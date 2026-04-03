@@ -4,7 +4,6 @@
 /// 统一定义应用中使用的所有文字
 /// 便于国际化和管理
 /// ============================================
-
 class AppStrings {
   // ==================== 应用名称 ====================
 
@@ -12,7 +11,7 @@ class AppStrings {
   static const String appName = '亲途';
 
   /// 应用副标题
-  static const String appSubtitle = '让爱导航回家';
+  static const String appSubtitle = '指尖即是爱的方向';
 
   // ==================== 启动页 ====================
 
@@ -81,7 +80,7 @@ class AppStrings {
   static const String iAmJunior = '我是晚辈';
 
   /// 长辈角色描述
-  static const String elderRoleDescription = '接受子女的导航帮助';
+  static const String elderRoleDescription = '接受晚辈的导航帮助';
 
   /// 晚辈角色描述
   static const String juniorRoleDescription = '为长辈规划导航路线';
@@ -158,4 +157,13 @@ class AppStrings {
 
   /// 保存失败
   static const String saveFailed = '保存失败，请重试';
+
+  /// 保存角色信息失败
+  static const String saveRoleFailed = '保存角色信息失败，请重试';
+
+  /// 角色（长辈端）
+  static const String roleElder = '长辈端';
+
+  /// 角色（晚辈端）
+  static const String roleJunior = '晚辈端';
 }

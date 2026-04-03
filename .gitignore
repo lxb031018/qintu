@@ -62,9 +62,10 @@ lib/generated_plugin_registrant.dart
 !**/.vscode/**
 
 # Private configuration files
-*.env
-*.env.local
-*.env.*.local
+.env
+.env.local
+.env.*.local
+!.env.example
 
 # Credentials and secrets
 credentials.json

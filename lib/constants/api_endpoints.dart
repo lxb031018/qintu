@@ -1,46 +1,41 @@
-/// ============================================
-/// API 端点常量
-///
-/// 统一定义所有 API 端点地址
-/// ============================================
+import '../config/app_config.dart';
+
+/// API 端点常量 - 统一定义所有 API 端点地址
 
 class ApiEndpoints {
-  // ==================== 基础地址 ====================
+  // ==================== 基础地址（统一来源：AppConfig）====================
 
-  /// CloudBase 网关地址
-  static const String gatewayUrl = 'https://qintu-cloudebase-5f5bpuj13bc6467.api.tcloudbasegateway.com';
+  /// CloudBase 网关地址（从 AppConfig 引用）
+  static String get gatewayUrl => AppConfig.gatewayUrl;
 
   /// 认证 API 基础路径
-  static const String authBaseUrl = '$gatewayUrl/auth/v1';
+  static String get authBaseUrl => '$gatewayUrl/auth/v1';
 
   /// 数据库 API 基础路径
-  static const String databaseBaseUrl = '$gatewayUrl/v1/rdb/rest';
+  static String get databaseBaseUrl => '$gatewayUrl/v1/rdb/rest';
 
   /// 云函数 API 基础路径
-  static const String functionsBaseUrl = '$gatewayUrl/v1/functions';
+  static String get functionsBaseUrl => '$gatewayUrl/v1/functions';
 
   // ==================== 认证相关 API ====================
 
   /// 发送验证码
-  static const String sendVerificationCode = '/auth/v1/verification';
+  static const String sendVerificationCode = '/verification';
 
   /// 验证验证码
-  static const String verifyCode = '/auth/v1/verification/verify';
+  static const String verifyCode = '/verification/verify';
 
   /// 登录
-  static const String signIn = '/auth/v1/signin';
+  static const String signIn = '/signin';
 
   /// 注册
-  static const String signUp = '/auth/v1/signup';
-
-  /// 获取用户信息
-  static const String getUserInfo = '/auth/v1/user';
+  static const String signUp = '/signup';
 
   /// 刷新 Token
-  static const String refreshToken = '/auth/v1/token/refresh';
+  static const String refreshToken = '/token/refresh';
 
   /// 退出登录
-  static const String signOut = '/auth/v1/signout';
+  static const String signOut = '/signout';
 
   // ==================== 用户相关 API ====================
 

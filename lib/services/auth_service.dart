@@ -1,26 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
 import '../constants/api_endpoints.dart';
-import '../constants/app_config.dart';
+import '../config/app_config.dart';
 import '../constants/app_strings.dart';
 import '../models/auth_result.dart';
+import '../utils/logger.dart';
 
-/// ============================================
-/// CloudBase 认证服务
-///
-/// 封装所有与用户登录相关的 HTTP API 调用
-/// ============================================
+/// CloudBase 认证服务 - 封装所有与用户登录相关的 HTTP API 调用
 
 class CloudBaseAuthService {
   /// CloudBase 环境配置
-  static const String envId = AppConfig.envId;
+  static String get envId => AppConfig.envId;
 
-  /// 认证 API 基础地址
-  static const String authBaseUrl = ApiEndpoints.authBaseUrl;
+  /// 认证 API 基础地址（统一来源：ApiEndpoints）
+  static String get authBaseUrl => ApiEndpoints.authBaseUrl;
 
-  /// Publishable Key（用于客户端认证，可以公开）
-  static const String publishableKey = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJpc3MiOiJodHRwczovL3FpbnR1LWNsb3VkZWJhc2UtNWY1YnB1ajEzYmM2NDY3LmFwLXNoYW5naGFpLnRjYi1hcGkudGVuY2VudGNsb3VkYXBpLmNvbSIsInN1YiI6ImFub24iLCJhdWQiOiJxaW50dS1jbG91ZGViYXNlLTVmNWJwdWoxM2JjNjQ2NyIsImV4cCI6NDA3ODg3MDg5MywiaWF0IjoxNzc1MTg3NjkzLCJub25jZSI6IjZOeTVQbHBtU215WHdIZjZ2eWFnTlEiLCJhdF9oYXNoIjoiNk55NVBscG1TbXlYd0hmNnZ5YWdOUSIsIm5hbWUiOiJBbm9ueW1vdXMiLCJzY29wZSI6ImFub255bW91cyIsInByb2plY3RfaWQiOiJxaW50dS1jbG91ZGViYXNlLTVmNWJwdWoxM2JjNjQ2NyIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.oLl3ED22kCq_1tnWzxGb-jV4xsJMNlsnLBZ_eEptkGs5Q0Wfe3T75HC3HsuAbFogS7PnlLBieLkYLXGflMdz_IZN_RUZCd4SC9HTH1N9wf4Ov7OfucNO1qQgpaQU74XUAWC70gwnRsNjnmXOgKuDI0-iPOzsMSPWtV-3ci95zFlu2oG1EF7A3M0NWBuS5nNkYeLfQLWskNHt-4bnsNjGvStGKbs2Kz7JqI2PoV07an9WcfOtVKXafzCJwLJUesrlR2jq6d15pbBSStsPgZ4EAkMBzPsBUJFiq8SKhsTOgwhhLow3Ax_JcnhYXcUH43iJ11ky4n7BCemx_r_hbus0Ow';
+  /// Publishable Key（从环境变量读取）
+  static String get publishableKey => AppConfig.publishableKey;
 
   /// 通用的请求头（包含 Publishable Key 认证）
   static Map<String, String> get _headers => {
@@ -38,9 +34,8 @@ class CloudBaseAuthService {
   static Future<String> sendVerificationCode(String phoneNumber) async {
     final url = Uri.parse('$authBaseUrl${ApiEndpoints.sendVerificationCode}');
 
-    developer.log('========== 发送验证码 ==========', name: 'AuthService');
-    developer.log('URL: $url', name: 'AuthService');
-    developer.log('手机号: $phoneNumber', name: 'AuthService');
+    Logger.authSeparator('发送验证码');
+    Logger.apiRequest(url.toString(), {'phone_number': phoneNumber, 'target': ApiEndpoints.targetAny});
 
     try {
       final response = await http.post(
@@ -52,16 +47,15 @@ class CloudBaseAuthService {
         }),
       );
 
-      developer.log('响应状态码: ${response.statusCode}', name: 'AuthService');
-      developer.log('响应内容: ${response.body}', name: 'AuthService');
+      Logger.apiResponse(response.statusCode, response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        developer.log('✅ 发送成功，verification_id: ${data['verification_id']}', name: 'AuthService');
+        Logger.authSuccess('发送成功，verification_id: ${data['verification_id']}');
         return data['verification_id'];
       } else {
         final error = jsonDecode(response.body);
-        developer.log('❌ 发送失败: ${error['message'] ?? response.body}', name: 'AuthService');
+        Logger.authError('发送失败: ${error['message'] ?? response.body}');
 
         if (error['error_code'] == 429) {
           throw Exception(AppStrings.codeSendTooFrequent);
@@ -69,7 +63,7 @@ class CloudBaseAuthService {
         throw Exception(AppStrings.codeSendFailed);
       }
     } catch (e) {
-      developer.log('❌ 网络请求异常: $e', name: 'AuthService');
+      Logger.authError('网络请求异常: $e');
 
       if (e is Exception && e.toString().contains('验证码')) {
         rethrow;
@@ -90,10 +84,11 @@ class CloudBaseAuthService {
   static Future<String> verifyCode(String verificationId, String code) async {
     final url = Uri.parse('$authBaseUrl${ApiEndpoints.verifyCode}');
 
-    developer.log('========== 验证验证码 ==========', name: 'AuthService');
-    developer.log('URL: $url', name: 'AuthService');
-    developer.log('verification_id: $verificationId', name: 'AuthService');
-    developer.log('验证码: $code', name: 'AuthService');
+    Logger.authSeparator('验证验证码');
+    Logger.apiRequest(url.toString(), {
+      'verification_id': verificationId,
+      'verification_code': code,
+    });
 
     try {
       final response = await http.post(
@@ -105,16 +100,15 @@ class CloudBaseAuthService {
         }),
       );
 
-      developer.log('响应状态码: ${response.statusCode}', name: 'AuthService');
-      developer.log('响应内容: ${response.body}', name: 'AuthService');
+      Logger.apiResponse(response.statusCode, response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        developer.log('✅ 验证成功，verification_token: ${data['verification_token']}', name: 'AuthService');
+        Logger.authSuccess('验证成功，verification_token: ${data['verification_token']}');
         return data['verification_token'];
       } else {
         final error = jsonDecode(response.body);
-        developer.log('❌ 验证失败: ${error['message'] ?? response.body}', name: 'AuthService');
+        Logger.authError('验证失败: ${error['message'] ?? response.body}');
 
         if (error['error_code'] == 3) {
           throw Exception(AppStrings.codeInvalidOrExpired);
@@ -122,7 +116,7 @@ class CloudBaseAuthService {
         throw Exception(AppStrings.codeInvalid);
       }
     } catch (e) {
-      developer.log('❌ 网络请求异常: $e', name: 'AuthService');
+      Logger.authError('网络请求异常: $e');
 
       if (e is Exception && (e.toString().contains('验证码') || e.toString().contains('验证'))) {
         rethrow;
@@ -148,12 +142,14 @@ class CloudBaseAuthService {
     required String verificationToken,
     required String phoneNumber,
   }) async {
-    developer.log('========== 智能登录/注册 ==========', name: 'AuthService');
+    Logger.authSeparator('智能登录/注册');
 
     try {
       // 先尝试登录（老用户）
-      developer.log('尝试登录（老用户）...', name: 'AuthService');
+      Logger.auth('尝试登录（老用户）...');
       final loginUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signIn}');
+
+      Logger.apiRequest(loginUrl.toString(), {'verification_token': verificationToken});
 
       final loginResponse = await http.post(
         loginUrl,
@@ -163,21 +159,28 @@ class CloudBaseAuthService {
         }),
       );
 
+      Logger.apiResponse(loginResponse.statusCode, loginResponse.body);
+
       if (loginResponse.statusCode == 200) {
-        developer.log('✅ 登录成功（老用户）', name: 'AuthService');
+        Logger.authSuccess('登录成功（老用户）');
         final data = jsonDecode(loginResponse.body);
         return AuthResult.fromJson(data);
       }
 
       // 如果登录失败，检查错误类型
       final error = jsonDecode(loginResponse.body);
-      developer.log('登录失败: ${error['error_description']}', name: 'AuthService');
+      Logger.auth('登录失败: ${error['error_description']}');
 
       // 如果是"用户不存在"错误，尝试注册
       if (error['error_code'] == 5 || error['error'] == 'not_found') {
-        developer.log('用户不存在，尝试注册（新用户）...', name: 'AuthService');
+        Logger.auth('用户不存在，尝试注册（新用户）...');
 
         final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
+        Logger.apiRequest(signupUrl.toString(), {
+          'verification_token': verificationToken,
+          'phone_number': phoneNumber,
+        });
+
         final signupResponse = await http.post(
           signupUrl,
           headers: _headers,
@@ -187,20 +190,22 @@ class CloudBaseAuthService {
           }),
         );
 
+        Logger.apiResponse(signupResponse.statusCode, signupResponse.body);
+
         if (signupResponse.statusCode == 200) {
-          developer.log('✅ 注册成功（新用户）', name: 'AuthService');
+          Logger.authSuccess('注册成功（新用户）');
           final data = jsonDecode(signupResponse.body);
           return AuthResult.fromJson(data);
         } else {
           final signupError = jsonDecode(signupResponse.body);
-          developer.log('❌ 注册失败: ${signupError['error_description']}', name: 'AuthService');
+          Logger.authError('注册失败: ${signupError['error_description']}');
           throw Exception(AppStrings.registerFailed);
         }
       } else {
         throw Exception(AppStrings.loginFailed);
       }
     } catch (e) {
-      developer.log('❌ 异常: $e', name: 'AuthService');
+      Logger.authError('异常: $e');
 
       if (e is Exception && e.toString().contains('失败')) {
         rethrow;

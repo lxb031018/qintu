@@ -1,16 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'constants/app_colors.dart';
+import 'config/app_config.dart';
 import 'constants/app_strings.dart';
 import 'pages/auth_page.dart';
 import 'pages/role_selection_page.dart';
-import 'services/token_storage.dart';
+import 'services/secure_storage.dart';
 import 'theme/app_theme.dart';
 
-/// ============================================
 /// 亲途应用入口
-/// ============================================
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemStatusBarContrastEnforced: false,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: AppColors.backgroundColor,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+  // .env 文件可选加载，如不存在则使用默认值
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    // .env 文件不存在时使用默认配置
+    // 提示用户：请复制 .env.example 为 .env 并填入配置
+  }
   runApp(const MainApp());
 }
 
@@ -19,11 +41,22 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppStrings.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.backgroundColor,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: MaterialApp(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        home: const SplashScreen(),
+      ),
     );
   }
 }
@@ -52,21 +85,24 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 800));
 
     // 检查是否已登录
-    final isLoggedIn = await TokenStorage.isLoggedIn();
+    final isLoggedIn = await SecureStorage.isLoggedIn();
 
     if (!mounted) return;
 
     if (isLoggedIn) {
       // 已登录，获取登录信息
-      final loginInfo = await TokenStorage.getLoginInfo();
+      final loginInfo = await SecureStorage.getLoginInfo();
       final accessToken = loginInfo?['access_token'] ?? '';
-      final phoneNumber = loginInfo?['phone_number'] ?? '';
+      final userId = loginInfo?['user_id'] ?? '';
+
+      // 检查 widget 是否还在树中
+      if (!mounted) return;
 
       // 跳转到角色选择页面
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => RoleSelectionPage(
-            userId: 'user_${DateTime.now().millisecondsSinceEpoch}',
+            userId: userId,
             accessToken: accessToken,
           ),
         ),
@@ -85,6 +121,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
+      extendBody: true,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -93,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.15),
+                color: AppColors.primaryColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -110,13 +147,20 @@ class _SplashScreenState extends State<SplashScreen> {
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textColor,
-                fontFamily: 'PingFang SC',
+                fontFamily: AppConfig.fontFamily,
               ),
             ),
             const SizedBox(height: 16),
-            // 加载指示器
-            CircularProgressIndicator(
-              color: AppColors.primaryColor,
+            // 启动文案
+            Text(
+              AppStrings.appSubtitle,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryColor,
+                fontFamily: AppConfig.fontFamily,
+                letterSpacing: 1.2,
+              ),
             ),
           ],
         ),

@@ -64,17 +64,17 @@ class AppColors {
   static const Color blackOpacity10 = Color(0x1A000000);
 
   /// 半透明主色
-  static Color primaryOpacity10 = primaryColor.withOpacity(0.1);
-  static Color primaryOpacity15 = primaryColor.withOpacity(0.15);
-  static Color primaryOpacity30 = primaryColor.withOpacity(0.3);
-  static Color primaryOpacity40 = primaryColor.withOpacity(0.4);
+  static Color primaryOpacity10 = primaryColor.withValues(alpha: 0.1);
+  static Color primaryOpacity15 = primaryColor.withValues(alpha: 0.15);
+  static Color primaryOpacity30 = primaryColor.withValues(alpha: 0.3);
+  static Color primaryOpacity40 = primaryColor.withValues(alpha: 0.4);
 
   /// 半透明错误色
-  static Color errorOpacity10 = errorColor.withOpacity(0.1);
-  static Color errorOpacity30 = errorColor.withOpacity(0.3);
+  static Color errorOpacity10 = errorColor.withValues(alpha: 0.1);
+  static Color errorOpacity30 = errorColor.withValues(alpha: 0.3);
 
   /// 半透明成功色
-  static Color successOpacity10 = successColor.withOpacity(0.1);
+  static Color successOpacity10 = successColor.withValues(alpha: 0.1);
 
   // ==================== 特殊用途颜色 ====================
 
@@ -88,5 +88,28 @@ class AppColors {
   static const Color borderColor = Color(0xFFE2E8F0);
 
   /// 输入框焦点边框颜色
-  static Color focusBorderColor = primaryColor.withOpacity(0.5);
+  static Color focusBorderColor = primaryColor.withValues(alpha: 0.5);
+
+  // ==================== 深色主题颜色 ====================
+
+  /// 深色背景
+  static const Color darkBackgroundColor = Color(0xFF1A1A2E);
+
+  /// 深色卡片背景
+  static const Color darkCardBackground = Color(0xFF16213E);
+
+  /// 深色主文字
+  static const Color darkTextColor = Color(0xFFE2E8F0);
+
+  /// 深色辅助文字
+  static const Color darkLightTextColor = Color(0xFFA0AEC0);
+
+  /// 深色分割线
+  static const Color darkDividerColor = Color(0xFF2D3748);
+
+  /// 深色输入框背景
+  static const Color darkInputBackground = Color(0xFF0F3460);
+
+  /// 深色边框
+  static const Color darkBorderColor = Color(0xFF2D3748);
 }

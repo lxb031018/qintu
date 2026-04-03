@@ -1,20 +1,21 @@
-/// ============================================
-/// 应用配置常量
-///
-/// 统一定义应用的配置信息
-/// ============================================
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+/// 应用配置常量 - 统一定义应用的配置信息
 
 class AppConfig {
-  // ==================== CloudBase 环境配置 ====================
+  // ==================== CloudBase 环境配置（从环境变量读取）====================
 
   /// CloudBase 环境 ID
-  static const String envId = 'qintu-cloudebase-5f5bpuj13bc6467';
+  static String get envId => dotenv.env['CLOUDBASE_ENV_ID'] ?? 'qintu-cloudebase-5f5bpuj13bc6467';
 
   /// CloudBase 网关地址
-  static const String gatewayUrl = 'https://$envId.api.tcloudbasegateway.com';
+  static String get gatewayUrl => 'https://$envId.api.tcloudbasegateway.com';
 
   /// CloudBase 服务地址
-  static const String serviceUrl = 'https://$envId.service.tcloudbase.com';
+  static String get serviceUrl => 'https://$envId.service.tcloudbase.com';
+
+  /// Publishable Key（从环境变量读取）
+  static String get publishableKey => dotenv.env['CLOUDBASE_PUBLISHABLE_KEY'] ?? '';
 
   // ==================== 认证配置 ====================
 
@@ -119,4 +120,7 @@ class AppConfig {
 
   /// Token 过期时间存储键
   static const String expiresInKey = 'expires_in';
+
+  /// 用户 ID 存储键
+  static const String userIdKey = 'user_id';
 }

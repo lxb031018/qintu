@@ -1,8 +1,4 @@
-/// ============================================
-/// 认证结果模型
-///
-/// 用户登录成功后返回的认证信息
-/// ============================================
+// 认证结果模型 - 用户登录成功后返回的认证信息
 
 class AuthResult {
   /// 访问令牌
@@ -14,11 +10,14 @@ class AuthResult {
   /// Token 有效期（秒）
   final int expiresIn;
 
-  /// 构造函数
+  /// 用户 ID（从 sub 字段解析）
+  final String uid;
+
   AuthResult({
     required this.accessToken,
     required this.refreshToken,
     required this.expiresIn,
+    required this.uid,
   });
 
   /// 从 JSON 创建实例
@@ -27,6 +26,7 @@ class AuthResult {
       accessToken: json['access_token'] ?? '',
       refreshToken: json['refresh_token'] ?? '',
       expiresIn: json['expires_in'] ?? 0,
+      uid: json['sub'] ?? '',
     );
   }
 
@@ -36,6 +36,7 @@ class AuthResult {
       'access_token': accessToken,
       'refresh_token': refreshToken,
       'expires_in': expiresIn,
+      'sub': uid,
     };
   }
 
@@ -51,7 +52,10 @@ class AuthResult {
 
   @override
   String toString() {
-    return 'AuthResult(accessToken: ${accessToken.substring(0, 20)}..., expiresIn: $expiresIn 秒)';
+    final tokenPreview = accessToken.length > 20
+        ? '${accessToken.substring(0, 20)}...'
+        : accessToken;
+    return 'AuthResult(uid: $uid, accessToken: $tokenPreview..., expiresIn: $expiresIn 秒)';
   }
 
   @override

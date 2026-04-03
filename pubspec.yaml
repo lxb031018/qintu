@@ -10,7 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0  # HTTP 请求库，用于调用云函数
-  shared_preferences: ^2.2.2  # 本地存储，用于保存登录状态
+  shared_preferences: ^2.2.2  # 本地存储，用于保存非敏感配置
+  flutter_dotenv: ^5.1.0  # 环境变量管理
+  flutter_secure_storage: ^9.0.0  # 安全存储，用于保存敏感 token
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +21,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - .env

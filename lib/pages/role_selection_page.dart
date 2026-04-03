@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
+import '../config/app_config.dart';
+import '../constants/app_strings.dart';
 
-/// ============================================
-/// 角色选择页面
-///
-/// 用户登录后选择身份：长辈 或 晚辈
-/// 设计风格：柔和粉彩风格，大字体，适合老年人
-/// ============================================
+/// 角色选择页面 - 用户登录后选择身份：长辈 或 晚辈
 
 class RoleSelectionPage extends StatefulWidget {
   final String userId;
@@ -22,14 +20,8 @@ class RoleSelectionPage extends StatefulWidget {
 }
 
 class _RoleSelectionPageState extends State<RoleSelectionPage> {
-  // ==================== 状态变量 ====================
-
-  /// 是否正在保存
   bool _isLoading = false;
 
-  // ==================== 核心方法 ====================
-
-  /// 选择角色
   Future<void> _selectRole(String role) async {
     setState(() => _isLoading = true);
 
@@ -37,16 +29,14 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       // TODO: 将角色信息保存到服务器
       // await saveUserRole(widget.userId, role, widget.accessToken);
 
-      // 模拟网络延迟
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // 跳转到对应的主页面
       if (role == 'elder') {
         // TODO: 跳转到长辈端主页
-        _showSuccessDialog('长辈端');
+        _showSuccessDialog(AppStrings.roleElder);
       } else {
         // TODO: 跳转到晚辈端主页
-        _showSuccessDialog('晚辈端');
+        _showSuccessDialog(AppStrings.roleJunior);
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -54,50 +44,46 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     }
   }
 
-  /// 显示成功对话框
   void _showSuccessDialog(String role) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('角色设置成功'),
-        content: Text('您已选择$role，即将进入主页'),
+        title: Text(AppStrings.roleSetSuccess),
+        content: Text(AppStrings.roleSetSuccessMessage(role)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               setState(() => _isLoading = false);
             },
-            child: const Text('确定'),
+            child: Text(AppStrings.confirm),
           ),
         ],
       ),
     );
   }
 
-  /// 显示错误对话框
   void _showErrorDialog(String error) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('设置失败'),
-        content: Text('保存角色信息失败，请重试\n错误：$error'),
+        title: Text(AppStrings.settingFailed),
+        content: Text('${AppStrings.saveRoleFailed}\n错误：$error'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
+            child: Text(AppStrings.confirm),
           ),
         ],
       ),
     );
   }
 
-  // ==================== UI 构建 ====================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 奶油白背景
-      backgroundColor: const Color(0xFFFFF8F0),
+      backgroundColor: AppColors.backgroundColor,
+      extendBody: true,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -105,24 +91,24 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             children: [
               // 标题区域
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    '欢迎使用亲途',
+                    AppStrings.roleSelectionTitle,
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF4A5568),
-                      fontFamily: 'PingFang SC',
+                      color: AppColors.textColor,
+                      fontFamily: AppConfig.fontFamily,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '选择后可以在设置中更改',
+                    AppStrings.roleSelectionHint,
                     style: TextStyle(
                       fontSize: 18,
-                      color: const Color(0xFF4A5568).withOpacity(0.6),
-                      fontFamily: 'PingFang SC',
+                      color: AppColors.lightTextColor,
+                      fontFamily: AppConfig.fontFamily,
                     ),
                   ),
                 ],
@@ -135,24 +121,22 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // 我是长辈按钮
                     _buildRoleButton(
                       role: 'elder',
-                      title: '我是长辈',
-                      subtitle: '接受子女的导航帮助',
+                      title: AppStrings.iAmElder,
+                      subtitle: AppStrings.elderRoleDescription,
                       icon: Icons.elderly,
-                      color: const Color(0xFFFF8C69), // 珊瑚橙
+                      color: AppColors.primaryColor,
                     ),
 
                     const SizedBox(height: 40),
 
-                    // 我是晚辈按钮
                     _buildRoleButton(
                       role: 'junior',
-                      title: '我是晚辈',
-                      subtitle: '为长辈规划导航路线',
+                      title: AppStrings.iAmJunior,
+                      subtitle: AppStrings.juniorRoleDescription,
                       icon: Icons.family_restroom,
-                      color: const Color(0xFF87CEEB), // 天空蓝
+                      color: AppColors.secondaryColor,
                     ),
                   ],
                 ),
@@ -164,7 +148,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     );
   }
 
-  /// 构建角色选择按钮
   Widget _buildRoleButton({
     required String role,
     required String title,
@@ -180,7 +163,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -195,11 +178,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Row(
               children: [
-                // 图标
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -211,37 +193,33 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
 
                 const SizedBox(width: 24),
 
-                // 文字
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 标题
                       Text(
                         title,
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF4A5568),
-                          fontFamily: 'PingFang SC',
+                          color: AppColors.textColor,
+                          fontFamily: AppConfig.fontFamily,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // 副标题
                       Text(
                         subtitle,
                         style: TextStyle(
                           fontSize: 18,
-                          color: const Color(0xFF4A5568).withOpacity(0.6),
-                          fontFamily: 'PingFang SC',
+                          color: AppColors.lightTextColor,
+                          fontFamily: AppConfig.fontFamily,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // 箭头图标
                 if (!_isLoading)
                   Icon(
                     Icons.arrow_forward_ios,
@@ -249,7 +227,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                     color: color,
                   ),
 
-                // 加载指示器
                 if (_isLoading)
                   const SizedBox(
                     width: 28,
