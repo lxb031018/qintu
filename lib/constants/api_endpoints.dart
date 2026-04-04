@@ -88,9 +88,9 @@ class ApiEndpoints {
   /// 发送验证码目标类型
   static const String targetAny = 'ANY';
 
-  /// 用户角色：长辈
-  static const String roleElder = 'elder';
+  /// 用户角色：接收者
+  static const String roleReceiver = 'receiver';
 
-  /// 用户角色：晚辈
-  static const String roleJunior = 'junior';
+  /// 用户角色：发送者
+  static const String roleSender = 'sender';
 }

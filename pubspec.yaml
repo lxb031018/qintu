@@ -13,6 +13,7 @@ dependencies:
   shared_preferences: ^2.2.2  # 本地存储，用于保存非敏感配置
   flutter_dotenv: ^5.1.0  # 环境变量管理
   flutter_secure_storage: ^9.0.0  # 安全存储，用于保存敏感 token
+  geolocator: ^13.0.2  # 位置服务，用于获取用户位置
 
 dev_dependencies:
   flutter_test:

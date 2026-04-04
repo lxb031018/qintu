@@ -6,6 +6,8 @@ import 'config/app_config.dart';
 import 'constants/app_strings.dart';
 import 'pages/auth_page.dart';
 import 'pages/role_selection_page.dart';
+import 'pages/receiver_home_page.dart';
+import 'pages/sender_home_page.dart';
 import 'services/secure_storage.dart';
 import 'theme/app_theme.dart';
 
@@ -94,19 +96,43 @@ class _SplashScreenState extends State<SplashScreen> {
       final loginInfo = await SecureStorage.getLoginInfo();
       final accessToken = loginInfo?['access_token'] ?? '';
       final userId = loginInfo?['user_id'] ?? '';
+      final userRole = loginInfo?['user_role'] as String?;
 
       // 检查 widget 是否还在树中
       if (!mounted) return;
 
-      // 跳转到角色选择页面
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => RoleSelectionPage(
-            userId: userId,
-            accessToken: accessToken,
+      // 根据角色跳转到对应主页
+      if (userRole == 'receiver') {
+        // 接收者：直接进入接收者主页
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ReceiverHomePage(
+              userId: userId,
+              accessToken: accessToken,
+            ),
           ),
-        ),
-      );
+        );
+      } else if (userRole == 'sender') {
+        // 发送者：直接进入发送者主页
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => SenderHomePage(
+              userId: userId,
+              accessToken: accessToken,
+            ),
+          ),
+        );
+      } else {
+        // 未选择角色：进入角色选择页面
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => RoleSelectionPage(
+              userId: userId,
+              accessToken: accessToken,
+            ),
+          ),
+        );
+      }
     } else {
       // 未登录，跳转到认证页面
       Navigator.of(context).pushReplacement(

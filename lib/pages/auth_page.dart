@@ -122,7 +122,8 @@ class _AuthPageState extends State<AuthPage> {
       await SecureStorage.saveTokens(
         accessToken: _authResult!.accessToken,
         refreshToken: _authResult!.refreshToken,
-        expiresIn: _authResult!.expiresIn,
+        accessTokenExpiresIn: _authResult!.accessTokenExpiresIn,
+        refreshTokenExpiresIn: _authResult!.refreshTokenExpiresIn,
         phoneNumber: formattedPhone,
         userId: _authResult!.uid,
       );

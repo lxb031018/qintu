@@ -7,8 +7,11 @@ class AuthResult {
   /// 刷新令牌
   final String refreshToken;
 
-  /// Token 有效期（秒）
-  final int expiresIn;
+  /// Access Token 有效期（秒）
+  final int accessTokenExpiresIn;
+
+  /// Refresh Token 有效期（秒）
+  final int refreshTokenExpiresIn;
 
   /// 用户 ID（从 sub 字段解析）
   final String uid;
@@ -16,7 +19,8 @@ class AuthResult {
   AuthResult({
     required this.accessToken,
     required this.refreshToken,
-    required this.expiresIn,
+    required this.accessTokenExpiresIn,
+    required this.refreshTokenExpiresIn,
     required this.uid,
   });
 
@@ -25,7 +29,8 @@ class AuthResult {
     return AuthResult(
       accessToken: json['access_token'] ?? '',
       refreshToken: json['refresh_token'] ?? '',
-      expiresIn: json['expires_in'] ?? 0,
+      accessTokenExpiresIn: json['expires_in'] ?? 0,
+      refreshTokenExpiresIn: json['refresh_expires_in'] ?? 0,
       uid: json['sub'] ?? '',
     );
   }
@@ -35,19 +40,30 @@ class AuthResult {
     return {
       'access_token': accessToken,
       'refresh_token': refreshToken,
-      'expires_in': expiresIn,
+      'expires_in': accessTokenExpiresIn,
+      'refresh_expires_in': refreshTokenExpiresIn,
       'sub': uid,
     };
   }
 
-  /// Token 过期时间
-  DateTime get expiresAt {
-    return DateTime.now().add(Duration(seconds: expiresIn));
+  /// Access Token 过期时间
+  DateTime get accessTokenExpiresAt {
+    return DateTime.now().add(Duration(seconds: accessTokenExpiresIn));
   }
 
-  /// 检查 Token 是否已过期
-  bool get isExpired {
-    return DateTime.now().isAfter(expiresAt);
+  /// Refresh Token 过期时间
+  DateTime get refreshTokenExpiresAt {
+    return DateTime.now().add(Duration(seconds: refreshTokenExpiresIn));
+  }
+
+  /// 检查 Access Token 是否已过期
+  bool get isAccessTokenExpired {
+    return DateTime.now().isAfter(accessTokenExpiresAt);
+  }
+
+  /// 检查 Refresh Token 是否已过期
+  bool get isRefreshTokenExpired {
+    return DateTime.now().isAfter(refreshTokenExpiresAt);
   }
 
   @override
@@ -55,7 +71,7 @@ class AuthResult {
     final tokenPreview = accessToken.length > 20
         ? '${accessToken.substring(0, 20)}...'
         : accessToken;
-    return 'AuthResult(uid: $uid, accessToken: $tokenPreview..., expiresIn: $expiresIn 秒)';
+    return 'AuthResult(uid: $uid, accessToken: $tokenPreview, accessTokenExpiresIn: $accessTokenExpiresIn 秒, refreshTokenExpiresIn: $refreshTokenExpiresIn 秒)';
   }
 
   @override

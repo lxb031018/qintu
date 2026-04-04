@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- 位置权限描述 -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>亲途需要获取您的位置信息，以便为您提供导航服务</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>亲途需要获取您的位置信息，以便为您提供导航服务</string>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../config/app_config.dart';
 import '../constants/app_strings.dart';
+import '../services/secure_storage.dart';
+import 'receiver_home_page.dart';
+import 'sender_home_page.dart';
 
-/// 角色选择页面 - 用户登录后选择身份：长辈 或 晚辈
+/// 角色选择页面 - 用户登录后选择身份：接收者 或 发送者
 
 class RoleSelectionPage extends StatefulWidget {
   final String userId;
@@ -26,41 +29,43 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     setState(() => _isLoading = true);
 
     try {
+      // 保存角色信息到本地（根据角色设置不同的有效期）
+      await SecureStorage.saveRole(role);
+
       // TODO: 将角色信息保存到服务器
       // await saveUserRole(widget.userId, role, widget.accessToken);
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      if (role == 'elder') {
-        // TODO: 跳转到长辈端主页
-        _showSuccessDialog(AppStrings.roleElder);
+      if (role == 'receiver') {
+        // 跳转到接收者端主页
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => ReceiverHomePage(
+                userId: widget.userId,
+                accessToken: widget.accessToken,
+              ),
+            ),
+          );
+        }
       } else {
-        // TODO: 跳转到晚辈端主页
-        _showSuccessDialog(AppStrings.roleJunior);
+        // 跳转到发送者端主页
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => SenderHomePage(
+                userId: widget.userId,
+                accessToken: widget.accessToken,
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
       _showErrorDialog(e.toString());
     }
-  }
-
-  void _showSuccessDialog(String role) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.roleSetSuccess),
-        content: Text(AppStrings.roleSetSuccessMessage(role)),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() => _isLoading = false);
-            },
-            child: Text(AppStrings.confirm),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showErrorDialog(String error) {
@@ -102,15 +107,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                       fontFamily: AppConfig.fontFamily,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppStrings.roleSelectionHint,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppColors.lightTextColor,
-                      fontFamily: AppConfig.fontFamily,
-                    ),
-                  ),
                 ],
               ),
 
@@ -122,20 +118,20 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildRoleButton(
-                      role: 'elder',
-                      title: AppStrings.iAmElder,
-                      subtitle: AppStrings.elderRoleDescription,
-                      icon: Icons.elderly,
+                      role: 'receiver',
+                      title: AppStrings.iAmReceiver,
+                      subtitle: AppStrings.receiverRoleDescription,
+                      icon: Icons.move_to_inbox,
                       color: AppColors.primaryColor,
                     ),
 
                     const SizedBox(height: 40),
 
                     _buildRoleButton(
-                      role: 'junior',
-                      title: AppStrings.iAmJunior,
-                      subtitle: AppStrings.juniorRoleDescription,
-                      icon: Icons.family_restroom,
+                      role: 'sender',
+                      title: AppStrings.iAmSender,
+                      subtitle: AppStrings.senderRoleDescription,
+                      icon: Icons.send,
                       color: AppColors.secondaryColor,
                     ),
                   ],

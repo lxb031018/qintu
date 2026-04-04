@@ -70,26 +70,98 @@ class AppStrings {
   /// 角色选择标题
   static const String roleSelectionTitle = '欢迎使用亲途';
 
-  /// 角色选择提示
-  static const String roleSelectionHint = '选择后可以在设置中更改';
+  /// 我是接收者
+  static const String iAmReceiver = '我是接收者';
 
-  /// 我是长辈
-  static const String iAmElder = '我是长辈';
+  /// 我是发送者
+  static const String iAmSender = '我是发送者';
 
-  /// 我是晚辈
-  static const String iAmJunior = '我是晚辈';
+  /// 接收者角色描述
+  static const String receiverRoleDescription = '接收导航指引，轻松出行';
 
-  /// 长辈角色描述
-  static const String elderRoleDescription = '接受晚辈的导航帮助';
-
-  /// 晚辈角色描述
-  static const String juniorRoleDescription = '为长辈规划导航路线';
+  /// 发送者角色描述
+  static const String senderRoleDescription = '发送导航指引，帮助他人';
 
   /// 角色设置成功
   static const String roleSetSuccess = '角色设置成功';
 
   /// 角色设置提示
   static String roleSetSuccessMessage(String role) => '您已选择$role，即将进入主页';
+
+  // ==================== 位置权限 ====================
+
+  /// 位置权限标题
+  static const String locationPermissionTitle = '需要位置权限';
+
+  /// 位置权限说明
+  static const String locationPermissionMessage = '亲途需要获取您的位置信息以提供导航服务，请授权位置权限';
+
+  /// 位置服务未开启
+  static const String locationServiceDisabled = '位置服务未开启，请在设置中开启';
+
+  /// 开启定位
+  static const String openLocation = '开启定位';
+
+  /// 定位已开启
+  static const String locationEnabled = '定位已开启';
+
+  /// 定位未开启
+  static const String locationDisabled = '定位未开启';
+
+  /// 等待导航
+  static const String waitingForNavigation = '等待接收导航指引...';
+
+  /// 暂无导航任务
+  static const String noNavigationTask = '暂无导航任务';
+
+  // ==================== 发送者端 ====================
+
+  /// 发送者主页标题
+  static const String senderHomeTitle = '发送导航指引';
+
+  /// 输入起点
+  static const String inputStartPoint = '输入起点';
+
+  /// 输入终点
+  static const String inputEndPoint = '输入终点';
+
+  /// 起点标签
+  static const String startPointLabel = '起点';
+
+  /// 终点标签
+  static const String endPointLabel = '终点';
+
+  /// 规划路线
+  static const String planRoute = '规划路线';
+
+  /// 发送导航
+  static const String sendNavigation = '发送导航';
+
+  /// 选择接收者
+  static const String selectReceiver = '选择接收者';
+
+  // ==================== 退出登录 ====================
+
+  /// 退出
+  static const String logout = '退出';
+
+  /// 退出确认标题
+  static const String logoutConfirmTitle = '您确定退出嘛？>_<';
+
+  /// 确定
+  static const String confirmLogout = '确定';
+
+  /// 取消
+  static const String cancelLogout = '取消';
+
+  /// 位置权限被拒绝
+  static const String locationPermissionDenied = '位置权限被拒绝，部分功能可能受限';
+
+  /// 前往设置
+  static const String goToSettings = '前往设置';
+
+  /// 稍后再说
+  static const String later = '稍后再说';
 
   // ==================== 错误提示 ====================
 
@@ -161,9 +233,9 @@ class AppStrings {
   /// 保存角色信息失败
   static const String saveRoleFailed = '保存角色信息失败，请重试';
 
-  /// 角色（长辈端）
-  static const String roleElder = '长辈端';
+  /// 角色（接收者端）
+  static const String roleReceiver = '接收者端';
 
-  /// 角色（晚辈端）
-  static const String roleJunior = '晚辈端';
+  /// 角色（发送者端）
+  static const String roleSender = '发送者端';
 }
