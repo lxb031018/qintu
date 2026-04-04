@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
+import '../binding/binding_page.dart';
 
 /// 发送者端主页（底部导航栏）
 ///
@@ -55,7 +56,7 @@ class _SenderMainScreenState extends State<SenderMainScreen> {
       case 0:
         return const _HomeTab();
       case 1:
-        return const _BindingTab();
+        return const BindingPage();  // 使用绑定管理页面
       case 2:
         return const _SettingsTab();
       default:
@@ -94,48 +95,6 @@ class _HomeTab extends StatelessWidget {
             SizedBox(height: 16),
             Text(
               '选择接收者，规划路线并发送导航',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.lightTextColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Binding Tab - 管理绑定关系
-class _BindingTab extends StatelessWidget {
-  const _BindingTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('绑定管理'),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.link,
-              size: 80,
-              color: AppColors.brandGreen,
-            ),
-            SizedBox(height: 24),
-            Text(
-              '绑定管理',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              '添加新绑定、解绑、查看绑定列表',
               style: TextStyle(
                 fontSize: 16,
                 color: AppColors.lightTextColor,
