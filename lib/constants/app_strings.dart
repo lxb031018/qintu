@@ -100,7 +100,7 @@ class AppStrings {
   static const String locationServiceDisabled = '位置服务未开启，请在设置中开启';
 
   /// 开启定位
-  static const String openLocation = '开启定位';
+  static const String openLocation = '点击开启定位';
 
   /// 定位已开启
   static const String locationEnabled = '定位已开启';
@@ -139,6 +139,11 @@ class AppStrings {
 
   /// 选择接收者
   static const String selectReceiver = '选择接收者';
+
+  // ==================== 设置 ====================
+
+  /// 设置
+  static const String settings = '设置';
 
   // ==================== 退出登录 ====================
 

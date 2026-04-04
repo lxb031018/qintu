@@ -215,6 +215,30 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
           ),
         ),
       ),
+      // 右下角设置按钮
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // TODO: 跳转到设置页面
+          Logger.ui('点击设置按钮');
+        },
+        backgroundColor: AppColors.primaryColor.withValues(alpha: 0.15),
+        elevation: 2,
+        icon: Icon(
+          Icons.settings_outlined,
+          color: AppColors.primaryColor,
+          size: 24,
+        ),
+        label: Text(
+          AppStrings.settings,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryColor,
+            fontFamily: AppConfig.fontFamily,
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

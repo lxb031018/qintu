@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../config/app_config.dart';
 import '../constants/app_strings.dart';
-import '../widgets/common/logout_dialog.dart';
+import '../utils/logger.dart';
 
 /// 发送者端主页 - 输入起终点，发送导航指引
 
@@ -69,23 +69,6 @@ class _SenderHomePageState extends State<SenderHomePage> {
       appBar: AppBar(
         backgroundColor: AppColors.backgroundColor,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: GestureDetector(
-            onTap: () => LogoutDialog.show(context),
-            child: Center(
-              child: Text(
-                AppStrings.logout,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.lightTextColor,
-                  fontFamily: AppConfig.fontFamily,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ),
         title: Text(
           AppStrings.senderHomeTitle,
           style: TextStyle(
@@ -191,6 +174,30 @@ class _SenderHomePageState extends State<SenderHomePage> {
           ),
         ),
       ),
+      // 右下角设置按钮
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // TODO: 跳转到设置页面
+          Logger.ui('点击设置按钮');
+        },
+        backgroundColor: AppColors.secondaryColor.withValues(alpha: 0.15),
+        elevation: 2,
+        icon: Icon(
+          Icons.settings_outlined,
+          color: AppColors.secondaryColor,
+          size: 24,
+        ),
+        label: Text(
+          AppStrings.settings,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.secondaryColor,
+            fontFamily: AppConfig.fontFamily,
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
