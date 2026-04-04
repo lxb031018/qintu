@@ -1,4 +1,3 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'cloudbase_config.dart';
 import 'auth_config.dart';
 import 'ui_config.dart';
