@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tcb *)",
+      "Bash(curl *)",
+      "Bash(tccli *)",
+      "Bash(icacls *)",
+      "Bash(del *)",
+      "Bash(dir *)",
+      "Bash(timeout *)",
+      "Bash(rmdir *)",
+      "Bash(mkdir *)",
+      "Bash(tar *)",
+      "Bash(cloudbase *)",
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(flutter *)"
+    ]
+  },
+  "$version": 3
+}

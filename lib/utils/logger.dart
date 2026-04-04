@@ -1,211 +1,224 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
+import 'logger/log_config.dart';
 
-// 日志工具类 - 提供统一的日志输出接口
+export 'logger/log_config.dart';
+export 'logger/file_logger.dart';
 
+/// 亲途日志工具
+///
+/// 功能：
+/// - 支持不同日志级别（debug/info/warning/error/critical）
+/// - 支持标签分类
+/// - 支持附加数据和堆栈跟踪
+/// - 开发环境彩色输出
+/// - 生产环境自动降级为 info 级别
+/// - 支持文件日志（异步、自动轮转）
+///
+/// 使用示例：
+/// ```dart
+/// // 推荐方式：使用 Logs 预定义实例
+/// Logs.auth.info('用户登录成功');
+/// Logs.api.warning('API 请求超时');
+/// Logs.app.error('应用启动失败', stackTrace: stackTrace);
+///
+/// // 自定义标签
+/// const customLogger = Logger('CUSTOM');
+/// customLogger.info('自定义日志');
+/// ```
 class Logger {
-  // ==================== 敏感字段 ====================
+  /// 日志标签
+  final String tag;
 
-  /// 需要脱敏的字段名列表
-  static const List<String> _sensitiveFields = [
-    'access_token',
-    'refresh_token',
-    'verification_token',
-    'verification_id',
-    'verification_code',
-    'phone_number',
-    'uid',
-    'password',
-    'Authorization',
-  ];
+  const Logger(this.tag);
 
-  /// 脱敏处理 Map 数据
-  static Map<String, dynamic> _sanitizeMap(Map<String, dynamic> data) {
-    return data.map((key, value) {
-      if (_sensitiveFields.contains(key)) {
-        return MapEntry(key, '***');
-      }
-      return MapEntry(key, value);
-    });
+  // ==================== 公开 API ====================
+
+  /// DEBUG 级别日志 - 开发调试
+  void debug(String message, {Map<String, dynamic>? data}) {
+    _log(LogLevel.debug, message, data: data);
   }
 
-  /// 脱敏处理：将敏感字段的值替换为 ***
-  /// 支持 JSON 字符串和 Map 数据
-  static String _sanitize(String content) {
-    String result = content;
-    for (final field in _sensitiveFields) {
-      // 匹配 "field":"value" 或 "field": "value" 格式
-      final pattern = RegExp('"$field"\\s*:\\s*"[^"]*"');
-      result = result.replaceAllMapped(pattern, (match) {
-        return '"$field":"***"';
+  /// INFO 级别日志 - 正常业务流程
+  void info(String message, {Map<String, dynamic>? data}) {
+    _log(LogLevel.info, message, data: data);
+  }
+
+  /// WARNING 级别日志 - 警告信息
+  void warning(String message, {Map<String, dynamic>? data, StackTrace? stackTrace}) {
+    _log(LogLevel.warning, message, data: data, stackTrace: stackTrace);
+  }
+
+  /// ERROR 级别日志 - 错误信息
+  void error(String message, {Map<String, dynamic>? data, StackTrace? stackTrace}) {
+    _log(LogLevel.error, message, data: data, stackTrace: stackTrace);
+  }
+
+  /// CRITICAL 级别日志 - 严重错误
+  void critical(String message, {Map<String, dynamic>? data, StackTrace? stackTrace}) {
+    _log(LogLevel.critical, message, data: data, stackTrace: stackTrace);
+  }
+
+  // ==================== 内部实现 ====================
+
+  /// 记录日志
+  void _log(
+    LogLevel level,
+    String message, {
+    Map<String, dynamic>? data,
+    StackTrace? stackTrace,
+  }) {
+    // 检查日志级别
+    if (level.value < LogConfig.minLevel.value) {
+      return;
+    }
+
+    final timestamp = DateTime.now();
+    final formattedMessage = _formatLog(timestamp, level, message, data, stackTrace);
+
+    // 输出到控制台
+    _outputToConsole(formattedMessage, level);
+
+    // 输出到 DevTools Timeline（仅开发环境）
+    if (kDebugMode && data != null) {
+      developer.postEvent('qintu.log', {
+        'tag': tag,
+        'level': level.name,
+        'message': message,
+        'data': data,
       });
     }
-    return result;
+
+    // 输出到文件
+    LogConfig.writeToFile('[$tag] $message${data != null ? ' $data' : ''}');
   }
 
-  // ==================== 模块开关 ====================
-  // 根据需要开启/关闭不同模块的日志
+  /// 格式化日志消息
+  String _formatLog(
+    DateTime timestamp,
+    LogLevel level,
+    String message,
+    Map<String, dynamic>? data,
+    StackTrace? stackTrace,
+  ) {
+    final timeStr = '${timestamp.hour.toString().padLeft(2, '0')}:'
+        '${timestamp.minute.toString().padLeft(2, '0')}:'
+        '${timestamp.second.toString().padLeft(2, '0')}.'
+        '${timestamp.millisecond.toString().padLeft(3, '0')}';
 
-  /// 认证模块日志（登录、注册、验证码等）
-  static const bool enableAuthLogs = false;
+    final levelStr = _formatLevel(level);
+    final tagStr = tag.isNotEmpty ? '[$tag]' : '';
+    final dataStr = data != null ? '\n  数据: $data' : '';
+    final stackTraceStr = stackTrace != null ? '\n$stackTrace' : '';
 
-  /// API 请求日志（网络请求、响应等）
-  static const bool enableApiLogs = true;
+    return '$timeStr $levelStr $tagStr $message$dataStr$stackTraceStr';
+  }
 
-  /// UI 模块日志（页面跳转、用户交互等）
-  static const bool enableUiLogs = true;
-
-  /// 数据库模块日志
-  static const bool enableDatabaseLogs = true;
-
-  /// 其他模块日志
-  static const bool enableOtherLogs = true;
-
-  // ==================== 基础配置 ====================
-
-  /// 是否启用日志（默认在调试模式下启用）
-  static bool get isEnabled => kDebugMode;
-
-  // ==================== 认证模块日志 ====================
-
-  /// 认证模块 - 普通日志
-  static void auth(String message) {
-    if (isEnabled && enableAuthLogs) {
-      debugPrint('🔐 [AUTH] $message');
+  /// 格式化日志级别
+  String _formatLevel(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return '🐛 DEBUG  ';
+      case LogLevel.info:
+        return 'ℹ️ INFO   ';
+      case LogLevel.warning:
+        return '⚠️ WARNING';
+      case LogLevel.error:
+        return '❌ ERROR ';
+      case LogLevel.critical:
+        return '🔥 CRITICAL';
     }
   }
 
-  /// 认证模块 - 成功日志
-  static void authSuccess(String message) {
-    if (isEnabled && enableAuthLogs) {
-      debugPrint('✅ [AUTH] $message');
-    }
-  }
-
-  /// 认证模块 - 错误日志
-  static void authError(String message) {
-    if (isEnabled && enableAuthLogs) {
-      debugPrint('❌ [AUTH] $message');
-    }
-  }
-
-  /// 认证模块 - 分隔线
-  static void authSeparator(String title) {
-    if (isEnabled && enableAuthLogs) {
-      debugPrint('========== $title ==========');
-    }
-  }
-
-  // ==================== API 模块日志 ====================
-
-  /// API 模块 - 普通日志
-  static void api(String message) {
-    if (isEnabled && enableApiLogs) {
-      debugPrint('🌐 [API] $message');
-    }
-  }
-
-  /// API 模块 - 请求日志
-  static void apiRequest(String url, [Map<String, dynamic>? body]) {
-    if (isEnabled && enableApiLogs) {
-      debugPrint('📤 [API] Request: $url');
-      if (body != null) {
-        final sanitizedBody = _sanitizeMap(body);
-        debugPrint('📤 [API] Body: $sanitizedBody');
+  /// 输出到控制台
+  void _outputToConsole(String message, LogLevel level) {
+    if (kDebugMode) {
+      // 开发环境：彩色输出
+      String colorCode;
+      switch (level) {
+        case LogLevel.debug:
+          colorCode = '\x1B[37m';
+          break;
+        case LogLevel.info:
+          colorCode = '\x1B[36m';
+          break;
+        case LogLevel.warning:
+          colorCode = '\x1B[33m';
+          break;
+        case LogLevel.error:
+          colorCode = '\x1B[31m';
+          break;
+        case LogLevel.critical:
+          colorCode = '\x1B[35m';
+          break;
       }
+      // ignore: avoid_print
+      print('$colorCode$message\x1B[0m');
+    } else {
+      // 生产环境：使用 developer.log
+      developer.log(
+        message,
+        level: _toDeveloperLevel(level),
+        name: 'qintu',
+      );
     }
   }
 
-  /// API 模块 - 响应日志
-  static void apiResponse(int statusCode, String body) {
-    if (isEnabled && enableApiLogs) {
-      debugPrint('📥 [API] Status: $statusCode');
-      debugPrint('📥 [API] Response: ${_sanitize(body)}');
+  /// 转换为 developer.log 级别
+  int _toDeveloperLevel(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return 0;
+      case LogLevel.info:
+        return 800;
+      case LogLevel.warning:
+        return 900;
+      case LogLevel.error:
+        return 1000;
+      case LogLevel.critical:
+        return 1100;
     }
   }
+}
 
-  // ==================== UI 模块日志 ====================
+// ==================== 预定义的日志实例 ====================
 
-  /// UI 模块 - 普通日志
-  static void ui(String message) {
-    if (isEnabled && enableUiLogs) {
-      debugPrint('📱 [UI] $message');
-    }
-  }
+/// 便捷日志实例集合
+///
+/// 使用示例：
+/// ```dart
+/// Logs.auth.info('认证成功');
+/// Logs.api.warning('API 超时');
+/// Logs.binding.error('绑定失败');
+/// ```
+class Logs {
+  /// API 请求日志
+  static const Logger api = Logger('API');
 
-  /// UI 模块 - 导航日志
-  static void navigation(String from, String to) {
-    if (isEnabled && enableUiLogs) {
-      debugPrint('🧭 [NAV] $from → $to');
-    }
-  }
+  /// 认证相关日志
+  static const Logger auth = Logger('AUTH');
 
-  // ==================== 数据库模块日志 ====================
+  /// 绑定关系日志
+  static const Logger binding = Logger('BINDING');
 
-  /// 数据库模块 - 普通日志
-  static void database(String message) {
-    if (isEnabled && enableDatabaseLogs) {
-      debugPrint('💾 [DB] $message');
-    }
-  }
+  /// 导航任务日志
+  static const Logger task = Logger('TASK');
 
-  /// 数据库模块 - 查询日志
-  static void dbQuery(String query, [Map<String, dynamic>? params]) {
-    if (isEnabled && enableDatabaseLogs) {
-      debugPrint('🔍 [DB] Query: $query');
-      if (params != null) {
-        debugPrint('🔍 [DB] Params: $params');
-      }
-    }
-  }
+  /// 位置服务日志
+  static const Logger location = Logger('LOCATION');
 
-  // ==================== 通用日志方法 ====================
+  /// UI 交互日志
+  static const Logger ui = Logger('UI');
 
-  /// 普通日志
-  static void log(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint(message);
-    }
-  }
+  /// 数据库操作日志
+  static const Logger database = Logger('DATABASE');
 
-  /// 信息日志
-  static void info(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('ℹ️ $message');
-    }
-  }
+  /// 网络请求日志
+  static const Logger network = Logger('NETWORK');
 
-  /// 成功日志
-  static void success(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('✅ $message');
-    }
-  }
+  /// 存储相关日志
+  static const Logger storage = Logger('STORAGE');
 
-  /// 警告日志
-  static void warning(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('⚠️ $message');
-    }
-  }
-
-  /// 错误日志
-  static void error(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('❌ $message');
-    }
-  }
-
-  /// 调试日志
-  static void debug(String message) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('🔍 $message');
-    }
-  }
-
-  /// 分隔线
-  static void separator(String title) {
-    if (isEnabled && enableOtherLogs) {
-      debugPrint('========== $title ==========');
-    }
-  }
+  /// 应用级别日志
+  static const Logger app = Logger('APP');
 }

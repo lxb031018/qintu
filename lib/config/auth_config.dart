@@ -1,5 +1,7 @@
-/// 认证配置
-/// 负责管理 Token 有效期、验证码等认证相关配置
+// 认证配置
+// 负责管理 Token 有效期、验证码等认证相关配置
+
+import '../constants/app_roles.dart';
 
 class AuthConfig {
   // ==================== 基础配置 ====================
@@ -25,9 +27,9 @@ class AuthConfig {
   /// 根据角色获取 Access Token 有效期
   static int getAccessTokenExpiresIn(String? role) {
     switch (role) {
-      case 'receiver':
+      case AppRoles.receiver:
         return receiverAccessTokenExpiresIn;
-      case 'sender':
+      case AppRoles.sender:
         return senderAccessTokenExpiresIn;
       default:
         return accessTokenExpiresIn;
@@ -37,9 +39,9 @@ class AuthConfig {
   /// 根据角色获取 Refresh Token 有效期
   static int getRefreshTokenExpiresIn(String? role) {
     switch (role) {
-      case 'receiver':
+      case AppRoles.receiver:
         return receiverRefreshTokenExpiresIn;
-      case 'sender':
+      case AppRoles.sender:
         return senderRefreshTokenExpiresIn;
       default:
         return refreshTokenExpiresIn;

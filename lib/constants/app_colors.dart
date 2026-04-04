@@ -13,6 +13,9 @@ class AppColors {
   /// 珊瑚橙（主色调）
   static const Color primaryColor = Color(0xFFFF8C69);
 
+  /// 品牌绿（辅助主色调，用于 Logo、图标等）
+  static const Color brandGreen = Color(0xFF4CAF50);
+
   /// 天空蓝（辅助色）
   static const Color secondaryColor = Color(0xFF87CEEB);
 
@@ -92,24 +95,54 @@ class AppColors {
 
   // ==================== 深色主题颜色 ====================
 
-  /// 深色背景
-  static const Color darkBackgroundColor = Color(0xFF1A1A2E);
+  /// 深色背景（深蓝灰，与珊瑚橙形成良好对比）
+  static const Color darkBackgroundColor = Color(0xFF121212);
 
-  /// 深色卡片背景
-  static const Color darkCardBackground = Color(0xFF16213E);
+  /// 深色表面（卡片、对话框等）
+  static const Color darkSurfaceColor = Color(0xFF1E1E1E);
 
-  /// 深色主文字
-  static const Color darkTextColor = Color(0xFFE2E8F0);
+  /// 深色卡片背景（稍微亮一些，形成层次感）
+  static const Color darkCardBackground = Color(0xFF242424);
 
-  /// 深色辅助文字
-  static const Color darkLightTextColor = Color(0xFFA0AEC0);
+  /// 深色主文字（浅灰白，确保对比度）
+  static const Color darkTextColor = Color(0xFFE8E8E8);
+
+  /// 深色辅助文字（中等灰度）
+  static const Color darkLightTextColor = Color(0xFF9E9E9E);
 
   /// 深色分割线
-  static const Color darkDividerColor = Color(0xFF2D3748);
+  static const Color darkDividerColor = Color(0xFF2C2C2C);
 
   /// 深色输入框背景
-  static const Color darkInputBackground = Color(0xFF0F3460);
+  static const Color darkInputBackground = Color(0xFF2A2A2A);
 
   /// 深色边框
-  static const Color darkBorderColor = Color(0xFF2D3748);
+  static const Color darkBorderColor = Color(0xFF333333);
+
+  /// 深色禁用状态
+  static const Color darkDisabledColor = Color(0xFF4A4A4A);
+
+  /// 深色错误提示背景
+  static const Color darkErrorBackground = Color(0xFF3D1F1F);
+
+  /// 深色成功提示背景
+  static const Color darkSuccessBackground = Color(0xFF1F3D2A);
+
+  /// 深色警告提示背景
+  static const Color darkWarningBackground = Color(0xFF3D2F1F);
+
+  /// 深色信息提示背景
+  static const Color darkInfoBackground = Color(0xFF1F2D3D);
+
+  /// 深色输入框文字
+  static const Color darkInputTextColor = Color(0xFFE0E0E0);
+
+  /// 深色输入框提示文字
+  static const Color darkInputHintColor = Color(0xFF757575);
+
+  /// 深色图标（未选中状态）
+  static const Color darkIconColor = Color(0xFF9E9E9E);
+
+  /// 深色悬浮图标
+  static const Color darkOnPrimaryColor = Color(0xFFFFFFFF);
 }

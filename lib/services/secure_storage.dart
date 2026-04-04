@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
+import '../constants/app_roles.dart';
 import '../utils/logger.dart';
 
 /// 安全存储服务 - 负责管理用户登录状态的持久化
@@ -56,7 +57,7 @@ class SecureStorage {
     required String userId,
     String? role,
   }) async {
-    Logger.database('开始保存登录信息，角色: ${role ?? "未设置"}');
+    Logs.database.info('开始保存登录信息，角色: ${role ?? "未设置"}');
     
     try {
       // 敏感数据使用安全存储
@@ -85,9 +86,9 @@ class SecureStorage {
       // 清除缓存，确保下次读取时获取最新数据
       _prefsCache = null;
 
-      Logger.database('Token 已保存，角色: ${role ?? "未设置"}, Refresh Token 有效期: ${effectiveRefreshTokenExpiresIn}s (${effectiveRefreshTokenExpiresIn ~/ 86400}天)');
+      Logs.database.info('Token 已保存，角色: ${role ?? "未设置"}, Refresh Token 有效期: ${effectiveRefreshTokenExpiresIn}s (${effectiveRefreshTokenExpiresIn ~/ 86400}天)');
     } catch (e, stackTrace) {
-      Logger.database('保存登录信息失败: $e\n$stackTrace');
+      Logs.database.info('保存登录信息失败: $e\n$stackTrace');
       rethrow;
     }
   }
@@ -123,7 +124,7 @@ class SecureStorage {
   /// 保存用户角色（单独调用）
   /// 当用户选择角色时，需要更新 Refresh Token 的有效期
   static Future<void> saveRole(String role) async {
-    Logger.database('开始保存用户角色: $role');
+    Logs.database.info('开始保存用户角色: $role');
     
     try {
       final prefs = await _getPrefs();
@@ -139,9 +140,9 @@ class SecureStorage {
       // 清除缓存，确保下次读取时获取最新数据
       _prefsCache = null;
 
-      Logger.database('角色已保存: $role, Refresh Token 有效期: ${effectiveExpiresIn}s (${effectiveExpiresIn ~/ 86400}天)');
+      Logs.database.info('角色已保存: $role, Refresh Token 有效期: ${effectiveExpiresIn}s (${effectiveExpiresIn ~/ 86400}天)');
     } catch (e, stackTrace) {
-      Logger.database('保存角色失败: $e\n$stackTrace');
+      Logs.database.info('保存角色失败: $e\n$stackTrace');
       rethrow;
     }
   }
@@ -154,7 +155,7 @@ class SecureStorage {
 
       // Access Token 和 Refresh Token 都必须存在
       if (accessToken == null || refreshToken == null) {
-        Logger.auth('登录状态检查: Token 不存在 (accessToken: ${accessToken == null}, refreshToken: ${refreshToken == null})');
+        Logs.auth.info('登录状态检查: Token 不存在 (accessToken: ${accessToken == null}, refreshToken: ${refreshToken == null})');
         return false;
       }
 
@@ -164,11 +165,11 @@ class SecureStorage {
       final refreshTokenSaveTime = prefs.getInt(AppConfig.refreshTokenSaveTimeKey);
       final refreshTokenExpiresIn = prefs.getInt(AppConfig.expiresInKey);
 
-      Logger.auth('登录状态检查: role=$role, saveTime=$refreshTokenSaveTime, expiresIn=$refreshTokenExpiresIn');
+      Logs.auth.info('登录状态检查: role=$role, saveTime=$refreshTokenSaveTime, expiresIn=$refreshTokenExpiresIn');
 
       // 如果保存时间为空，说明登录流程未完成或数据损坏
       if (refreshTokenSaveTime == null) {
-        Logger.warning('登录状态检查: refreshTokenSaveTime 不存在，可能登录流程中断');
+        Logs.app.warning('登录状态检查: refreshTokenSaveTime 不存在，可能登录流程中断');
         return false;
       }
       
@@ -180,17 +181,17 @@ class SecureStorage {
       final now = DateTime.now();
 
       final daysRemaining = expireDateTime.difference(now).inDays;
-      Logger.auth('Token 有效期: 保存于 ${saveDateTime.toString().substring(0, 19)}, 过期于 ${expireDateTime.toString().substring(0, 19)}, 剩余 ${daysRemaining}天');
+      Logs.auth.info('Token 有效期：保存于 ${saveDateTime.toString().substring(0, 19)}, 过期于 ${expireDateTime.toString().substring(0, 19)}, 剩余 $daysRemaining 天');
 
       if (now.isAfter(expireDateTime)) {
-        Logger.warning('Refresh Token 已过期（角色: $role），需要重新登录');
+        Logs.app.warning('Refresh Token 已过期（角色: $role），需要重新登录');
         return false;
       }
 
-      Logger.auth('✅ 已登录（角色: $role，Token 剩余有效期: $daysRemaining 天）');
+      Logs.auth.info('✅ 已登录（角色: $role，Token 剩余有效期: $daysRemaining 天）');
       return true;
     } catch (e, stackTrace) {
-      Logger.auth('登录状态检查异常: $e\n$stackTrace');
+      Logs.auth.info('登录状态检查异常: $e\n$stackTrace');
       return false;
     }
   }
@@ -204,9 +205,9 @@ class SecureStorage {
 
     // 根据角色返回对应的 Refresh Token 有效期
     switch (role) {
-      case 'receiver':
+      case AppRoles.receiver:
         return AppConfig.receiverRefreshTokenExpiresIn; // 1 年
-      case 'sender':
+      case AppRoles.sender:
         return AppConfig.senderRefreshTokenExpiresIn; // 30 天
       default:
         return AppConfig.refreshTokenExpiresIn; // 30 天（默认）
@@ -228,7 +229,7 @@ class SecureStorage {
     await prefs.remove(AppConfig.refreshTokenSaveTimeKey);
     await prefs.remove(AppConfig.userRoleKey);
 
-    Logger.database('Token 已清除');
+    Logs.database.info('Token 已清除');
   }
 
   /// 获取完整的登录信息

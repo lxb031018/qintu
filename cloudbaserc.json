@@ -1,12 +1,28 @@
 {
-  "envId": "{{env.ENV_ID}}",
+  "envId": "qintu-cloudebase-5f5bpuj13bc6467",
   "functionRoot": "./functions",
-  "functions": [],
+  "functions": [
+    {
+      "name": "qintu-api",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "installDependency": true,
+      "functionCodePath": "qintu-api",
+      "functionType": "HTTP",
+      "timeout": 30,
+      "memorySize": 512
+    }
+  ],
   "ai": {
     "defaultAgent": "{{env.AI_DEFAULT_AGENT}}",
     "agents": {
       "codebuddy": {
         "type": "none"
+      },
+      "qwen": {
+        "type": "cloudbase",
+        "provider": "deepseek",
+        "model": "deepseek-v3"
       }
     }
   }

@@ -1,96 +1,112 @@
+/// ============================================
+/// API 端点常量
+///
+/// 统一定义所有 API 端点路径
+/// 避免在代码中硬编码 URL 路径
+/// ============================================
+
 import '../config/app_config.dart';
 
-/// API 端点常量 - 统一定义所有 API 端点地址
-
 class ApiEndpoints {
-  // ==================== 基础地址（统一来源：AppConfig）====================
+  // ==================== 认证相关配置 ====================
 
-  /// CloudBase 网关地址（从 AppConfig 引用）
-  static String get gatewayUrl => AppConfig.gatewayUrl;
+  /// 认证 API 基础地址
+  static String get authBaseUrl => AppConfig.authBaseUrl;
 
-  /// 认证 API 基础路径
-  static String get authBaseUrl => '$gatewayUrl/auth/v1';
+  // ==================== 用户管理 ====================
 
-  /// 数据库 API 基础路径
-  static String get databaseBaseUrl => '$gatewayUrl/v1/rdb/rest';
+  /// 用户注册
+  static const String registerUser = '/api/users/register';
 
-  /// 云函数 API 基础路径
-  static String get functionsBaseUrl => '$gatewayUrl/v1/functions';
-
-  // ==================== 认证相关 API ====================
-
-  /// 发送验证码
-  static const String sendVerificationCode = '/verification';
-
-  /// 验证验证码
-  static const String verifyCode = '/verification/verify';
-
-  /// 登录
-  static const String signIn = '/signin';
-
-  /// 注册
-  static const String signUp = '/signup';
-
-  /// 刷新 Token
-  static const String refreshToken = '/token/refresh';
-
-  /// 退出登录
-  static const String signOut = '/signout';
-
-  // ==================== 用户相关 API ====================
+  /// 获取当前用户信息
+  static const String getCurrentUser = '/api/users/me';
 
   /// 更新用户信息
-  static const String updateUser = '/auth/v1/user';
+  static const String updateUser = '/api/users/me';
 
-  /// 删除用户
-  static const String deleteUser = '/auth/v1/user';
+  /// 删除用户账号
+  static const String deleteUser = '/api/users/me';
 
-  // ==================== 数据库相关 API ====================
+  // ==================== 绑定关系 ====================
 
-  /// 查询用户资料
-  static String getUserProfile(String uid) => '/v1/rdb/rest/user_profiles?uid=eq.$uid';
+  /// 生成绑定码
+  static const String generateBindCode = '/api/bindings/generate';
 
-  /// 创建用户资料
-  static const String createUserProfile = '/v1/rdb/rest/user_profiles';
+  /// 确认绑定
+  static const String confirmBinding = '/api/bindings/confirm';
 
-  /// 更新用户资料
-  static String updateUserProfile(String uid) => '/v1/rdb/rest/user_profiles?uid=eq.$uid';
+  /// 获取我的绑定关系
+  static const String getMyBindings = '/api/bindings/my';
 
-  // ==================== 导航任务相关 API ====================
+  /// 解除绑定
+  static const String revokeBinding = '/api/bindings'; // + /{id}
 
-  /// 查询导航任务
-  static const String getNavigationTasks = '/v1/rdb/rest/navigation_tasks';
+  /// 检查绑定码
+  static const String checkBindCode = '/api/bindings/check'; // + /{code}
+
+  // ==================== 导航任务 ====================
 
   /// 创建导航任务
-  static const String createNavigationTask = '/v1/rdb/rest/navigation_tasks';
+  static const String createTask = '/api/tasks';
 
-  /// 更新导航任务
-  static String updateNavigationTask(String taskId) => '/v1/rdb/rest/navigation_tasks?id=eq.$taskId';
+  /// 获取我的任务
+  static const String getMyTasks = '/api/tasks/my';
 
-  // ==================== 云函数 API ====================
+  /// 获取任务详情
+  static const String getTask = '/api/tasks'; // + /{id}
 
-  /// 调用云函数
-  static String callFunction(String functionName) => '/v1/functions/$functionName';
+  /// 接受任务
+  static const String acceptTask = '/api/tasks'; // + /{id}/accept
 
-  // ==================== 完整 URL 构建 ====================
+  /// 拒绝任务
+  static const String rejectTask = '/api/tasks'; // + /{id}/reject
 
-  /// 构建认证 API 完整 URL
-  static String buildAuthUrl(String endpoint) => '$gatewayUrl$endpoint';
+  /// 取消任务
+  static const String cancelTask = '/api/tasks'; // + /{id}/cancel
 
-  /// 构建数据库 API 完整 URL
-  static String buildDatabaseUrl(String endpoint) => '$gatewayUrl$endpoint';
+  /// 完成任务
+  static const String completeTask = '/api/tasks'; // + /{id}/complete
 
-  /// 构建云函数 API 完整 URL
-  static String buildFunctionUrl(String functionName) => '$gatewayUrl/v1/functions/$functionName';
+  /// 修改路线
+  static const String updateRoute = '/api/tasks'; // + /{id}/route
 
-  // ==================== 请求参数 ====================
+  /// 获取任务状态
+  static const String getTaskStatus = '/api/tasks'; // + /{id}/status
 
-  /// 发送验证码目标类型
-  static const String targetAny = 'ANY';
+  // ==================== 实时位置 ====================
 
-  /// 用户角色：接收者
-  static const String roleReceiver = 'receiver';
+  /// 上报位置
+  static const String reportLocation = '/api/locations';
 
-  /// 用户角色：发送者
-  static const String roleSender = 'sender';
+  /// 获取位置
+  static const String getLocation = '/api/locations'; // + /{userId}
+
+  /// 获取最后位置
+  static const String getLastLocation = '/api/locations'; // + /{userId}/last
+
+  // ==================== 认证相关 ====================
+
+  /// 发送验证码
+  /// CloudBase 官方 Auth API: POST /auth/v1/verification
+  static const String sendVerificationCode = '/auth/v1/verification';
+
+  /// 验证验证码
+  /// CloudBase 官方 Auth API: POST /auth/v1/verification/verify
+  static const String verifyCode = '/auth/v1/verification/verify';
+
+  /// 登录
+  /// CloudBase 官方 Auth API: POST /auth/v1/signin
+  static const String signIn = '/auth/v1/signin';
+
+  /// 注册
+  /// CloudBase 官方 Auth API: POST /auth/v1/signup
+  static const String signUp = '/auth/v1/signup';
+
+  /// 刷新令牌
+  /// CloudBase 官方 Auth API: POST /auth/v1/refreshtoken
+  static const String refreshToken = '/auth/v1/refreshtoken';
+
+  /// 登出
+  /// CloudBase 官方 Auth API: POST /auth/v1/signout
+  static const String signOut = '/auth/v1/signout';
 }

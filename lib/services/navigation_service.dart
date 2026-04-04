@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../pages/auth_page.dart';
-import '../pages/role_selection_page.dart';
-import '../pages/receiver_home_page.dart';
-import '../pages/sender_home_page.dart';
+import '../constants/app_roles.dart';
+import '../features/auth/auth_page.dart';
+import '../features/role/role_selection_page.dart';
+import '../features/receiver/receiver_home_page.dart';
+import '../features/sender/sender_home_page.dart';
 
 /// 导航服务
 ///
@@ -23,12 +24,14 @@ class NavigationService {
   static Future<void> goToRoleSelection(
     BuildContext context, {
     required String userId,
+    required String phone,
     required String accessToken,
   }) async {
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => RoleSelectionPage(
           userId: userId,
+          phone: phone,
           accessToken: accessToken,
         ),
       ),
@@ -39,12 +42,14 @@ class NavigationService {
   static Future<void> goToReceiverHome(
     BuildContext context, {
     required String userId,
+    required String phone,
     required String accessToken,
   }) async {
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => ReceiverHomePage(
           userId: userId,
+          phone: phone,
           accessToken: accessToken,
         ),
       ),
@@ -71,23 +76,26 @@ class NavigationService {
   ///
   /// [context] BuildContext
   /// [userId] 用户 ID
+  /// [phone] 用户手机号
   /// [accessToken] 访问令牌
   /// [userRole] 用户角色（receiver/sender），如果为 null 则跳转到角色选择页面
   static Future<void> goToHomeByRole(
     BuildContext context, {
     required String userId,
+    required String phone,
     required String accessToken,
     String? userRole,
   }) async {
     switch (userRole) {
-      case 'receiver':
+      case AppRoles.receiver:
         await goToReceiverHome(
           context,
           userId: userId,
+          phone: phone,
           accessToken: accessToken,
         );
         break;
-      case 'sender':
+      case AppRoles.sender:
         await goToSenderHome(
           context,
           userId: userId,
@@ -99,6 +107,7 @@ class NavigationService {
         await goToRoleSelection(
           context,
           userId: userId,
+          phone: phone,
           accessToken: accessToken,
         );
     }

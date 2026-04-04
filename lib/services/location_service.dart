@@ -8,26 +8,26 @@ class LocationService {
   static Future<bool> checkPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      Logger.warning('位置服务未开启');
+      Logs.app.warning('位置服务未开启');
       return false;
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      Logger.auth('位置权限被拒绝，请求权限...');
+      Logs.auth.info('位置权限被拒绝，请求权限...');
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        Logger.warning('位置权限被拒绝');
+        Logs.app.warning('位置权限被拒绝');
         return false;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      Logger.warning('位置权限被永久拒绝');
+      Logs.app.warning('位置权限被永久拒绝');
       return false;
     }
 
-    Logger.authSuccess('位置权限已授权');
+    Logs.location.info('位置权限已授权');
     return true;
   }
 
@@ -35,23 +35,23 @@ class LocationService {
   static Future<bool> requestPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      Logger.warning('位置服务未开启，请前往设置开启');
+      Logs.app.warning('位置服务未开启，请前往设置开启');
       return false;
     }
 
     LocationPermission permission = await Geolocator.requestPermission();
 
     if (permission == LocationPermission.denied) {
-      Logger.warning('位置权限被拒绝');
+      Logs.app.warning('位置权限被拒绝');
       return false;
     }
 
     if (permission == LocationPermission.deniedForever) {
-      Logger.warning('位置权限被永久拒绝，请前往设置开启');
+      Logs.app.warning('位置权限被永久拒绝，请前往设置开启');
       return false;
     }
 
-    Logger.authSuccess('位置权限授权成功');
+    Logs.location.info('位置权限授权成功');
     return true;
   }
 
@@ -63,17 +63,17 @@ class LocationService {
         return null;
       }
 
-      Logger.auth('正在获取位置信息...');
+      Logs.auth.info('正在获取位置信息...');
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
         ),
       );
 
-      Logger.authSuccess('获取位置成功: ${position.latitude}, ${position.longitude}');
+      Logs.location.info('获取位置成功: ${position.latitude}, ${position.longitude}');
       return position;
     } catch (e) {
-      Logger.authError('获取位置失败: $e');
+      Logs.location.warning('获取位置失败: $e');
       return null;
     }
   }

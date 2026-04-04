@@ -19,10 +19,16 @@ class CloudBaseAuthService {
   static String get publishableKey => AppConfig.publishableKey;
 
   /// 通用的请求头（包含 Publishable Key 认证）
-  static Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $publishableKey',
-      };
+  static Map<String, String> get _headers {
+    final key = publishableKey;
+    // 打印 Key 的前 10 位以确认是否加载成功，避免泄露完整 Key
+    Logs.auth.info('🔑 获取请求头, Publishable Key: ${key.isEmpty ? "未加载 (空字符串)" : key.substring(0, 10) + "..."}');
+    
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $key',
+    };
+  }
 
   /// ==========================================
   /// 第 1 步：发送短信验证码
@@ -34,8 +40,9 @@ class CloudBaseAuthService {
   static Future<String> sendVerificationCode(String phoneNumber) async {
     final url = Uri.parse('$authBaseUrl${ApiEndpoints.sendVerificationCode}');
 
-    Logger.authSeparator('发送验证码');
-    Logger.apiRequest(url.toString(), {'phone_number': phoneNumber, 'target': ApiEndpoints.targetAny});
+    Logs.auth.info('发送验证码');
+    Logs.api.info('API请求: POST ${url.toString()}');
+    Logs.api.info('请求体: phone_number=$phoneNumber');
 
     try {
       final response = await http.post(
@@ -43,29 +50,29 @@ class CloudBaseAuthService {
         headers: _headers,
         body: jsonEncode({
           'phone_number': phoneNumber,
-          'target': ApiEndpoints.targetAny,
         }),
       );
 
-      Logger.apiResponse(response.statusCode, response.body);
+      Logs.api.info('API响应: ${response.statusCode}');
+      Logs.api.info('响应体: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        Logger.authSuccess('发送成功，verification_id: ${data['verification_id']}');
+        Logs.auth.info('发送成功，verification_id: ${data['verification_id']}');
         return data['verification_id'];
       } else {
         final error = jsonDecode(response.body);
-        Logger.authError('发送失败: ${error['message'] ?? response.body}');
+        Logs.auth.warning('发送失败: ${error['message'] ?? response.body}');
 
         // 根据错误码抛出具体异常
-        switch (error['error_code']) {
-          case 429:
-            throw const RateLimitException(
-              message: '验证码发送过于频繁，请稍后再试',
-            );
-          case 1:
+        switch (error['code']) {
+          case 'INVALID_PARAMETER':
             throw const VerificationCodeException(
               message: '手机号格式错误',
+            );
+          case 'TASK_IN_PROGRESS':
+            throw const RateLimitException(
+              message: '验证码发送过于频繁，请稍后再试',
             );
           default:
             throw NetworkException(
@@ -75,19 +82,19 @@ class CloudBaseAuthService {
         }
       }
     } on RateLimitException {
-      rethrow; // 频率限制异常直接向上抛
+      rethrow;
     } on VerificationCodeException {
-      rethrow; // 验证码异常直接向上抛
+      rethrow;
     } on http.ClientException catch (e) {
-      Logger.authError('HTTP 客户端异常: $e');
+      Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
         originalError: e,
       );
     } catch (e) {
-      Logger.authError('网络请求异常: $e');
+      Logs.auth.warning('网络请求异常: $e');
       if (e is NetworkException) rethrow;
-      
+
       throw const NetworkException(
         message: '网络连接异常，请检查网络设置',
       );
@@ -105,11 +112,9 @@ class CloudBaseAuthService {
   static Future<String> verifyCode(String verificationId, String code) async {
     final url = Uri.parse('$authBaseUrl${ApiEndpoints.verifyCode}');
 
-    Logger.authSeparator('验证验证码');
-    Logger.apiRequest(url.toString(), {
-      'verification_id': verificationId,
-      'verification_code': code,
-    });
+    Logs.auth.info('验证验证码');
+    Logs.api.info('API请求: POST ${url.toString()}');
+    Logs.api.info('请求体: verification_id=$verificationId, code=$code');
 
     try {
       final response = await http.post(
@@ -121,25 +126,22 @@ class CloudBaseAuthService {
         }),
       );
 
-      Logger.apiResponse(response.statusCode, response.body);
+      Logs.api.info('API响应: ${response.statusCode}');
+      Logs.api.info('响应体: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        Logger.authSuccess('验证成功，verification_token: ${data['verification_token']}');
+        Logs.auth.info('验证成功，verification_token: ${data['verification_token']}');
         return data['verification_token'];
       } else {
         final error = jsonDecode(response.body);
-        Logger.authError('验证失败: ${error['message'] ?? response.body}');
+        Logs.auth.warning('验证失败: ${error['message'] ?? response.body}');
 
         // 根据错误码抛出具体异常
-        switch (error['error_code']) {
-          case 3:
+        switch (error['code']) {
+          case 'INVALID_VERIFICATION_CODE':
             throw const VerificationCodeException(
               message: '验证码错误或已过期，请重新获取',
-            );
-          case 4:
-            throw const VerificationCodeException(
-              message: '验证码格式错误',
             );
           default:
             throw NetworkException(
@@ -151,15 +153,15 @@ class CloudBaseAuthService {
     } on VerificationCodeException {
       rethrow;
     } on http.ClientException catch (e) {
-      Logger.authError('HTTP 客户端异常: $e');
+      Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
         originalError: e,
       );
     } catch (e) {
-      Logger.authError('网络请求异常: $e');
+      Logs.auth.warning('网络请求异常: $e');
       if (e is NetworkException) rethrow;
-      
+
       throw const NetworkException(
         message: '网络连接异常，请检查网络设置',
       );
@@ -182,14 +184,15 @@ class CloudBaseAuthService {
     required String verificationToken,
     required String phoneNumber,
   }) async {
-    Logger.authSeparator('智能登录/注册');
+    Logs.auth.info('智能登录/注册');
 
     try {
       // 先尝试登录（老用户）
-      Logger.auth('尝试登录（老用户）...');
+      Logs.auth.info('尝试登录（老用户）...');
       final loginUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signIn}');
 
-      Logger.apiRequest(loginUrl.toString(), {'verification_token': verificationToken});
+      Logs.api.info('API请求: POST ${loginUrl.toString()}');
+      Logs.api.info('请求体: verification_token=${verificationToken.substring(0, 20)}...');
 
       final loginResponse = await http.post(
         loginUrl,
@@ -199,69 +202,58 @@ class CloudBaseAuthService {
         }),
       );
 
-      Logger.apiResponse(loginResponse.statusCode, loginResponse.body);
+      Logs.api.info('API响应: ${loginResponse.statusCode}');
+      Logs.api.info('响应体: ${loginResponse.body}');
 
       if (loginResponse.statusCode == 200) {
-        Logger.authSuccess('登录成功（老用户）');
+        Logs.auth.info('登录成功（老用户）');
         final data = jsonDecode(loginResponse.body);
         return AuthResult.fromJson(data);
       }
 
-      // 如果登录失败，检查错误类型
-      final error = jsonDecode(loginResponse.body);
-      Logger.auth('登录失败: ${error['error_description']}');
+      // 如果登录失败，尝试注册
+      Logs.auth.info('登录失败，尝试注册（新用户）...');
 
-      // 如果是"用户不存在"错误，尝试注册
-      if (error['error_code'] == 5 || error['error'] == 'not_found') {
-        Logger.auth('用户不存在，尝试注册（新用户）...');
+      final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
+      Logs.api.info('API请求: POST ${signupUrl.toString()}');
+      Logs.api.info('请求体: verification_token=..., phone_number=$phoneNumber');
 
-        final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
-        Logger.apiRequest(signupUrl.toString(), {
+      final signupResponse = await http.post(
+        signupUrl,
+        headers: _headers,
+        body: jsonEncode({
           'verification_token': verificationToken,
           'phone_number': phoneNumber,
-        });
+        }),
+      );
 
-        final signupResponse = await http.post(
-          signupUrl,
-          headers: _headers,
-          body: jsonEncode({
-            'verification_token': verificationToken,
-            'phone_number': phoneNumber,
-          }),
-        );
+      Logs.api.info('API响应: ${signupResponse.statusCode}');
+      Logs.api.info('响应体: ${signupResponse.body}');
 
-        Logger.apiResponse(signupResponse.statusCode, signupResponse.body);
-
-        if (signupResponse.statusCode == 200) {
-          Logger.authSuccess('注册成功（新用户）');
-          final data = jsonDecode(signupResponse.body);
-          return AuthResult.fromJson(data);
-        } else {
-          final signupError = jsonDecode(signupResponse.body);
-          Logger.authError('注册失败: ${signupError['error_description']}');
-          throw AuthException(
-            message: signupError['error_description'] ?? '注册失败，请稍后重试',
-            code: signupError['error_code']?.toString(),
-          );
-        }
+      if (signupResponse.statusCode == 200) {
+        Logs.auth.info('注册成功（新用户）');
+        final data = jsonDecode(signupResponse.body);
+        return AuthResult.fromJson(data);
       } else {
+        final signupError = jsonDecode(signupResponse.body);
+        Logs.auth.warning('注册失败: ${signupError['message']}');
         throw AuthException(
-          message: error['error_description'] ?? '登录失败，请稍后重试',
-          code: error['error_code']?.toString(),
+          message: signupError['message'] ?? '注册失败，请稍后重试',
+          code: signupError['code'],
         );
       }
     } on AuthException {
       rethrow;
     } on http.ClientException catch (e) {
-      Logger.authError('HTTP 客户端异常: $e');
+      Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
         originalError: e,
       );
     } catch (e) {
-      Logger.authError('异常: $e');
+      Logs.auth.warning('异常: $e');
       if (e is NetworkException) rethrow;
-      
+
       throw const NetworkException(
         message: '网络连接异常，请检查网络设置',
       );

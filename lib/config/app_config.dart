@@ -22,6 +22,12 @@ class AppConfig {
   /// CloudBase 服务地址
   static String get serviceUrl => CloudBaseConfig.serviceUrl;
 
+  /// CloudBase API 基础 URL（用于认证等 API 调用）
+  static String get cloudBaseApiUrl => '${CloudBaseConfig.serviceUrl}/auth';
+
+  /// 认证 API 基础地址（向后兼容）
+  static String get authBaseUrl => CloudBaseConfig.authBaseUrl;
+
   /// Publishable Key（从环境变量读取）
   static String get publishableKey => CloudBaseConfig.publishableKey;
 

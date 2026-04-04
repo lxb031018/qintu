@@ -1,0 +1,5 @@
+#!/bin/bash
+# CloudBase HTTP Function 启动脚本
+# 必须命名为 scf_bootstrap 并放在函数根目录
+
+exec node index.js

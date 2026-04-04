@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../config/app_config.dart';
-import '../../services/secure_storage.dart';
-import '../../pages/role_selection_page.dart';
+import '../../state/managers/user_state_manager.dart';
 
 /// 退出登录确认对话框
 ///
 /// 公共组件,用于各个页面的退出登录功能
-/// 点击确认后清除登录状态并跳转到角色选择页面
+/// 点击确认后清除登录状态并跳转到登录页面
 
 class LogoutDialog extends StatelessWidget {
   const LogoutDialog({super.key});
@@ -26,23 +26,29 @@ class LogoutDialog extends StatelessWidget {
   }
 
   /// 处理退出登录逻辑
-  static Future<void> _handleLogout(BuildContext context) async {
-    // 关闭对话框
-    Navigator.of(context).pop(true);
+  static Future<void> _handleLogout(BuildContext dialogContext) async {
+    // 先关闭对话框
+    if (!dialogContext.mounted) return;
+    Navigator.of(dialogContext).pop(true);
 
-    // 清除登录状态
-    await SecureStorage.clearTokens();
-
-    // 跳转到角色选择页面
-    if (!context.mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => RoleSelectionPage(
-          userId: '',
-          accessToken: '',
-        ),
-      ),
-    );
+    // 使用用户状态管理器退出登录
+    try {
+      final userStateManager = dialogContext.read<UserStateManager>();
+      await userStateManager.logout();
+      
+      // 路由会由 go_router 的 redirect 自动处理
+      // 当 isLoggedIn 变为 false 时，会自动重定向到 /auth
+    } catch (e) {
+      // 如果退出失败，显示错误消息
+      if (dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(
+          SnackBar(
+            content: Text('退出登录失败: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
