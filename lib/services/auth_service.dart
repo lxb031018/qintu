@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/api_endpoints.dart';
 import '../config/app_config.dart';
-import '../constants/app_strings.dart';
 import '../models/auth_result.dart';
 import '../utils/logger.dart';
+import '../utils/exceptions.dart';
 
 /// CloudBase 认证服务 - 封装所有与用户登录相关的 HTTP API 调用
 
@@ -57,19 +57,40 @@ class CloudBaseAuthService {
         final error = jsonDecode(response.body);
         Logger.authError('发送失败: ${error['message'] ?? response.body}');
 
-        if (error['error_code'] == 429) {
-          throw Exception(AppStrings.codeSendTooFrequent);
+        // 根据错误码抛出具体异常
+        switch (error['error_code']) {
+          case 429:
+            throw const RateLimitException(
+              message: '验证码发送过于频繁，请稍后再试',
+            );
+          case 1:
+            throw const VerificationCodeException(
+              message: '手机号格式错误',
+            );
+          default:
+            throw NetworkException(
+              message: error['message'] ?? '验证码发送失败',
+              statusCode: response.statusCode,
+            );
         }
-        throw Exception(AppStrings.codeSendFailed);
       }
+    } on RateLimitException {
+      rethrow; // 频率限制异常直接向上抛
+    } on VerificationCodeException {
+      rethrow; // 验证码异常直接向上抛
+    } on http.ClientException catch (e) {
+      Logger.authError('HTTP 客户端异常: $e');
+      throw NetworkException(
+        message: '网络请求失败',
+        originalError: e,
+      );
     } catch (e) {
       Logger.authError('网络请求异常: $e');
-
-      if (e is Exception && e.toString().contains('验证码')) {
-        rethrow;
-      }
-
-      throw Exception(AppStrings.networkException);
+      if (e is NetworkException) rethrow;
+      
+      throw const NetworkException(
+        message: '网络连接异常，请检查网络设置',
+      );
     }
   }
 
@@ -110,19 +131,38 @@ class CloudBaseAuthService {
         final error = jsonDecode(response.body);
         Logger.authError('验证失败: ${error['message'] ?? response.body}');
 
-        if (error['error_code'] == 3) {
-          throw Exception(AppStrings.codeInvalidOrExpired);
+        // 根据错误码抛出具体异常
+        switch (error['error_code']) {
+          case 3:
+            throw const VerificationCodeException(
+              message: '验证码错误或已过期，请重新获取',
+            );
+          case 4:
+            throw const VerificationCodeException(
+              message: '验证码格式错误',
+            );
+          default:
+            throw NetworkException(
+              message: error['message'] ?? '验证码验证失败',
+              statusCode: response.statusCode,
+            );
         }
-        throw Exception(AppStrings.codeInvalid);
       }
+    } on VerificationCodeException {
+      rethrow;
+    } on http.ClientException catch (e) {
+      Logger.authError('HTTP 客户端异常: $e');
+      throw NetworkException(
+        message: '网络请求失败',
+        originalError: e,
+      );
     } catch (e) {
       Logger.authError('网络请求异常: $e');
-
-      if (e is Exception && (e.toString().contains('验证码') || e.toString().contains('验证'))) {
-        rethrow;
-      }
-
-      throw Exception(AppStrings.networkException);
+      if (e is NetworkException) rethrow;
+      
+      throw const NetworkException(
+        message: '网络连接异常，请检查网络设置',
+      );
     }
   }
 
@@ -199,19 +239,32 @@ class CloudBaseAuthService {
         } else {
           final signupError = jsonDecode(signupResponse.body);
           Logger.authError('注册失败: ${signupError['error_description']}');
-          throw Exception(AppStrings.registerFailed);
+          throw AuthException(
+            message: signupError['error_description'] ?? '注册失败，请稍后重试',
+            code: signupError['error_code']?.toString(),
+          );
         }
       } else {
-        throw Exception(AppStrings.loginFailed);
+        throw AuthException(
+          message: error['error_description'] ?? '登录失败，请稍后重试',
+          code: error['error_code']?.toString(),
+        );
       }
+    } on AuthException {
+      rethrow;
+    } on http.ClientException catch (e) {
+      Logger.authError('HTTP 客户端异常: $e');
+      throw NetworkException(
+        message: '网络请求失败',
+        originalError: e,
+      );
     } catch (e) {
       Logger.authError('异常: $e');
-
-      if (e is Exception && e.toString().contains('失败')) {
-        rethrow;
-      }
-
-      throw Exception(AppStrings.networkException);
+      if (e is NetworkException) rethrow;
+      
+      throw const NetworkException(
+        message: '网络连接异常，请检查网络设置',
+      );
     }
   }
 

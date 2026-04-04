@@ -18,7 +18,18 @@ class Logger {
     'Authorization',
   ];
 
+  /// 脱敏处理 Map 数据
+  static Map<String, dynamic> _sanitizeMap(Map<String, dynamic> data) {
+    return data.map((key, value) {
+      if (_sensitiveFields.contains(key)) {
+        return MapEntry(key, '***');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
   /// 脱敏处理：将敏感字段的值替换为 ***
+  /// 支持 JSON 字符串和 Map 数据
   static String _sanitize(String content) {
     String result = content;
     for (final field in _sensitiveFields) {
@@ -98,8 +109,7 @@ class Logger {
     if (isEnabled && enableApiLogs) {
       debugPrint('📤 [API] Request: $url');
       if (body != null) {
-        final sanitizedBody = body.map((key, value) =>
-            MapEntry(key, _sensitiveFields.contains(key) ? '***' : value));
+        final sanitizedBody = _sanitizeMap(body);
         debugPrint('📤 [API] Body: $sanitizedBody');
       }
     }

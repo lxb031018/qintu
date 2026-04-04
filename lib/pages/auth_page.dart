@@ -3,14 +3,15 @@ import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/secure_storage.dart';
+import '../services/navigation_service.dart';
 import '../models/auth_result.dart';
 import '../utils/error_mapper.dart';
+import '../utils/exceptions.dart';
 import '../widgets/auth/auth_header.dart';
 import '../widgets/auth/auth_button.dart';
 import '../widgets/auth/phone_input_card.dart';
 import '../widgets/auth/code_input_card.dart';
 import '../widgets/auth/error_card.dart';
-import 'role_selection_page.dart';
 
 /// ============================================
 /// 认证页面（登录/注册）
@@ -83,7 +84,12 @@ class _AuthPageState extends State<AuthPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = ErrorMapper.parse(e.toString());
+        // 根据异常类型显示对应错误信息
+        if (e is AppException) {
+          _errorMessage = e.message;
+        } else {
+          _errorMessage = ErrorMapper.parse(e.toString());
+        }
       });
     }
   }
@@ -129,19 +135,21 @@ class _AuthPageState extends State<AuthPage> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => RoleSelectionPage(
-              userId: _authResult!.uid,
-              accessToken: _authResult!.accessToken,
-            ),
-          ),
+        await NavigationService.goToRoleSelection(
+          context,
+          userId: _authResult!.uid,
+          accessToken: _authResult!.accessToken,
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = ErrorMapper.parse(e.toString());
+        // 根据异常类型显示对应错误信息
+        if (e is AppException) {
+          _errorMessage = e.message;
+        } else {
+          _errorMessage = ErrorMapper.parse(e.toString());
+        }
       });
     }
   }

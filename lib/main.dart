@@ -5,10 +5,8 @@ import 'constants/app_colors.dart';
 import 'config/app_config.dart';
 import 'constants/app_strings.dart';
 import 'pages/auth_page.dart';
-import 'pages/role_selection_page.dart';
-import 'pages/receiver_home_page.dart';
-import 'pages/sender_home_page.dart';
 import 'services/secure_storage.dart';
+import 'services/navigation_service.dart';
 import 'theme/app_theme.dart';
 
 /// 亲途应用入口
@@ -102,44 +100,15 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       // 根据角色跳转到对应主页
-      if (userRole == 'receiver') {
-        // 接收者：直接进入接收者主页
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => ReceiverHomePage(
-              userId: userId,
-              accessToken: accessToken,
-            ),
-          ),
-        );
-      } else if (userRole == 'sender') {
-        // 发送者：直接进入发送者主页
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => SenderHomePage(
-              userId: userId,
-              accessToken: accessToken,
-            ),
-          ),
-        );
-      } else {
-        // 未选择角色：进入角色选择页面
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => RoleSelectionPage(
-              userId: userId,
-              accessToken: accessToken,
-            ),
-          ),
-        );
-      }
+      await NavigationService.goToHomeByRole(
+        context,
+        userId: userId,
+        accessToken: accessToken,
+        userRole: userRole,
+      );
     } else {
       // 未登录，跳转到认证页面
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const AuthPage(),
-        ),
-      );
+      await NavigationService.goToAuth(context);
     }
   }
 

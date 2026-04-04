@@ -3,8 +3,7 @@ import '../constants/app_colors.dart';
 import '../config/app_config.dart';
 import '../constants/app_strings.dart';
 import '../services/secure_storage.dart';
-import 'receiver_home_page.dart';
-import 'sender_home_page.dart';
+import '../services/navigation_service.dart';
 
 /// 角色选择页面 - 用户登录后选择身份：接收者 或 发送者
 
@@ -40,25 +39,19 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       if (role == 'receiver') {
         // 跳转到接收者端主页
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => ReceiverHomePage(
-                userId: widget.userId,
-                accessToken: widget.accessToken,
-              ),
-            ),
+          await NavigationService.goToReceiverHome(
+            context,
+            userId: widget.userId,
+            accessToken: widget.accessToken,
           );
         }
       } else {
         // 跳转到发送者端主页
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => SenderHomePage(
-                userId: widget.userId,
-                accessToken: widget.accessToken,
-              ),
-            ),
+          await NavigationService.goToSenderHome(
+            context,
+            userId: widget.userId,
+            accessToken: widget.accessToken,
           );
         }
       }

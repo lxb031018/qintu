@@ -3,8 +3,7 @@ import '../constants/app_colors.dart';
 import '../config/app_config.dart';
 import '../constants/app_strings.dart';
 import '../services/location_service.dart';
-import '../services/secure_storage.dart';
-import 'role_selection_page.dart';
+import '../widgets/common/logout_dialog.dart';
 
 /// 接收者端主页 - 等待接收导航指引
 
@@ -47,95 +46,6 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> {
     await _checkLocationStatus();
   }
 
-  /// 显示退出确认对话框
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          AppStrings.logoutConfirmTitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            fontFamily: AppConfig.fontFamily,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        actions: [
-          Row(
-            children: [
-              // 确定按钮（左边）
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.of(dialogContext).pop();
-                    // 清除登录状态
-                    await SecureStorage.clearTokens();
-                    // 跳转到角色选择页面
-                    if (!mounted) return;
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => RoleSelectionPage(
-                          userId: widget.userId,
-                          accessToken: widget.accessToken,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.confirmLogout,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: AppConfig.fontFamily,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              // 取消按钮（右边）
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightTextColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.cancelLogout,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: AppConfig.fontFamily,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,7 +58,7 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: GestureDetector(
-            onTap: _showLogoutDialog,
+            onTap: () => LogoutDialog.show(context),
             child: Center(
               child: Text(
                 AppStrings.logout,

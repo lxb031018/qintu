@@ -20,6 +20,15 @@ class SecureStorage {
     ),
   );
 
+  /// SharedPreferences 缓存实例
+  static SharedPreferences? _prefsCache;
+
+  /// 获取 SharedPreferences 实例（带缓存）
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefsCache ??= await SharedPreferences.getInstance();
+    return _prefsCache!;
+  }
+
   /// 保存登录信息
   ///
   /// [accessToken] 访问令牌（安全存储）
@@ -46,7 +55,7 @@ class SecureStorage {
     final effectiveRefreshTokenExpiresIn = AppConfig.getRefreshTokenExpiresIn(role);
 
     // 非敏感数据使用普通存储
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setInt(AppConfig.expiresInKey, effectiveRefreshTokenExpiresIn);
     await prefs.setString(AppConfig.phoneNumberKey, phoneNumber);
     await prefs.setString(AppConfig.userIdKey, userId);
@@ -76,26 +85,26 @@ class SecureStorage {
 
   /// 获取手机号
   static Future<String?> getPhoneNumber() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(AppConfig.phoneNumberKey);
   }
 
   /// 获取用户 ID
   static Future<String?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(AppConfig.userIdKey);
   }
 
   /// 获取用户角色
   static Future<String?> getUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     return prefs.getString(AppConfig.userRoleKey);
   }
 
   /// 保存用户角色（单独调用）
   /// 当用户选择角色时，需要更新 Refresh Token 的有效期
   static Future<void> saveRole(String role) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setString(AppConfig.userRoleKey, role);
 
     // 更新 Refresh Token 保存时间和有效期（根据角色重新计算）
@@ -119,7 +128,7 @@ class SecureStorage {
     }
 
     // 获取用户角色，根据角色判断 Refresh Token 有效期
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final role = prefs.getString(AppConfig.userRoleKey);
     final refreshTokenSaveTime = prefs.getInt(AppConfig.refreshTokenSaveTimeKey);
     final refreshTokenExpiresIn = prefs.getInt(AppConfig.expiresInKey);
@@ -168,7 +177,7 @@ class SecureStorage {
     await _secureStorage.delete(key: AppConfig.refreshTokenKey);
 
     // 清除普通存储
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(AppConfig.expiresInKey);
     await prefs.remove(AppConfig.phoneNumberKey);
     await prefs.remove(AppConfig.userIdKey);
@@ -187,7 +196,7 @@ class SecureStorage {
     }
 
     final refreshToken = await _secureStorage.read(key: AppConfig.refreshTokenKey);
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
 
     return {
       'access_token': accessToken,

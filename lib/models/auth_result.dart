@@ -68,10 +68,8 @@ class AuthResult {
 
   @override
   String toString() {
-    final tokenPreview = accessToken.length > 20
-        ? '${accessToken.substring(0, 20)}...'
-        : accessToken;
-    return 'AuthResult(uid: $uid, accessToken: $tokenPreview, accessTokenExpiresIn: $accessTokenExpiresIn 秒, refreshTokenExpiresIn: $refreshTokenExpiresIn 秒)';
+    // 安全考虑：不输出任何 token 内容，只输出非敏感信息
+    return 'AuthResult(uid: $uid, accessTokenExpiresIn: $accessTokenExpiresIn 秒, refreshTokenExpiresIn: $refreshTokenExpiresIn 秒)';
   }
 
   @override
