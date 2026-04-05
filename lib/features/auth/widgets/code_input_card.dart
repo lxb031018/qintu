@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_config.dart';
 import '../../../constants/app_strings.dart';
+import '../../../utils/phone_utils.dart';
 
 /// ============================================
 /// 验证码输入卡片
@@ -30,6 +31,9 @@ class CodeInputCard extends StatelessWidget {
   /// 重新发送回调
   final VoidCallback onResend;
 
+  /// 修改手机号回调
+  final VoidCallback? onChangePhone;
+
   const CodeInputCard({
     super.key,
     required this.controller,
@@ -39,10 +43,15 @@ class CodeInputCard extends StatelessWidget {
     required this.lightTextColor,
     required this.countdown,
     required this.onResend,
+    this.onChangePhone,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBackground = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    final inputTextColor = isDark ? Colors.white : const Color(0xFF212121);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -50,7 +59,7 @@ class CodeInputCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: primaryColor.withValues(alpha: 0.3),
@@ -64,14 +73,29 @@ class CodeInputCard extends StatelessWidget {
                 size: 28,
               ),
               const SizedBox(width: 12),
-              Text(
-                '${AppStrings.codeSent} $phoneNumber',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: textColor,
-                  fontFamily: AppConfig.fontFamily,
+              Expanded(
+                child: Text(
+                  '${AppStrings.codeSent} ${PhoneUtils.maskPhone(phoneNumber)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: textColor,
+                    fontFamily: AppConfig.fontFamily,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (onChangePhone != null)
+                TextButton(
+                  onPressed: onChangePhone,
+                  child: Text(
+                    '修改',
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontSize: 14,
+                      fontFamily: AppConfig.fontFamily,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -81,7 +105,7 @@ class CodeInputCard extends StatelessWidget {
         // 验证码输入框
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBackground,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -97,7 +121,7 @@ class CodeInputCard extends StatelessWidget {
             maxLength: 6,
             style: TextStyle(
               fontSize: 32,
-              color: Colors.black87,
+              color: inputTextColor,
               fontFamily: AppConfig.fontFamily,
               fontWeight: FontWeight.bold,
               letterSpacing: 8,
@@ -120,7 +144,7 @@ class CodeInputCard extends StatelessWidget {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: cardBackground,
               counterText: '',
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 24,

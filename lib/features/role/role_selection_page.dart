@@ -3,7 +3,7 @@ import '../../constants/app_colors.dart';
 import '../../config/app_config.dart';
 import '../../constants/app_strings.dart';
 import '../../services/secure_storage.dart';
-import '../../services/navigation_service.dart';
+import '../../router/app_router.dart';
 
 /// 角色选择页面 - 用户登录后选择身份：接收者 或 发送者
 
@@ -30,37 +30,25 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 保存角色信息到本地（根据角色设置不同的有效期）
+      // 保存角色信息到本地
       await SecureStorage.saveRole(role);
-
-      // TODO: 将角色信息保存到服务器
-      // await saveUserRole(widget.userId, role, widget.accessToken);
-
-      await Future.delayed(const Duration(milliseconds: 300));
 
       if (role == 'receiver') {
         // 跳转到接收者端主页
         if (mounted) {
-          await NavigationService.goToReceiverHome(
-            context,
-            userId: widget.userId,
-            phone: widget.phone,
-            accessToken: widget.accessToken,
-          );
+          context.goToReceiverHome();
         }
       } else {
         // 跳转到发送者端主页
         if (mounted) {
-          await NavigationService.goToSenderHome(
-            context,
-            userId: widget.userId,
-            accessToken: widget.accessToken,
-          );
+          context.goToSenderHome();
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorDialog(e.toString());
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorDialog(e.toString());
+      }
     }
   }
 
@@ -82,8 +70,14 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
+    final textColor = isDark ? AppColors.darkTextColor : AppColors.textColor;
+    final lightTextColor = isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor;
+    final cardBackground = isDark ? AppColors.darkCardBackground : Colors.white;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: backgroundColor,
       extendBody: true,
       body: SafeArea(
         child: Padding(
@@ -99,7 +93,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textColor,
+                      color: textColor,
                       fontFamily: AppConfig.fontFamily,
                     ),
                   ),
@@ -119,6 +113,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                       subtitle: AppStrings.receiverRoleDescription,
                       icon: Icons.move_to_inbox,
                       color: AppColors.primaryColor,
+                      cardBackground: cardBackground,
+                      textColor: textColor,
+                      lightTextColor: lightTextColor,
                     ),
 
                     const SizedBox(height: 40),
@@ -129,6 +126,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                       subtitle: AppStrings.senderRoleDescription,
                       icon: Icons.send,
                       color: AppColors.secondaryColor,
+                      cardBackground: cardBackground,
+                      textColor: textColor,
+                      lightTextColor: lightTextColor,
                     ),
                   ],
                 ),
@@ -146,12 +146,15 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     required String subtitle,
     required IconData icon,
     required Color color,
+    required Color cardBackground,
+    required Color textColor,
+    required Color lightTextColor,
   }) {
     return Container(
       width: double.infinity,
       height: 140,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -195,7 +198,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textColor,
+                          color: textColor,
                           fontFamily: AppConfig.fontFamily,
                         ),
                       ),
@@ -204,7 +207,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                         subtitle,
                         style: TextStyle(
                           fontSize: 18,
-                          color: AppColors.lightTextColor,
+                          color: lightTextColor,
                           fontFamily: AppConfig.fontFamily,
                         ),
                       ),

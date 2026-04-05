@@ -10,8 +10,7 @@
 
 | 文档                                          | 说明            | 适用人员 |
 | ------------------------------------------- | ------------- | ---- |
-| [项目总览](../README_PROJECT.md)                | 项目简介、功能列表、技术栈 | 所有人员 |
-| [实现总结](summaries/IMPLEMENTATION_SUMMARY.md) | 完成度总结、待实现模块   | 开发人员 |
+| [项目总览](README_PROJECT.md)                | 项目简介、功能列表、技术栈 | 所有人员 |
 
 ***
 
@@ -19,14 +18,29 @@
 
 | 文档                                                     | 说明                                | 适用人员        |
 | ------------------------------------------------------ | --------------------------------- | ----------- |
-| “文档”“说明”“使用人员”                                         | Provider 状态管理、架构优化过程              | 架构师、开发      |
+| [前端开发规范](architecture/FRONTEND_DEVELOPMENT.md)      | 前端开发最高指导原则（合并版） | 所有开发人员 |
+| [项目架构](architecture/PROJECT_ARCHITECTURE.md)          | 项目架构、角色设计、命名规范、重构记录 | 开发人员 |
+| [架构优化总结](architecture/ARCHITECTURE_OPTIMIZATION.md)   | Provider 状态管理、架构优化过程              | 架构师、开发      |
 | [架构解耦计划](architecture/ARCHITECTURE_DECOUPLING_PLAN.md) | 当前架构分析、重构计划、Clean Architecture 设计 | 架构师、开发 Lead |
-| [Flutter 实现文档](architecture/flutter_implementation.md) | Flutter UI 架构设计、组件规范              | 前端开发        |
 | [绑定人数限制](features/binding_limits.md)                   | 绑定规则、API 说明、测试方法                  | 开发、测试       |
 
 ***
 
 ### 📝 开发指南
+
+#### 资源引用
+
+| 文档                                                  | 说明              | 适用人员    |
+| --------------------------------------------------- | --------------- | ------- |
+| [资源引用规范](guides/RESOURCE_REFERENCE.md)           | 字符串、颜色、常量等资源引用说明 | 所有开发人员 |
+
+#### 认证与登录
+
+| 文档                                                  | 说明              | 适用人员    |
+| --------------------------------------------------- | --------------- | ------- |
+| [CloudBase 认证配置](guides/CLOUDBASE_AUTH_CONFIG.md) | CloudBase 认证配置说明 | 开发、运维   |
+| [手机号登录设置](guides/AUTH_SETUP.md)                  | 手机号验证码登录配置指南   | 开发、测试   |
+| [开发模式](guides/DEV_MODE.md)                         | 模拟登录、快速查看页面指南 | 开发人员 |
 
 #### 日志系统
 
@@ -73,10 +87,11 @@
 
 | 文档                                                  | 说明            | 阶段   |
 | --------------------------------------------------- | ------------- | ---- |
-| [阶段 1 总结](summaries/IMPLEMENTATION_SUMMARY.md)      | 颜色和时间常量规范化    | 阶段 1 |
+| [实现总结](summaries/IMPLEMENTATION_SUMMARY.md)      | 完成度总结、待实现模块   | 阶段 1 |
 | [阶段 2 总结](summaries/PHASE2_SUMMARY.md)              | 业务字符串解耦       | 阶段 2 |
 | [绑定功能完成总结](summaries/BINDING_COMPLETION_SUMMARY.md) | 绑定功能开发完成总结    | 功能开发 |
 | [编译错误修复总结](summaries/FIX_SUMMARY.md)                | 132 个编译错误修复过程 | 代码质量 |
+| [重构与修复总结 2026-04-05](summaries/REFACTORING_AND_FIXES_20260405.md) | 项目重构、问题修复、主题适配 | 开发人员 |
 
 ***
 
@@ -85,16 +100,21 @@
 ```
 docs/
 ├── README.md                          # 本文档（文档索引）
-│
-├── guides/                            # 📝 开发指南
-│   ├── LOGGER_GUIDE.md                # 日志使用指南
-│   ├── BINDING_PROVIDER_USAGE.md      # BindingProvider 使用指南
-│   └── DEPLOYMENT_GUIDE.md            # 部署指南
+├── README_PROJECT.md                  # 项目总览
 │
 ├── architecture/                      # 🏗️ 架构与设计
+│   ├── FRONTEND_DEVELOPMENT.md        # 前端开发规范（合并版，最高指导原则）
+│   ├── PROJECT_ARCHITECTURE.md        # 项目架构（角色设计、命名规范）
 │   ├── ARCHITECTURE_OPTIMIZATION.md   # 架构优化总结
 │   ├── ARCHITECTURE_DECOUPLING_PLAN.md# 架构解耦计划
-│   └── flutter_implementation.md      # Flutter 实现文档
+│   └── flutter_implementation.md      # Flutter 实现文档（待合并）
+│
+├── guides/                            # 📝 开发指南
+│   ├── CLOUDBASE_AUTH_CONFIG.md       # CloudBase 认证配置
+│   ├── AUTH_SETUP.md                  # 手机号登录设置指南
+│   ├── DEV_MODE.md                    # 开发模式使用指南
+│   ├── LOGGER_GUIDE.md                # 日志使用指南
+│   └── BINDING_PROVIDER_USAGE.md      # BindingProvider 使用指南
 │
 ├── features/                          # 🧩 功能模块
 │   ├── BINDING_TAB_FEATURES.md        # BindingTab 功能说明
@@ -114,10 +134,15 @@ docs/
 │   ├── PHASE2_SUMMARY.md              # 阶段 2 总结
 │   ├── BINDING_COMPLETION_SUMMARY.md  # 绑定功能完成总结
 │   ├── FIX_SUMMARY.md                 # 编译错误修复总结
-│   └── LOGGER_REFACTORING.md          # 日志重构总结
+│   ├── LOGGER_REFACTORING.md          # 日志重构总结
+│   └── REFACTORING_AND_FIXES_20260405.md # 重构与修复总结（合并版）
 │
 └── archive/                           # 📁 历史归档
-    └── REQUIREMENTS_AND_DESIGN.md     # 项目需求与设计文档
+    ├── DOCUMENT_ORGANIZATION_PLAN.md  # 文档整理计划（已完成）
+    ├── DEPLOY_GUIDE.md                # 旧版部署指南
+    ├── INTERACTION_FLOWS.md           # 交互流程
+    ├── REQUIREMENTS_AND_DESIGN.md     # 需求与设计
+    └── WIREFRAMES.md                  # 线框图
 ```
 
 ***

@@ -3,12 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../state/managers/user_state_manager.dart';
 import '../state/models/user_state.dart';
-import '../services/service_locator.dart';
 import '../features/auth/auth_page.dart';
 import '../features/role/role_selection_page.dart';
 import '../features/receiver/receiver_home_page.dart';
-import '../features/sender/sender_home_page.dart';
+import '../features/sender/sender_main_screen.dart';
 import '../features/settings/settings_page.dart';
+import '../features/common/splash_screen.dart';
 import '../utils/logger.dart';
 import '../constants/app_roles.dart';
 
@@ -38,13 +38,12 @@ class AppRouter {
       redirect: _redirect,
       routes: [
         // 启动页
-        // 启动页（暂时注释，使用 MainScreen 替代）
-        // GoRoute(
-        //   path: AppRoutes.splash,
-        //   name: 'splash',
-        //   builder: (context, state) => const SplashScreen(),
-        // ),
-        
+        GoRoute(
+          path: AppRoutes.splash,
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
+
         // 认证页面
         GoRoute(
           path: AppRoutes.auth,
@@ -57,7 +56,7 @@ class AppRouter {
           path: AppRoutes.roleSelection,
           name: 'role-selection',
           builder: (context, state) {
-            final userStateManager = ServiceLocator.call<UserStateManager>();
+            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
             return RoleSelectionPage(
               userId: userStateManager.state.userId ?? '',
               phone: userStateManager.state.phoneNumber ?? '',
@@ -65,13 +64,13 @@ class AppRouter {
             );
           },
         ),
-        
+
         // 接收者主页
         GoRoute(
           path: AppRoutes.receiverHome,
           name: 'receiver-home',
           builder: (context, state) {
-            final userStateManager = ServiceLocator.call<UserStateManager>();
+            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
             return ReceiverHomePage(
               userId: userStateManager.state.userId ?? '',
               phone: userStateManager.state.phoneNumber ?? '',
@@ -79,14 +78,14 @@ class AppRouter {
             );
           },
         ),
-        
+
         // 发送者主页
         GoRoute(
           path: AppRoutes.senderHome,
           name: 'sender-home',
           builder: (context, state) {
-            final userStateManager = ServiceLocator.call<UserStateManager>();
-            return SenderHomePage(
+            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
+            return SenderMainScreen(
               userId: userStateManager.state.userId ?? '',
               accessToken: userStateManager.state.accessToken ?? '',
             );
@@ -108,18 +107,17 @@ class AppRouter {
   /// 路由守卫和重定向逻辑
   static Future<String?> _redirect(BuildContext context, GoRouterState state) async {
     Logs.ui.info('🧭 [ROUTER] redirect 被调用, location=${state.matchedLocation}');
-    
-    // 等待一帧，确保 Provider 已经初始化
-    await Future.delayed(Duration.zero);
+
+    // 确保 Provider 已经初始化
     if (!context.mounted) return null;
 
     final userStateManager = Provider.of<UserStateManager>(context, listen: false);
     final authStatus = userStateManager.state.authStatus;
     final isLoggedIn = userStateManager.state.isLoggedIn;
     final userRole = userStateManager.state.userRole;
-    
+
     Logs.ui.info('🧭 [ROUTER] authStatus=$authStatus, isLoggedIn=$isLoggedIn, userRole=$userRole');
-    
+
     // 如果状态还在初始化中，停留在启动页
     if (authStatus == AuthStatus.unknown || authStatus == AuthStatus.loading) {
       Logs.ui.info('🧭 [ROUTER] 状态初始化中，停留在启动页');
@@ -131,12 +129,12 @@ class AppRouter {
       Logs.ui.info('🧭 [ROUTER] 返回 null (停留在启动页)');
       return null; // 停留在当前页面（启动页）
     }
-    
+
     final isOnAuthPage = state.matchedLocation == AppRoutes.auth;
     final isOnSplashPage = state.matchedLocation == AppRoutes.splash;
-    
+
     Logs.ui.info('🧭 [ROUTER] isOnAuthPage=$isOnAuthPage, isOnSplashPage=$isOnSplashPage');
-    
+
     // 如果未登录，重定向到认证页面（无论在哪个页面）
     if (!isLoggedIn) {
       if (!isOnAuthPage) {
@@ -146,17 +144,17 @@ class AppRouter {
       Logs.ui.info('🧭 [ROUTER] 未登录但已在认证页，不需要重定向');
       return null;
     }
-    
+
     // 如果已登录且在认证页面或启动页，重定向到对应的主页
     if (isOnAuthPage || isOnSplashPage) {
       Logs.ui.info('🧭 [ROUTER] 已登录且在认证页/启动页');
-      
+
       // 如果角色未设置，重定向到角色选择页面
       if (userRole == null || userRole.isEmpty) {
         Logs.ui.info('🧭 [ROUTER] 角色未设置，重定向到角色选择页面: ${AppRoutes.roleSelection}');
         return AppRoutes.roleSelection;
       }
-      
+
       String targetRoute;
       switch (userRole) {
         case AppRoles.receiver:
@@ -171,7 +169,7 @@ class AppRouter {
       Logs.ui.info('🧭 [ROUTER] 根据角色重定向到: $targetRoute');
       return targetRoute;
     }
-    
+
     // 不需要重定向
     Logs.ui.info('🧭 [ROUTER] 不需要重定向，返回 null');
     return null;

@@ -4,6 +4,7 @@ import '../../config/app_config.dart';
 import '../../constants/app_strings.dart';
 import '../../services/location_service.dart';
 import '../../utils/logger.dart';
+import '../../utils/phone_utils.dart';
 import '../settings/settings_page.dart';
 
 /// 接收者端主页 - 等待接收导航指引
@@ -95,7 +96,7 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
   Future<void> _handleBindingRequest(Map<String, dynamic> request) async {
     // 脱敏显示手机号
     final phone = request['phone'] ?? '未知';
-    final maskedPhone = _maskPhone(phone);
+    final maskedPhone = PhoneUtils.maskPhone(phone);
     final name = request['name'] ?? '未提供姓名';
 
     final result = await showDialog<bool>(
@@ -171,7 +172,7 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
-                title: Text(request['phone'] ?? '未知'),
+                title: Text(PhoneUtils.maskPhone(request['phone'] ?? '未知')),
                 subtitle: Text(request['name'] ?? '未提供姓名'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -200,14 +201,6 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
     );
   }
 
-  /// 手机号脱敏处理
-  String _maskPhone(String phone) {
-    if (phone.length == 11) {
-      return '${phone.substring(0, 3)}****${phone.substring(7)}';
-    }
-    return phone;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -222,7 +215,51 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
         backgroundColor: backgroundColor,
         elevation: 0,
         toolbarHeight: 72,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _isLocationEnabled
+                  ? AppColors.successColor.withValues(alpha: 0.15)
+                  : AppColors.primaryColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isLocationEnabled ? Icons.location_on : Icons.location_off,
+                  size: 18,
+                  color: _isLocationEnabled ? AppColors.successColor : AppColors.primaryColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _isLocationEnabled ? '定位已开启' : '定位未开启',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: _isLocationEnabled ? AppColors.successColor : AppColors.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
+          // 设置按钮（右上角）
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
+            },
+            tooltip: AppStrings.settings,
+          ),
+          const SizedBox(width: 8),
           // 绑定请求按钮（如果有新请求显示红点）
           if (_pendingBindingRequests.isNotEmpty)
             Stack(
@@ -258,7 +295,7 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
                 ),
               ],
             ),
-          // 定位开关按钮（右上角）
+          // 定位开关按钮
           Padding(
             padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
             child: GestureDetector(
@@ -362,33 +399,7 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
           ),
         ),
       ),
-      // 右下角设置按钮
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const SettingsPage(),
-            ),
-          );
-        },
-        backgroundColor: AppColors.primaryColor.withAlpha(38),
-        elevation: 2,
-        icon: Icon(
-          Icons.settings_outlined,
-          color: AppColors.primaryColor,
-          size: 24,
-        ),
-        label: Text(
-          AppStrings.settings,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryColor,
-            fontFamily: AppConfig.fontFamily,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+
 }

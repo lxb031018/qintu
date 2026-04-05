@@ -114,7 +114,7 @@ class FileLogger {
     }
 
     try {
-      final content = _buffer.join('\n') + '\n';
+      final content = '${_buffer.join('\n')}\n';
       _logSink!.write(content);
       _currentFileSize += content.length;
       _buffer.clear();

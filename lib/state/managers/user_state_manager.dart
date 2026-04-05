@@ -28,15 +28,15 @@ class UserStateManager extends ChangeNotifier {
       if (isLoggedIn) {
         Logs.auth.info('用户已登录，正在获取登录信息...');
         final loginInfo = await SecureStorage.getLoginInfo();
-        Logs.auth.info('获取到 loginInfo: user_id=${loginInfo?['user_id']}, user_role=${loginInfo?['user_role']}');
+        Logs.auth.info('获取到 loginInfo: user_id=${loginInfo?.userId}, user_role=${loginInfo?.userRole}');
 
         _state = _state.copyWith(
           authStatus: AuthStatus.authenticated,
-          userId: loginInfo?['user_id'],
-          accessToken: loginInfo?['access_token'],
-          refreshToken: loginInfo?['refresh_token'],
-          phoneNumber: loginInfo?['phone_number'],
-          userRole: loginInfo?['user_role'],
+          userId: loginInfo?.userId,
+          accessToken: loginInfo?.accessToken,
+          refreshToken: loginInfo?.refreshToken,
+          phoneNumber: loginInfo?.phoneNumber,
+          userRole: loginInfo?.userRole,
           isLoading: false,
         );
 

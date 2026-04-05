@@ -14,9 +14,7 @@ class AppStrings {
   static const String appSubtitle = '指尖即是爱的方向';
 
   // ==================== 启动页 ====================
-
-  /// 加载中提示
-  static const String loading = '加载中...';
+  // （无独立字符串，使用 loadingText）
 
   // ==================== 认证页面 ====================
 
@@ -82,9 +80,6 @@ class AppStrings {
   /// 发送者角色描述
   static const String senderRoleDescription = '发送导航指引，帮助他人';
 
-  /// 角色设置成功
-  static const String roleSetSuccess = '角色设置成功';
-
   /// 角色设置提示
   static String roleSetSuccessMessage(String role) => '您已选择$role，即将进入主页';
 
@@ -134,11 +129,27 @@ class AppStrings {
   /// 规划路线
   static const String planRoute = '规划路线';
 
-  /// 发送导航
-  static const String sendNavigation = '发送导航';
+  // ==================== 底部导航 ====================
 
-  /// 选择接收者
-  static const String selectReceiver = '选择接收者';
+  /// 主页（底部导航Tab）
+  static const String tabHome = '主页';
+
+  /// 绑定（底部导航Tab）
+  static const String tabBinding = '绑定';
+
+  /// 设置（底部导航Tab）
+  static const String tabSettings = '设置';
+
+  // ==================== 主题设置 ====================
+
+  /// 浅色主题
+  static const String themeLight = '浅色';
+
+  /// 深色主题
+  static const String themeDark = '深色';
+
+  /// 跟随系统
+  static const String themeSystem = '跟随系统';
 
   // ==================== 设置 ====================
 
@@ -153,21 +164,6 @@ class AppStrings {
   /// 退出确认标题
   static const String logoutConfirmTitle = '您确定退出嘛？>_<';
 
-  /// 确定
-  static const String confirmLogout = '确定';
-
-  /// 取消
-  static const String cancelLogout = '取消';
-
-  /// 位置权限被拒绝
-  static const String locationPermissionDenied = '位置权限被拒绝，部分功能可能受限';
-
-  /// 前往设置
-  static const String goToSettings = '前往设置';
-
-  /// 稍后再说
-  static const String later = '稍后再说';
-
   // ==================== 错误提示 ====================
 
   /// 手机号格式错误
@@ -179,33 +175,6 @@ class AppStrings {
   /// 请先获取验证码
   static const String pleaseGetCodeFirst = '请先获取验证码';
 
-  /// 验证码发送失败
-  static const String codeSendFailed = '验证码发送失败，请检查手机号是否正确';
-
-  /// 验证码错误或已过期
-  static const String codeInvalidOrExpired = '验证码错误或已过期，请重新获取';
-
-  /// 验证码错误
-  static const String codeInvalid = '验证码错误，请重新输入';
-
-  /// 登录失败
-  static const String loginFailed = '登录失败，请稍后重试';
-
-  /// 注册失败
-  static const String registerFailed = '注册失败，请稍后重试';
-
-  /// 网络连接失败
-  static const String networkError = '网络连接失败，请检查网络设置';
-
-  /// 网络异常
-  static const String networkException = '网络异常，请检查网络连接';
-
-  /// 操作失败
-  static const String operationFailed = '操作失败，请稍后重试';
-
-  /// 验证码发送过于频繁
-  static const String codeSendTooFrequent = '验证码发送过于频繁，请稍后再试';
-
   // ==================== 通用 ====================
 
   /// 确定
@@ -214,26 +183,11 @@ class AppStrings {
   /// 取消
   static const String cancel = '取消';
 
-  /// 保存
-  static const String save = '保存';
-
-  /// 删除
-  static const String delete = '删除';
-
-  /// 编辑
-  static const String edit = '编辑';
-
-  /// 返回
-  static const String back = '返回';
-
   /// 加载中
   static const String loadingText = '加载中...';
 
   /// 设置失败
   static const String settingFailed = '设置失败';
-
-  /// 保存失败
-  static const String saveFailed = '保存失败，请重试';
 
   /// 保存角色信息失败
   static const String saveRoleFailed = '保存角色信息失败，请重试';
@@ -243,4 +197,108 @@ class AppStrings {
 
   /// 角色（发送者端）
   static const String roleSender = '发送者端';
+
+  // ==================== 绑定管理 ====================
+
+  /// 刷新成功
+  static const String refreshSuccess = '刷新成功';
+
+  /// 刷新
+  static const String refresh = '刷新';
+
+  /// 解除绑定
+  static const String revokeBinding = '解除绑定';
+
+  /// 解除绑定确认
+  static const String revokeBindingConfirm = '确定要解除这个绑定关系吗？';
+
+  /// 解除绑定成功
+  static const String revokeBindingSuccess = '解除绑定成功';
+
+  /// 解除绑定失败
+  static const String revokeBindingFailed = '解除绑定失败';
+
+  /// 当前绑定
+  static const String currentBinding = '当前绑定';
+
+  /// 作为发送者
+  static const String asSender = '作为发送者';
+
+  /// 作为接收者
+  static const String asReceiver = '作为接收者';
+
+  /// 已达上限
+  static const String limitReached = '已达上限';
+
+  /// 暂无绑定关系
+  static const String noBinding = '暂无绑定关系';
+
+  /// 绑定新用户
+  static const String addNewBinding = '绑定新用户';
+
+  /// 绑定人数已达上限
+  static const String bindingLimitReached = '绑定人数已达上限';
+
+  /// 发送绑定请求
+  static const String sendBindingRequest = '发送绑定请求';
+
+  /// 您的姓名
+  static const String yourName = '您的姓名（必填）';
+
+  /// 对方手机号
+  static const String partnerPhone = '对方手机号（必填）';
+
+  /// 发送请求
+  static const String sendRequest = '发送请求';
+
+  /// 绑定请求已发送
+  static const String bindingRequestSent = '绑定请求已发送，等待对方确认';
+
+  /// 请填写您的姓名
+  static const String pleaseFillName = '请填写您的姓名';
+
+  /// 请输入正确的手机号
+  static const String invalidPhone = '请输入正确的手机号';
+
+  /// 加载失败
+  static const String loadFailed = '加载失败';
+
+  /// 重试
+  static const String retry = '重试';
+
+  /// 切换角色
+  static const String switchRole = '切换角色';
+
+  /// 切换
+  static const String switchText = '切换';
+
+  /// 点击右侧按钮切换角色
+  static const String switchRoleHint = '点击右侧按钮切换角色';
+
+  /// 接收者
+  static const String receiver = '接收者';
+
+  /// 发送者
+  static const String sender = '发送者';
+
+  /// 备注
+  static const String remark = '备注';
+
+  /// 未知用户
+  static const String unknownUser = '未知用户';
+
+  /// 生效中
+  static const String active = '生效中';
+
+  /// 待确认
+  static const String pending = '待确认';
+
+  /// 已过期
+  static const String expired = '已过期';
+
+  /// 已解除
+  static const String revoked = '已解除';
+
+  /// 当前角色
+  static const String currentRole = '当前角色';
 }

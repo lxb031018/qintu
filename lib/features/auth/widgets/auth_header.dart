@@ -8,9 +8,6 @@ import '../../../constants/app_strings.dart';
 /// ============================================
 
 class AuthHeader extends StatelessWidget {
-  /// 主色调
-  final Color primaryColor;
-
   /// 文字颜色
   final Color textColor;
 
@@ -19,7 +16,6 @@ class AuthHeader extends StatelessWidget {
 
   const AuthHeader({
     super.key,
-    required this.primaryColor,
     required this.textColor,
     required this.lightTextColor,
   });
@@ -28,22 +24,6 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Logo 图标
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: primaryColor.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.family_restroom,
-            size: 60,
-            color: primaryColor,
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
         // 标题
         Text(
           AppStrings.welcomeTitle,

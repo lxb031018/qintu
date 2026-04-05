@@ -72,9 +72,13 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBackground = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    final inputTextColor = isDark ? Colors.white : const Color(0xFF212121);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -89,10 +93,10 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
         keyboardType: TextInputType.phone,
         maxLength: 11,
         obscureText: _obscureText,
-        obscuringCharacter: '●',
+        obscuringCharacter: '•',
         style: TextStyle(
           fontSize: 24,
-          color: Colors.black87,
+          color: inputTextColor,
           fontFamily: AppConfig.fontFamily,
         ),
         decoration: InputDecoration(
@@ -128,7 +132,7 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: cardBackground,
           counterText: '',
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 24,

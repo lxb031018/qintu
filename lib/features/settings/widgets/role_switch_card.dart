@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_roles.dart';
 import '../../../services/secure_storage.dart';
-import '../../../services/navigation_service.dart';
+import '../../../state/managers/user_state_manager.dart';
+import '../../../router/app_router.dart';
 import '../../../utils/logger.dart';
 import 'settings_section_card.dart';
 
@@ -38,20 +41,22 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
         ? AppStrings.roleReceiver
         : AppStrings.roleSender;
 
+    Logs.ui.info('请求切换角色: ${widget.currentRole} -> $roleName');
+
     // 显示确认对话框
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('切换角色'),
+        title: const Text(AppStrings.switchRole),
         content: Text('确定要切换到$roleName吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(AppStrings.cancelLogout),
+            child: const Text(AppStrings.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(AppStrings.confirmLogout),
+            child: const Text(AppStrings.confirm),
           ),
         ],
       ),
@@ -59,36 +64,37 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
 
     if (confirmed == true && mounted) {
       try {
+        Logs.ui.info('用户确认切换角色: $roleName');
+
         // 保存新角色
         await SecureStorage.saveRole(newRole);
+        Logs.storage.info('角色已保存: $newRole');
 
-        if (!mounted) return;
-
-        // 获取登录信息
-        final loginInfo = await SecureStorage.getLoginInfo();
-        final userId = loginInfo?['user_id'] ?? '';
-        final phone = loginInfo?['phone_number'] ?? '';
-        final accessToken = loginInfo?['access_token'] ?? '';
-
-        // 跳转到对应主页
+        // 更新 UserStateManager 中的角色状态
         if (mounted) {
-          await NavigationService.goToHomeByRole(
-            context,
-            userId: userId,
-            phone: phone,
-            accessToken: accessToken,
-            userRole: newRole,
-          );
+          final userStateManager = context.read<UserStateManager>();
+          await userStateManager.updateUserRole(newRole);
         }
 
-        // 触发回调
-        widget.onRoleChanged?.call();
-      } catch (e) {
-        Logs.app.error('切换角色失败: $e');
+        // 关闭设置页面
+        if (mounted) {
+          context.pop(); // 关闭设置页面
+          
+          // 跳转到对应主页（通过路由守卫自动处理）
+          if (newRole == AppRoles.receiver) {
+            context.goToReceiverHome();
+          } else {
+            context.goToSenderHome();
+          }
+          
+          Logs.ui.info('角色切换成功: $roleName');
+        }
+      } catch (e, stackTrace) {
+        Logs.ui.error('切换角色失败: $e', stackTrace: stackTrace);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('切换角色失败，请重试'),
+            SnackBar(
+              content: Text('切换角色失败: $e'),
               backgroundColor: AppColors.errorColor,
             ),
           );
@@ -138,7 +144,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SettingsSectionCard(
-      title: '当前角色',
+      title: AppStrings.currentRole,
       child: Row(
         children: [
           Container(
@@ -168,7 +174,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '点击右侧按钮切换角色',
+                  AppStrings.switchRoleHint,
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark
@@ -182,7 +188,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
           ElevatedButton.icon(
             onPressed: _switchRole,
             icon: const Icon(Icons.swap_horiz),
-            label: const Text('切换'),
+            label: const Text(AppStrings.switchText),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(100, 40),
             ),

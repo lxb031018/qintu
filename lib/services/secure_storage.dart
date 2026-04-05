@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../constants/app_roles.dart';
+import '../models/login_info.dart';
 import '../utils/logger.dart';
 
 /// 安全存储服务 - 负责管理用户登录状态的持久化
@@ -9,6 +10,11 @@ import '../utils/logger.dart';
 /// 安全策略：
 /// - 敏感数据（access_token, refresh_token）使用 FlutterSecureStorage
 /// - 非敏感数据（expires_in, phone_number 等）使用 SharedPreferences
+///
+/// 重构说明（2026-04-05）：
+/// - 引入 LoginInfo 强类型模型，替代 `Map<String, dynamic>`
+/// - 引入 UserCredentials 封装导航参数
+/// - 优化日志记录，统一错误处理
 
 class SecureStorage {
   /// 安全存储实例
@@ -25,29 +31,14 @@ class SecureStorage {
   static SharedPreferences? _prefsCache;
 
   /// 获取 SharedPreferences 实例（带缓存）
-  /// 注意：应用重启后缓存会重新初始化，确保读取最新数据
   static Future<SharedPreferences> _getPrefs() async {
-    // 如果缓存为空或应用刚从后台恢复，重新初始化
-    if (_prefsCache == null) {
-      _prefsCache = await SharedPreferences.getInstance();
-    }
+    _prefsCache ??= await SharedPreferences.getInstance();
     return _prefsCache!;
   }
 
-  /// 清除缓存（用于测试或异常恢复）
-  static void clearPrefsCache() {
-    _prefsCache = null;
-  }
+  // ==================== Token 存储 ====================
 
   /// 保存登录信息
-  ///
-  /// [accessToken] 访问令牌（安全存储）
-  /// [refreshToken] 刷新令牌（安全存储）
-  /// [accessTokenExpiresIn] Access Token 过期时间（秒）- 来自服务端
-  /// [refreshTokenExpiresIn] Refresh Token 过期时间（秒）- 来自服务端
-  /// [phoneNumber] 手机号
-  /// [userId] 用户 ID
-  /// [role] 用户角色（receiver/sender）- 未设置时使用默认配置
   static Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
@@ -58,13 +49,13 @@ class SecureStorage {
     String? role,
   }) async {
     Logs.database.info('开始保存登录信息，角色: ${role ?? "未设置"}');
-    
+
     try {
       // 敏感数据使用安全存储
       await _secureStorage.write(key: AppConfig.accessTokenKey, value: accessToken);
       await _secureStorage.write(key: AppConfig.refreshTokenKey, value: refreshToken);
 
-      // 根据角色获取正确的 Refresh Token 有效期（优先使用角色配置）
+      // 根据角色获取正确的 Refresh Token 有效期
       final effectiveRefreshTokenExpiresIn = AppConfig.getRefreshTokenExpiresIn(role);
 
       // 非敏感数据使用普通存储
@@ -83,12 +74,12 @@ class SecureStorage {
         await prefs.setString(AppConfig.userRoleKey, role);
       }
 
-      // 清除缓存，确保下次读取时获取最新数据
+      // 清除缓存
       _prefsCache = null;
 
-      Logs.database.info('Token 已保存，角色: ${role ?? "未设置"}, Refresh Token 有效期: ${effectiveRefreshTokenExpiresIn}s (${effectiveRefreshTokenExpiresIn ~/ 86400}天)');
+      Logs.database.info('Token 已保存，角色: ${role ?? "未设置"}');
     } catch (e, stackTrace) {
-      Logs.database.info('保存登录信息失败: $e\n$stackTrace');
+      Logs.database.error('保存登录信息失败: $e', stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -232,8 +223,8 @@ class SecureStorage {
     Logs.database.info('Token 已清除');
   }
 
-  /// 获取完整的登录信息
-  static Future<Map<String, dynamic>?> getLoginInfo() async {
+  /// 获取完整的登录信息（强类型）
+  static Future<LoginInfo?> getLoginInfo() async {
     final accessToken = await _secureStorage.read(key: AppConfig.accessTokenKey);
     if (accessToken == null) {
       return null;
@@ -242,15 +233,22 @@ class SecureStorage {
     final refreshToken = await _secureStorage.read(key: AppConfig.refreshTokenKey);
     final prefs = await _getPrefs();
 
-    return {
-      'access_token': accessToken,
-      'refresh_token': refreshToken,
-      'expires_in': prefs.getInt(AppConfig.expiresInKey),
-      'phone_number': prefs.getString(AppConfig.phoneNumberKey),
-      'user_id': prefs.getString(AppConfig.userIdKey),
-      'user_role': prefs.getString(AppConfig.userRoleKey),
-      'access_token_save_time': prefs.getInt(AppConfig.accessTokenSaveTimeKey),
-      'refresh_token_save_time': prefs.getInt(AppConfig.refreshTokenSaveTimeKey),
-    };
+    return LoginInfo.fromStorage(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresIn: prefs.getInt(AppConfig.expiresInKey),
+      phoneNumber: prefs.getString(AppConfig.phoneNumberKey),
+      userId: prefs.getString(AppConfig.userIdKey),
+      userRole: prefs.getString(AppConfig.userRoleKey),
+      accessTokenSaveTime: prefs.getInt(AppConfig.accessTokenSaveTimeKey),
+      refreshTokenSaveTime: prefs.getInt(AppConfig.refreshTokenSaveTimeKey),
+    );
+  }
+
+  /// 获取完整的登录信息（Map 格式，兼容旧代码）
+  @Deprecated('使用 getLoginInfo() 代替，返回强类型 LoginInfo')
+  static Future<Map<String, dynamic>?> getLoginInfoAsMap() async {
+    final loginInfo = await getLoginInfo();
+    return loginInfo?.toMap();
   }
 }

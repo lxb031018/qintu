@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../config/app_config.dart';
-import '../../state/managers/user_state_manager.dart';
+import '../../services/secure_storage.dart';
+import '../../utils/logger.dart';
 
 /// 退出登录确认对话框
 ///
 /// 公共组件,用于各个页面的退出登录功能
-/// 点击确认后清除登录状态并跳转到登录页面
+/// 点击确认后清除登录状态并返回 true，由调用方处理导航
 
 class LogoutDialog extends StatelessWidget {
   const LogoutDialog({super.key});
@@ -17,38 +17,23 @@ class LogoutDialog extends StatelessWidget {
   ///
   /// [context] BuildContext
   /// 返回 `Future<bool>` - 用户是否确认退出
+  /// 如果返回 true，调用方需要：
+  /// 1. 清除本地存储
+  /// 2. 跳转到登录页
   static Future<bool> show(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => const LogoutDialog(),
     );
-    return result ?? false;
-  }
 
-  /// 处理退出登录逻辑
-  static Future<void> _handleLogout(BuildContext dialogContext) async {
-    // 先关闭对话框
-    if (!dialogContext.mounted) return;
-    Navigator.of(dialogContext).pop(true);
-
-    // 使用用户状态管理器退出登录
-    try {
-      final userStateManager = dialogContext.read<UserStateManager>();
-      await userStateManager.logout();
-      
-      // 路由会由 go_router 的 redirect 自动处理
-      // 当 isLoggedIn 变为 false 时，会自动重定向到 /auth
-    } catch (e) {
-      // 如果退出失败，显示错误消息
-      if (dialogContext.mounted) {
-        ScaffoldMessenger.of(dialogContext).showSnackBar(
-          SnackBar(
-            content: Text('退出登录失败: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (result == true) {
+      Logs.auth.info('用户确认退出');
+      // 清除本地存储
+      await SecureStorage.clearTokens();
+      Logs.storage.info('已清除本地存储');
     }
+
+    return result ?? false;
   }
 
   @override
@@ -71,7 +56,7 @@ class LogoutDialog extends StatelessWidget {
             // 确定按钮（左边）
             Expanded(
               child: ElevatedButton(
-                onPressed: () => _handleLogout(context),
+                onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: Colors.white,
@@ -81,7 +66,7 @@ class LogoutDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  AppStrings.confirmLogout,
+                  AppStrings.confirm,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -104,7 +89,7 @@ class LogoutDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  AppStrings.cancelLogout,
+                  AppStrings.cancel,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

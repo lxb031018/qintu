@@ -5,6 +5,9 @@ import '../../providers/binding_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../models/binding.dart';
 import '../../utils/logger.dart';
+import '../../utils/phone_utils.dart';
+import '../../constants/app_colors.dart';
+import '../../constants/app_strings.dart';
 
 /// ============================================
 /// 绑定管理页面（绑定 Tab）
@@ -80,12 +83,12 @@ class _BindingPageState extends State<BindingPage> {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('刷新成功'),
+                      content: Text(AppStrings.refreshSuccess),
                       duration: Duration(seconds: 1),
                     ),
                   );
                 },
-                tooltip: '刷新',
+                tooltip: AppStrings.refresh,
               ),
             ],
           ),
@@ -137,20 +140,20 @@ class _BindingPageState extends State<BindingPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('解除绑定'),
-          content: const Text('确定要解除这个绑定关系吗？'),
+          title: const Text(AppStrings.revokeBinding),
+          content: const Text(AppStrings.revokeBindingConfirm),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
+              child: const Text(AppStrings.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.errorColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('解除绑定'),
+              child: const Text(AppStrings.revokeBinding),
             ),
           ],
         );
@@ -159,7 +162,7 @@ class _BindingPageState extends State<BindingPage> {
 
     if (confirmed == true) {
       if (!context.mounted) return;
-      
+
       final bindingProvider = context.read<BindingProvider>();
       final success = await bindingProvider.revokeBinding(bindingId);
 
@@ -167,16 +170,16 @@ class _BindingPageState extends State<BindingPage> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(bindingProvider.successMessage ?? '解除绑定成功'),
-            backgroundColor: Colors.green,
+          const SnackBar(
+            content: Text(AppStrings.revokeBindingSuccess),
+            backgroundColor: AppColors.successColor,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(bindingProvider.error ?? '解除绑定失败'),
-            backgroundColor: Colors.red,
+            content: Text(bindingProvider.error ?? AppStrings.revokeBindingFailed),
+            backgroundColor: AppColors.errorColor,
           ),
         );
       }
@@ -192,20 +195,24 @@ class _BindingStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBackground = isDark ? AppColors.darkCardBackground : Colors.blue.shade50;
+    final borderColor = isDark ? AppColors.darkDividerColor : Colors.blue.shade200;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '当前绑定',
+            AppStrings.currentBinding,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -217,7 +224,7 @@ class _BindingStatsCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   icon: Icons.person_outlined,
-                  label: '作为发送者',
+                  label: AppStrings.asSender,
                   value: '${provider.asSenderCount}/5',
                   isLimitReached: provider.isSenderLimitReached,
                 ),
@@ -226,7 +233,7 @@ class _BindingStatsCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   icon: Icons.group_outlined,
-                  label: '作为接收者',
+                  label: AppStrings.asReceiver,
                   value: '${provider.asReceiverCount}/3',
                   isLimitReached: provider.isReceiverLimitReached,
                 ),
@@ -257,7 +264,7 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: isLimitReached ? Colors.red : Colors.blue),
+        Icon(icon, color: isLimitReached ? AppColors.errorColor : Colors.blue),
         const SizedBox(height: 4),
         Text(
           label,
@@ -269,15 +276,15 @@ class _StatItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: isLimitReached ? Colors.red : null,
+            color: isLimitReached ? AppColors.errorColor : null,
           ),
         ),
         if (isLimitReached)
           const Text(
-            '已达上限',
+            AppStrings.limitReached,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.red,
+              color: AppColors.errorColor,
             ),
           ),
       ],
@@ -323,22 +330,26 @@ class _BindingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSender = binding.myRole == MyRole.sender;
     final statusColor = _getStatusColor(binding.status);
     final statusText = _getStatusText(binding.status);
+    final avatarBackground = isSender
+        ? Colors.orange.shade100
+        : Colors.green.shade100;
+    final avatarIconColor = isSender ? Colors.orange : Colors.green;
+    final roleTextColor = isSender ? Colors.orange : Colors.green;
     // 手机号脱敏显示
-    final maskedPhone = _maskPhone(binding.partnerNickname ?? '未知用户');
+    final maskedPhone = PhoneUtils.maskPhone(binding.partnerNickname ?? AppStrings.unknownUser);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isSender
-              ? Colors.orange.shade100
-              : Colors.green.shade100,
+          backgroundColor: avatarBackground,
           child: Icon(
             isSender ? Icons.person : Icons.group,
-            color: isSender ? Colors.orange : Colors.green,
+            color: avatarIconColor,
           ),
         ),
         title: Text(
@@ -350,16 +361,16 @@ class _BindingCard extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             Text(
-              isSender ? '接收者' : '发送者',
+              isSender ? AppStrings.receiver : AppStrings.sender,
               style: TextStyle(
                 fontSize: 12,
-                color: isSender ? Colors.orange : Colors.green,
+                color: roleTextColor,
               ),
             ),
             if (binding.remark != null && binding.remark!.isNotEmpty)
               Text(
-                '备注：${binding.remark}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                '${AppStrings.remark}：${binding.remark}',
+                style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey),
               ),
           ],
         ),
@@ -382,9 +393,9 @@ class _BindingCard extends StatelessWidget {
             const SizedBox(width: 8),
             if (binding.status == BindingStatus.active)
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                icon: const Icon(Icons.delete_outline, color: AppColors.errorColor),
                 onPressed: onRevoke,
-                tooltip: '解除绑定',
+                tooltip: AppStrings.revokeBinding,
               ),
           ],
         ),
@@ -392,37 +403,29 @@ class _BindingCard extends StatelessWidget {
     );
   }
 
-  /// 手机号脱敏处理
-  String _maskPhone(String phone) {
-    if (phone.length == 11) {
-      return '${phone.substring(0, 3)}****${phone.substring(7)}';
-    }
-    return phone;
-  }
-
   Color _getStatusColor(BindingStatus status) {
     switch (status) {
       case BindingStatus.active:
-        return Colors.green;
+        return AppColors.successColor;
       case BindingStatus.pending:
         return Colors.orange;
       case BindingStatus.expired:
         return Colors.grey;
       case BindingStatus.revoked:
-        return Colors.red;
+        return AppColors.errorColor;
     }
   }
 
   String _getStatusText(BindingStatus status) {
     switch (status) {
       case BindingStatus.active:
-        return '生效中';
+        return AppStrings.active;
       case BindingStatus.pending:
-        return '待确认';
+        return AppStrings.pending;
       case BindingStatus.expired:
-        return '已过期';
+        return AppStrings.expired;
       case BindingStatus.revoked:
-        return '已解除';
+        return AppStrings.revoked;
     }
   }
 }
@@ -440,7 +443,7 @@ class _AddBindingButton extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         child: const Text(
-          '绑定人数已达上限',
+          AppStrings.bindingLimitReached,
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -454,7 +457,7 @@ class _AddBindingButton extends StatelessWidget {
           onPressed: () => _showBindingDialog(context),
           icon: const Icon(Icons.add, size: 24),
           label: const Text(
-            '绑定新用户',
+            AppStrings.addNewBinding,
             style: TextStyle(fontSize: 18),
           ),
           style: ElevatedButton.styleFrom(
@@ -471,14 +474,14 @@ class _AddBindingButton extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('绑定新用户'),
+          title: const Text(AppStrings.addNewBinding),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: const Icon(Icons.phone_android, size: 40),
-                title: const Text('手机号绑定'),
-                subtitle: const Text('输入对方手机号发送绑定请求'),
+                title: const Text(AppStrings.partnerPhone),
+                subtitle: const Text(AppStrings.sendBindingRequest),
                 onTap: () {
                   Navigator.pop(context);
                   _showPhoneBindingDialog(context);
@@ -505,7 +508,7 @@ class _AddBindingButton extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('发送绑定请求'),
+              title: const Text(AppStrings.sendBindingRequest),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -513,8 +516,8 @@ class _AddBindingButton extends StatelessWidget {
                     controller: nameController,
                     enabled: !isLoading,
                     decoration: const InputDecoration(
-                      labelText: '您的姓名（必填）',
-                      hintText: '请输入您的真实姓名',
+                      labelText: AppStrings.yourName,
+                      hintText: AppStrings.yourName,
                       border: OutlineInputBorder(),
                     ),
                     maxLength: 20,
@@ -526,8 +529,8 @@ class _AddBindingButton extends StatelessWidget {
                     obscureText: obscurePhone,
                     obscuringCharacter: '●',
                     decoration: InputDecoration(
-                      labelText: '对方手机号（必填）',
-                      hintText: '请输入 11 位手机号',
+                      labelText: AppStrings.partnerPhone,
+                      hintText: AppStrings.partnerPhone,
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -564,7 +567,7 @@ class _AddBindingButton extends StatelessWidget {
                         children: [
                           CircularProgressIndicator(),
                           SizedBox(height: 8),
-                          Text('正在发送请求...'),
+                          Text(AppStrings.loadingText),
                         ],
                       ),
                     ),
@@ -576,7 +579,7 @@ class _AddBindingButton extends StatelessWidget {
                     showTimer?.cancel();
                     Navigator.pop(context);
                   },
-                  child: const Text('取消'),
+                  child: const Text(AppStrings.cancel),
                 ),
                 ElevatedButton(
                   onPressed: isLoading
@@ -584,14 +587,14 @@ class _AddBindingButton extends StatelessWidget {
                       : () async {
                           if (nameController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('请填写您的姓名')),
+                              const SnackBar(content: Text(AppStrings.pleaseFillName)),
                             );
                             return;
                           }
                           if (phoneController.text.isEmpty ||
                               phoneController.text.length != 11) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('请输入正确的手机号')),
+                              const SnackBar(content: Text(AppStrings.invalidPhone)),
                             );
                             return;
                           }
@@ -607,7 +610,7 @@ class _AddBindingButton extends StatelessWidget {
                           //   phoneController.text,
                           // );
 
-                          // 模拟延迟
+                          // 网络请求延迟
                           await Future.delayed(const Duration(seconds: 1));
 
                           setDialogState(() {
@@ -622,12 +625,12 @@ class _AddBindingButton extends StatelessWidget {
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('绑定请求已发送，等待对方确认'),
-                              backgroundColor: Colors.green,
+                              content: Text(AppStrings.bindingRequestSent),
+                              backgroundColor: AppColors.successColor,
                             ),
                           );
                         },
-                  child: const Text('发送请求'),
+                  child: const Text(AppStrings.sendRequest),
                 ),
               ],
             );
@@ -635,7 +638,7 @@ class _AddBindingButton extends StatelessWidget {
         );
       },
     );
-    
+
     showTimer?.cancel();
   }
 }
@@ -646,6 +649,11 @@ class _EmptyBindingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.grey.shade500 : Colors.grey.shade400;
+    final titleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final subtitleColor = isDark ? Colors.grey.shade500 : Colors.grey.shade500;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -653,22 +661,22 @@ class _EmptyBindingView extends StatelessWidget {
           Icon(
             Icons.link_off,
             size: 80,
-            color: Colors.grey.shade400,
+            color: iconColor,
           ),
           const SizedBox(height: 16),
           Text(
-            '暂无绑定关系',
+            AppStrings.noBinding,
             style: TextStyle(
               fontSize: 18,
-              color: Colors.grey.shade600,
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '点击下方"绑定新用户"开始绑定',
+            AppStrings.addNewBinding,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: subtitleColor,
             ),
           ),
         ],
@@ -691,6 +699,9 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -700,27 +711,27 @@ class _ErrorView extends StatelessWidget {
             const Icon(
               Icons.error_outline,
               size: 80,
-              color: Colors.red,
+              color: AppColors.errorColor,
             ),
             const SizedBox(height: 16),
             Text(
-              '加载失败',
+              AppStrings.loadFailed,
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey.shade700,
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               error,
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: AppColors.errorColor),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
+              label: const Text(AppStrings.retry),
             ),
           ],
         ),

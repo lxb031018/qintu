@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/app_strings.dart';
 
 /// ============================================
 /// 主题管理器
@@ -10,16 +11,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeManager extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
-  
+
   /// 单例实例
   static final ThemeManager _instance = ThemeManager._internal();
-  
+
   /// 获取单例
   static ThemeManager get instance => _instance;
-  
+
   /// 内部构造函数
   ThemeManager._internal();
-  
+
   /// 工厂构造函数，返回单例
   factory ThemeManager() => _instance;
 
@@ -83,11 +84,11 @@ class ThemeManager extends ChangeNotifier {
   String getThemeModeName(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
-        return '浅色';
+        return AppStrings.themeLight;
       case ThemeMode.dark:
-        return '深色';
+        return AppStrings.themeDark;
       case ThemeMode.system:
-        return '跟随系统';
+        return AppStrings.themeSystem;
     }
   }
 

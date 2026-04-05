@@ -5,6 +5,7 @@ import '../config/app_config.dart';
 import '../models/auth_result.dart';
 import '../utils/logger.dart';
 import '../utils/exceptions.dart';
+import '../utils/phone_utils.dart';
 
 /// CloudBase 认证服务 - 封装所有与用户登录相关的 HTTP API 调用
 
@@ -22,7 +23,7 @@ class CloudBaseAuthService {
   static Map<String, String> get _headers {
     final key = publishableKey;
     // 打印 Key 的前 10 位以确认是否加载成功，避免泄露完整 Key
-    Logs.auth.info('🔑 获取请求头, Publishable Key: ${key.isEmpty ? "未加载 (空字符串)" : key.substring(0, 10) + "..."}');
+    Logs.auth.info('🔑 获取请求头, Publishable Key: ${key.isEmpty ? "未加载 (空字符串)" : "${key.substring(0, 10)}..."}');
     
     return {
       'Content-Type': 'application/json',
@@ -42,7 +43,7 @@ class CloudBaseAuthService {
 
     Logs.auth.info('发送验证码');
     Logs.api.info('API请求: POST ${url.toString()}');
-    Logs.api.info('请求体: phone_number=$phoneNumber');
+    Logs.api.info('请求体: phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
     try {
       final response = await http.post(
@@ -216,7 +217,7 @@ class CloudBaseAuthService {
 
       final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
       Logs.api.info('API请求: POST ${signupUrl.toString()}');
-      Logs.api.info('请求体: verification_token=..., phone_number=$phoneNumber');
+      Logs.api.info('请求体: verification_token=..., phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
       final signupResponse = await http.post(
         signupUrl,
