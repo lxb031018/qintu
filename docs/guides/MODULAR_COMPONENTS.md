@@ -258,7 +258,7 @@ TextFormField(
 | `ThemeUtils` | 主题适配工具 | ✅ 已完成 |
 | `Validators` | 表单验证逻辑 | ✅ 已完成 |
 | `Logger` | 日志系统 | ✅ 已有 |
-| `UserStateManager` | 用户状态管理 | ✅ 已有 |
+| `AuthStateManager` | 认证状态管理 | ✅ 已有 |
 | `AppRouter` | go_router 路由配置 | ✅ 已有 |
 
 ---

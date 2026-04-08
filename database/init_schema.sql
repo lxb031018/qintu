@@ -51,31 +51,30 @@ CREATE TABLE `user_bindings` (
     `id` INT NOT NULL AUTO_INCREMENT COMMENT '绑定关系自增 ID',
     `sender_openid` VARCHAR(64) NOT NULL COMMENT '发送者 openid（外键关联 users 表）',
     `receiver_openid` VARCHAR(64) NOT NULL COMMENT '接收者 openid（外键关联 users 表）',
-    `bind_code` VARCHAR(8) NOT NULL COMMENT '绑定码（6-8位字母数字组合，用于配对）',
-    `status` ENUM('pending', 'active', 'expired', 'revoked') NOT NULL DEFAULT 'active' 
+    `bind_code` VARCHAR(8) DEFAULT NULL COMMENT '绑定码（已废弃，仅历史数据使用）',
+    `status` ENUM('pending', 'active', 'expired', 'revoked') NOT NULL DEFAULT 'active'
         COMMENT '绑定状态：pending=待确认, active=生效中, expired=已过期, revoked=已撤销',
     `remark` VARCHAR(200) DEFAULT NULL COMMENT '备注（如：给父亲的绑定关系）',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `expired_at` TIMESTAMP NULL DEFAULT NULL COMMENT '过期时间（可选）',
-    
+
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_sender_receiver` (`sender_openid`, `receiver_openid`) 
+    UNIQUE KEY `uk_sender_receiver` (`sender_openid`, `receiver_openid`)
         COMMENT '同一对发送者-接收者只能有一条绑定',
-    UNIQUE KEY `uk_bind_code` (`bind_code`) 
-        COMMENT '绑定码全局唯一',
-    KEY `idx_receiver_openid` (`receiver_openid`) 
+    KEY `idx_receiver_openid` (`receiver_openid`)
         COMMENT '用于查询某人被谁绑定为接收者',
-    KEY `idx_sender_openid` (`sender_openid`) 
+    KEY `idx_sender_openid` (`sender_openid`)
         COMMENT '用于查询某人绑定了哪些接收者',
     KEY `idx_status` (`status`),
-    
+    KEY `idx_created_at` (`created_at`),
+
     -- 外键约束（可选，如果 CloudBase MySQL 支持）
-    CONSTRAINT `fk_binding_sender` FOREIGN KEY (`sender_openid`) 
+    CONSTRAINT `fk_binding_sender` FOREIGN KEY (`sender_openid`)
         REFERENCES `users` (`openid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_binding_receiver` FOREIGN KEY (`receiver_openid`) 
+    CONSTRAINT `fk_binding_receiver` FOREIGN KEY (`receiver_openid`)
         REFERENCES `users` (`openid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='用户绑定关系表 - 建立发送者与接收者的配对关系';
 
 -- ------------------------------------------------------------

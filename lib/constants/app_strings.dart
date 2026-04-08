@@ -103,6 +103,9 @@ class AppStrings {
   /// 定位未开启
   static const String locationDisabled = '定位未开启';
 
+  /// 当前位置按钮
+  static const String currentLocation = '当前位置';
+
   /// 等待导航
   static const String waitingForNavigation = '等待接收导航指引...';
 
@@ -301,4 +304,59 @@ class AppStrings {
 
   /// 当前角色
   static const String currentRole = '当前角色';
+
+  /// 确认切换角色提示
+  static String confirmSwitchRole(String role) => '确定要切换到$role吗？';
+
+  /// 角色未设置
+  static const String roleNotSet = '未设置';
+
+  /// 切换角色失败
+  static String switchRoleFailed(String error) => '切换角色失败: $error';
+
+  // ==================== 绑定对话框 ====================
+
+  /// 绑定提示文本
+  static const String bindingHintText = '对方将看到您的姓名和手机号，请确认信息真实有效';
+
+  // ==================== 通知和绑定请求 ====================
+
+  /// 绑定请求通知
+  static const String bindingRequests = '绑定请求';
+
+  /// 待确认的绑定请求
+  static const String pendingBindingRequests = '待确认的绑定请求';
+
+  /// 暂无待确认请求
+  static const String noPendingRequests = '暂无待确认请求';
+
+  /// 接受绑定请求
+  static const String acceptBindingRequest = '接受';
+
+  /// 拒绝绑定请求
+  static const String rejectBindingRequest = '拒绝';
+
+  /// 接受确认对话框
+  static const String acceptBindingRequestConfirm = '确定要接受这个绑定请求吗？接受后双方将建立绑定关系。';
+
+  /// 拒绝确认对话框
+  static const String rejectBindingRequestConfirm = '确定要拒绝这个绑定请求吗？';
+
+  /// 接受成功
+  static const String acceptBindingRequestSuccess = '已接受绑定请求，绑定关系已生效';
+
+  /// 拒绝成功
+  static const String rejectBindingRequestSuccess = '已拒绝绑定请求';
+
+  /// 接受失败
+  static const String acceptBindingRequestFailed = '接受失败，请重试';
+
+  /// 拒绝失败
+  static const String rejectBindingRequestFailed = '拒绝失败，请重试';
+
+  /// 请求时间格式
+  static String requestTimeAgo(String time) => '⏰ $time';
+
+  /// 绑定请求详情提示
+  static const String bindingRequestDetailHint = '对方希望通过此绑定关系与您建立连接，接受后对方将能够与您共享位置信息';
 }

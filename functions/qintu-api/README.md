@@ -18,7 +18,7 @@
 | 模块 | 路由前缀 | 功能描述 |
 |------|----------|----------|
 | 用户管理 | `/api/users` | 用户注册、登录、信息查询 |
-| 绑定关系 | `/api/bindings` | 生成绑定码、确认绑定、解绑 |
+| 绑定关系 | `/api/bindings` | 发送绑定请求、确认/拒绝绑定、解绑 |
 | 导航任务 | `/api/tasks` | 创建任务、接受/开始/完成/取消任务、更新路线 |
 | 实时位置 | `/api/locations` | 上传位置、查询位置、切换共享状态 |
 
@@ -270,11 +270,14 @@ X-User-OpenID: <openid>
 
 ### 2. 绑定关系管理 (`/api/bindings`)
 
-#### 2.1 生成绑定码
+**绑定流程说明**：
+发送者输入接收者手机号 → 发送绑定请求 → 接收者确认/拒绝 → 建立绑定关系
 
-**接口**：`POST /api/bindings/generate`
+#### 2.1 发送绑定请求
 
-**说明**：发送者生成绑定码，用于与接收者建立绑定关系
+**接口**：`POST /api/bindings/request-phone`
+
+**说明**：发送者输入接收者手机号，发送绑定请求
 
 **请求头**：
 ```
@@ -284,8 +287,8 @@ X-User-OpenID: <sender_openid>
 **请求体**：
 ```json
 {
-  "receiver_phone": "+86 13800138000",  // 可选，如果知道接收者手机号
-  "remark": "给父亲的绑定"                // 可选
+  "receiver_phone": "+86 13800138000",
+  "sender_name": "张三"
 }
 ```
 
@@ -295,18 +298,61 @@ X-User-OpenID: <sender_openid>
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "bind_code": "ABC12345",
-    "expires_at": "2026-04-05T10:00:00.000Z",
-    "message": "请将此绑定码告知接收者，接收者输入后即可建立绑定关系"
+    "message": "绑定请求已发送"
   }
 }
 ```
 
-#### 2.2 确认绑定
+**错误响应**：
+```json
+{
+  "code": "BINDING_LIMIT_EXCEEDED",
+  "message": "发送者绑定人数已达上限（最多5个接收者）"
+}
+```
 
-**接口**：`POST /api/bindings/confirm`
+或
 
-**说明**：接收者输入绑定码，确认绑定关系
+```json
+{
+  "code": "RECEIVER_BINDING_FULL",
+  "message": "该接收者已被过多发送者绑定（最多3个）"
+}
+```
+
+#### 2.2 获取待确认的绑定请求
+
+**接口**：`GET /api/bindings/pending`
+
+**说明**：接收者查看等待确认的绑定请求
+
+**请求头**：
+```
+X-User-OpenID: <receiver_openid>
+```
+
+**响应**：
+```json
+{
+  "code": "SUCCESS",
+  "message": "操作成功",
+  "data": [
+    {
+      "id": 1,
+      "sender_name": "张三",
+      "sender_nickname": "张三",
+      "sender_phone": "138****8000",
+      "created_at": "2026-04-08T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### 2.3 确认绑定请求
+
+**接口**：`POST /api/bindings/confirm-request`
+
+**说明**：接收者确认绑定请求
 
 **请求头**：
 ```
@@ -316,7 +362,7 @@ X-User-OpenID: <receiver_openid>
 **请求体**：
 ```json
 {
-  "bind_code": "ABC12345"
+  "request_id": 1
 }
 ```
 
@@ -326,19 +372,41 @@ X-User-OpenID: <receiver_openid>
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "message": "绑定关系已确认",
-    "binding": {
-      "id": 1,
-      "bind_code": "ABC12345",
-      "status": "active",
-      "sender_nickname": "张三",
-      "sender_phone": "+86 13800138000"
-    }
+    "message": "绑定成功"
   }
 }
 ```
 
-#### 2.3 获取我的绑定关系
+#### 2.4 拒绝绑定请求
+
+**接口**：`POST /api/bindings/reject-request`
+
+**说明**：接收者拒绝绑定请求
+
+**请求头**：
+```
+X-User-OpenID: <receiver_openid>
+```
+
+**请求体**：
+```json
+{
+  "request_id": 1
+}
+```
+
+**响应**：
+```json
+{
+  "code": "SUCCESS",
+  "message": "操作成功",
+  "data": {
+    "message": "已拒绝"
+  }
+}
+```
+
+#### 2.5 获取我的绑定关系
 
 **接口**：`GET /api/bindings/my`
 
@@ -359,7 +427,6 @@ X-User-OpenID: <openid>
     "bindings": [
       {
         "id": 1,
-        "bind_code": "ABC12345",
         "status": "active",
         "my_role": "sender",
         "partner_nickname": "李四",
@@ -370,13 +437,26 @@ X-User-OpenID: <openid>
 }
 ```
 
-#### 2.4 解除绑定
+#### 2.6 解除绑定
 
 **接口**：`DELETE /api/bindings/:id`
+
+**说明**：解除绑定关系（绑定双方均可操作）
 
 **请求头**：
 ```
 X-User-OpenID: <openid>
+```
+
+**响应**：
+```json
+{
+  "code": "SUCCESS",
+  "message": "操作成功",
+  "data": {
+    "message": "绑定关系已解除"
+  }
+}
 ```
 
 ---

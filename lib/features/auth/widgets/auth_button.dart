@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/app_config.dart';
+import '../../../theme/app_text_styles.dart';
 
 /// 认证按钮组件
 ///
@@ -67,11 +67,9 @@ class AuthButton extends StatelessWidget {
               )
             : Text(
                 text,
-                style: TextStyle(
-                  fontSize: 24,
+                style: AppTextStyles.emojiIcon.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  fontFamily: AppConfig.fontFamily,
                 ),
               ),
       ),

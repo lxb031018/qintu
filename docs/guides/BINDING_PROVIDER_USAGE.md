@@ -6,16 +6,16 @@
 
 ## 🚀 基本使用
 
-### 1. 初始化
+### 1. 使用方式
 
-在用户登录后，需要初始化 `BindingProvider`：
+`BindingProvider` 内部使用 `ApiClient` 单例，无需手动初始化：
 
 ```dart
 // 获取 BindingProvider 实例
 final bindingProvider = context.read<BindingProvider>();
 
-// 使用 UserProvider 中的 ApiService 初始化
-bindingProvider.init(userProvider.apiService!);
+// 直接调用方法（ApiClient 会自动从 SecureStorage 获取 Token）
+await bindingProvider.loadBindings();
 ```
 
 ### 2. 加载绑定列表
@@ -29,55 +29,63 @@ print('作为发送者: ${bindingProvider.asSenderCount}');
 print('作为接收者: ${bindingProvider.asReceiverCount}');
 ```
 
-### 3. 生成绑定码
+### 3. 发送手机号绑定请求
 
 ```dart
-final bindCode = await bindingProvider.generateBindCode(
-  receiverPhone: '+86 13800138000',  // 可选
-  remark: '给父亲的绑定',              // 可选
+final success = await bindingProvider.requestPhoneBinding(
+  receiverPhone: '+86 13800138000',
+  senderName: '张三',
 );
 
-if (bindCode != null) {
-  print('绑定码: $bindCode');
-  // 显示绑定码给用户
+if (success) {
+  print('绑定请求已发送，等待接收者确认');
 } else {
-  print('生成失败: ${bindingProvider.error}');
+  print('请求失败: ${bindingProvider.error}');
 }
 ```
 
-### 4. 确认绑定
+### 4. 获取待确认的绑定请求
 
 ```dart
-final success = await bindingProvider.confirmBinding('ABC12345');
+await bindingProvider.loadPendingRequests();
+
+// 访问待确认请求列表
+print('待确认请求数量: ${bindingProvider.pendingRequests.length}');
+```
+
+### 5. 确认绑定请求
+
+```dart
+final success = await bindingProvider.confirmRequest(requestId);
 
 if (success) {
-  print('绑定成功: ${bindingProvider.successMessage}');
+  print('绑定成功');
 } else {
   print('绑定失败: ${bindingProvider.error}');
 }
 ```
 
-### 5. 解除绑定
+### 6. 拒绝绑定请求
+
+```dart
+final success = await bindingProvider.rejectRequest(requestId);
+
+if (success) {
+  print('已拒绝绑定请求');
+} else {
+  print('拒绝失败: ${bindingProvider.error}');
+}
+```
+
+### 7. 解除绑定
 
 ```dart
 final success = await bindingProvider.revokeBinding(bindingId);
 
 if (success) {
-  print('解除成功: ${bindingProvider.successMessage}');
+  print('解除绑定成功');
 } else {
   print('解除失败: ${bindingProvider.error}');
-}
-```
-
-### 6. 检查绑定码
-
-```dart
-final info = await bindingProvider.checkBindCode('ABC12345');
-
-if (info != null) {
-  print('绑定码有效: $info');
-} else {
-  print('绑定码无效: ${bindingProvider.error}');
 }
 ```
 
@@ -88,11 +96,11 @@ if (info != null) {
 - `bindingSummary`: 绑定摘要信息（包含 asSender, asReceiver 等）
 - `senderBindings`: 仅作为发送者的绑定关系
 - `receiverBindings`: 仅作为接收者的绑定关系
+- `pendingRequests`: 待确认的绑定请求列表
 
 ### 状态数据
 - `isLoading`: 是否正在加载
 - `error`: 错误信息
-- `successMessage`: 成功消息
 
 ### 计算属性
 - `asSenderCount`: 作为发送者的绑定数量
@@ -103,10 +111,11 @@ if (info != null) {
 
 ## ⚠️ 注意事项
 
-1. **必须先初始化**：在使用任何功能前，必须先调用 `init(apiService)` 方法
+1. **无需手动初始化**：`BindingProvider` 内部使用 `ApiClient()` 单例，自动从 `SecureStorage` 获取 Token
 2. **错误处理**：操作失败时，错误信息会保存在 `error` 属性中
 3. **自动刷新**：成功执行操作后，会自动刷新绑定列表
-4. **状态清理**：可以使用 `clearError()` 和 `clearSuccessMessage()` 清理状态
+4. **状态清理**：可以使用 `clearError()` 清理错误状态
+5. **双向确认机制**：绑定需要发送者发请求，接收者确认后才生效
 
 ## 📝 完整示例
 
@@ -159,17 +168,20 @@ class _BindingExampleWidgetState extends State<BindingExampleWidget> {
               onPressed: provider.isSenderLimitReached
                   ? null
                   : () async {
-                      final code = await provider.generateBindCode();
-                      if (code != null) {
+                      final success = await provider.requestPhoneBinding(
+                        receiverPhone: '+86 13800138000',
+                        senderName: '张三',
+                      );
+                      if (success) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('绑定码: $code')),
+                          const SnackBar(content: Text('绑定请求已发送')),
                         );
                       }
                     },
               child: Text(
                 provider.isSenderLimitReached
                     ? '绑定人数已达上限'
-                    : '生成绑定码',
+                    : '发送绑定请求',
               ),
             ),
             Expanded(
@@ -205,13 +217,13 @@ class _BindingExampleWidgetState extends State<BindingExampleWidget> {
 
 ## 🔧 在 main.dart 中注册
 
-`BindingProvider` 已经在 `main.dart` 中注册：
+`BindingProvider` 和 `AuthStateManager` 已经在 `main.dart` 中注册：
 
 ```dart
 MultiProvider(
   providers: [
-    ChangeNotifierProvider(create: (_) => UserProvider()),
     ChangeNotifierProvider(create: (_) => BindingProvider()),
+    ChangeNotifierProvider.value(value: _authStateManager),
   ],
   child: MaterialApp(...),
 )

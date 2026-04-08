@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../managers/theme_manager.dart';
 import '../../../constants/app_colors.dart';
+import '../../../theme/app_text_styles.dart';
 import 'settings_section_card.dart';
 
 /// ============================================
@@ -26,12 +28,19 @@ class ThemeSelectorCard extends StatefulWidget {
 
 class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
   late ThemeMode _selectedThemeMode;
-  final ThemeManager _themeManager = ThemeManager();
+  late ThemeManager _themeManager;
 
   @override
   void initState() {
     super.initState();
     _selectedThemeMode = widget.currentThemeMode;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 通过 Provider 获取共享的 ThemeManager 实例
+    _themeManager = Provider.of<ThemeManager>(context, listen: false);
   }
 
   @override
@@ -114,8 +123,7 @@ class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTextStyles.bodySmall.copyWith(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected
                       ? AppColors.primaryColor

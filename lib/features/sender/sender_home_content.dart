@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
-import '../../config/app_config.dart';
 import '../../constants/app_strings.dart';
+import '../../theme/app_text_styles.dart';
 
 /// 发送者 Home 内容（路径规划、发送导航）
 ///
@@ -13,12 +13,10 @@ import '../../constants/app_strings.dart';
 
 class SenderHomeContent extends StatefulWidget {
   final String userId;
-  final String accessToken;
 
   const SenderHomeContent({
     super.key,
     required this.userId,
-    required this.accessToken,
   });
 
   @override
@@ -82,11 +80,9 @@ class _SenderHomeContentState extends State<SenderHomeContent> {
         elevation: 0,
         title: Text(
           AppStrings.senderHomeTitle,
-          style: TextStyle(
-            fontSize: 20,
+          style: AppTextStyles.bodyLarge.copyWith(
             fontWeight: FontWeight.bold,
             color: textColor,
-            fontFamily: AppConfig.fontFamily,
           ),
         ),
         centerTitle: true,
@@ -178,11 +174,9 @@ class _SenderHomeContentState extends State<SenderHomeContent> {
                         )
                       : Text(
                           AppStrings.planRoute,
-                          style: TextStyle(
-                            fontSize: 24,
+                          style: AppTextStyles.titleSmall.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontFamily: AppConfig.fontFamily,
                           ),
                         ),
                 ),
@@ -220,23 +214,17 @@ class _SenderHomeContentState extends State<SenderHomeContent> {
       ),
       child: TextField(
         controller: controller,
-        style: TextStyle(
-          fontSize: 18,
+        style: AppTextStyles.bodySmall.copyWith(
           color: textColor,
-          fontFamily: AppConfig.fontFamily,
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
+          labelStyle: AppTextStyles.caption.copyWith(
             color: AppColors.primaryColor,
-            fontSize: 16,
-            fontFamily: AppConfig.fontFamily,
           ),
           hintText: hint,
-          hintStyle: TextStyle(
+          hintStyle: AppTextStyles.caption.copyWith(
             color: lightTextColor,
-            fontSize: 16,
-            fontFamily: AppConfig.fontFamily,
           ),
           prefixIcon: Icon(
             icon,

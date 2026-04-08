@@ -6,23 +6,11 @@ import '../constants/app_strings.dart';
 /// 主题管理器
 ///
 /// 管理应用主题的持久化和切换
-/// 使用单例模式确保全局唯一实例
+/// 通过 Provider 进行依赖注入,不使用单例模式
 /// ============================================
 
 class ThemeManager extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
-
-  /// 单例实例
-  static final ThemeManager _instance = ThemeManager._internal();
-
-  /// 获取单例
-  static ThemeManager get instance => _instance;
-
-  /// 内部构造函数
-  ThemeManager._internal();
-
-  /// 工厂构造函数，返回单例
-  factory ThemeManager() => _instance;
 
   /// 当前主题模式
   ThemeMode _themeMode = ThemeMode.system;
@@ -44,8 +32,8 @@ class ThemeManager extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     // 如果用户没有设置过主题，默认跟随系统
     final themeIndex = prefs.getInt(_themeModeKey);
-    return themeIndex != null 
-        ? ThemeMode.values[themeIndex] 
+    return themeIndex != null
+        ? ThemeMode.values[themeIndex]
         : ThemeMode.system;
   }
 

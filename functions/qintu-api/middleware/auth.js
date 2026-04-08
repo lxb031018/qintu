@@ -1,8 +1,15 @@
 /**
  * 认证中间件
- * 
- * 验证用户身份（从 CloudBase Auth 获取的 Access Token）
- * 并将用户信息注入到 req.user
+ *
+ * ⚠️ TODO: 生产环境必须实现真正的 Token 验证（CloudBase JWT）
+ * 当前实现仅信任 X-User-OpenID 请求头，仅适用于开发/测试阶段。
+ * 任何知道有效 openid 的人都可以冒充用户。
+ *
+ * 上线前修复方案：
+ * 1. 从 Authorization: Bearer <token> 获取 Access Token
+ * 2. 使用 CloudBase SDK 验证 JWT 签名
+ * 3. 从解码后的 token 中提取 openid
+ * 4. 移除对 X-User-OpenID 的依赖
  */
 
 const { query } = require('../lib/database');

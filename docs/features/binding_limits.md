@@ -1,5 +1,45 @@
 # 亲途 - 绑定人数限制说明
 
+## 📋 核心概念
+
+### 手机号绑定（远程绑定）
+- **用途**：建立长期或短期绑定关系的唯一方法
+- **场景**：发送者知道对方手机号，远程建立绑定关系
+- **流程**：输入对方手机号 → 发送绑定请求 → 接收者确认 → 建立绑定关系
+- **限制**：发送者最多 5 个接收者，接收者最多被 3 个发送者绑定
+- **有效期设置**：
+  - **永久绑定**：长期关系（如家庭成员）
+  - **有限时间绑定**：自定义有效期（如旅游团导游带团 7 天）
+  - 由发送者定义，过期后自动解除绑定
+- **特点**：绑定后可随时查看对方位置、发送导航任务
+
+### 二维码分享路线（临时分享）
+- **用途**：一次性分享路线，**无需绑定关系**
+- **场景**：面对面时，发送者生成路线二维码，多人可扫码接受同一路线
+- **限制**：无限制，任何人都可以扫码接受导航
+- **特点**：
+  - 每次规划路线生成一个二维码
+  - 一个二维码可被多人扫描使用
+  - 临时性、无需注册、无需绑定
+
+---
+
+## 🔒 位置共享权限控制
+
+### 双向控制权
+- **发送者**：可以随时允许/拒绝他人查看自己的位置
+- **接收者**：可以随时允许/拒绝他人查看自己的位置
+
+### 控制时机
+- **导航开始前**：在规划路线后、导航启动前设置
+- **导航进行中**：在导航过程中随时切换
+
+### 权限选项
+- **允许查看**：其他人可以看到实时位置
+- **拒绝查看**：隐藏自己的位置信息
+
+---
+
 ## 📋 限制策略
 
 根据家庭场景定位，系统对绑定人数进行了合理限制：
@@ -27,15 +67,15 @@
 
 ## 🔒 限制验证点
 
-### 1. 发送者生成绑定码时
+### 1. 发送者输入手机号发送绑定请求时
 
-**接口**：`POST /api/bindings/generate`
+**接口**：`POST /api/bindings/request-phone`
 
 **验证逻辑**：
 ```javascript
 // 检查发送者当前绑定数量
 const senderBindingsCount = await query(
-  `SELECT COUNT(*) as count FROM user_bindings 
+  `SELECT COUNT(*) as count FROM user_bindings
    WHERE sender_openid = ? AND status = 'active'`,
   [senderOpenid]
 );
@@ -57,14 +97,14 @@ if (senderBindingsCount[0].count >= 5) {
 
 ### 2. 发送者绑定已知接收者时
 
-**接口**：`POST /api/bindings/generate`（带 `receiver_phone`）
+**接口**：`POST /api/bindings/request-phone`（带 `receiver_phone`）
 
 **额外验证**：
 ```javascript
 // 检查接收者被绑定数量
 const receiverBindingsCount = await query(
-  `SELECT COUNT(*) as count FROM user_bindings 
-   WHERE receiver_openid = ? AND status = 'active'`,
+  `SELECT COUNT(*) as count FROM user_bindings
+   WHERE receiver_openid = ? AND status IN ('active', 'pending')`,
   [receiverOpenid]
 );
 
@@ -85,13 +125,13 @@ if (receiverBindingsCount[0].count >= 3) {
 
 ### 3. 接收者确认绑定时
 
-**接口**：`POST /api/bindings/confirm`
+**接口**：`POST /api/bindings/confirm-request`
 
 **验证逻辑**：
 ```javascript
-// 检查接收者当前绑定数量
+// 确认绑定时再次检查接收者绑定数量
 const receiverBindingsCount = await query(
-  `SELECT COUNT(*) as count FROM user_bindings 
+  `SELECT COUNT(*) as count FROM user_bindings
    WHERE receiver_openid = ? AND status = 'active'`,
   [receiverOpenid]
 );
@@ -102,7 +142,7 @@ if (receiverBindingsCount[0].count >= 3) {
 
 // 检查发送者绑定数量
 const senderBindingsCount = await query(
-  `SELECT COUNT(*) as count FROM user_bindings 
+  `SELECT COUNT(*) as count FROM user_bindings
    WHERE sender_openid = ? AND status = 'active'`,
   [binding.sender_openid]
 );
@@ -184,8 +224,8 @@ Text('作为接收者：${data.as_receiver}/3 个绑定');
 
 // 达到上限时禁用绑定按钮
 ElevatedButton(
-  onPressed: data.as_sender >= 5 ? null : _generateBindCode,
-  child: Text(data.as_sender >= 5 ? '绑定人数已达上限' : '生成绑定码'),
+  onPressed: data.as_sender >= 5 ? null : _bindByPhone,
+  child: Text(data.as_sender >= 5 ? '绑定人数已达上限' : '绑定新用户'),
 );
 ```
 
@@ -215,17 +255,17 @@ const BINDING_LIMITS = {
 ```bash
 # 循环绑定 5 次
 for i in {1..5}; do
-  curl -X POST http://localhost:9000/api/bindings/generate \
+  curl -X POST http://localhost:9000/api/bindings/request-phone \
     -H "Content-Type: application/json" \
     -H "X-User-OpenID: sender_openid" \
-    -d "{\"receiver_phone\": \"+86 1380013800$i\"}"
+    -d "{\"receiver_phone\": \"+86 1380013800$i\", \"sender_name\": \"发送者\"}"
 done
 
 # 第 6 次绑定应失败
-curl -X POST http://localhost:9000/api/bindings/generate \
+curl -X POST http://localhost:9000/api/bindings/request-phone \
   -H "Content-Type: application/json" \
   -H "X-User-OpenID: sender_openid" \
-  -d "{\"receiver_phone\": \"+86 13800138006\"}"
+  -d "{\"receiver_phone\": \"+86 13800138006\", \"sender_name\": \"发送者\"}"
 
 # 预期响应：
 # {"code": "BINDING_LIMIT_EXCEEDED", "message": "绑定人数已达上限（最多5个接收者）"}
@@ -234,21 +274,29 @@ curl -X POST http://localhost:9000/api/bindings/generate \
 ### 测试 2：接收者被 3 个发送者绑定
 
 ```bash
-# 3 个发送者分别绑定同一接收者
+# 3 个发送者分别向同一接收者发送绑定请求
 for sender in sender1 sender2 sender3; do
-  # 生成绑定码
-  BIND_CODE=$(curl -X POST ... -H "X-User-OpenID: $sender" ...)
-  
+  # 发送绑定请求
+  curl -X POST http://localhost:9000/api/bindings/request-phone \
+    -H "Content-Type: application/json" \
+    -H "X-User-OpenID: $sender" \
+    -d "{\"receiver_phone\": \"+86 13800138000\", \"sender_name\": \"$sender\"}"
+
   # 接收者确认绑定
-  curl -X POST http://localhost:9000/api/bindings/confirm \
+  curl -X POST http://localhost:9000/api/bindings/confirm-request \
     -H "Content-Type: application/json" \
     -H "X-User-OpenID: receiver_openid" \
-    -d "{\"bind_code\": \"$BIND_CODE\"}"
+    -d "{\"request_id\": \"请求ID\"}"
 done
 
-# 第 4 个发送者尝试绑定时，接收者确认应失败
+# 第 4 个发送者尝试绑定时应失败
+curl -X POST http://localhost:9000/api/bindings/request-phone \
+  -H "Content-Type: application/json" \
+  -H "X-User-OpenID: sender4" \
+  -d "{\"receiver_phone\": \"+86 13800138000\", \"sender_name\": \"sender4\"}"
+
 # 预期响应：
-# {"code": "BINDING_LIMIT_EXCEEDED", "message": "绑定人数已达上限（最多3个发送者）"}
+# {"code": "RECEIVER_BINDING_FULL", "message": "该用户已被 3 个发送者绑定，无法继续绑定"}
 ```
 
 ---
@@ -278,7 +326,7 @@ KEY `idx_status` (`status`)
 |------|-----|
 | 发送者上限 | 5 个接收者 |
 | 接收者上限 | 3 个发送者 |
-| 验证时机 | 生成绑定码时、确认绑定时 |
+| 验证时机 | 输入手机号绑定时、确认绑定时 |
 | 错误代码 | `BINDING_LIMIT_EXCEEDED`, `RECEIVER_BINDING_FULL`, `SENDER_BINDING_FULL` |
 | HTTP 状态码 | 409 (Conflict) |
 | 是否可配置 | 是（修改 `BINDING_LIMITS` 常量即可） |

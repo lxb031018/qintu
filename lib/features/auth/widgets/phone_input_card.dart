@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../config/app_config.dart';
 import '../../../constants/app_strings.dart';
+import '../../../theme/app_text_styles.dart';
 
 /// 手机号输入卡片
 ///
@@ -94,30 +94,22 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
         maxLength: 11,
         obscureText: _obscureText,
         obscuringCharacter: '•',
-        style: TextStyle(
-          fontSize: 24,
+        style: AppTextStyles.emojiIcon.copyWith(
           color: inputTextColor,
-          fontFamily: AppConfig.fontFamily,
         ),
         decoration: InputDecoration(
           labelText: AppStrings.phoneLabel,
-          labelStyle: TextStyle(
+          labelStyle: AppTextStyles.inputLabel.copyWith(
             color: widget.primaryColor,
-            fontSize: 20,
-            fontFamily: AppConfig.fontFamily,
           ),
           hintText: AppStrings.phoneHint,
-          hintStyle: TextStyle(
+          hintStyle: AppTextStyles.inputHint.copyWith(
             color: widget.lightTextColor,
-            fontSize: 18,
-            fontFamily: AppConfig.fontFamily,
           ),
           prefixText: '+86 ',
-          prefixStyle: TextStyle(
+          prefixStyle: AppTextStyles.emojiIcon.copyWith(
             color: widget.primaryColor,
-            fontSize: 24,
             fontWeight: FontWeight.bold,
-            fontFamily: AppConfig.fontFamily,
           ),
           suffixIcon: IconButton(
             icon: Icon(

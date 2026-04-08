@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
-import '../../config/app_config.dart';
 import '../../constants/app_strings.dart';
 import '../../services/secure_storage.dart';
 import '../../router/app_router.dart';
+import '../../theme/app_text_styles.dart';
 
 /// 角色选择页面 - 用户登录后选择身份：接收者 或 发送者
 
 class RoleSelectionPage extends StatefulWidget {
   final String userId;
   final String phone;
-  final String accessToken;
 
   const RoleSelectionPage({
     super.key,
     required this.userId,
     required this.phone,
-    required this.accessToken,
   });
 
   @override
@@ -90,11 +88,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 children: [
                   Text(
                     AppStrings.roleSelectionTitle,
-                    style: TextStyle(
-                      fontSize: 40,
+                    style: AppTextStyles.roleIcon.copyWith(
                       fontWeight: FontWeight.bold,
                       color: textColor,
-                      fontFamily: AppConfig.fontFamily,
                     ),
                   ),
                 ],
@@ -195,20 +191,16 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 32,
+                        style: AppTextStyles.roleCardIcon.copyWith(
                           fontWeight: FontWeight.bold,
                           color: textColor,
-                          fontFamily: AppConfig.fontFamily,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: AppTextStyles.roleName.copyWith(
                           color: lightTextColor,
-                          fontFamily: AppConfig.fontFamily,
                         ),
                       ),
                     ],

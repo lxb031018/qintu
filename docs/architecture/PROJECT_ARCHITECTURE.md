@@ -5,7 +5,18 @@
 ```
 lib/features/
 ├── auth/              # 认证模块（登录/注册）
+│   ├── auth_page.dart
+│   └── widgets/       # 认证组件（auth_header, auth_button 等）
 ├── binding/           # 绑定管理模块（独立的绑定关系管理）
+│   ├── binding_page.dart          # 主页面 (~230 行)
+│   └── widgets/                   # 绑定组件
+│       ├── phone_binding_dialog.dart   # 手机号对话框
+│       ├── binding_stats_card.dart     # 统计卡片
+│       ├── binding_list_view.dart      # 列表视图
+│       ├── binding_card.dart           # 绑定卡片
+│       ├── add_binding_button.dart     # 添加按钮
+│       ├── empty_binding_view.dart     # 空状态
+│       └── error_view.dart             # 错误视图
 ├── receiver/          # 接收者模块（老人端 - 简洁单页）
 ├── role/              # 角色选择模块
 ├── sender/            # 发送者模块（子女端 - 三Tab架构）
@@ -13,6 +24,8 @@ lib/features/
 │   ├── sender_home_content.dart     # 发送者Home Tab内容（路径规划）
 │   └── widgets/                     # 发送者相关小组件
 └── settings/          # 设置模块（主题、账号、退出）
+    ├── settings_page.dart
+    └── widgets/       # 设置组件（theme_selector, logout_card 等）
 ```
 
 ## 🎯 角色架构设计
@@ -88,19 +101,31 @@ ReceiverHomePage (单页展示)
 
 ## ✅ 重构完成项
 
-1. ✅ 删除 `lib/features/home/` 文件夹（包含硬编码的占位页面）
-2. ✅ 重构 `lib/features/sender/` 为三Tab架构
-3. ✅ 保持 `lib/features/receiver/` 简洁单页架构
-4. ✅ 更新 `NavigationService` 导航逻辑
-5. ✅ 更新 `main.dart` 和 `app_router.dart` 引用
-6. ✅ 清理所有未使用的导入
-7. ✅ 修复硬编码字符串（底部导航、主题模式名称）
-8. ✅ 修复废弃 API（`dialogBackgroundColor`）
-9. ✅ 完整深色模式适配（所有核心页面）
-10. ✅ 接收者页面按钮位置调整（避免误触）
-11. ✅ 角色切换页面更新修复（清除页面栈）
-12. ✅ 主题切换实时生效修复
-13. ✅ 退出登录错误修复
+### 架构重构（2026-04-08）
+1. ✅ Token 刷新功能完整实现（`TokenRefreshInterceptor`）
+2. ✅ 测试覆盖提升到 29 个测试全部通过
+3. ✅ `api_client.dart` 从 424 行拆分到 180 行 (-57%)
+4. ✅ `ThemeManager` 移除单例，统一使用 Provider
+5. ✅ 全局错误边界 `ErrorBoundary` 和 `SafeErrorWidget`
+6. ✅ `binding_page.dart` 从 742 行重构到 233 行 (-69%)
+7. ✅ 创建 `lib/features/README.md` Feature 模块结构规范
+8. ✅ 修复所有硬编码（绑定限制、提示文本等）
+9. ✅ 修复 `auth_page.dart` 中的废弃导入
+
+### 早期重构
+10. ✅ 删除 `lib/features/home/` 文件夹（包含硬编码的占位页面）
+11. ✅ 重构 `lib/features/sender/` 为三Tab架构
+12. ✅ 保持 `lib/features/receiver/` 简洁单页架构
+13. ✅ 统一使用 `go_router` 导航（已删除 `NavigationService`）
+14. ✅ 更新 `main.dart` 和 `app_router.dart` 引用
+15. ✅ 清理所有未使用的导入
+16. ✅ 修复硬编码字符串（底部导航、主题模式名称）
+17. ✅ 修复废弃 API（`dialogBackgroundColor`）
+18. ✅ 完整深色模式适配（所有核心页面）
+19. ✅ 接收者页面按钮位置调整（避免误触）
+20. ✅ 角色切换页面更新修复（清除页面栈）
+21. ✅ 主题切换实时生效修复
+22. ✅ 退出登录错误修复
 
 ## 🔧 待完善项
 

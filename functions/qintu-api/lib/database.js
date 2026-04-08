@@ -30,6 +30,13 @@ let pool;
 // 尝试创建连接池（异步，不阻塞）
 if (hasDbConfig) {
   try {
+    console.log('🔧 正在创建数据库连接池...', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      database: dbConfig.database
+    });
+    
     pool = mysql.createPool(dbConfig);
 
     // 异步测试连接，不阻塞启动
@@ -41,6 +48,7 @@ if (hasDbConfig) {
         })
         .catch(err => {
           console.error('❌ MySQL 数据库连接失败:', err.message);
+          console.error('错误详情:', err);
           console.log('⚠️  请检查环境变量配置（DB_HOST, DB_USER, DB_PASSWORD）');
         });
     });

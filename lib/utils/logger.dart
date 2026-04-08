@@ -221,4 +221,7 @@ class Logs {
 
   /// 应用级别日志
   static const Logger app = Logger('APP');
+
+  /// 高德地图日志
+  static const Logger map = Logger('MAP');
 }

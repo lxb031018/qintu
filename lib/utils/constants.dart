@@ -23,10 +23,7 @@ class Constants {
   
   // 位置更新间隔（毫秒）
   static const int locationUpdateInterval = 5000;  // 5 秒
-  
-  // 绑定码有效期（小时）
-  static const int bindCodeExpiryHours = 24;
-  
+
   // 任务轮询间隔（毫秒）
   static const int taskPollingInterval = 10000;  // 10 秒
   

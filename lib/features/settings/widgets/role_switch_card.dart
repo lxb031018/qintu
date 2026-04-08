@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_roles.dart';
 import '../../../services/secure_storage.dart';
-import '../../../state/managers/user_state_manager.dart';
+import '../../../managers/auth_state_manager.dart';
 import '../../../router/app_router.dart';
 import '../../../utils/logger.dart';
+import '../../../theme/app_text_styles.dart';
 import 'settings_section_card.dart';
 
 /// ============================================
@@ -43,22 +43,11 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
 
     Logs.ui.info('请求切换角色: ${widget.currentRole} -> $roleName');
 
-    // 显示确认对话框
+    // 显示警告风格的确认对话框
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.switchRole),
-        content: Text('确定要切换到$roleName吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(AppStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(AppStrings.confirm),
-          ),
-        ],
+      builder: (context) => _RoleSwitchConfirmDialog(
+        targetRole: roleName,
       ),
     );
 
@@ -70,31 +59,29 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
         await SecureStorage.saveRole(newRole);
         Logs.storage.info('角色已保存: $newRole');
 
-        // 更新 UserStateManager 中的角色状态
+        // 更新 AuthStateManager 中的角色状态
         if (mounted) {
-          final userStateManager = context.read<UserStateManager>();
-          await userStateManager.updateUserRole(newRole);
+          final authStateManager = context.read<AuthStateManager>();
+          await authStateManager.updateUserRole(newRole);
+
+          if (mounted) {
+            // 跳转到对应主页（通过路由守卫自动处理）
+            // 使用 go 直接导航，避免 pop 可能导致的空栈问题
+            if (newRole == AppRoles.receiver) {
+              context.goToReceiverHome();
+            } else {
+              context.goToSenderHome();
+            }
+          }
         }
 
-        // 关闭设置页面
-        if (mounted) {
-          context.pop(); // 关闭设置页面
-          
-          // 跳转到对应主页（通过路由守卫自动处理）
-          if (newRole == AppRoles.receiver) {
-            context.goToReceiverHome();
-          } else {
-            context.goToSenderHome();
-          }
-          
-          Logs.ui.info('角色切换成功: $roleName');
-        }
+        Logs.ui.info('角色切换成功: $roleName');
       } catch (e, stackTrace) {
         Logs.ui.error('切换角色失败: $e', stackTrace: stackTrace);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('切换角色失败: $e'),
+              content: Text(AppStrings.switchRoleFailed(e.toString())),
               backgroundColor: AppColors.errorColor,
             ),
           );
@@ -111,7 +98,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
       case AppRoles.sender:
         return AppStrings.roleSender;
       default:
-        return '未设置';
+        return AppStrings.roleNotSet;
     }
   }
 
@@ -166,8 +153,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
               children: [
                 Text(
                   _getRoleName(widget.currentRole),
-                  style: TextStyle(
-                    fontSize: 20,
+                  style: AppTextStyles.bodyLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? AppColors.darkTextColor : AppColors.textColor,
                   ),
@@ -175,8 +161,7 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
                 const SizedBox(height: 4),
                 Text(
                   AppStrings.switchRoleHint,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.locationTitle.copyWith(
                     color: isDark
                         ? AppColors.darkLightTextColor
                         : AppColors.lightTextColor,
@@ -195,6 +180,104 @@ class _RoleSwitchCardState extends State<RoleSwitchCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// ============================================
+/// 角色切换确认对话框（警告风格）
+///
+/// 设计原则：
+/// - "取消"按钮显眼、使用安心的绿色
+/// - "确定"按钮不显眼、使用警告的橙色
+/// - 让用户更容易选择"取消"，避免误操作
+/// ============================================
+
+class _RoleSwitchConfirmDialog extends StatelessWidget {
+  final String targetRole;
+
+  const _RoleSwitchConfirmDialog({
+    required this.targetRole,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      // 标题使用警告色
+      title: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.warningColor,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              AppStrings.switchRole,
+              style: AppTextStyles.dialogTitle.copyWith(
+                color: AppColors.warningColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      // 内容
+      content: Text(
+        AppStrings.confirmSwitchRole(targetRole),
+        style: AppTextStyles.dialogContent,
+      ),
+      // 按钮区域：调换位置，取消在左（显眼），确定在右（不显眼）
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      actions: [
+        Row(
+          children: [
+            // 确定按钮（左边）- 不显眼，使用OutlinedButton + 警告色
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warningColor,
+                  side: BorderSide(color: AppColors.warningColor, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.confirm,
+                  style: AppTextStyles.dialogButton.copyWith(
+                    color: AppColors.warningColor,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // 取消按钮（右边）- 显眼，使用ElevatedButton + 安心的绿色
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.successColor,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.cancel,
+                  style: AppTextStyles.dialogButton.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

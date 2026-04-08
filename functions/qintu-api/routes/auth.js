@@ -22,8 +22,12 @@ const app = cloudbase.init({
   env: process.env.TCB_ENV || process.env.CLOUDBASE_ENV_ID || 'qintu-cloudebase-5f5bpuj13bc6467'
 });
 
-// 模拟验证码存储（生产环境应使用 Redis）
+// 模拟验证码存储（仅开发期使用，生产环境应使用 Redis 或数据库）
 const mockVerificationCodes = new Map();
+
+// ⚠️ 开发模式开关：仅在开发环境启用 mock 逻辑
+// 生产环境必须设置 NODE_ENV=production，否则 mock 逻辑会泄露敏感信息
+const isDevMode = process.env.NODE_ENV !== 'production';
 
 /**
  * POST /api/auth/send-code
@@ -43,13 +47,12 @@ router.post('/send-code', async (req, res) => {
     const smsSignId = process.env.SMS_SIGN_ID;
     const smsTemplateId = process.env.SMS_TEMPLATE_ID;
 
-    if (!smsSignId || !smsTemplateId) {
-      console.warn('[Auth] 未配置短信签名或模板 ID，返回模拟验证码');
-      // 开发阶段：返回模拟 verification_id
+    // ⚠️ 开发模式：返回模拟验证码（mock_code 仅在此模式下返回）
+    if (isDevMode && (!smsSignId || !smsTemplateId)) {
+      console.warn('[Auth] 开发模式：未配置短信签名/模板 ID，返回模拟验证码');
       const verificationId = 'mock_vid_' + Date.now();
       const mockCode = '123456';
-      
-      // 存储模拟验证码（5分钟过期）
+
       mockVerificationCodes.set(verificationId, {
         code: mockCode,
         phone: phone_number,
@@ -59,8 +62,13 @@ router.post('/send-code', async (req, res) => {
       return success(res, {
         message: '验证码已发送（模拟模式）',
         verification_id: verificationId,
-        mock_code: mockCode // 提示测试用的固定验证码
+        mock_code: mockCode // 仅开发期返回，生产环境自动隐藏
       });
+    }
+
+    // ⚠️ 生产模式：必须配置短信服务
+    if (!smsSignId || !smsTemplateId) {
+      return error(res, '短信服务未配置，请联系管理员', 'SMS_NOT_CONFIGURED', 500);
     }
 
     // 发送短信
@@ -104,6 +112,11 @@ router.post('/verify-code', async (req, res) => {
 
     // 检查是否是模拟模式
     if (verification_id.startsWith('mock_vid_')) {
+      // ⚠️ 生产模式拒绝 mock 请求
+      if (!isDevMode) {
+        return error(res, '模拟验证码仅适用于开发环境', 'MOCK_NOT_ALLOWED', 400);
+      }
+
       const mockData = mockVerificationCodes.get(verification_id);
       
       if (!mockData) {
@@ -175,6 +188,11 @@ router.post('/sign-in', async (req, res) => {
 
     console.log(`[Auth] 用户登录: verification_token=${verification_token}`);
 
+    // ⚠️ 生产模式拒绝 mock 令牌
+    if (verification_token.startsWith('mock_vtoken_') && !isDevMode) {
+      return error(res, '模拟令牌仅适用于开发环境', 'MOCK_NOT_ALLOWED', 400);
+    }
+
     // 检查验证令牌
     const tokenData = mockVerificationCodes.get(verification_token);
     
@@ -231,6 +249,14 @@ router.post('/sign-in', async (req, res) => {
       [user.openid]
     );
 
+    // 查询待确认的绑定请求数量
+    const pendingRequestsResult = await query(
+      `SELECT COUNT(*) as count FROM user_bindings 
+       WHERE receiver_openid = ? AND status = 'pending'`,
+      [user.openid]
+    );
+    const pending_count = pendingRequestsResult[0].count;
+
     // 清理已使用的验证令牌
     mockVerificationCodes.delete(verification_token);
 
@@ -241,7 +267,8 @@ router.post('/sign-in', async (req, res) => {
       refresh_expires_in: refreshExpiresIn,
       uid: user.openid,
       phone: user.phone,
-      user_type: user.user_type
+      user_type: user.user_type,
+      pending_count: pending_count
     });
   } catch (err) {
     console.error('[Auth] 登录异常:', err);
@@ -264,6 +291,11 @@ router.post('/sign-up', async (req, res) => {
     }
 
     console.log(`[Auth] 用户注册: phone=${phone_number}`);
+
+    // ⚠️ 生产模式拒绝 mock 令牌
+    if (verification_token.startsWith('mock_vtoken_') && !isDevMode) {
+      return error(res, '模拟令牌仅适用于开发环境', 'MOCK_NOT_ALLOWED', 400);
+    }
 
     // 检查验证令牌
     const tokenData = mockVerificationCodes.get(verification_token);
@@ -326,6 +358,7 @@ router.post('/sign-up', async (req, res) => {
     // 清理已使用的验证令牌
     mockVerificationCodes.delete(verification_token);
 
+    // 新注册用户 pending_count 为 0
     return success(res, {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -333,7 +366,8 @@ router.post('/sign-up', async (req, res) => {
       refresh_expires_in: refreshExpiresIn,
       uid: openid,
       phone: phone_number,
-      user_type: 'pending'
+      user_type: 'pending',
+      pending_count: 0
     });
   } catch (err) {
     console.error('[Auth] 注册异常:', err);
@@ -356,6 +390,12 @@ router.post('/refresh-token', async (req, res) => {
     }
 
     console.log(`[Auth] 刷新令牌`);
+
+    // ⚠️ 生产模式拒绝 mock 令牌
+    if (refresh_token.startsWith('refresh_') && !isDevMode) {
+      // 在生产模式下，refresh_token 应该由 CloudBase Auth 签发，而不是 mock 生成
+      return error(res, '模拟令牌仅适用于开发环境', 'MOCK_NOT_ALLOWED', 401);
+    }
 
     // 检查刷新令牌
     const tokenData = mockVerificationCodes.get(refresh_token);
@@ -439,6 +479,11 @@ router.post('/sign-out', async (req, res) => {
     const accessToken = authHeader.substring(7);
 
     console.log(`[Auth] 用户登出`);
+
+    // ⚠️ 生产模式拒绝 mock 令牌
+    if (accessToken.startsWith('access_') && !isDevMode) {
+      return error(res, '模拟令牌仅适用于开发环境', 'MOCK_NOT_ALLOWED', 401);
+    }
 
     // 删除访问令牌
     mockVerificationCodes.delete(accessToken);

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../state/managers/user_state_manager.dart';
-import '../state/models/user_state.dart';
+import '../managers/auth_state_manager.dart';
+import '../models/user_state.dart';
 import '../features/auth/auth_page.dart';
 import '../features/role/role_selection_page.dart';
 import '../features/receiver/receiver_home_page.dart';
@@ -25,6 +25,11 @@ class AppRoutes {
 /// 应用路由配置
 class AppRouter {
   static GoRouter? _router;
+
+  /// 重置路由单例（用于测试）
+  static void resetRouter() {
+    _router = null;
+  }
 
   static GoRouter getRouter() {
     // 如果已经初始化，直接返回（避免重复初始化）
@@ -56,11 +61,10 @@ class AppRouter {
           path: AppRoutes.roleSelection,
           name: 'role-selection',
           builder: (context, state) {
-            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
+            final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
             return RoleSelectionPage(
-              userId: userStateManager.state.userId ?? '',
-              phone: userStateManager.state.phoneNumber ?? '',
-              accessToken: userStateManager.state.accessToken ?? '',
+              userId: authStateManager.state.userId ?? '',
+              phone: authStateManager.state.phoneNumber ?? '',
             );
           },
         ),
@@ -70,11 +74,10 @@ class AppRouter {
           path: AppRoutes.receiverHome,
           name: 'receiver-home',
           builder: (context, state) {
-            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
+            final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
             return ReceiverHomePage(
-              userId: userStateManager.state.userId ?? '',
-              phone: userStateManager.state.phoneNumber ?? '',
-              accessToken: userStateManager.state.accessToken ?? '',
+              userId: authStateManager.state.userId ?? '',
+              phone: authStateManager.state.phoneNumber ?? '',
             );
           },
         ),
@@ -84,10 +87,9 @@ class AppRouter {
           path: AppRoutes.senderHome,
           name: 'sender-home',
           builder: (context, state) {
-            final userStateManager = Provider.of<UserStateManager>(context, listen: false);
+            final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
             return SenderMainScreen(
-              userId: userStateManager.state.userId ?? '',
-              accessToken: userStateManager.state.accessToken ?? '',
+              userId: authStateManager.state.userId ?? '',
             );
           },
         ),
@@ -111,10 +113,10 @@ class AppRouter {
     // 确保 Provider 已经初始化
     if (!context.mounted) return null;
 
-    final userStateManager = Provider.of<UserStateManager>(context, listen: false);
-    final authStatus = userStateManager.state.authStatus;
-    final isLoggedIn = userStateManager.state.isLoggedIn;
-    final userRole = userStateManager.state.userRole;
+    final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
+    final authStatus = authStateManager.state.authStatus;
+    final isLoggedIn = authStateManager.state.isLoggedIn;
+    final userRole = authStateManager.state.userRole;
 
     Logs.ui.info('🧭 [ROUTER] authStatus=$authStatus, isLoggedIn=$isLoggedIn, userRole=$userRole');
 

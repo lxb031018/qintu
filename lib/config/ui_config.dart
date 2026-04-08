@@ -34,21 +34,11 @@ class UIConfig {
   static const double largeIconSize = 64.0;
 
   // ==================== 字体配置 ====================
+  // 注意：所有字体大小现在由 AppTextStyles 统一管理，支持动态缩放
+  // 请参考：lib/theme/app_text_styles.dart
 
   /// 字体家族
   static const String fontFamily = 'PingFang SC';
-
-  /// 标题字体大小
-  static const double titleFontSize = 36.0;
-
-  /// 副标题字体大小
-  static const double subtitleFontSize = 24.0;
-
-  /// 正文字体大小
-  static const double bodyFontSize = 18.0;
-
-  /// 按钮字体大小
-  static const double buttonFontSize = 24.0;
 
   // ==================== 动画配置 ====================
 

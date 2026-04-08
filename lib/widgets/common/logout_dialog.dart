@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
-import '../../config/app_config.dart';
 import '../../services/secure_storage.dart';
 import '../../utils/logger.dart';
+import '../../theme/app_text_styles.dart';
 
 /// 退出登录确认对话框
 ///
@@ -42,11 +42,9 @@ class LogoutDialog extends StatelessWidget {
       title: Text(
         AppStrings.logoutConfirmTitle,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 28,
+        style: AppTextStyles.emojiLarge.copyWith(
           fontWeight: FontWeight.bold,
           color: Colors.black87,
-          fontFamily: AppConfig.fontFamily,
         ),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -67,10 +65,8 @@ class LogoutDialog extends StatelessWidget {
                 ),
                 child: Text(
                   AppStrings.confirm,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: AppConfig.fontFamily,
+                  style: AppTextStyles.dialogConfirmButton.copyWith(
+                    fontSize: 22 * AppTextStyles.fontSizeScale,
                   ),
                 ),
               ),
@@ -90,10 +86,8 @@ class LogoutDialog extends StatelessWidget {
                 ),
                 child: Text(
                   AppStrings.cancel,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: AppConfig.fontFamily,
+                  style: AppTextStyles.dialogButton.copyWith(
+                    fontSize: 22 * AppTextStyles.fontSizeScale,
                   ),
                 ),
               ),

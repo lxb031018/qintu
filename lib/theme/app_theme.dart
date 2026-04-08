@@ -1,195 +1,161 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../config/ui_config.dart';
+import 'app_text_styles.dart';
 
 /// 应用主题配置
 ///
 /// 统一管理浅色和深色主题的配置
+/// 注意：所有文字样式现在使用 AppTextStyles，支持动态字体缩放
 class AppTheme {
-  /// 浅色主题
-  static ThemeData get lightTheme => _buildLightTheme();
+  /// 字体缩放比例（默认值，实际使用时应从 SettingsManager 获取）
+  static double _fontSizeScale = 1.0;
 
-  /// 深色主题
-  static ThemeData get darkTheme => _buildDarkTheme();
+  /// 设置字体缩放比例
+  static void setFontSizeScale(double scale) {
+    _fontSizeScale = scale;
+  }
 
-  static ThemeData _buildLightTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.brandGreen,
-        brightness: Brightness.light,
-      ),
-      scaffoldBackgroundColor: AppColors.backgroundColor,
+  /// 获取当前字体缩放比例
+  static double get fontSizeScale => _fontSizeScale;
+
+  /// 构建浅色主题
+  static ThemeData buildLightTheme() {
+    return _buildTheme(
+      scaffoldColor: AppColors.backgroundColor,
       cardColor: AppColors.cardBackground,
-      dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.cardBackground,
-      ),
+      dialogColor: AppColors.cardBackground,
       dividerColor: AppColors.dividerColor,
-      textTheme: _lightTextTheme,
-      appBarTheme: _lightAppBarTheme,
-      cardTheme: _lightCardTheme,
-      inputDecorationTheme: _lightInputDecoration,
-      elevatedButtonTheme: _lightButtonTheme,
-      floatingActionButtonTheme: _lightFabTheme,
+      textColor: AppColors.textColor,
+      lightTextColor: AppColors.lightTextColor,
+      inputFillColor: AppColors.cardBackground,
+      borderColor: AppColors.borderColor,
+      focusedBorderColor: AppColors.focusBorderColor,
+      fabColor: Colors.white,
     );
   }
 
-  static ThemeData _buildDarkTheme() {
+  /// 构建深色主题
+  static ThemeData buildDarkTheme() {
+    return _buildTheme(
+      scaffoldColor: AppColors.darkBackgroundColor,
+      cardColor: AppColors.darkCardBackground,
+      dialogColor: AppColors.darkCardBackground,
+      dividerColor: AppColors.darkDividerColor,
+      textColor: AppColors.darkTextColor,
+      lightTextColor: AppColors.darkLightTextColor,
+      inputFillColor: AppColors.darkInputBackground,
+      borderColor: AppColors.darkBorderColor,
+      focusedBorderColor: AppColors.focusBorderColor,
+      fabColor: AppColors.darkOnPrimaryColor,
+    );
+  }
+
+  static ThemeData _buildTheme({
+    required Color scaffoldColor,
+    required Color cardColor,
+    required Color dialogColor,
+    required Color dividerColor,
+    required Color textColor,
+    required Color lightTextColor,
+    required Color inputFillColor,
+    required Color borderColor,
+    required Color focusedBorderColor,
+    required Color fabColor,
+  }) {
+    // 同步字体缩放到 AppTextStyles
+    AppTextStyles.setFontSizeScale(_fontSizeScale);
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.brandGreen,
-        brightness: Brightness.dark,
+        brightness: scaffoldColor == AppColors.backgroundColor ? Brightness.light : Brightness.dark,
       ),
-      scaffoldBackgroundColor: AppColors.darkBackgroundColor,
-      cardColor: AppColors.darkCardBackground,
-      dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.darkCardBackground,
+      scaffoldBackgroundColor: scaffoldColor,
+      cardColor: cardColor,
+      dialogTheme: DialogThemeData(backgroundColor: dialogColor),
+      dividerColor: dividerColor,
+      textTheme: AppTextStyles.textTheme,
+      appBarTheme: _buildAppBarTheme(scaffoldColor, textColor),
+      cardTheme: _buildCardTheme(cardColor),
+      inputDecorationTheme: _buildInputDecoration(inputFillColor, borderColor, focusedBorderColor, lightTextColor),
+      elevatedButtonTheme: _buildButtonTheme(),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.brandGreen,
+        foregroundColor: fabColor,
       ),
-      dividerColor: AppColors.darkDividerColor,
-      textTheme: _darkTextTheme,
-      appBarTheme: _darkAppBarTheme,
-      cardTheme: _darkCardTheme,
-      inputDecorationTheme: _darkInputDecoration,
-      elevatedButtonTheme: _darkButtonTheme,
-      floatingActionButtonTheme: _darkFabTheme,
     );
   }
 
-  static final _lightTextTheme = TextTheme(
-    displayLarge: _createTextStyle(57, AppColors.textColor),
-    displayMedium: _createTextStyle(45, AppColors.textColor),
-    headlineLarge: _createTextStyle(UIConfig.titleFontSize, AppColors.textColor, FontWeight.bold),
-    headlineMedium: _createTextStyle(UIConfig.subtitleFontSize, AppColors.textColor, FontWeight.bold),
-    titleLarge: _createTextStyle(UIConfig.subtitleFontSize, AppColors.textColor, FontWeight.w600),
-    bodyLarge: _createTextStyle(UIConfig.bodyFontSize, AppColors.textColor),
-    bodyMedium: _createTextStyle(UIConfig.bodyFontSize - 2, AppColors.textColor),
-    bodySmall: _createTextStyle(UIConfig.bodyFontSize - 4, AppColors.lightTextColor),
-    labelLarge: _createTextStyle(UIConfig.buttonFontSize, AppColors.textColor, FontWeight.bold),
-  );
-
-  static final _darkTextTheme = TextTheme(
-    displayLarge: _createTextStyle(57, AppColors.darkTextColor),
-    displayMedium: _createTextStyle(45, AppColors.darkTextColor),
-    headlineLarge: _createTextStyle(UIConfig.titleFontSize, AppColors.darkTextColor, FontWeight.bold),
-    headlineMedium: _createTextStyle(UIConfig.subtitleFontSize, AppColors.darkTextColor, FontWeight.bold),
-    titleLarge: _createTextStyle(UIConfig.subtitleFontSize, AppColors.darkTextColor, FontWeight.w600),
-    bodyLarge: _createTextStyle(UIConfig.bodyFontSize, AppColors.darkTextColor),
-    bodyMedium: _createTextStyle(UIConfig.bodyFontSize - 2, AppColors.darkTextColor),
-    bodySmall: _createTextStyle(UIConfig.bodyFontSize - 4, AppColors.darkLightTextColor),
-    labelLarge: _createTextStyle(UIConfig.buttonFontSize, AppColors.darkTextColor, FontWeight.bold),
-  );
-
-  static TextStyle _createTextStyle(double fontSize, Color color, [FontWeight fontWeight = FontWeight.normal]) {
-    return TextStyle(
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      color: color,
-      fontFamily: UIConfig.fontFamily,
+  static AppBarTheme _buildAppBarTheme(Color backgroundColor, Color textColor) {
+    return AppBarTheme(
+      backgroundColor: backgroundColor,
+      foregroundColor: textColor,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: AppTextStyles.appBarTitle,
     );
   }
 
-  static final _lightAppBarTheme = AppBarTheme(
-    backgroundColor: AppColors.backgroundColor,
-    foregroundColor: AppColors.textColor,
-    elevation: 0,
-    centerTitle: true,
-    titleTextStyle: _createTextStyle(UIConfig.titleFontSize, AppColors.textColor, FontWeight.bold),
-  );
-
-  static final _darkAppBarTheme = AppBarTheme(
-    backgroundColor: AppColors.darkBackgroundColor,
-    foregroundColor: AppColors.darkTextColor,
-    elevation: 0,
-    centerTitle: true,
-    titleTextStyle: _createTextStyle(UIConfig.titleFontSize, AppColors.darkTextColor, FontWeight.bold),
-  );
-
-  static final _lightCardTheme = CardThemeData(
-    color: AppColors.cardBackground,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-    ),
-  );
-
-  static final _darkCardTheme = CardThemeData(
-    color: AppColors.darkCardBackground,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-    ),
-  );
-
-  static final _lightInputDecoration = InputDecorationTheme(
-    fillColor: AppColors.cardBackground,
-    filled: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: const BorderSide(color: AppColors.borderColor),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: const BorderSide(color: AppColors.borderColor),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: BorderSide(color: AppColors.focusBorderColor, width: 2),
-    ),
-    labelStyle: const TextStyle(color: AppColors.brandGreen, fontFamily: UIConfig.fontFamily),
-    hintStyle: const TextStyle(color: AppColors.lightTextColor, fontFamily: UIConfig.fontFamily),
-  );
-
-  static final _darkInputDecoration = InputDecorationTheme(
-    fillColor: AppColors.darkInputBackground,
-    filled: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: const BorderSide(color: AppColors.darkBorderColor),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: const BorderSide(color: AppColors.darkBorderColor),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UIConfig.borderRadius),
-      borderSide: BorderSide(color: AppColors.focusBorderColor, width: 2),
-    ),
-    labelStyle: const TextStyle(color: AppColors.brandGreen, fontFamily: UIConfig.fontFamily),
-    hintStyle: const TextStyle(color: AppColors.darkInputHintColor, fontFamily: UIConfig.fontFamily),
-  );
-
-  static final _lightButtonTheme = ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.brandGreen,
-      foregroundColor: Colors.white,
-      minimumSize: const Size(double.infinity, UIConfig.buttonHeight),
+  static CardThemeData _buildCardTheme(Color cardColor) {
+    return CardThemeData(
+      color: cardColor,
+      elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(UIConfig.borderRadius),
       ),
-      textStyle: _createTextStyle(UIConfig.buttonFontSize, Colors.white, FontWeight.bold),
-    ),
-  );
+    );
+  }
 
-  static final _darkButtonTheme = ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.brandGreen,
-      foregroundColor: Colors.white,
-      minimumSize: const Size(double.infinity, UIConfig.buttonHeight),
-      shape: RoundedRectangleBorder(
+  static InputDecorationTheme _buildInputDecoration(
+    Color fillColor,
+    Color borderColor,
+    Color focusedBorderColor,
+    Color hintColor,
+  ) {
+    return InputDecorationTheme(
+      fillColor: fillColor,
+      filled: true,
+      border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(UIConfig.borderRadius),
+        borderSide: BorderSide(color: borderColor),
       ),
-      textStyle: _createTextStyle(UIConfig.buttonFontSize, Colors.white, FontWeight.bold),
-    ),
-  );
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(UIConfig.borderRadius),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(UIConfig.borderRadius),
+        borderSide: BorderSide(color: focusedBorderColor, width: 2),
+      ),
+      labelStyle: TextStyle(color: AppColors.brandGreen, fontFamily: UIConfig.fontFamily),
+      hintStyle: TextStyle(color: hintColor, fontFamily: UIConfig.fontFamily),
+    );
+  }
 
-  static const _lightFabTheme = FloatingActionButtonThemeData(
-    backgroundColor: AppColors.brandGreen,
-    foregroundColor: Colors.white,
-  );
+  static ElevatedButtonThemeData _buildButtonTheme() {
+    return ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.brandGreen,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, UIConfig.buttonHeight),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(UIConfig.borderRadius),
+        ),
+        textStyle: AppTextStyles.button,
+      ),
+    );
+  }
 
-  static const _darkFabTheme = FloatingActionButtonThemeData(
-    backgroundColor: AppColors.brandGreen,
-    foregroundColor: AppColors.darkOnPrimaryColor,
-  );
+  // ==================== 保留旧方法以兼容过渡（后续可删除）====================
+
+  /// 浅色主题（已废弃，使用 buildLightTheme 代替）
+  @Deprecated('Use buildLightTheme() instead')
+  static ThemeData get lightTheme => buildLightTheme();
+
+  /// 深色主题（已废弃，使用 buildDarkTheme 代替）
+  @Deprecated('Use buildDarkTheme() instead')
+  static ThemeData get darkTheme => buildDarkTheme();
 }
+

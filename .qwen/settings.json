@@ -14,7 +14,15 @@
       "Bash(cloudbase *)",
       "Bash(npm install *)",
       "Bash(node *)",
-      "Bash(flutter *)"
+      "Bash(flutter *)",
+      "Bash(chcp *)",
+      "Bash(type *)",
+      "Bash(move *)",
+      "Bash(findstr *)",
+      "Bash(git checkout *)",
+      "Bash(select-string *)",
+      "Bash(select-object *)",
+      "Bash(dart *)"
     ]
   },
   "$version": 3

@@ -4,10 +4,9 @@ import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
-import '../../utils/constants.dart';
+import '../../services/api_client.dart';
 import '../../utils/logger.dart';
-import '../../state/managers/user_state_manager.dart';
+import '../../managers/auth_state_manager.dart';
 import '../../router/app_router.dart';
 import '../../models/auth_result.dart';
 import '../../utils/error_mapper.dart';
@@ -129,27 +128,25 @@ class _AuthPageState extends State<AuthPage> {
         phoneNumber: formattedPhone,
       );
 
-      // 使用 UserStateManager 统一设置认证状态
+      // 使用 AuthStateManager 统一设置认证状态
       if (mounted) {
-        final userStateManager = context.read<UserStateManager>();
-        await userStateManager.setAuthenticated(
+        final authStateManager = context.read<AuthStateManager>();
+        await authStateManager.setAuthenticated(
           userId: _authResult!.uid,
           accessToken: _authResult!.accessToken,
           refreshToken: _authResult!.refreshToken,
           accessTokenExpiresIn: _authResult!.accessTokenExpiresIn,
           refreshTokenExpiresIn: _authResult!.refreshTokenExpiresIn,
           phoneNumber: formattedPhone,
+          pendingBindingCount: _authResult!.pendingCount,
         );
 
         // 同步用户信息到 MySQL 数据库（确保后端有记录）
         try {
-          final apiService = ApiService(
-            baseUrl: Constants.baseUrl,
-            openid: _authResult!.uid,
-          );
-          await apiService.syncUser(
-            openid: _authResult!.uid,
-            phone: formattedPhone,
+          final apiClient = ApiClient();
+          await apiClient.post(
+            '/api/users/sync',
+            data: {'openid': _authResult!.uid, 'phone': formattedPhone},
           );
           Logs.auth.info('用户同步成功');
         } catch (e) {

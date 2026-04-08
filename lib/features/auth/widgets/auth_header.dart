@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../config/app_config.dart';
 import '../../../constants/app_strings.dart';
+import '../../../theme/app_text_styles.dart';
 
 /// 认证页标题组件
 ///
@@ -27,11 +27,9 @@ class AuthHeader extends StatelessWidget {
         // 标题
         Text(
           AppStrings.welcomeTitle,
-          style: TextStyle(
-            fontSize: 36,
+          style: AppTextStyles.emojiLarge.copyWith(
             fontWeight: FontWeight.bold,
             color: textColor,
-            fontFamily: AppConfig.fontFamily,
           ),
         ),
 
@@ -40,10 +38,8 @@ class AuthHeader extends StatelessWidget {
         // 副标题
         Text(
           AppStrings.loginSubtitle,
-          style: TextStyle(
-            fontSize: 18,
+          style: AppTextStyles.bodySmall.copyWith(
             color: lightTextColor,
-            fontFamily: AppConfig.fontFamily,
           ),
         ),
       ],

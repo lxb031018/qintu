@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../services/secure_storage.dart';
 import '../../managers/theme_manager.dart';
+import '../../theme/app_text_styles.dart';
 import 'widgets/role_switch_card.dart';
 import 'widgets/theme_selector_card.dart';
 import 'widgets/logout_card.dart';
+import 'widgets/font_size_selector_card.dart';
 
 /// ============================================
 /// 设置页面
@@ -24,14 +27,21 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver {
   String _currentRole = '';
   ThemeMode _currentThemeMode = ThemeMode.system;
-  final ThemeManager _themeManager = ThemeManager.instance;
+  late ThemeManager _themeManager;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _themeManager.addListener(_onThemeChanged);
     _loadSettings();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 在 didChangeDependencies 中获取 Provider
+    _themeManager = Provider.of<ThemeManager>(context, listen: false);
+    _themeManager.addListener(_onThemeChanged);
   }
 
   @override
@@ -103,6 +113,11 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
 
           const SizedBox(height: 16),
 
+          // 字体大小设置卡片
+          const FontSizeSelectorCard(),
+
+          const SizedBox(height: 16),
+
           // 主题设置卡片
           ThemeSelectorCard(
             currentThemeMode: _currentThemeMode,
@@ -120,8 +135,7 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
           Center(
             child: Text(
               '${AppStrings.appName} v1.0.0',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTextStyles.caption.copyWith(
                 color: isDark
                     ? AppColors.darkLightTextColor
                     : AppColors.lightTextColor,

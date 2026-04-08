@@ -47,23 +47,20 @@
 | 模块 | 文件 | 状态 |
 |------|------|------|
 | **数据模型** | `lib/models/` | ✅ 100% |
-|  - User | `user.dart` | ✅ |
-|  - Binding | `binding.dart` | ✅ |
-|  - NavigationTask | `navigation_task.dart` | ✅ |
-|  - Location | `location.dart` | ✅ |
-| **API 服务** | `lib/services/` | ✅ 100% |
-|  - ApiService | `api_service.dart` | ✅ 21 个接口 |
-|  - ApiResponse | `api_response.dart` | ✅ |
-| **状态管理** | `lib/providers/` | ✅ 50% |
-|  - UserProvider | `user_provider.dart` | ✅ |
-|  - BindingProvider | 待实现 | ⏳ |
+| **API 服务** | `lib/services/api_client.dart` | ✅ 基于 Dio |
+|  - ApiClient | `api_client.dart` | ✅ 统一 HTTP 客户端 |
+| **状态管理** | `lib/state/` + `lib/providers/` | |
+|  - AuthStateManager | `state/managers/auth_state_manager.dart` | ✅ 认证状态 |
+|  - BindingProvider | `providers/binding_provider.dart` | ✅ 绑定状态 |
 |  - TaskProvider | 待实现 | ⏳ |
-| **UI 页面** | `lib/screens/` | ✅ 40% |
-|  - 登录页 | `auth/login_screen.dart` | ✅ |
-|  - 主页（3 Tab） | `home/main_screen.dart` | ✅ |
-|  - 主页 Tab | `home/home_tab.dart` | ✅ |
-|  - 绑定 Tab | `home/binding_tab.dart` | ✅ |
-|  - 设置 Tab | `home/settings_tab.dart` | ✅ |
+| **路由** | `lib/router/app_router.dart` | ✅ go_router + 路由守卫 |
+| **UI 页面** | `lib/features/` | |
+|  - 认证页 | `features/auth/auth_page.dart` | ✅ |
+|  - 角色选择 | `features/role/role_selection_page.dart` | ✅ |
+|  - 接收者主页 | `features/receiver/receiver_home_page.dart` | ✅ |
+|  - 发送者主页（3 Tab） | `features/sender/sender_main_screen.dart` | ✅ |
+|  - 绑定管理 | `features/binding/binding_page.dart` | ✅ |
+|  - 设置页 | `features/settings/settings_page.dart` | ✅ |
 | **工具模块** | `lib/utils/` | ✅ 100% |
 |  - 日志 | `logger.dart` | ✅ |
 |  - 常量 | `constants.dart` | ✅ |
@@ -75,7 +72,7 @@
 | 路线规划页 | 高德地图集成 + 路线预览 | 1-2 天 |
 | 导航页 | 高德导航组件 + 前台保活 | 2-3 天 |
 | 位置查看页 | 地图显示接收者位置 | 0.5 天 |
-| 二维码生成/扫描 | qr_flutter + mobile_scanner | 0.5 天 |
+| 二维码生成/扫描 | qr_flutter + mobile_scanner（面对面分享路线，无需绑定） | 0.5 天 |
 | BindingProvider | 绑定状态管理 | 0.5 天 |
 | TaskProvider | 任务状态管理 | 0.5 天 |
 
@@ -173,13 +170,52 @@ qintu/
 
 ### 发送者端
 - 主页：显示绑定接收者列表 + 发送路线按钮
-- 绑定：管理绑定关系 + 生成绑定码/扫码
+- 绑定：管理绑定关系 + 手机号绑定（远程建立关系）
 - 设置：个人资料 + 通知设置 + 退出登录
 
 ### 接收者端
 - 主页：显示等待状态或导航任务
 - 绑定：查看绑定信息
 - 设置：个人资料 + 退出登录
+
+---
+
+## 🎯 核心场景说明
+
+### 场景 1：手机号绑定（建立长期/短期关系）
+- **用途**：建立长期或短期绑定关系的唯一方法
+- **场景**：发送者知道对方手机号，远程建立绑定关系
+- **流程**：输入对方 11 位手机号 → 选择绑定有效期 → 确认绑定 → 建立关系
+- **有效期设置**：
+  - **永久绑定**：长期关系（如家庭成员）
+  - **有限时间绑定**：自定义有效期（如旅游团导游带团 7 天）
+  - 由发送者定义，过期后自动解除绑定
+- **特点**：绑定后可随时查看对方位置、发送导航任务
+
+### 场景 2：二维码分享路线（临时分享）
+- **用途**：一次性分享路线，**无需绑定关系**
+- **场景**：面对面时，发送者生成路线二维码，多人可扫码接受同一路线
+- **流程**：发送者规划路线 → 生成二维码 → 多人扫码 → 各自开始导航
+- **特点**：
+  - 每次规划路线生成一个二维码
+  - 一个二维码可被多人扫描使用
+  - 临时性、无需注册、无需绑定
+
+---
+
+## 🔒 位置共享权限控制
+
+### 双向控制权
+- **发送者**：可以随时允许/拒绝他人查看自己的位置
+- **接收者**：可以随时允许/拒绝他人查看自己的位置
+
+### 控制时机
+- **导航开始前**：在规划路线后、导航启动前设置
+- **导航进行中**：在导航过程中随时切换
+
+### 权限选项
+- **允许查看**：其他人可以看到实时位置
+- **拒绝查看**：隐藏自己的位置信息
 
 ---
 
@@ -190,28 +226,30 @@ qintu/
 ### 核心接口示例
 
 ```dart
-// 用户注册
-await apiService.registerUser(
-  openid: 'xxx',
-  phone: '+86 13800138000',
-  nickname: '张三',
-  userType: 'both',
-);
+final apiClient = ApiClient();
 
-// 生成绑定码
-await apiService.generateBindCode(
-  receiverPhone: '+86 13800138000',
-  remark: '给父亲的绑定',
-);
+// 用户注册
+await apiClient.post('/api/users/register', data: {
+  'openid': 'xxx',
+  'phone': '+86 13800138000',
+  'nickname': '张三',
+  'user_type': 'both',
+});
+
+// 手机号绑定
+await apiClient.post('/api/bindings/generate', data: {
+  'receiver_phone': '+86 13800138000',
+  'remark': '给父亲的绑定',
+});
 
 // 创建导航任务
-await apiService.createNavigationTask(
-  receiverOpenid: 'xxx',
-  endName: '北京站',
-  endLatitude: 39.9042,
-  endLongitude: 116.4074,
-  routeData: {...},
-);
+await apiClient.post('/api/tasks', data: {
+  'receiver_openid': 'xxx',
+  'end_name': '北京站',
+  'end_latitude': 39.9042,
+  'end_longitude': 116.4074,
+  'route_data': {...},
+});
 ```
 
 ---

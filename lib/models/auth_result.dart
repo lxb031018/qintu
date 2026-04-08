@@ -15,6 +15,9 @@ class AuthResult {
 
   /// 用户 ID（从 sub 字段解析）
   final String uid;
+  
+  /// 待确认的绑定请求数量
+  final int pendingCount;
 
   AuthResult({
     required this.accessToken,
@@ -22,6 +25,7 @@ class AuthResult {
     required this.accessTokenExpiresIn,
     required this.refreshTokenExpiresIn,
     required this.uid,
+    this.pendingCount = 0,
   });
 
   /// 从 JSON 创建实例
@@ -31,7 +35,8 @@ class AuthResult {
       refreshToken: json['refresh_token'] ?? '',
       accessTokenExpiresIn: json['expires_in'] ?? 0,
       refreshTokenExpiresIn: json['refresh_expires_in'] ?? 0,
-      uid: json['sub'] ?? '',
+      uid: json['sub'] ?? json['uid'] ?? '',
+      pendingCount: json['pending_count'] ?? 0,
     );
   }
 
@@ -43,6 +48,7 @@ class AuthResult {
       'expires_in': accessTokenExpiresIn,
       'refresh_expires_in': refreshTokenExpiresIn,
       'sub': uid,
+      'pending_count': pendingCount,
     };
   }
 

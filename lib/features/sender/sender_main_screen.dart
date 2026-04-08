@@ -13,12 +13,10 @@ import '../settings/settings_page.dart';
 
 class SenderMainScreen extends StatefulWidget {
   final String userId;
-  final String accessToken;
 
   const SenderMainScreen({
     super.key,
     required this.userId,
-    required this.accessToken,
   });
 
   @override
@@ -64,10 +62,7 @@ class _SenderMainScreenState extends State<SenderMainScreen> {
     switch (_currentIndex) {
       case 0:
         // Home Tab - 路径规划内容
-        return SenderHomeContent(
-          userId: widget.userId,
-          accessToken: widget.accessToken,
-        );
+        return SenderHomeContent(userId: widget.userId);
       case 1:
         // 绑定 Tab - 使用 Provider 包装
         return const _BindingTabWrapper();
@@ -75,10 +70,7 @@ class _SenderMainScreenState extends State<SenderMainScreen> {
         // 设置 Tab
         return const SettingsPage();
       default:
-        return SenderHomeContent(
-          userId: widget.userId,
-          accessToken: widget.accessToken,
-        );
+        return SenderHomeContent(userId: widget.userId);
     }
   }
 }
@@ -89,7 +81,8 @@ class _BindingTabWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 这里需要提供 BindingProvider 和 UserProvider
+    // 这里需要提供 BindingProvider
+    // AuthStateManager 在 main.dart 中已全局注册
     // 如果 Provider 已经在更高层级提供，可以直接使用 BindingPage
     return const BindingPage();
   }

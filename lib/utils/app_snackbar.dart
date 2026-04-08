@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_text_styles.dart';
 import '../constants/app_colors.dart';
 
 /// ============================================
@@ -37,8 +38,7 @@ class AppSnackbar {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
-            fontSize: 16,
+          style: AppTextStyles.caption.copyWith(
             color: AppColors.whiteText,
           ),
         ),

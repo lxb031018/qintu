@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:x_amap_base/x_amap_base.dart';
+import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
-import '../../config/app_config.dart';
 import '../../constants/app_strings.dart';
 import '../../services/location_service.dart';
 import '../../utils/logger.dart';
-import '../../utils/phone_utils.dart';
+import '../../providers/binding_provider.dart';
 import '../settings/settings_page.dart';
+import '../../theme/app_text_styles.dart';
+import 'widgets/receiver_map_widget.dart';
+import 'widgets/receiver_location_toggle.dart';
+import '../../../services/location_cache_service.dart';
+import '../binding/pending_requests_page.dart';
 
 /// 接收者端主页 - 等待接收导航指引
 
 class ReceiverHomePage extends StatefulWidget {
   final String userId;
   final String phone;
-  final String accessToken;
 
   const ReceiverHomePage({
     super.key,
     required this.userId,
     required this.phone,
-    required this.accessToken,
   });
 
   @override
@@ -27,10 +31,10 @@ class ReceiverHomePage extends StatefulWidget {
 
 class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBindingObserver {
   bool _isLocationEnabled = false;
-  bool _isCheckingLocation = false; // 防止重复检查
-  
-  // 绑定请求相关（TODO: 后续从 Provider 获取）
-  final List<Map<String, dynamic>> _pendingBindingRequests = [];
+
+  // 地图相关
+  LatLng? _currentPosition;
+  dynamic _mapWidgetState;
 
   @override
   void initState() {
@@ -38,8 +42,17 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
     // 注册生命周期观察者
     WidgetsBinding.instance.addObserver(this);
     _checkLocationStatus();
-    // TODO: 加载待确认的绑定请求
-    // _loadPendingBindingRequests();
+    _fetchCurrentPosition(); // 获取当前位置
+    // 加载待确认的绑定请求
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPendingBindingRequests();
+    });
+  }
+
+  /// 加载待确认的绑定请求
+  Future<void> _loadPendingBindingRequests() async {
+    final provider = context.read<BindingProvider>();
+    await provider.loadPendingRequests();
   }
 
   @override
@@ -63,150 +76,55 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
 
   /// 检查定位状态
   Future<void> _checkLocationStatus() async {
-    // 防止重复检查
-    if (_isCheckingLocation) return;
+    final isEnabled = await LocationService.checkPermission();
+    if (mounted) {
+      setState(() => _isLocationEnabled = isEnabled);
+      Logs.ui.info('定位状态更新: ${isEnabled ? "已开启" : "未开启"}');
+    }
+  }
 
-    setState(() => _isCheckingLocation = true);
-
+  /// 获取当前位置并更新地图
+  Future<void> _fetchCurrentPosition() async {
     try {
-      final isEnabled = await LocationService.checkPermission();
-      if (mounted) {
-        setState(() => _isLocationEnabled = isEnabled);
-        Logs.ui.info('定位状态更新: ${isEnabled ? "已开启" : "未开启"}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isCheckingLocation = false);
-      }
-    }
-  }
-
-  /// 打开定位设置
-  Future<void> _openLocationSettings() async {
-    final opened = await LocationService.openLocationSettings();
-    if (opened) {
-      Logs.ui.info('已打开定位设置页面，等待用户操作...');
-      // 不在这里延迟检查，而是等用户返回时由生命周期触发
-    } else {
-      Logs.app.warning('打开定位设置失败');
-    }
-  }
-
-  /// 处理绑定请求
-  Future<void> _handleBindingRequest(Map<String, dynamic> request) async {
-    // 脱敏显示手机号
-    final phone = request['phone'] ?? '未知';
-    final maskedPhone = PhoneUtils.maskPhone(phone);
-    final name = request['name'] ?? '未提供姓名';
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('绑定请求'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('您收到一个绑定请求'),
-              const SizedBox(height: 16),
-              Text(
-                '手机号：$maskedPhone',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text('姓名：$name'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('拒绝'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认绑定'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == true) {
-      // TODO: 调用 API 确认绑定
-      Logs.binding.info('确认绑定: $maskedPhone');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('绑定成功'),
-            backgroundColor: Colors.green,
-          ),
+      final position = await LocationService.getCurrentPosition();
+      if (position != null && mounted) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+        });
+        Logs.ui.info('位置更新: ${position.latitude}, ${position.longitude}');
+        
+        // 缓存位置
+        await LocationCacheService.saveLocation(
+          position.latitude,
+          position.longitude,
         );
       }
-    } else if (result == false) {
-      // TODO: 调用 API 拒绝绑定
-      Logs.binding.info('拒绝绑定: $maskedPhone');
+    } catch (e) {
+      Logs.ui.warning('获取位置失败: $e');
     }
   }
 
-  /// 显示绑定请求列表
+  /// 定位到当前位置
+  void _moveToCurrentPosition() {
+    _mapWidgetState?.moveToCurrentPosition();
+  }
+
+  /// 显示待确认绑定请求页面
   void _showPendingBindingRequests() {
-    if (_pendingBindingRequests.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无待确认的绑定请求')),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: _pendingBindingRequests.length,
-          itemBuilder: (context, index) {
-            final request = _pendingBindingRequests[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                title: Text(PhoneUtils.maskPhone(request['phone'] ?? '未知')),
-                subtitle: Text(request['name'] ?? '未提供姓名'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handleBindingRequest(request);
-                      },
-                      child: const Text('拒绝'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handleBindingRequest(request);
-                      },
-                      child: const Text('确认'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PendingRequestsPage(),
+      ),
+    ).then((_) {
+      // 返回时刷新
+      _loadPendingBindingRequests();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
-    final textColor = isDark ? AppColors.darkTextColor : AppColors.textColor;
-    final lightTextColor = isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -214,42 +132,55 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
       appBar: AppBar(
         backgroundColor: backgroundColor,
         elevation: 0,
-        toolbarHeight: 72,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: _isLocationEnabled
-                  ? AppColors.successColor.withValues(alpha: 0.15)
-                  : AppColors.primaryColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _isLocationEnabled ? Icons.location_on : Icons.location_off,
-                  size: 18,
-                  color: _isLocationEnabled ? AppColors.successColor : AppColors.primaryColor,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _isLocationEnabled ? '定位已开启' : '定位未开启',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: _isLocationEnabled ? AppColors.successColor : AppColors.primaryColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        toolbarHeight: 64,
+        title: const Text(AppStrings.appName),
         actions: [
-          // 设置按钮（右上角）
+          // 绑定请求通知按钮（始终显示，有请求时显示徽章）
+          Consumer<BindingProvider>(
+            builder: (context, provider, child) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_none_rounded),
+                    onPressed: _showPendingBindingRequests,
+                    tooltip: AppStrings.bindingRequests,
+                    iconSize: 28,
+                  ),
+                  if (provider.hasPendingRequests)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: AppColors.errorColor,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          provider.pendingRequestsCount > 99
+                              ? '99+'
+                              : '${provider.pendingRequestsCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          // 设置按钮（最右边）
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, size: 30),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -258,148 +189,92 @@ class _ReceiverHomePageState extends State<ReceiverHomePage> with WidgetsBinding
               );
             },
             tooltip: AppStrings.settings,
-          ),
-          const SizedBox(width: 8),
-          // 绑定请求按钮（如果有新请求显示红点）
-          if (_pendingBindingRequests.isNotEmpty)
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.person_add),
-                  onPressed: _showPendingBindingRequests,
-                  tooltip: '绑定请求',
-                ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '${_pendingBindingRequests.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          // 定位开关按钮
-          Padding(
-            padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-            child: GestureDetector(
-              onTap: _isCheckingLocation ? null : _openLocationSettings,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _isCheckingLocation
-                      ? lightTextColor.withAlpha(77)
-                      : _isLocationEnabled
-                          ? AppColors.successColor.withAlpha(38)
-                          : AppColors.primaryColor,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isCheckingLocation)
-                      const SizedBox(
-                        width: 26,
-                        height: 26,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    else
-                      Icon(
-                        _isLocationEnabled ? Icons.location_on : Icons.location_off,
-                        size: 26,
-                        color: _isLocationEnabled
-                            ? AppColors.successColor
-                            : Colors.white,
-                      ),
-                    if (!_isCheckingLocation) const SizedBox(width: 10),
-                    if (!_isCheckingLocation)
-                      Text(
-                        _isLocationEnabled
-                            ? AppStrings.locationEnabled
-                            : AppStrings.openLocation,
-                        style: TextStyle(
-                          fontSize: 18,
-                          height: 1.2,
-                          color: _isLocationEnabled
-                              ? AppColors.successColor
-                              : Colors.white,
-                          fontFamily: AppConfig.fontFamily,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            iconSize: 30,
+            padding: const EdgeInsets.only(right: 8),
           ),
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 状态图标
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withAlpha(26),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.navigation_outlined,
-                  size: 80,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // 提示文字
-              Text(
-                AppStrings.waitingForNavigation,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                  fontFamily: AppConfig.fontFamily,
+        child: Stack(
+          children: [
+            // 地图组件
+            ReceiverMapWidget(
+              onStateCreated: (state) {
+                _mapWidgetState = state;
+              },
+              currentPosition: _currentPosition,
+              onPositionUpdated: (LatLng position) {
+                setState(() => _currentPosition = position);
+              },
+            ),
+            // 定位开关（AppBar 下方居中）
+            Positioned(
+              top: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ReceiverLocationToggle(
+                  isLocationEnabled: _isLocationEnabled,
+                  onLocationChanged: (isEnabled) {
+                    setState(() => _isLocationEnabled = isEnabled);
+                  },
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                AppStrings.noNavigationTask,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: lightTextColor,
-                  fontFamily: AppConfig.fontFamily,
-                ),
-              ),
-            ],
-          ),
+            ),
+            // 定位到当前位置按钮（右下角）
+            Positioned(
+              bottom: 24,
+              right: 16,
+              child: _buildLocateMeButton(),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  /// 构建定位到当前位置按钮
+  Widget _buildLocateMeButton() {
+    return GestureDetector(
+      onTap: _moveToCurrentPosition,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: _currentPosition != null
+              ? Colors.white
+              : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.my_location,
+              color: _currentPosition != null
+                  ? AppColors.primaryColor
+                  : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              AppStrings.currentLocation,
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+                color: _currentPosition != null
+                    ? AppColors.primaryColor
+                    : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../constants/api_endpoints.dart';
 import '../config/app_config.dart';
 import '../models/auth_result.dart';
@@ -10,6 +10,12 @@ import '../utils/phone_utils.dart';
 /// CloudBase 认证服务 - 封装所有与用户登录相关的 HTTP API 调用
 
 class CloudBaseAuthService {
+  static final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    sendTimeout: const Duration(seconds: 30),
+  ));
+
   /// CloudBase 环境配置
   static String get envId => AppConfig.envId;
 
@@ -24,7 +30,7 @@ class CloudBaseAuthService {
     final key = publishableKey;
     // 打印 Key 的前 10 位以确认是否加载成功，避免泄露完整 Key
     Logs.auth.info('🔑 获取请求头, Publishable Key: ${key.isEmpty ? "未加载 (空字符串)" : "${key.substring(0, 10)}..."}');
-    
+
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $key',
@@ -46,47 +52,44 @@ class CloudBaseAuthService {
     Logs.api.info('请求体: phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
+      final response = await _dio.post(
+        url.toString(),
+        options: Options(headers: _headers),
+        data: jsonEncode({
+          'target': 'ANY',  // CloudBase 官方 API 要求：不限制用户是否存在
           'phone_number': phoneNumber,
         }),
       );
 
       Logs.api.info('API响应: ${response.statusCode}');
-      Logs.api.info('响应体: ${response.body}');
+      Logs.api.info('响应体: ${response.data}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         Logs.auth.info('发送成功，verification_id: ${data['verification_id']}');
         return data['verification_id'];
       } else {
-        final error = jsonDecode(response.body);
-        Logs.auth.warning('发送失败: ${error['message'] ?? response.body}');
+        final error = response.data is String ? jsonDecode(response.data) : response.data;
+        Logs.auth.warning('发送失败: ${error['error_description'] ?? error['error'] ?? response.data}');
 
-        // 根据错误码抛出具体异常
-        switch (error['code']) {
-          case 'INVALID_PARAMETER':
-            throw const VerificationCodeException(
-              message: '手机号格式错误',
-            );
-          case 'TASK_IN_PROGRESS':
-            throw const RateLimitException(
-              message: '验证码发送过于频繁，请稍后再试',
-            );
-          default:
-            throw NetworkException(
-              message: error['message'] ?? '验证码发送失败',
-              statusCode: response.statusCode,
-            );
+        // 根据错误类型抛出具体异常
+        final errorCode = error['error'];
+        if (errorCode == 'invalid_phone_number') {
+          throw const VerificationCodeException(message: '手机号格式错误');
+        } else if (errorCode == 'rate_limit_exceeded') {
+          throw const RateLimitException(message: '验证码发送过于频繁，请稍后再试');
+        } else {
+          throw NetworkException(
+            message: error['error_description'] ?? '验证码发送失败',
+            statusCode: response.statusCode,
+          );
         }
       }
     } on RateLimitException {
       rethrow;
     } on VerificationCodeException {
       rethrow;
-    } on http.ClientException catch (e) {
+    } on DioException catch (e) {
       Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
@@ -118,25 +121,25 @@ class CloudBaseAuthService {
     Logs.api.info('请求体: verification_id=$verificationId, code=$code');
 
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
+      final response = await _dio.post(
+        url.toString(),
+        options: Options(headers: _headers),
+        data: jsonEncode({
           'verification_id': verificationId,
           'verification_code': code,
         }),
       );
 
       Logs.api.info('API响应: ${response.statusCode}');
-      Logs.api.info('响应体: ${response.body}');
+      Logs.api.info('响应体: ${response.data}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         Logs.auth.info('验证成功，verification_token: ${data['verification_token']}');
         return data['verification_token'];
       } else {
-        final error = jsonDecode(response.body);
-        Logs.auth.warning('验证失败: ${error['message'] ?? response.body}');
+        final error = response.data is String ? jsonDecode(response.data) : response.data;
+        Logs.auth.warning('验证失败: ${error['message'] ?? response.data}');
 
         // 根据错误码抛出具体异常
         switch (error['code']) {
@@ -153,7 +156,7 @@ class CloudBaseAuthService {
       }
     } on VerificationCodeException {
       rethrow;
-    } on http.ClientException catch (e) {
+    } on DioException catch (e) {
       Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
@@ -174,8 +177,8 @@ class CloudBaseAuthService {
   /// ==========================================
   ///
   /// 自动判断用户是新用户还是老用户：
-  /// - 新用户：自动注册
-  /// - 老用户：直接登录
+  /// - 老用户：调用 signin 直接登录
+  /// - 新用户：调用 signup 注册并登录
   ///
   /// [verificationToken] 第 2 步返回的 verification_token
   /// [phoneNumber] 手机号，格式为 "+86 13800138000"
@@ -195,62 +198,44 @@ class CloudBaseAuthService {
       Logs.api.info('API请求: POST ${loginUrl.toString()}');
       Logs.api.info('请求体: verification_token=${verificationToken.substring(0, 20)}...');
 
-      final loginResponse = await http.post(
-        loginUrl,
-        headers: _headers,
-        body: jsonEncode({
+      final loginResponse = await _dio.post(
+        loginUrl.toString(),
+        options: Options(headers: _headers),
+        data: jsonEncode({
           'verification_token': verificationToken,
         }),
       );
 
       Logs.api.info('API响应: ${loginResponse.statusCode}');
-      Logs.api.info('响应体: ${loginResponse.body}');
+      Logs.api.info('响应体: ${loginResponse.data}');
 
       if (loginResponse.statusCode == 200) {
         Logs.auth.info('登录成功（老用户）');
-        final data = jsonDecode(loginResponse.body);
+        final data = loginResponse.data is String ? jsonDecode(loginResponse.data) : loginResponse.data;
         return AuthResult.fromJson(data);
       }
 
-      // 如果登录失败，尝试注册
-      Logs.auth.info('登录失败，尝试注册（新用户）...');
+      // 如果登录失败（非 404 错误），抛出异常
+      final loginError = loginResponse.data is String ? jsonDecode(loginResponse.data) : loginResponse.data;
+      Logs.auth.warning('登录失败: ${loginError['error_description'] ?? loginError['error']}');
 
-      final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
-      Logs.api.info('API请求: POST ${signupUrl.toString()}');
-      Logs.api.info('请求体: verification_token=..., phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
-
-      final signupResponse = await http.post(
-        signupUrl,
-        headers: _headers,
-        body: jsonEncode({
-          'verification_token': verificationToken,
-          'phone_number': phoneNumber,
-        }),
+      throw AuthException(
+        message: loginError['error_description'] ?? loginError['error'] ?? '登录失败',
+        code: loginError['error_code'],
       );
-
-      Logs.api.info('API响应: ${signupResponse.statusCode}');
-      Logs.api.info('响应体: ${signupResponse.body}');
-
-      if (signupResponse.statusCode == 200) {
-        Logs.auth.info('注册成功（新用户）');
-        final data = jsonDecode(signupResponse.body);
-        return AuthResult.fromJson(data);
-      } else {
-        final signupError = jsonDecode(signupResponse.body);
-        Logs.auth.warning('注册失败: ${signupError['message']}');
-        throw AuthException(
-          message: signupError['message'] ?? '注册失败，请稍后重试',
-          code: signupError['code'],
-        );
+    } on DioException catch (e) {
+      // 如果是 404，说明用户不存在，走注册流程
+      if (e.response?.statusCode == 404) {
+        Logs.auth.info('用户不存在，尝试注册...');
+        return _register(verificationToken: verificationToken, phoneNumber: phoneNumber);
       }
-    } on AuthException {
-      rethrow;
-    } on http.ClientException catch (e) {
       Logs.auth.warning('HTTP 客户端异常: $e');
       throw NetworkException(
         message: '网络请求失败',
         originalError: e,
       );
+    } on AuthException {
+      rethrow;
     } catch (e) {
       Logs.auth.warning('异常: $e');
       if (e is NetworkException) rethrow;
@@ -262,23 +247,39 @@ class CloudBaseAuthService {
   }
 
   /// ==========================================
-  /// 完整登录流程（一键调用）
+  /// 内部方法：注册新用户
   /// ==========================================
-  ///
-  /// 这个方法把上面 3 步合并成一个方法，方便调用
-  /// 但在学习阶段，建议分开调用以理解流程
-  static Future<AuthResult> loginWithPhone({
+  static Future<AuthResult> _register({
+    required String verificationToken,
     required String phoneNumber,
-    required String code,
-    required String verificationId,
   }) async {
-    // 第 2 步：验证验证码
-    final verificationToken = await verifyCode(verificationId, code);
+    final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
+    Logs.api.info('API请求: POST ${signupUrl.toString()}');
+    Logs.api.info('请求体: verification_token=${verificationToken.substring(0, 20)}..., phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
-    // 第 3 步：智能登录/注册
-    return await signInOrSignUp(
-      verificationToken: verificationToken,
-      phoneNumber: phoneNumber,
- );
+    final signupResponse = await _dio.post(
+      signupUrl.toString(),
+      options: Options(headers: _headers),
+      data: jsonEncode({
+        'phone_number': phoneNumber,  // CloudBase 官方 API 要求：注册时必须传手机号
+        'verification_token': verificationToken,
+      }),
+    );
+
+    Logs.api.info('API响应: ${signupResponse.statusCode}');
+    Logs.api.info('响应体: ${signupResponse.data}');
+
+    if (signupResponse.statusCode == 200) {
+      Logs.auth.info('注册并登录成功（新用户）');
+      final data = signupResponse.data is String ? jsonDecode(signupResponse.data) : signupResponse.data;
+      return AuthResult.fromJson(data);
+    } else {
+      final signupError = signupResponse.data is String ? jsonDecode(signupResponse.data) : signupResponse.data;
+      Logs.auth.warning('注册失败: ${signupError['error_description'] ?? signupError['error']}');
+      throw AuthException(
+        message: signupError['error_description'] ?? signupError['error'] ?? '注册失败，请稍后重试',
+        code: signupError['error_code'],
+      );
+    }
   }
 }

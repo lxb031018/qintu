@@ -215,7 +215,18 @@ router.post('/sync', async (req, res) => {
       [openid]
     );
 
-    return success(res, users[0]);
+    // 查询待确认的绑定请求数量
+    const pendingRequestsResult = await query(
+      `SELECT COUNT(*) as count FROM user_bindings 
+       WHERE receiver_openid = ? AND status = 'pending'`,
+      [openid]
+    );
+    const pending_count = pendingRequestsResult[0].count;
+
+    const userInfo = users[0];
+    userInfo.pending_count = pending_count;
+
+    return success(res, userInfo);
   } catch (err) {
     console.error('用户同步失败:', err);
 

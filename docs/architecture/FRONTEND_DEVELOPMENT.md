@@ -109,7 +109,7 @@ core/
 │   └── storage_keys.dart
 ├── services/               # 服务层
 │   ├── auth_service.dart
-│   ├── api_service.dart
+│   ├── api_client.dart       # 统一 HTTP 客户端（Dio）
 │   └── secure_storage.dart
 ├── models/                 # 数据模型
 │   ├── user.dart
@@ -119,6 +119,45 @@ core/
 └── router/                 # 路由管理
     └── app_router.dart
 ```
+
+---
+
+## 🎯 核心场景说明
+
+### 场景 1：手机号绑定（建立长期/短期关系）
+- **用途**：建立长期或短期绑定关系的唯一方法
+- **场景**：发送者知道对方手机号，远程建立绑定关系
+- **流程**：输入对方 11 位手机号 → 选择绑定有效期 → 确认绑定 → 建立关系
+- **有效期设置**：
+  - **永久绑定**：长期关系（如家庭成员）
+  - **有限时间绑定**：自定义有效期（如旅游团导游带团 7 天）
+  - 由发送者定义，过期后自动解除绑定
+- **特点**：绑定后可随时查看对方位置、发送导航任务
+
+### 场景 2：二维码分享路线（临时分享）
+- **用途**：一次性分享路线，**无需绑定关系**
+- **场景**：面对面时，发送者生成路线二维码，多人可扫码接受同一路线
+- **流程**：发送者规划路线 → 生成二维码 → 多人扫码 → 各自开始导航
+- **特点**：
+  - 每次规划路线生成一个二维码
+  - 一个二维码可被多人扫描使用
+  - 临时性、无需注册、无需绑定
+
+---
+
+## 🔒 位置共享权限控制
+
+### 双向控制权
+- **发送者**：可以随时允许/拒绝他人查看自己的位置
+- **接收者**：可以随时允许/拒绝他人查看自己的位置
+
+### 控制时机
+- **导航开始前**：在规划路线后、导航启动前设置
+- **导航进行中**：在导航过程中随时切换
+
+### 权限选项
+- **允许查看**：其他人可以看到实时位置
+- **拒绝查看**：隐藏自己的位置信息
 
 ---
 
@@ -197,12 +236,45 @@ color: Color(0xFF4CAF50)
 
 ### 5.3 字体规范
 
-| 元素 | 发送者端 | 接收者端 |
-|------|---------|---------|
-| 标题 | 20sp | 24sp |
-| 正文 | 16sp | 20sp |
-| 按钮 | 18sp | 22sp |
-| 提示文字 | 14sp | 18sp |
+**重要**：项目使用 `AppTextStyles` 统一管理所有文字样式，支持动态字体缩放。
+
+#### 基础字体大小（1.0x 缩放时）
+
+| 元素 | 基础大小 | 对应 AppTextStyles |
+|------|---------|-------------------|
+| 超大标题 | 40sp | `AppTextStyles.titleLarge` |
+| 大标题 | 32sp | `AppTextStyles.titleMedium` |
+| 标题 | 24sp | `AppTextStyles.titleSmall` |
+| 大正文 | 24sp | `AppTextStyles.bodyLarge` |
+| 正文 | 20sp | `AppTextStyles.bodyMedium` |
+| 小正文 | 18sp | `AppTextStyles.bodySmall` |
+| 按钮文字 | 24sp | `AppTextStyles.button` |
+| 小按钮文字 | 18sp | `AppTextStyles.buttonSmall` |
+| 辅助文字 | 16sp | `AppTextStyles.caption` |
+| 小提示 | 14sp | `AppTextStyles.captionSmall` |
+
+#### 动态缩放机制
+
+用户可以在设置中选择字体大小（0.9x、1.0x、1.2x、1.4x），所有文字会自动按比例缩放。
+
+```dart
+// ✅ 正确：使用 AppTextStyles
+Text('欢迎', style: AppTextStyles.titleSmall)
+Text('说明', style: AppTextStyles.bodyMedium)
+Text('提交', style: AppTextStyles.button)
+
+// ❌ 错误：硬编码 fontSize（不会响应字体缩放）
+Text('欢迎', style: TextStyle(fontSize: 24))
+```
+
+#### 注意事项
+
+1. **禁止硬编码 `fontSize`**：所有文字必须使用 `AppTextStyles.xxx`
+2. **支持 `copyWith`**：如需覆盖个别属性（如颜色），使用 `.copyWith()`
+   ```dart
+   Text('错误', style: AppTextStyles.error.copyWith(color: Colors.red))
+   ```
+3. **新增样式**：在 `lib/theme/app_text_styles.dart` 中添加新的 getter
 
 ### 5.4 间距规范
 
@@ -228,7 +300,7 @@ color: Color(0xFF4CAF50)
 
 - **统一 AppBar 样式**：所有页面的顶部导航栏必须保持一致的高度、背景色和阴影效果
 - **统一颜色方案**：所有页面必须使用 `lib/constants/app_colors.dart` 定义的颜色常量，禁止硬编码颜色值
-- **统一字体大小**：相同类型的文本（标题、正文、按钮等）在所有页面中使用相同的字号
+- **统一字体大小**：所有文字使用 `AppTextStyles`，禁止硬编码 `fontSize`。相同类型的文字在所有页面中使用相同的 `AppTextStyles` 样式（会自动响应字体缩放）
 - **统一间距规范**：页面边距、卡片间距、组件间距必须统一
 - **统一圆角风格**：卡片、按钮、输入框的圆角大小必须保持一致
 - **统一深色/浅色适配**：所有页面必须同时适配深色和浅色主题
@@ -283,7 +355,7 @@ class AuthButton extends StatelessWidget {
 使用 Provider 进行全局状态管理：
 
 ```dart
-class UserProvider extends ChangeNotifier {
+class AuthStateManager extends ChangeNotifier {
   User? _user;
   User? get user => _user;
 
@@ -298,21 +370,21 @@ class UserProvider extends ChangeNotifier {
 
 ```dart
 // ✅ 正确：使用 Consumer
-Consumer<UserProvider>(
-  builder: (context, userProvider, child) {
-    return Text(userProvider.user?.name ?? '');
+Consumer<AuthStateManager>(
+  builder: (context, authStateManager, child) {
+    return Text(authStateManager.state.userId ?? '');
   },
 )
 
-// ❌ 错误：直接调用 Provider.of
-Provider.of<UserProvider>(context).user
+// ✅ 直接读取状态
+Provider.of<AuthStateManager>(context, listen: false).state
 ```
 
 ### 7.3 Provider 列表
 
 | Provider | 职责 | 位置 |
 |----------|------|------|
-| `UserProvider` | 用户信息和登录状态 | `lib/providers/user_provider.dart` |
+| `AuthStateManager` | 认证状态和 Token | `lib/state/managers/auth_state_manager.dart` |
 | `BindingProvider` | 绑定关系状态和操作 | `lib/providers/binding_provider.dart` |
 | `TaskProvider` | 导航任务状态 | `lib/providers/task_provider.dart` |
 
@@ -348,7 +420,7 @@ final response = await http.post(
 const baseUrl = 'https://$envId.api.tcloudbasegateway.com/v1/functions/qintu-api?webfn=true';
 
 // 绑定关系 API
-POST /api/bindings/generate   // 生成绑定码
+POST /api/bindings/generate   // 手机号绑定（建立关系）
 POST /api/bindings/confirm    // 确认绑定
 GET  /api/bindings/my         // 获取我的绑定关系
 DELETE /api/bindings/{id}     // 解除绑定

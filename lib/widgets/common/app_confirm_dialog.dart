@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_text_styles.dart';
 import '../../constants/app_colors.dart';
-import '../../config/app_config.dart';
 
 /// ============================================
 /// 通用确认对话框组件
@@ -29,14 +29,11 @@ class AppConfirmDialog {
       builder: (context) => AlertDialog(
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.dialogTitle,
         ),
         content: Text(
           message,
-          style: const TextStyle(fontSize: 18),
+          style: AppTextStyles.dialogContent,
         ),
         actions: [
           // 取消按钮
@@ -47,11 +44,7 @@ class AppConfirmDialog {
             },
             child: Text(
               cancelText ?? '取消',
-              style: TextStyle(
-                fontSize: 18,
-                color: AppColors.lightTextColor,
-                fontFamily: AppConfig.fontFamily,
-              ),
+              style: AppTextStyles.dialogButton,
             ),
           ),
           // 确认按钮
@@ -66,11 +59,8 @@ class AppConfirmDialog {
             ),
             child: Text(
               confirmText ?? '确定',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              style: AppTextStyles.dialogButton.copyWith(
                 color: confirmTextColor ?? AppColors.whiteText,
-                fontFamily: AppConfig.fontFamily,
               ),
             ),
           ),

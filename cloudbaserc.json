@@ -10,7 +10,16 @@
       "functionCodePath": "qintu-api",
       "functionType": "HTTP",
       "timeout": 30,
-      "memorySize": 512
+      "memorySize": 512,
+      "envVariables": {
+        "DB_HOST": "qintu-cloudebase-5f5bpuj13bc6467.ap-shanghai.tdsql.db.tencentcs.com",
+        "DB_PORT": "3306",
+        "DB_USER": "root",
+        "DB_PASSWORD": "Qintu@2026!DB",
+        "DB_NAME": "qintu",
+        "ENV_ID": "qintu-cloudebase-5f5bpuj13bc6467",
+        "NODE_ENV": "production"
+      }
     }
   ],
   "ai": {

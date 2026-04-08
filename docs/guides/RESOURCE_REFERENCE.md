@@ -102,7 +102,7 @@ import 'package:qintu/constants/app_strings.dart';
 | `AppStrings.remark` | 备注 | 备注标签 |
 | `AppStrings.unknownUser` | 未知用户 | 未知用户 |
 | `AppStrings.active` | 生效中 | 生效中状态 |
-| `AppStrings.pending` | 待确认 | 待确认状态 |
+| `AppStrings.pending` | 待确认 | 待确认状态（已废弃，手机号绑定无需此状态） |
 | `AppStrings.expired` | 已过期 | 已过期状态 |
 | `AppStrings.revoked` | 已解除 | 已解除状态 |
 
@@ -277,12 +277,123 @@ import 'config/ui_config.dart';
 |--------|------|
 | `UIConfig.appName` | 应用名称 |
 | `UIConfig.fontFamily` | 字体族 |
-| `UIConfig.titleFontSize` | 标题字体大小 |
-| `UIConfig.subtitleFontSize` | 副标题字体大小 |
-| `UIConfig.bodyFontSize` | 正文字体大小 |
-| `UIConfig.buttonFontSize` | 按钮字体大小 |
 | `UIConfig.borderRadius` | 圆角大小 |
 | `UIConfig.buttonHeight` | 按钮高度 |
+| `UIConfig.iconSize` | 图标大小 |
+| `UIConfig.largeIconSize` | 大图标大小 |
+
+> **注意**：字体大小现在由 `AppTextStyles` 统一管理，支持动态缩放。请参考下文"文字样式"章节。
+
+### 3.1.1 文字样式
+
+**文件位置**: `lib/theme/app_text_styles.dart`
+
+**导入方式**:
+```dart
+import 'theme/app_text_styles.dart';
+```
+
+**说明**：`AppTextStyles` 统一管理所有文字样式，支持动态字体缩放。所有 `fontSize` 都会乘以 `_fontSizeScale`（由 `SettingsManager` 管理）。
+
+#### 标题样式
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.titleLarge` | 40sp | 超大标题（欢迎页） |
+| `AppTextStyles.titleMedium` | 32sp | 大标题 |
+| `AppTextStyles.titleSmall` | 24sp | 标题 |
+
+#### 正文样式
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.bodyLarge` | 24sp | 大正文 |
+| `AppTextStyles.bodyMedium` | 20sp | 正文 |
+| `AppTextStyles.bodySmall` | 18sp | 小正文 |
+
+#### 辅助文字
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.caption` | 16sp | 辅助文字（提示文字） |
+| `AppTextStyles.captionSmall` | 14sp | 小提示文字 |
+
+#### 按钮样式
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.button` | 24sp | 按钮文字 |
+| `AppTextStyles.buttonSmall` | 18sp | 小按钮文字 |
+
+#### 输入框样式
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.input` | 24sp | 输入框文字 |
+| `AppTextStyles.inputHint` | 18sp | 输入框提示文字 |
+| `AppTextStyles.inputLabel` | 20sp | 输入框标签 |
+
+#### 特殊样式
+
+| 样式 | 基础大小 | 用途 |
+|------|---------|------|
+| `AppTextStyles.appBarTitle` | 20sp | AppBar 标题 |
+| `AppTextStyles.splashLogo` | 36sp | 启动页 Logo 文字 |
+| `AppTextStyles.splashSubtitle` | 16sp | 启动页副标题 |
+| `AppTextStyles.dialogTitle` | 24sp | 对话框标题 |
+| `AppTextStyles.dialogContent` | 18sp | 对话框内容 |
+| `AppTextStyles.dialogButton` | 18sp | 对话框按钮 |
+| `AppTextStyles.dialogConfirmButton` | 18sp | 对话框确认按钮（强调色） |
+| `AppTextStyles.roleIcon` | 40sp | 角色图标（Emoji） |
+| `AppTextStyles.roleCardIcon` | 32sp | 角色卡片图标 |
+| `AppTextStyles.roleName` | 18sp | 角色名称 |
+| `AppTextStyles.number` | 32sp | 数字（验证码输入） |
+| `AppTextStyles.error` | 18sp | 错误提示 |
+| `AppTextStyles.success` | 18sp | 成功提示 |
+| `AppTextStyles.errorDetail` | 12sp | 错误详情（等宽字体） |
+| `AppTextStyles.statValue` | 16sp | 统计数值 |
+| `AppTextStyles.statLabel` | 12sp | 统计标签 |
+| `AppTextStyles.statUnit` | 10sp | 统计单位 |
+| `AppTextStyles.statusTag` | 12sp | 状态标签 |
+| `AppTextStyles.locationTitle` | 14sp | 位置信息标题 |
+| `AppTextStyles.locationDetail` | 12sp | 位置信息详情 |
+| `AppTextStyles.bottomTab` | 10sp | 底部标签（Tab 等） |
+| `AppTextStyles.emojiIcon` | 28sp | Emoji 图标（通用） |
+| `AppTextStyles.emojiLarge` | 32sp | 大 Emoji 图标 |
+
+#### 使用示例
+
+```dart
+// ✅ 正确：使用 AppTextStyles
+Text('欢迎', style: AppTextStyles.titleSmall)
+Text('说明', style: AppTextStyles.bodyMedium)
+Text('提交', style: AppTextStyles.button)
+
+// ❌ 错误：硬编码 fontSize
+Text('欢迎', style: TextStyle(fontSize: 24))
+```
+
+#### 动态缩放机制
+
+```dart
+// 用户选择字体大小后
+await _settingsManager.setFontSizeScale(1.2);  // 1.2x 缩放
+
+// MaterialApp 中的 AnimatedBuilder 会自动重建
+AnimatedBuilder(
+  animation: _settingsManager,
+  builder: (context, child) {
+    AppTheme.setFontSizeScale(_settingsManager.fontSizeScale);
+    return MaterialApp(...);
+  },
+)
+
+// AppTextStyles 中所有 fontSize 都会乘以 _fontSizeScale
+static TextStyle get button => TextStyle(
+  fontSize: 24 * _fontSizeScale,  // 1.2x 时 = 28.8
+  ...
+);
+```
 
 ### 3.2 CloudBase 配置
 
@@ -392,8 +503,9 @@ import 'utils/constants.dart';
 Text('亲途')
 Text('加载中...')
 Text('确定')
-SizedBox(height: 16)  // 应使用 UIConfig
+SizedBox(height: 16)  // 应使用 UIConfig 或 AppDurations
 Color(0xFF4CAF50)     // 应使用 AppColors
+TextStyle(fontSize: 24)  // 应使用 AppTextStyles
 ```
 
 ✅ **正确示例**:
@@ -401,8 +513,9 @@ Color(0xFF4CAF50)     // 应使用 AppColors
 Text(AppStrings.appName)
 Text(AppStrings.loading)
 Text(AppStrings.confirm)
-SizedBox(height: UIConfig.spacingMedium)
+SizedBox(height: UIConfig.buttonHeight)
 AppColors.brandGreen
+Text('欢迎', style: AppTextStyles.titleSmall)
 ```
 
 ### 6.2 导入规范
@@ -478,6 +591,7 @@ lib/
 - [ ] 所有用户可见的文字都使用了 `AppStrings`
 - [ ] 所有颜色都使用了 `AppColors`
 - [ ] 所有尺寸常量都使用了 `UIConfig` 或 `AppDurations`
+- [ ] 所有文字样式都使用了 `AppTextStyles`（禁止硬编码 `fontSize`）
 - [ ] 所有 API 端点都使用了 `ApiEndpoints`
 - [ ] 没有硬编码的魔法数字或字符串
 

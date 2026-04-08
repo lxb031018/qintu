@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../config/app_config.dart';
 import '../../../constants/app_strings.dart';
+import '../../../theme/app_text_styles.dart';
 import '../../../utils/phone_utils.dart';
 
 /// ============================================
@@ -76,10 +76,8 @@ class CodeInputCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${AppStrings.codeSent} ${PhoneUtils.maskPhone(phoneNumber)}',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTextStyles.caption.copyWith(
                     color: textColor,
-                    fontFamily: AppConfig.fontFamily,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -89,10 +87,8 @@ class CodeInputCard extends StatelessWidget {
                   onPressed: onChangePhone,
                   child: Text(
                     '修改',
-                    style: TextStyle(
+                    style: AppTextStyles.locationTitle.copyWith(
                       color: primaryColor,
-                      fontSize: 14,
-                      fontFamily: AppConfig.fontFamily,
                     ),
                   ),
                 ),
@@ -119,25 +115,17 @@ class CodeInputCard extends StatelessWidget {
             controller: controller,
             keyboardType: TextInputType.number,
             maxLength: 6,
-            style: TextStyle(
-              fontSize: 32,
+            style: AppTextStyles.number.copyWith(
               color: inputTextColor,
-              fontFamily: AppConfig.fontFamily,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 8,
             ),
             decoration: InputDecoration(
               labelText: AppStrings.codeLabel,
-              labelStyle: TextStyle(
+              labelStyle: AppTextStyles.inputLabel.copyWith(
                 color: primaryColor,
-                fontSize: 20,
-                fontFamily: AppConfig.fontFamily,
               ),
               hintText: AppStrings.codeHint,
-              hintStyle: TextStyle(
+              hintStyle: AppTextStyles.bodySmall.copyWith(
                 color: lightTextColor,
-                fontSize: 18,
-                fontFamily: AppConfig.fontFamily,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -168,10 +156,8 @@ class CodeInputCard extends StatelessWidget {
               ),
               label: Text(
                 countdown > 0 ? AppStrings.resendCodeCountdown(countdown) : AppStrings.resendCode,
-                style: TextStyle(
+                style: AppTextStyles.buttonSmall.copyWith(
                   color: countdown > 0 ? lightTextColor : primaryColor,
-                  fontSize: 16,
-                  fontFamily: AppConfig.fontFamily,
                 ),
               ),
             ),

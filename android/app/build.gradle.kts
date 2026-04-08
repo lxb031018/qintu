@@ -29,6 +29,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["appLabel"] = "亲途"
+        // 高德地图 API Key（从 .env 文件读取）
+        manifestPlaceholders["AMAP_ANDROID_API_KEY"] = System.getenv("AMAP_ANDROID_API_KEY") ?: ""
     }
 
     buildTypes {

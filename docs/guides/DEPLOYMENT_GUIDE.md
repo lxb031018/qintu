@@ -196,13 +196,16 @@ curl -X POST https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qin
 }
 ```
 
-### 测试生成绑定码
+### 测试手机号绑定
 
 ```bash
 curl -X POST https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/api/bindings/generate \
   -H "Content-Type: application/json" \
   -H "X-User-OpenID: test_openid_123" \
-  -d '{}'
+  -d '{
+    "receiver_phone": "+86 13800138001",
+    "remark": "测试绑定"
+  }'
 ```
 
 **预期响应**：
@@ -211,9 +214,7 @@ curl -X POST https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qin
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "bind_code": "ABC12345",
-    "expires_at": "2026-04-05T10:00:00.000Z",
-    "message": "请将此绑定码告知接收者..."
+    "message": "绑定成功"
   }
 }
 ```
@@ -274,7 +275,7 @@ static const String cloudFunctionBaseUrl =
 - [ ] HTTP 访问路径已创建（`/qintu-api`）
 - [ ] 健康检查接口返回正常
 - [ ] 用户注册接口测试通过
-- [ ] 绑定码生成接口测试通过
+- [ ] 手机号绑定接口测试通过
 - [ ] 数据库表全部创建成功
 - [ ] Flutter 配置已更新 Base URL
 

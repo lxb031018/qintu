@@ -9,7 +9,7 @@
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
 | `users` | 用户信息 | openid（主键）、手机号、角色类型 |
-| `user_bindings` | 绑定关系 | 发送者-接收者配对、绑定码 |
+| `user_bindings` | 绑定关系 | 发送者-接收者配对、绑定状态 |
 | `navigation_tasks` | 导航任务 | 路线数据、任务状态、高德路线 JSON |
 | `real_time_locations` | 实时位置 | 接收者当前位置、共享状态 |
 | `operation_logs` | 操作日志 | 审计和调试 |
@@ -23,7 +23,9 @@
     ↓
 用户选择角色（发送者/接收者）
     ↓
-输入绑定码 → 创建 user_bindings 记录
+发送者输入接收者手机号 → 发送绑定请求
+    ↓
+接收者确认绑定 → 创建 user_bindings 记录（status = 'active'）
     ↓
 发送者规划路线 → 创建 navigation_tasks 记录
     ↓
@@ -139,36 +141,37 @@ INSERT INTO users (openid, phone, nickname, user_type) VALUES (
 
 **核心逻辑**：
 - 只有互相绑定的用户才能发送/接收导航指令
-- 通过 `bind_code`（绑定码）进行配对
+- 通过手机号建立绑定关系，需要接收者确认
 - 支持一个发送者绑定多个接收者，反之亦然
 
 **关键字段**：
 - `sender_openid`：发送者的 openid
 - `receiver_openid`：接收者的 openid
-- `bind_code`：6-8 位字母数字组合的绑定码（如 `A1B2C3D4`）
+- `bind_code`：绑定码字段（已废弃，可为空，向后兼容）
 - `status`：绑定状态
-  - `pending`：待确认（接收者还未确认）
+  - `pending`：待确认（发送者已发请求，接收者未确认）
   - `active`：生效中
   - `expired`：已过期
   - `revoked`：已撤销
+- `remark`：备注信息（存储发送者名称等）
 
 **示例数据**：
 ```sql
 -- 子女（发送者）绑定父母（接收者）
-INSERT INTO user_bindings (sender_openid, receiver_openid, bind_code, status, remark) VALUES (
+INSERT INTO user_bindings (sender_openid, receiver_openid, status, remark) VALUES (
     'openid_child',
     'openid_parent',
-    'ABC12345',
     'active',
     '给父亲的绑定关系'
 );
 ```
 
 **绑定流程**：
-1. 发送者在 App 中生成绑定码（如 `ABC12345`）
-2. 接收者在 App 中输入该绑定码
-3. 系统验证后创建 `user_bindings` 记录
-4. 状态设为 `active`，绑定成功
+1. 发送者输入接收者手机号，发送绑定请求
+2. 系统创建 `user_bindings` 记录，状态为 `pending`
+3. 接收者查看待确认请求列表
+4. 接收者确认绑定，状态更新为 `active`
+5. 绑定关系生效
 
 ---
 

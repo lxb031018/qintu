@@ -22,8 +22,11 @@ class AppConfig {
   /// CloudBase 服务地址
   static String get serviceUrl => CloudBaseConfig.serviceUrl;
 
-  /// CloudBase API 基础 URL（用于认证等 API 调用）
-  static String get cloudBaseApiUrl => '${CloudBaseConfig.serviceUrl}/auth';
+  /// CloudBase API 基础 URL（用于云函数 API 调用）
+  static String get cloudBaseApiUrl => CloudBaseConfig.serviceUrl;
+
+  /// API 路径前缀
+  static String get apiPrefix => '/api';
 
   /// 认证 API 基础地址（向后兼容）
   static String get authBaseUrl => CloudBaseConfig.authBaseUrl;
@@ -101,17 +104,8 @@ class AppConfig {
   /// 字体家族
   static String get fontFamily => UIConfig.fontFamily;
 
-  /// 标题字体大小
-  static double get titleFontSize => UIConfig.titleFontSize;
-
-  /// 副标题字体大小
-  static double get subtitleFontSize => UIConfig.subtitleFontSize;
-
-  /// 正文字体大小
-  static double get bodyFontSize => UIConfig.bodyFontSize;
-
-  /// 按钮字体大小
-  static double get buttonFontSize => UIConfig.buttonFontSize;
+  // 注意：字体大小现在由 AppTextStyles 统一管理，支持动态缩放
+  // 已删除 titleFontSize、subtitleFontSize、bodyFontSize、buttonFontSize 等代理属性
 
   /// 默认动画时长（毫秒）
   static int get animationDuration => UIConfig.animationDuration;

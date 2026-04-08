@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
-import '../../../config/app_config.dart';
+import '../../../theme/app_text_styles.dart';
 
 /// ============================================
 /// 错误提示卡片
@@ -43,10 +43,8 @@ class ErrorCard extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
+              style: AppTextStyles.error.copyWith(
                 color: errorColor,
-                fontSize: 18,
-                fontFamily: AppConfig.fontFamily,
               ),
             ),
           ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
-import '../../../state/managers/user_state_manager.dart';
+import '../../../managers/auth_state_manager.dart';
 import '../../../router/app_router.dart';
 import '../../../utils/logger.dart';
 import '../../../widgets/common/logout_dialog.dart';
@@ -24,10 +24,10 @@ class LogoutCard extends StatelessWidget {
     if (confirmed && context.mounted) {
       try {
         Logs.auth.info('执行退出登录');
-        
-        // 使用 UserStateManager 执行登出
-        final userStateManager = context.read<UserStateManager>();
-        await userStateManager.logout();
+
+        // 使用 AuthStateManager 执行登出
+        final authStateManager = context.read<AuthStateManager>();
+        await authStateManager.logout();
         
         // 使用 go_router 跳转到登录页
         if (context.mounted) {

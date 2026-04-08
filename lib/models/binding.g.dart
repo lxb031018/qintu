@@ -8,7 +8,7 @@ part of 'binding.dart';
 
 Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
   id: (json['id'] as num).toInt(),
-  bindCode: json['bind_code'] as String,
+  bindCode: json['bind_code'] as String?,
   status: $enumDecode(_$BindingStatusEnumMap, json['status']),
   remark: json['remark'] as String?,
   myRole: $enumDecodeNullable(_$MyRoleEnumMap, json['my_role']),
@@ -33,7 +33,7 @@ Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
 
 Map<String, dynamic> _$BindingToJson(Binding instance) => <String, dynamic>{
   'id': instance.id,
-  'bind_code': instance.bindCode,
+  if (instance.bindCode case final value?) 'bind_code': value,
   'status': _$BindingStatusEnumMap[instance.status]!,
   'remark': instance.remark,
   'my_role': _$MyRoleEnumMap[instance.myRole],

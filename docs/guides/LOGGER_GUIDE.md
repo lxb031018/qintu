@@ -62,10 +62,10 @@ logger.critical('数据库连接断开', stackTrace: stackTrace);
 ### API 服务中使用
 
 ```dart
-// lib/services/api_service.dart
+// lib/services/api_client.dart
 import '../utils/logger.dart';
 
-class ApiService {
+class ApiClient {
   Future<ApiResponse> createNavigationTask({...}) async {
     Logs.api.info('创建导航任务', data: {
       'receiver': receiverOpenid,
@@ -120,23 +120,22 @@ Logs.auth.error('登录失败', data: {
 ### 绑定模块中使用
 
 ```dart
-// 生成绑定码
-Logs.binding.info('生成绑定码', data: {
+// 手机号绑定
+Logs.binding.info('手机号绑定', data: {
   'sender': senderOpenid,
-  'bind_code': bindCode,
+  'receiver': receiverOpenid,
 });
 
 // 确认绑定
 Logs.binding.info('确认绑定成功', data: {
   'sender': senderOpenid,
   'receiver': receiverOpenid,
-  'bind_code': bindCode,
 });
 
 // 绑定失败
-Logs.binding.warning('绑定码无效', data: {
-  'bind_code': inputCode,
-  'reason': '已过期',
+Logs.binding.warning('绑定失败', data: {
+  'receiver_phone': inputPhone,
+  'reason': '用户不存在',
 });
 ```
 
@@ -202,8 +201,8 @@ Logs.location.info('切换位置共享', data: {
 10:30:15.123 ℹ️ INFO    [API] 发送请求: GET /api/users/me
 10:30:15.456 ℹ️ INFO    [API] 用户登录成功
   数据: {openid: xxx, user_type: both}
-10:30:16.789 🐛 DEBUG   [BINDING] 生成绑定码
-  数据: {sender: xxx, bind_code: ABC12345}
+10:30:16.789 🐛 DEBUG   [BINDING] 手机号绑定
+  数据: {sender: xxx, receiver: xxx}
 10:30:17.012 ⚠️ WARNING [TASK] 绑定人数接近上限
   数据: {current: 4, max: 5}
 10:30:18.345 ❌ ERROR  [API] 创建导航任务失败

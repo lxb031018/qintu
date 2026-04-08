@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
+import '../../../theme/app_text_styles.dart';
 
 /// ============================================
 /// 设置分区卡片组件
@@ -39,8 +40,7 @@ class SettingsSectionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 16,
+            style: AppTextStyles.titleSmall.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark
                   ? AppColors.darkLightTextColor

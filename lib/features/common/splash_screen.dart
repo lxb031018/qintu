@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
+import '../../theme/app_text_styles.dart';
 
 /// 启动页 - 应用初始化期间显示的加载页面
 /// 
@@ -38,8 +39,7 @@ class SplashScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               AppStrings.appName,
-              style: TextStyle(
-                fontSize: 36,
+              style: AppTextStyles.splashLogo.copyWith(
                 fontWeight: FontWeight.bold,
                 color: textColor,
               ),
@@ -47,8 +47,7 @@ class SplashScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               AppStrings.appSubtitle,
-              style: TextStyle(
-                fontSize: 16,
+              style: AppTextStyles.splashSubtitle.copyWith(
                 color: textColor.withValues(alpha: 0.6),
               ),
             ),
