@@ -82,15 +82,17 @@ endpoint: '/api/tasks/my?status=$status&page=$page&page_size=$pageSize'
 | 功能 | 前端方法 | 后端路由 | 状态 |
 |------|---------|---------|------|
 | 发送绑定请求 | `requestPhoneBinding()` | `POST /api/bindings/request-phone` | ✅ 已对齐 |
-| 获取待确认请求 | `getPendingRequests()` | `GET /api/bindings/pending` | ✅ 已对齐 |
+| 获取待确认请求 | `loadPendingRequests()` | `GET /api/bindings/pending` | ✅ 已对齐 |
 | 确认绑定请求 | `confirmRequest()` | `POST /api/bindings/confirm-request` | ✅ 已对齐 |
 | 拒绝绑定请求 | `rejectRequest()` | `POST /api/bindings/reject-request` | ✅ 已对齐 |
-| 获取绑定列表 | `getMyBindings()` | `GET /api/bindings/my` | ✅ 已对齐 |
+| 获取绑定列表 | `loadBindings()` | `GET /api/bindings/my` | ✅ 已对齐 |
 | 解除绑定 | `revokeBinding()` | `DELETE /api/bindings/:id` | ✅ 已对齐 |
 
 **说明**：
 - 不再使用绑定码机制，手机号即为唯一标识
 - 所有绑定均通过 `request-phone` 发起，接收者确认后才生效
+- pending 请求 7 天自动过期
+- 操作日志自动记录
 
 ### 任务管理（tasks.js）
 
@@ -98,10 +100,13 @@ endpoint: '/api/tasks/my?status=$status&page=$page&page_size=$pageSize'
 |------|---------|---------|------|
 | 创建任务 | `createNavigationTask()` | `POST /api/tasks` | ✅ 已对齐 |
 | 获取任务列表 | `getMyTasks()` | `GET /api/tasks/my` | ✅ 已对齐 |
-| 接受任务 | `acceptTask()` | `POST /api/tasks/:id/accept` | ✅ 已对齐 |
-| 开始任务 | `startTask()` | `POST /api/tasks/:id/start` | ✅ 已对齐 |
-| 完成任务 | `completeTask()` | `POST /api/tasks/:id/finish` | ✅ 已对齐 |
-| 取消任务 | `cancelTask()` | `POST /api/tasks/:id/cancel` | ✅ 已对齐 |
+| 获取待处理任务 | `getPendingTasks()` | `GET /api/tasks/pending` | ✅ 已对齐 |
+| 获取任务详情 | `getTaskDetail()` | `GET /api/tasks/:taskId` | ✅ 已对齐 |
+| 接受任务 | `acceptTask()` | `POST /api/tasks/:taskId/accept` | ✅ 已对齐 |
+| 开始任务 | `startTask()` | `POST /api/tasks/:taskId/start` | ✅ 已对齐 |
+| 完成任务 | `completeTask()` | `POST /api/tasks/:taskId/finish` | ✅ 已对齐 |
+| 取消任务 | `cancelTask()` | `POST /api/tasks/:taskId/cancel` | ✅ 已对齐 |
+| 更新路线 | `updateRoute()` | `PUT /api/tasks/:taskId/route` | ✅ 已对齐 |
 
 ### 位置管理（locations.js）
 
@@ -113,4 +118,21 @@ endpoint: '/api/tasks/my?status=$status&page=$page&page_size=$pageSize'
 
 ---
 
-**最后更新**: 2026-04-07
+## 🧪 自动化测试
+
+| 系统 | 测试脚本 | 用例数 | 状态 |
+|------|---------|--------|------|
+| 绑定系统 | `test-binding-flow.js` | 11 | ✅ 就绪 |
+| 导航任务 | `test-task-flow.js` | 18 | ✅ 就绪 |
+| 位置共享 | 集成在导航测试中 | - | ✅ 就绪 |
+
+**运行测试：**
+```bash
+cd functions/qintu-api
+node test-binding-flow.js
+node test-task-flow.js
+```
+
+---
+
+**最后更新**: 2026-04-09

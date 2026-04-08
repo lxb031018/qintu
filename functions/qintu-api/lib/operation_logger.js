@@ -4,7 +4,7 @@
  * 用于记录关键操作，便于审计和排查问题
  */
 
-const { query } = require('../database');
+const { query } = require('./database');
 
 /**
  * 记录操作日志
