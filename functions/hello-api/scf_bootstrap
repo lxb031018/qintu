@@ -1,0 +1,9 @@
+#!/bin/bash
+# CloudBase HTTP Function 启动脚本
+# 必须使用绝对路径
+
+export PORT=9000
+export NODE_ENV=production
+
+# 使用 Node.js 绝对路径启动
+/var/lang/node18/bin/node index.js

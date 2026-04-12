@@ -186,47 +186,63 @@ router.post('/sync', async (req, res) => {
       return validationError(res, 'openid 是必填参数');
     }
 
-    // 检查用户是否存在
-    const existingUsers = await query(
-      'SELECT openid FROM users WHERE openid = ?',
-      [openid]
-    );
-
-    if (existingUsers.length === 0) {
-      // 不存在则创建
-      await query(
-        `INSERT INTO users (openid, phone, nickname, user_type, last_login_at)
-         VALUES (?, ?, ?, 'both', NOW())`,
-        [openid, phone || null, nickname || null]
-      );
-      console.log(`[User Sync] 创建新用户: ${openid}`);
-    } else {
-      // 存在则更新登录时间
-      await query(
-        'UPDATE users SET last_login_at = NOW() WHERE openid = ?',
+    // 检查数据库是否配置（本地测试跳过数据库操作）
+    const isLocalTest = !process.env.DB_HOST || process.env.DB_HOST === 'localhost';
+    
+    if (!isLocalTest) {
+      // 生产环境：检查用户是否存在
+      const existingUsers = await query(
+        'SELECT openid FROM users WHERE openid = ?',
         [openid]
       );
+
+      if (existingUsers.length === 0) {
+        // 不存在则创建
+        await query(
+          `INSERT INTO users (openid, phone, nickname, user_type, last_login_at)
+           VALUES (?, ?, ?, 'both', NOW())`,
+          [openid, phone || null, nickname || null]
+        );
+        console.log(`[User Sync] 创建新用户: ${openid}`);
+      } else {
+        // 存在则更新登录时间
+        await query(
+          'UPDATE users SET last_login_at = NOW() WHERE openid = ?',
+          [openid]
+        );
+      }
+
+      // 获取用户信息返回
+      const users = await query(
+        `SELECT openid, phone, nickname, user_type, status, last_login_at, created_at
+         FROM users WHERE openid = ?`,
+        [openid]
+      );
+
+      // 查询待确认的绑定请求数量
+      const pendingRequestsResult = await query(
+        `SELECT COUNT(*) as count FROM user_bindings
+         WHERE receiver_openid = ? AND status = 'pending'`,
+        [openid]
+      );
+      const pending_count = pendingRequestsResult[0].count;
+
+      const userInfo = users[0];
+      userInfo.pending_count = pending_count;
+
+      return success(res, userInfo);
+    } else {
+      // 本地测试：直接返回模拟数据
+      console.log(`[User Sync] 本地测试模式，跳过数据库操作: ${openid}`);
+      return success(res, {
+        openid: openid,
+        phone: phone || null,
+        nickname: nickname || null,
+        user_type: 'both',
+        status: 'active',
+        pending_count: 0,
+      });
     }
-
-    // 获取用户信息返回
-    const users = await query(
-      `SELECT openid, phone, nickname, user_type, status, last_login_at, created_at
-       FROM users WHERE openid = ?`,
-      [openid]
-    );
-
-    // 查询待确认的绑定请求数量
-    const pendingRequestsResult = await query(
-      `SELECT COUNT(*) as count FROM user_bindings 
-       WHERE receiver_openid = ? AND status = 'pending'`,
-      [openid]
-    );
-    const pending_count = pendingRequestsResult[0].count;
-
-    const userInfo = users[0];
-    userInfo.pending_count = pending_count;
-
-    return success(res, userInfo);
   } catch (err) {
     console.error('用户同步失败:', err);
 

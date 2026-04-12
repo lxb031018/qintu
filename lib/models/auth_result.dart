@@ -1,65 +1,38 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'auth_result.freezed.dart';
+
 // 认证结果模型 - 用户登录成功后返回的认证信息
 
-class AuthResult {
-  /// 访问令牌
-  final String accessToken;
+@freezed
+class AuthResult with _$AuthResult {
+  const factory AuthResult({
+    @Default('') String accessToken,
+    @Default('') String refreshToken,
+    @Default(0) int accessTokenExpiresIn,
+    @Default(0) int refreshTokenExpiresIn,
+    @Default('') String uid,
+    @Default(0) int pendingCount,
+  }) = _AuthResult;
 
-  /// 刷新令牌
-  final String refreshToken;
-
-  /// Access Token 有效期（秒）
-  final int accessTokenExpiresIn;
-
-  /// Refresh Token 有效期（秒）
-  final int refreshTokenExpiresIn;
-
-  /// 用户 ID（从 sub 字段解析）
-  final String uid;
-  
-  /// 待确认的绑定请求数量
-  final int pendingCount;
-
-  AuthResult({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.accessTokenExpiresIn,
-    required this.refreshTokenExpiresIn,
-    required this.uid,
-    this.pendingCount = 0,
-  });
+  const AuthResult._();
 
   /// 从 JSON 创建实例
   factory AuthResult.fromJson(Map<String, dynamic> json) {
+    // CloudBase Auth v2 API 响应格式:
+    // - access_token: 访问令牌
+    // - refresh_token: 刷新令牌
+    // - expires_in: Access Token 有效期（秒）
+    // - 注意：CloudBase Auth v2 不返回 refresh_expires_in
+    //   Refresh Token 有效期需要使用默认值（AuthConfig.refreshTokenExpiresIn）
     return AuthResult(
       accessToken: json['access_token'] ?? '',
       refreshToken: json['refresh_token'] ?? '',
       accessTokenExpiresIn: json['expires_in'] ?? 0,
-      refreshTokenExpiresIn: json['refresh_expires_in'] ?? 0,
-      uid: json['sub'] ?? json['uid'] ?? '',
+      refreshTokenExpiresIn: 0, // CloudBase 不返回此字段，使用 0 表示需要使用默认值
+      uid: json['openid'] ?? json['sub'] ?? json['uid'] ?? '',
       pendingCount: json['pending_count'] ?? 0,
     );
-  }
-
-  /// 转换为 JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'access_token': accessToken,
-      'refresh_token': refreshToken,
-      'expires_in': accessTokenExpiresIn,
-      'refresh_expires_in': refreshTokenExpiresIn,
-      'sub': uid,
-      'pending_count': pendingCount,
-    };
-  }
-
-  /// Access Token 过期时间
-  DateTime get accessTokenExpiresAt {
-    return DateTime.now().add(Duration(seconds: accessTokenExpiresIn));
-  }
-
-  /// Refresh Token 过期时间
-  DateTime get refreshTokenExpiresAt {
-    return DateTime.now().add(Duration(seconds: refreshTokenExpiresIn));
   }
 
   /// 检查 Access Token 是否已过期
@@ -72,18 +45,13 @@ class AuthResult {
     return DateTime.now().isAfter(refreshTokenExpiresAt);
   }
 
-  @override
-  String toString() {
-    // 安全考虑：不输出任何 token 内容，只输出非敏感信息
-    return 'AuthResult(uid: $uid, accessTokenExpiresIn: $accessTokenExpiresIn 秒, refreshTokenExpiresIn: $refreshTokenExpiresIn 秒)';
+  /// Access Token 过期时间
+  DateTime get accessTokenExpiresAt {
+    return DateTime.now().add(Duration(seconds: accessTokenExpiresIn));
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AuthResult && other.accessToken == accessToken;
+  /// Refresh Token 过期时间
+  DateTime get refreshTokenExpiresAt {
+    return DateTime.now().add(Duration(seconds: refreshTokenExpiresIn));
   }
-
-  @override
-  int get hashCode => accessToken.hashCode;
 }

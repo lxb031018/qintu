@@ -1,17 +1,23 @@
 // ============================================
 // API 端点常量
 //
-// 统一定义所有 API 端点路径
-// 避免在代码中硬编码 URL 路径
+// 统一定义所有 API 路径
+// 避免在业务代码中硬编码 URL 路径
 // ============================================
 
-import '../config/app_config.dart';
+import '../config/environments/environment_manager.dart';
 
 class ApiEndpoints {
+  // ==================== 通用配置 ====================
+
+  /// API 路径前缀
+  static const String apiPrefix = '/api';
+
   // ==================== 认证相关配置 ====================
 
   /// 认证 API 基础地址
-  static String get authBaseUrl => AppConfig.authBaseUrl;
+  /// 根据环境自动选择：本地 → EnvironmentManager.baseUrl，CloudBase → CloudBase 网关
+  static String get authBaseUrl => EnvironmentManager.baseUrl;
 
   // ==================== 用户管理 ====================
 
@@ -35,6 +41,9 @@ class ApiEndpoints {
   /// 获取待确认的绑定请求
   static const String getPendingRequests = '/api/bindings/pending';
 
+  /// 获取我发出的绑定请求
+  static const String getSentRequests = '/api/bindings/sent';
+
   /// 确认绑定请求
   static const String confirmRequest = '/api/bindings/confirm-request';
 
@@ -46,6 +55,14 @@ class ApiEndpoints {
 
   /// 解除绑定
   static const String revokeBinding = '/api/bindings'; // + /{id}
+
+  /// 取消发出的绑定请求
+  static String cancelSentRequest(int requestId) => '/api/bindings/$requestId';
+
+  // ==================== 用户管理 ====================
+
+  /// 同步用户信息
+  static const String syncUser = '/api/users/sync';
 
   // ==================== 导航任务 ====================
 
@@ -88,24 +105,26 @@ class ApiEndpoints {
   static const String getLastLocation = '/api/locations'; // + /{userId}/last
 
   // ==================== 认证相关 ====================
-  // 使用 CloudBase 官方 Auth API
+  // 注意：以下端点在 CloudBase 环境下走官方 Auth API，本地环境下走自建后端
 
   /// 发送验证码
-  /// CloudBase 官方 Auth API: POST /auth/v1/verification
+  /// 本地: POST /auth/v1/verification → 自建后端（控制台打印验证码）
+  /// CloudBase: POST /auth/v1/verification → CloudBase Auth v2（短信发送）
   static const String sendVerificationCode = '/auth/v1/verification';
 
   /// 验证验证码
-  /// CloudBase 官方 Auth API: POST /auth/v1/verification/verify
+  /// 本地: POST /auth/v1/verification/verify → 自建后端
+  /// CloudBase: POST /auth/v1/verification/verify → CloudBase Auth v2
   static const String verifyCode = '/auth/v1/verification/verify';
 
-  /// 登录（老用户）
-  /// CloudBase 官方 Auth API: POST /auth/v1/signin
+  /// 登录
+  /// 本地: POST /auth/v1/signin → 自建后端
+  /// CloudBase: POST /auth/v1/signin → CloudBase Auth v2
   static const String signIn = '/auth/v1/signin';
 
-  /// 注册/登录（新用户首次登录）
-  /// CloudBase 官方 Auth API: POST /auth/v1/signup
-  /// 注意：CloudBase 官方 API 中，signup 和 signin 是同一个流程
-  /// 新用户验证成功后会自动创建用户，无需单独调用 signup
+  /// 注册/登录（新用户首次）
+  /// 本地: POST /auth/v1/signup → 自建后端
+  /// CloudBase: POST /auth/v1/signup → CloudBase Auth v2
   static const String signUp = '/auth/v1/signup';
 
   /// 刷新令牌

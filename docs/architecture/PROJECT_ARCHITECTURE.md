@@ -4,142 +4,145 @@
 
 ```
 lib/features/
-├── auth/              # 认证模块（登录/注册）
-│   ├── auth_page.dart
-│   └── widgets/       # 认证组件（auth_header, auth_button 等）
-├── binding/           # 绑定管理模块（独立的绑定关系管理）
-│   ├── binding_page.dart          # 主页面 (~230 行)
-│   └── widgets/                   # 绑定组件
-│       ├── phone_binding_dialog.dart   # 手机号对话框
-│       ├── binding_stats_card.dart     # 统计卡片
-│       ├── binding_list_view.dart      # 列表视图
-│       ├── binding_card.dart           # 绑定卡片
-│       ├── add_binding_button.dart     # 添加按钮
-│       ├── empty_binding_view.dart     # 空状态
-│       └── error_view.dart             # 错误视图
-├── receiver/          # 接收者模块（老人端 - 简洁单页）
-├── role/              # 角色选择模块
-├── sender/            # 发送者模块（子女端 - 三Tab架构）
-│   ├── sender_main_screen.dart      # 发送者主容器（底部三Tab导航）
-│   ├── sender_home_content.dart     # 发送者Home Tab内容（路径规划）
-│   └── widgets/                     # 发送者相关小组件
-└── settings/          # 设置模块（主题、账号、退出）
-    ├── settings_page.dart
-    └── widgets/       # 设置组件（theme_selector, logout_card 等）
+├── auth/                          # 认证模块（登录/注册）
+│   ├── auth_page.dart             # 登录/注册页面
+│   └── widgets/                   # 认证组件
+│       ├── auth_button.dart       # 认证按钮
+│       ├── auth_header.dart       # 页面头部（Logo + 欢迎语）
+│       ├── code_input_card.dart   # 验证码输入卡片
+│       ├── error_card.dart        # 错误提示卡片
+│       └── phone_input_card.dart  # 手机号输入卡片
+├── binding/                       # 绑定关系模块
+│   ├── binding_page.dart          # 绑定管理主页面
+│   ├── binding_controller.dart    # 绑定业务逻辑控制器
+│   ├── requests/                  # 请求管理子模块
+│   │   ├── notification_center_page.dart  # 通知中心页面（3个Tab）
+│   │   └── widgets/
+│   │       ├── empty_state_widget.dart    # 空状态组件
+│   │       ├── pending_request_card.dart  # 待确认请求卡片
+│   │       ├── received_requests_tab.dart # 收到请求Tab
+│   │       ├── rejected_requests_tab.dart # 被拒绝请求Tab
+│   │       └── sent_requests_tab.dart     # 发出请求Tab
+│   └── widgets/
+│       ├── add_binding_button.dart        # 添加绑定按钮
+│       ├── binding_card.dart              # 绑定关系卡片
+│       ├── binding_list_view.dart         # 绑定列表视图
+│       ├── binding_stats_card.dart        # 绑定统计卡片
+│       ├── empty_binding_view.dart        # 空绑定状态
+│       ├── error_view.dart                # 错误视图
+│       ├── notification_badge.dart        # 通知角标
+│       ├── phone_binding_dialog.dart      # 手机号绑定对话框
+│       └── sent_request_card.dart         # 已发出请求卡片
+├── common/                        # 通用模块
+│   └── splash_screen.dart         # 启动页
+├── home/                          # 主页模块
+│   ├── unified_home_page.dart     # 统一主页（顶部Tab架构）
+│   └── tabs/
+│       ├── route_planning_tab.dart        # 路线规划Tab
+│       └── widgets/
+│           └── route_map_widget.dart      # 地图组件
+└── settings/                      # 设置模块
+    ├── settings_page.dart         # 设置页面
+    ├── environment_switch_page.dart  # 环境切换页面
+    └── widgets/
+        ├── font_size_selector_card.dart   # 字体大小选择器
+        ├── logout_card.dart               # 退出登录卡片
+        ├── settings_section_card.dart     # 设置区域卡片
+        ├── tab_switch_mode_card.dart      # Tab切换模式卡片
+        └── theme_selector_card.dart       # 主题选择器
 ```
 
-## 🎯 角色架构设计
+## 🎯 统一主页架构
 
-### 发送者（子女/年轻人）- 三Tab架构
+### 顶部 3 Tab 架构
 
 ```
-SenderMainScreen (底部导航栏)
-├── Tab 0: Home - 路径规划、发送导航
-│   └── SenderHomeContent
-│       ├── 起点输入
-│       ├── 终点输入
-│       └── 规划路线按钮
-├── Tab 1: 绑定 - 管理绑定关系
-│   └── BindingPage (复用 binding/ 模块)
+UnifiedHomePage (顶部Tab栏)
+├── Tab 0: 路线规划 - 高德地图 + 起点终点输入
+│   └── RoutePlanningTab
+│       └── RouteMapWidget (地图组件)
+├── Tab 1: 关系绑定 - 绑定列表 + 通知中心
+│   └── BindingPage
+│       └── 通知中心入口 (角标提示)
 └── Tab 2: 设置 - 应用设置、账号管理
-    └── SettingsPage (复用 settings/ 模块)
+    └── SettingsPage
+        ├── 主题选择器
+        ├── 字体大小选择器
+        ├── Tab切换模式切换
+        └── 退出登录
 ```
 
 **设计理由**：
-- 发送者是主动操作方，功能复杂度高
-- 需要管理绑定关系（低频但重要）
-- 用户相对年轻，能处理复杂UI
+- 所有人使用同一套界面，不再区分"发送者"和"接收者"
+- 顶部 Tab 防止老人误触（双击切换）
+- 会用的年轻人自然使用所有功能
+- 不会用的老人不接触看不懂的按钮
 
-### 接收者（老人）- 简洁单页架构
+### 双击切换 Tab 机制
 
-```
-ReceiverHomePage (单页展示)
-├── AppBar
-│   ├── [开始导航] 按钮（左上角，避免误触）
-│   ├── 设置图标（右上角）
-│   ├── 绑定请求通知（如有，红点提示）
-│   └── 定位开关按钮
-├── 主体内容
-│   └── 等待导航提示
-└── （无浮动按钮，全部集成到 AppBar）
-```
+| 模式 | 单击行为 | 双击行为 | 适用场景 |
+|------|---------|---------|---------|
+| **双击模式** (默认) | 显示提示"💡 双击顶部标签切换页面" | 切换到对应 Tab | 防止老人误触 |
+| **单击模式** | 直接切换 Tab | 无操作 | 年轻人使用 |
 
-**设计理由**：
-- 老人用户防误触设计
-- 零学习成本，打开就是核心功能
-- 不会因为点错Tab而"丢失"导航界面
-- KISS原则（Keep It Simple, Stupid）
-- 所有操作按钮集成到 AppBar 上方，避免老人误触
+**设置路径**: 设置页 → Tab 双击模式
 
 ## 🔄 用户流程
 
 ```
 启动应用
    ↓
-检查登录状态
+AuthStateManager.initialize() 检查登录状态
    ↓
 未登录 → AuthPage (登录/注册)
    ↓
-已登录 → 检查角色
+已登录 → UnifiedHomePage (统一主页)
    ↓
-未选择角色 → RoleSelectionPage (角色选择)
-   ↓
-已选择角色
-   ├─ receiver → ReceiverHomePage (接收者单页)
-   └─ sender → SenderMainScreen (发送者三Tab)
+顶部 3 Tab 自由选择
 ```
 
 ## 📝 命名规范
 
 | 文件/类名 | 位置 | 说明 |
 |----------|------|------|
-| `SenderMainScreen` | `features/sender/` | 发送者主容器（带底部导航） |
-| `SenderHomeContent` | `features/sender/` | 发送者Home Tab内容 |
-| `ReceiverHomePage` | `features/receiver/` | 接收者主页（单页） |
-| `BindingPage` | `features/binding/` | 绑定管理页（独立模块） |
-| `SettingsPage` | `features/settings/` | 设置页（独立模块） |
+| `UnifiedHomePage` | `features/home/` | 统一主页（顶部Tab） |
+| `RoutePlanningTab` | `features/home/tabs/` | 路线规划Tab |
+| `BindingPage` | `features/binding/` | 绑定管理页 |
+| `NotificationCenterPage` | `features/binding/requests/` | 通知中心（3个Tab） |
+| `SettingsPage` | `features/settings/` | 设置页 |
 
-## ✅ 重构完成项
+## ✅ 架构决策
 
-### 架构重构（2026-04-08）
-1. ✅ Token 刷新功能完整实现（`TokenRefreshInterceptor`）
-2. ✅ 测试覆盖提升到 29 个测试全部通过
-3. ✅ `api_client.dart` 从 424 行拆分到 180 行 (-57%)
-4. ✅ `ThemeManager` 移除单例，统一使用 Provider
-5. ✅ 全局错误边界 `ErrorBoundary` 和 `SafeErrorWidget`
-6. ✅ `binding_page.dart` 从 742 行重构到 233 行 (-69%)
-7. ✅ 创建 `lib/features/README.md` Feature 模块结构规范
-8. ✅ 修复所有硬编码（绑定限制、提示文本等）
-9. ✅ 修复 `auth_page.dart` 中的废弃导入
+### 统一发送者和接收者端
 
-### 早期重构
-10. ✅ 删除 `lib/features/home/` 文件夹（包含硬编码的占位页面）
-11. ✅ 重构 `lib/features/sender/` 为三Tab架构
-12. ✅ 保持 `lib/features/receiver/` 简洁单页架构
-13. ✅ 统一使用 `go_router` 导航（已删除 `NavigationService`）
-14. ✅ 更新 `main.dart` 和 `app_router.dart` 引用
-15. ✅ 清理所有未使用的导入
-16. ✅ 修复硬编码字符串（底部导航、主题模式名称）
-17. ✅ 修复废弃 API（`dialogBackgroundColor`）
-18. ✅ 完整深色模式适配（所有核心页面）
-19. ✅ 接收者页面按钮位置调整（避免误触）
-20. ✅ 角色切换页面更新修复（清除页面栈）
-21. ✅ 主题切换实时生效修复
-22. ✅ 退出登录错误修复
+**决策日期**: 2026-04-08
 
-## 🔧 待完善项
+- ✅ 完全统一界面，不再区分角色
+- ✅ 统一主界面包含顶部 Tab Bar（路线规划/关系绑定/设置）
+- ✅ 删除角色选择机制
+- ✅ 绑定关系改为双向对等（A绑定B确认后，两人自动互相绑定）
 
-- [ ] `accessToken` 的获取（目前在 `main.dart` 中标记为 TODO）
-- [ ] 发送者 Home Tab 的路线规划 API 集成
-- [ ] 发送者选择接收者发送导航的功能
-- [ ] 接收者接收并显示导航指引
-- [ ] Provider 注入优化（BindingPage 可能需要 Provider 包装）
-- [ ] 接收者"开始导航"功能实现
+### 主题颜色
 
-## 🚀 编译检查
+**主色调**: 珊瑚橙 `#FF8C69`
+
+| 元素 | 浅色模式 | 深色模式 |
+|------|---------|---------|
+| 主色调 | 珊瑚橙 `#FF8C69` | 珊瑚橙 `#FF8C69` |
+| 背景 | 奶油白 `#FFF8F0` | 深蓝灰 `#121212` |
+| 卡片 | 纯白 `#FFFFFF` | 深灰 `#242424` |
+
+### 认证状态持久化
+
+- Token 仅存储在 `SecureStorage` 中
+- `AuthStateManager` 为唯一认证源
+- Refresh Token 有效期 10 年（一次登录，永久保持）
+- 自动刷新：`TokenRefreshInterceptor` 处理 401 错误
+
+## 📊 编译检查
 
 ```bash
 flutter analyze --no-fatal-infos
 ```
 
-当前状态：✅ **无编译错误**（仅有代码风格提示）
+当前状态：✅ **无编译错误**

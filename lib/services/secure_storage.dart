@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../config/app_config.dart';
-import '../constants/app_roles.dart';
+import '../constants/storage_keys.dart';
+import '../config/auth_config.dart';
 import '../models/login_info.dart';
 import '../utils/logger.dart';
 
@@ -46,38 +46,52 @@ class SecureStorage {
     required int refreshTokenExpiresIn,
     required String phoneNumber,
     required String userId,
-    String? role,
   }) async {
-    Logs.database.info('开始保存登录信息，角色: ${role ?? "未设置"}');
+    Logs.database.info('========== 开始保存登录信息 ==========');
+    Logs.database.info('用户ID: $userId');
+    Logs.database.info('手机号: $phoneNumber');
+    Logs.database.info('AccessToken 有效期: $accessTokenExpiresIn秒 (${accessTokenExpiresIn ~/ 3600}小时)');
+    Logs.database.info('RefreshToken 有效期: $refreshTokenExpiresIn秒 (${refreshTokenExpiresIn ~/ 86400}天)');
 
     try {
       // 敏感数据使用安全存储
-      await _secureStorage.write(key: AppConfig.accessTokenKey, value: accessToken);
-      await _secureStorage.write(key: AppConfig.refreshTokenKey, value: refreshToken);
-
-      // 根据角色获取正确的 Refresh Token 有效期
-      final effectiveRefreshTokenExpiresIn = AppConfig.getRefreshTokenExpiresIn(role);
+      Logs.database.info('正在保存 AccessToken 到 SecureStorage...');
+      await _secureStorage.write(key: SecureStorageKeys.accessToken, value: accessToken);
+      Logs.database.info('正在保存 RefreshToken 到 SecureStorage...');
+      await _secureStorage.write(key: SecureStorageKeys.refreshToken, value: refreshToken);
 
       // 非敏感数据使用普通存储
       final prefs = await _getPrefs();
-      await prefs.setInt(AppConfig.expiresInKey, effectiveRefreshTokenExpiresIn);
-      await prefs.setString(AppConfig.phoneNumberKey, phoneNumber);
-      await prefs.setString(AppConfig.userIdKey, userId);
+      
+      Logs.database.info('正在保存 RefreshToken 有效期到 SharedPreferences...');
+      await prefs.setInt(SecureStorageKeys.tokenExpiresAt, refreshTokenExpiresIn);
+      
+      Logs.database.info('正在保存手机号到 SharedPreferences...');
+      await prefs.setString(SecureStorageKeys.phoneNumber, phoneNumber);
+      
+      Logs.database.info('正在保存用户ID到 SharedPreferences...');
+      await prefs.setString(SecureStorageKeys.userId, userId);
 
       // 分别保存 Access Token 和 Refresh Token 的时间
       final now = DateTime.now().millisecondsSinceEpoch;
-      await prefs.setInt(AppConfig.accessTokenSaveTimeKey, now);
-      await prefs.setInt(AppConfig.refreshTokenSaveTimeKey, now);
+      final nowDate = DateTime.fromMillisecondsSinceEpoch(now);
+      Logs.database.info('正在保存 Token 时间戳: $nowDate');
+      
+      await prefs.setInt(SecureStorageKeys.accessTokenSaveTime, now);
+      await prefs.setInt(SecureStorageKeys.refreshTokenSaveTime, now);
 
-      // 存储用户角色
-      if (role != null) {
-        await prefs.setString(AppConfig.userRoleKey, role);
-      }
+      // 验证保存是否成功
+      final verifyAccessToken = await _secureStorage.read(key: SecureStorageKeys.accessToken);
+      final verifyRefreshToken = await _secureStorage.read(key: SecureStorageKeys.refreshToken);
+      final verifyUserId = prefs.getString(SecureStorageKeys.userId);
+      final verifySaveTime = prefs.getInt(SecureStorageKeys.refreshTokenSaveTime);
 
-      // 清除缓存
-      _prefsCache = null;
-
-      Logs.database.info('Token 已保存，角色: ${role ?? "未设置"}');
+      Logs.database.info('========== 保存结果验证 ==========');
+      Logs.database.info('AccessToken 保存成功: ${verifyAccessToken != null ? "✅ 是" : "❌ 否"}');
+      Logs.database.info('RefreshToken 保存成功: ${verifyRefreshToken != null ? "✅ 是" : "❌ 否"}');
+      Logs.database.info('UserId 保存成功: ${verifyUserId != null ? "✅ 是 ($verifyUserId)" : "❌ 否"}');
+      Logs.database.info('SaveTime 保存成功: ${verifySaveTime != null ? "✅ 是 ($nowDate)" : "❌ 否"}');
+      Logs.database.info('========== 登录信息保存完成 ==========');
     } catch (e, stackTrace) {
       Logs.database.error('保存登录信息失败: $e', stackTrace: stackTrace);
       rethrow;
@@ -86,162 +100,137 @@ class SecureStorage {
 
   /// 获取 Access Token
   static Future<String?> getAccessToken() async {
-    return await _secureStorage.read(key: AppConfig.accessTokenKey);
+    return await _secureStorage.read(key: SecureStorageKeys.accessToken);
   }
 
   /// 获取 Refresh Token
   static Future<String?> getRefreshToken() async {
-    return await _secureStorage.read(key: AppConfig.refreshTokenKey);
+    return await _secureStorage.read(key: SecureStorageKeys.refreshToken);
   }
 
   /// 获取手机号
   static Future<String?> getPhoneNumber() async {
     final prefs = await _getPrefs();
-    return prefs.getString(AppConfig.phoneNumberKey);
+    return prefs.getString(SecureStorageKeys.phoneNumber);
   }
 
   /// 获取用户 ID
   static Future<String?> getUserId() async {
     final prefs = await _getPrefs();
-    return prefs.getString(AppConfig.userIdKey);
-  }
-
-  /// 获取用户角色
-  static Future<String?> getUserRole() async {
-    final prefs = await _getPrefs();
-    return prefs.getString(AppConfig.userRoleKey);
-  }
-
-  /// 保存用户角色（单独调用）
-  /// 当用户选择角色时，需要更新 Refresh Token 的有效期
-  static Future<void> saveRole(String role) async {
-    Logs.database.info('开始保存用户角色: $role');
-    
-    try {
-      final prefs = await _getPrefs();
-      await prefs.setString(AppConfig.userRoleKey, role);
-
-      // 更新 Refresh Token 保存时间和有效期（根据角色重新计算）
-      await prefs.setInt(AppConfig.refreshTokenSaveTimeKey, DateTime.now().millisecondsSinceEpoch);
-      
-      // 更新 Refresh Token 有效期为角色配置
-      final effectiveExpiresIn = AppConfig.getRefreshTokenExpiresIn(role);
-      await prefs.setInt(AppConfig.expiresInKey, effectiveExpiresIn);
-
-      // 清除缓存，确保下次读取时获取最新数据
-      _prefsCache = null;
-
-      Logs.database.info('角色已保存: $role, Refresh Token 有效期: ${effectiveExpiresIn}s (${effectiveExpiresIn ~/ 86400}天)');
-    } catch (e, stackTrace) {
-      Logs.database.info('保存角色失败: $e\n$stackTrace');
-      rethrow;
-    }
+    return prefs.getString(SecureStorageKeys.userId);
   }
 
   /// 检查是否已登录
   static Future<bool> isLoggedIn() async {
+    Logs.auth.info('========== 开始检查登录状态 ==========');
+    
     try {
-      final accessToken = await _secureStorage.read(key: AppConfig.accessTokenKey);
-      final refreshToken = await _secureStorage.read(key: AppConfig.refreshTokenKey);
+      Logs.auth.info('步骤 1/5: 正在读取 AccessToken...');
+      final accessToken = await _secureStorage.read(key: SecureStorageKeys.accessToken);
+      Logs.auth.info('步骤 1/5 完成: accessToken = ${accessToken != null ? "✅ 存在 (${accessToken.length}字符)" : "❌ null"}');
+      
+      Logs.auth.info('步骤 2/5: 正在读取 RefreshToken...');
+      final refreshToken = await _secureStorage.read(key: SecureStorageKeys.refreshToken);
+      Logs.auth.info('步骤 2/5 完成: refreshToken = ${refreshToken != null ? "✅ 存在 (${refreshToken.length}字符)" : "❌ null"}');
 
       // Access Token 和 Refresh Token 都必须存在
       if (accessToken == null || refreshToken == null) {
-        Logs.auth.info('登录状态检查: Token 不存在 (accessToken: ${accessToken == null}, refreshToken: ${refreshToken == null})');
+        Logs.auth.info('❌ 登录状态检查失败: Token 不存在 (accessToken: ${accessToken == null}, refreshToken: ${refreshToken == null})');
+        Logs.auth.info('========================================');
         return false;
       }
 
-      // 获取用户角色，根据角色判断 Refresh Token 有效期
+      // 检查 Refresh Token 是否过期
+      Logs.auth.info('步骤 3/5: 正在读取 Token 时间戳...');
       final prefs = await _getPrefs();
-      final role = prefs.getString(AppConfig.userRoleKey);
-      final refreshTokenSaveTime = prefs.getInt(AppConfig.refreshTokenSaveTimeKey);
-      final refreshTokenExpiresIn = prefs.getInt(AppConfig.expiresInKey);
+      final refreshTokenSaveTime = prefs.getInt(SecureStorageKeys.refreshTokenSaveTime);
+      final refreshTokenExpiresIn = prefs.getInt(SecureStorageKeys.tokenExpiresAt);
 
-      Logs.auth.info('登录状态检查: role=$role, saveTime=$refreshTokenSaveTime, expiresIn=$refreshTokenExpiresIn');
+      Logs.auth.info('步骤 3/5 完成:');
+      Logs.auth.info('  - refreshTokenSaveTime = ${refreshTokenSaveTime ?? -1}');
+      Logs.auth.info('  - refreshTokenExpiresIn = ${refreshTokenExpiresIn ?? -1}');
 
       // 如果保存时间为空，说明登录流程未完成或数据损坏
       if (refreshTokenSaveTime == null) {
-        Logs.app.warning('登录状态检查: refreshTokenSaveTime 不存在，可能登录流程中断');
+        Logs.auth.warning('❌ 登录状态检查失败: refreshTokenSaveTime 不存在，可能登录流程中断');
+        Logs.auth.info('========================================');
         return false;
       }
-      
-      // 根据角色获取 Refresh Token 有效期
-      final effectiveExpiresIn = _getEffectiveRefreshTokenExpiresIn(role, refreshTokenExpiresIn);
 
+      Logs.auth.info('步骤 4/5: 正在计算 Token 有效期...');
+      final effectiveExpiresIn = refreshTokenExpiresIn ?? AuthConfig.refreshTokenExpiresIn;
       final saveDateTime = DateTime.fromMillisecondsSinceEpoch(refreshTokenSaveTime);
       final expireDateTime = saveDateTime.add(Duration(seconds: effectiveExpiresIn));
       final now = DateTime.now();
 
       final daysRemaining = expireDateTime.difference(now).inDays;
-      Logs.auth.info('Token 有效期：保存于 ${saveDateTime.toString().substring(0, 19)}, 过期于 ${expireDateTime.toString().substring(0, 19)}, 剩余 $daysRemaining 天');
+      final hoursRemaining = expireDateTime.difference(now).inHours;
+      
+      Logs.auth.info('步骤 4/5 完成:');
+      Logs.auth.info('  - 保存时间: $saveDateTime');
+      Logs.auth.info('  - 过期时间: $expireDateTime');
+      Logs.auth.info('  - 当前时间: $now');
+      Logs.auth.info('  - 有效期配置: $effectiveExpiresIn秒 (${effectiveExpiresIn ~/ 86400}天)');
+      Logs.auth.info('  - 剩余有效期: $daysRemaining 天 $hoursRemaining 小时');
 
+      Logs.auth.info('步骤 5/5: 正在检查是否过期...');
       if (now.isAfter(expireDateTime)) {
-        Logs.app.warning('Refresh Token 已过期（角色: $role），需要重新登录');
+        Logs.auth.info('步骤 5/5 完成: ❌ Refresh Token 已过期');
+        Logs.auth.info('  - 过期时间: $expireDateTime');
+        Logs.auth.info('  - 当前时间: $now');
+        Logs.auth.info('  - 过期时长: ${now.difference(expireDateTime).inDays} 天');
+        Logs.auth.info('========================================');
         return false;
       }
 
-      Logs.auth.info('✅ 已登录（角色: $role，Token 剩余有效期: $daysRemaining 天）');
+      Logs.auth.info('步骤 5/5 完成: ✅ Refresh Token 有效');
+      Logs.auth.info('========================================');
+      Logs.auth.info('✅ 登录状态检查通过: 已登录（Token 剩余有效期: $daysRemaining 天）');
+      Logs.auth.info('========================================');
       return true;
     } catch (e, stackTrace) {
-      Logs.auth.info('登录状态检查异常: $e\n$stackTrace');
+      Logs.auth.error('❌ 登录状态检查异常: $e', stackTrace: stackTrace);
+      Logs.auth.info('========================================');
       return false;
-    }
-  }
-
-  /// 根据角色获取 Refresh Token 实际有效期
-  static int _getEffectiveRefreshTokenExpiresIn(String? role, int? serverExpiresIn) {
-    // 如果服务端返回的 Refresh Token 有效期存在，优先使用（适配服务端实际配置）
-    if (serverExpiresIn != null && serverExpiresIn > 0) {
-      return serverExpiresIn;
-    }
-
-    // 根据角色返回对应的 Refresh Token 有效期
-    switch (role) {
-      case AppRoles.receiver:
-        return AppConfig.receiverRefreshTokenExpiresIn; // 1 年
-      case AppRoles.sender:
-        return AppConfig.senderRefreshTokenExpiresIn; // 30 天
-      default:
-        return AppConfig.refreshTokenExpiresIn; // 30 天（默认）
     }
   }
 
   /// 清除登录状态（退出登录）
   static Future<void> clearTokens() async {
     // 清除安全存储
-    await _secureStorage.delete(key: AppConfig.accessTokenKey);
-    await _secureStorage.delete(key: AppConfig.refreshTokenKey);
+    await _secureStorage.delete(key: SecureStorageKeys.accessToken);
+    await _secureStorage.delete(key: SecureStorageKeys.refreshToken);
 
     // 清除普通存储
     final prefs = await _getPrefs();
-    await prefs.remove(AppConfig.expiresInKey);
-    await prefs.remove(AppConfig.phoneNumberKey);
-    await prefs.remove(AppConfig.userIdKey);
-    await prefs.remove(AppConfig.accessTokenSaveTimeKey);
-    await prefs.remove(AppConfig.refreshTokenSaveTimeKey);
-    await prefs.remove(AppConfig.userRoleKey);
+    await prefs.remove(SecureStorageKeys.tokenExpiresAt);
+    await prefs.remove(SecureStorageKeys.phoneNumber);
+    await prefs.remove(SecureStorageKeys.userId);
+    await prefs.remove(SecureStorageKeys.accessTokenSaveTime);
+    await prefs.remove(SecureStorageKeys.refreshTokenSaveTime);
+    await prefs.remove(SecureStorageKeys.userRole);
 
     Logs.database.info('Token 已清除');
   }
 
   /// 获取完整的登录信息（强类型）
   static Future<LoginInfo?> getLoginInfo() async {
-    final accessToken = await _secureStorage.read(key: AppConfig.accessTokenKey);
+    final accessToken = await _secureStorage.read(key: SecureStorageKeys.accessToken);
     if (accessToken == null) {
       return null;
     }
 
-    final refreshToken = await _secureStorage.read(key: AppConfig.refreshTokenKey);
+    final refreshToken = await _secureStorage.read(key: SecureStorageKeys.refreshToken);
     final prefs = await _getPrefs();
 
     return LoginInfo.fromStorage(
       accessToken: accessToken,
       refreshToken: refreshToken,
-      expiresIn: prefs.getInt(AppConfig.expiresInKey),
-      phoneNumber: prefs.getString(AppConfig.phoneNumberKey),
-      userId: prefs.getString(AppConfig.userIdKey),
-      userRole: prefs.getString(AppConfig.userRoleKey),
-      accessTokenSaveTime: prefs.getInt(AppConfig.accessTokenSaveTimeKey),
-      refreshTokenSaveTime: prefs.getInt(AppConfig.refreshTokenSaveTimeKey),
+      expiresIn: prefs.getInt(SecureStorageKeys.tokenExpiresAt),
+      phoneNumber: prefs.getString(SecureStorageKeys.phoneNumber),
+      userId: prefs.getString(SecureStorageKeys.userId),
+      accessTokenSaveTime: prefs.getInt(SecureStorageKeys.accessTokenSaveTime),
+      refreshTokenSaveTime: prefs.getInt(SecureStorageKeys.refreshTokenSaveTime),
     );
   }
 

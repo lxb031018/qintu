@@ -1,4 +1,8 @@
-/// 异步状态（Sealed Class）
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'async_state.freezed.dart';
+
+/// 异步状态（Freezed Union）
 ///
 /// 统一表示异步操作的四种状态：
 /// - initial: 初始状态
@@ -8,64 +12,30 @@
 ///
 /// 使用 sealed class 确保状态完整性，
 /// 编译时检查所有分支是否处理
-sealed class AsyncState<T> {
-  const AsyncState();
+@freezed
+sealed class AsyncState<T> with _$AsyncState<T> {
+  const factory AsyncState.initial() = AsyncInitial<T>;
+  const factory AsyncState.loading({T? previousData}) = AsyncLoading<T>;
+  const factory AsyncState.success(T data) = AsyncSuccess<T>;
+  const factory AsyncState.error(String message, [Object? exception, StackTrace? stackTrace]) = AsyncError<T>;
+
+  const AsyncState._();
 
   /// 是否为初始状态
-  bool get isInitial => this is AsyncInitial<T>;
+  bool get isInitial => maybeWhen(initial: () => true, orElse: () => false);
 
   /// 是否为加载状态
-  bool get isLoading => this is AsyncLoading<T>;
+  bool get isLoading => maybeWhen(loading: (previousData) => true, orElse: () => false);
 
   /// 是否为成功状态
-  bool get isSuccess => this is AsyncSuccess<T>;
+  bool get isSuccess => maybeWhen(success: (data) => true, orElse: () => false);
 
   /// 是否为错误状态
-  bool get isError => this is AsyncError<T>;
+  bool get isError => maybeWhen(error: (message, exception, stackTrace) => true, orElse: () => false);
 
   /// 获取数据（仅成功时有效）
-  T? get data {
-    if (this is AsyncSuccess<T>) {
-      return (this as AsyncSuccess<T>).data;
-    }
-    return null;
-  }
+  T? get data => maybeWhen(success: (data) => data, orElse: () => null);
 
   /// 获取错误信息（仅错误时有效）
-  String? get errorMessage {
-    if (this is AsyncError<T>) {
-      return (this as AsyncError<T>).message;
-    }
-    return null;
-  }
-}
-
-/// 初始状态
-class AsyncInitial<T> extends AsyncState<T> {
-  const AsyncInitial();
-}
-
-/// 加载状态
-class AsyncLoading<T> extends AsyncState<T> {
-  /// 之前的数据（用于刷新时显示）
-  final T? previousData;
-
-  const AsyncLoading([this.previousData]);
-}
-
-/// 成功状态
-class AsyncSuccess<T> extends AsyncState<T> {
-  @override
-  final T data;
-
-  const AsyncSuccess(this.data);
-}
-
-/// 错误状态
-class AsyncError<T> extends AsyncState<T> {
-  final String message;
-  final Object? exception;
-  final StackTrace? stackTrace;
-
-  const AsyncError(this.message, [this.exception, this.stackTrace]);
+  String? get errorMessage => maybeWhen(error: (message, exception, stackTrace) => message, orElse: () => null);
 }

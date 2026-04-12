@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
-import '../../../constants/font_size_options.dart';
-import '../../../managers/settings_manager.dart';
+import '../../../constants/app_strings.dart';
+import '../../../constants/font_size_setting.dart';
+import '../../../providers/settings_manager.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/logger.dart';
 
@@ -37,7 +38,7 @@ class _FontSizeSelectorCardState extends State<FontSizeSelectorCard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.blackOpacity5,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -52,7 +53,7 @@ class _FontSizeSelectorCardState extends State<FontSizeSelectorCard> {
               Icon(Icons.text_fields, color: textColor, size: 24),
               const SizedBox(width: 12),
               Text(
-                '字体大小',
+                AppStrings.fontSize,
                 style: AppTextStyles.titleSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -122,14 +123,14 @@ class _FontSizeOptionButton extends StatelessWidget {
               ? AppColors.primaryColor
               : isDark
                   ? AppColors.darkBackgroundColor
-                  : Colors.grey.shade100,
+                  : AppColors.grey100,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
                 : isDark
                     ? AppColors.darkBorderColor
-                    : Colors.grey.shade300,
+                    : AppColors.grey300,
             width: 2,
           ),
         ),
@@ -138,7 +139,7 @@ class _FontSizeOptionButton extends StatelessWidget {
           children: [
             Icon(
               option.icon,
-              color: isSelected ? Colors.white : AppColors.primaryColor,
+              color: isSelected ? AppColors.whiteText : AppColors.primaryColor,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -146,7 +147,7 @@ class _FontSizeOptionButton extends StatelessWidget {
               option.label,
               style: AppTextStyles.locationTitle.copyWith(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : AppColors.primaryColor,
+                color: isSelected ? AppColors.whiteText : AppColors.primaryColor,
               ),
             ),
           ],

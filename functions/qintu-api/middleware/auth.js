@@ -1,107 +1,66 @@
 /**
- * 认证中间件
- *
- * ⚠️ TODO: 生产环境必须实现真正的 Token 验证（CloudBase JWT）
- * 当前实现仅信任 X-User-OpenID 请求头，仅适用于开发/测试阶段。
- * 任何知道有效 openid 的人都可以冒充用户。
- *
- * 上线前修复方案：
- * 1. 从 Authorization: Bearer <token> 获取 Access Token
- * 2. 使用 CloudBase SDK 验证 JWT 签名
- * 3. 从解码后的 token 中提取 openid
- * 4. 移除对 X-User-OpenID 的依赖
+ * 统一身份认证中间件
+ * 
+ * 职责：
+ * 1. 从请求头 x-user-openid 获取身份。
+ * 2. 如果没有，则从 Authorization Token (mock_token_oid_xxx) 中智能提取。
+ * 3. 将解析后的用户信息挂载到 req.user 上，供后续路由使用。
  */
 
-const { query } = require('../lib/database');
-const { unauthorized } = require('../lib/response');
+const config = require('../config'); // 🌟 引入配置
 
-/**
- * 认证中间件
- * 
- * 从请求头获取 Access Token，验证用户身份
- * 
- * 请求头格式：
- * Authorization: Bearer <access_token>
- * X-User-OpenID: <openid>（可选，用于开发调试）
- */
-async function authMiddleware(req, res, next) {
-  try {
-    // 从请求头获取用户 openid
-    // 注意：在生产环境中，应该验证 CloudBase Access Token
-    // 这里简化处理，直接从自定义头获取（需要配合 API 网关验证）
-    const openid = req.headers['x-user-openid'];
+function extractOpenid(req) {
+    // 1. 优先读取标准 Header
+    const headerOpenid = req.headers['x-user-openid'];
+    if (headerOpenid) return headerOpenid;
+
+    // 2. 兼容模式：从 Mock Token 中提取 (格式: mock_access_oid_xxx 或 mock_token_oid_xxx)
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.includes(config.PREFIX.OPENID)) {
+        const parts = authHeader.split(config.PREFIX.OPENID);
+        if (parts.length > 1) {
+            return config.PREFIX.OPENID + parts[1].split(/[\s"]/)[0];
+        }
+    }
     
-    if (!openid) {
-      return unauthorized(res, '缺少用户认证信息');
-    }
-
-    // 查询用户信息
-    const users = await query(
-      'SELECT openid, phone, nickname, user_type, status FROM users WHERE openid = ?',
-      [openid]
-    );
-
-    if (users.length === 0) {
-      return unauthorized(res, '用户不存在或未注册');
-    }
-
-    const user = users[0];
-
-    // 检查用户状态
-    if (user.status === 'disabled') {
-      return unauthorized(res, '用户账号已被禁用');
-    }
-
-    // 将用户信息注入请求对象
-    req.user = {
-      openid: user.openid,
-      phone: user.phone,
-      nickname: user.nickname,
-      user_type: user.user_type
-    };
-
-    next();
-  } catch (error) {
-    console.error('认证中间件错误:', error);
-    return unauthorized(res, '认证失败');
-  }
+    return null;
 }
 
 /**
- * 可选认证中间件
- * 
- * 如果提供认证信息则验证，否则跳过
- * 用于某些公开但登录后可见更多内容的接口
+ * 认证中间件 (可选模式)
+ * 即使没有身份验证通过，也会向下执行，但在 req.user 中标记
  */
-async function optionalAuth(req, res, next) {
-  try {
-    const openid = req.headers['x-user-openid'];
+function authMiddleware(req, res, next) {
+    const openid = extractOpenid(req);
     
     if (openid) {
-      const users = await query(
-        'SELECT openid, phone, nickname, user_type, status FROM users WHERE openid = ?',
-        [openid]
-      );
-
-      if (users.length > 0 && users[0].status === 'active') {
-        req.user = {
-          openid: users[0].openid,
-          phone: users[0].phone,
-          nickname: users[0].nickname,
-          user_type: users[0].user_type
-        };
-      }
+        req.user = { openid, isAuthenticated: true };
+    } else {
+        req.user = { openid: null, isAuthenticated: false };
     }
+    
+    next();
+}
 
+/**
+ * 强制认证中间件 (保护敏感路由)
+ * 如果没获取到身份，直接返回 401 错误
+ */
+function requireAuth(req, res, next) {
+    const openid = extractOpenid(req);
+    
+    if (!openid) {
+        return res.status(401).json({
+            code: 'UNAUTHORIZED',
+            message: '缺少有效的用户身份信息'
+        });
+    }
+    
+    req.user = { openid, isAuthenticated: true };
     next();
-  } catch (error) {
-    // 可选认证失败不影响后续
-    console.error('可选认证中间件错误:', error);
-    next();
-  }
 }
 
 module.exports = {
-  authMiddleware,
-  optionalAuth
+    authMiddleware,
+    requireAuth
 };

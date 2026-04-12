@@ -23,12 +23,15 @@ class BindingCard extends StatelessWidget {
     final statusColor = _getStatusColor(binding.status);
     final statusText = _getStatusText(binding.status);
     final avatarBackground = isSender
-        ? Colors.orange.shade100
-        : Colors.green.shade100;
-    final avatarIconColor = isSender ? Colors.orange : Colors.green;
-    final roleTextColor = isSender ? Colors.orange : Colors.green;
+        ? AppColors.orange100
+        : AppColors.green100;
+    final avatarIconColor = isSender ? AppColors.warningColor : AppColors.successColor;
     // 手机号脱敏显示
-    final maskedPhone = PhoneUtils.maskPhone(binding.partnerNickname ?? AppStrings.unknownUser);
+    final maskedPhone = PhoneUtils.maskPhone(binding.partnerPhone ?? '');
+    // 优先使用对方昵称，其次使用备注
+    final partnerDisplayName = (binding.partnerNickname != null && binding.partnerNickname!.isNotEmpty)
+        ? binding.partnerNickname!
+        : (binding.remark ?? AppStrings.unknownUser);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -41,7 +44,7 @@ class BindingCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          maskedPhone,
+          partnerDisplayName,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
@@ -49,18 +52,11 @@ class BindingCard extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             Text(
-              isSender ? AppStrings.receiver : AppStrings.sender,
+              maskedPhone,
               style: AppTextStyles.statusTag.copyWith(
-                color: roleTextColor,
+                color: isDark ? AppColors.grey400 : AppColors.disabledColor,
               ),
             ),
-            if (binding.remark != null && binding.remark!.isNotEmpty)
-              Text(
-                '${AppStrings.remark}：${binding.remark}',
-                style: AppTextStyles.statusTag.copyWith(
-                  color: isDark ? Colors.grey.shade400 : Colors.grey,
-                ),
-              ),
           ],
         ),
         trailing: Row(
@@ -96,9 +92,9 @@ class BindingCard extends StatelessWidget {
       case BindingStatus.active:
         return AppColors.successColor;
       case BindingStatus.pending:
-        return Colors.orange;
+        return AppColors.warningColor;
       case BindingStatus.expired:
-        return Colors.grey;
+        return AppColors.disabledColor;
       case BindingStatus.revoked:
         return AppColors.errorColor;
     }

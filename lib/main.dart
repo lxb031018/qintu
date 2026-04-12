@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:amap_map/amap_map.dart';
-import 'package:x_amap_base/x_amap_base.dart';
+import 'package:x_amap_base/x_amap_base.dart' show AMapPrivacyStatement;
 import 'constants/app_strings.dart';
 import 'providers/binding_provider.dart';
-import 'managers/auth_state_manager.dart';
-import 'managers/theme_manager.dart';
-import 'managers/settings_manager.dart';
+import 'providers/auth_state_manager.dart';
+import 'providers/theme_manager.dart';
+import 'providers/settings_manager.dart';
+import 'config/environments/environment_manager.dart';
 import 'utils/logger.dart';
 import 'theme/app_text_styles.dart';
 import 'theme/app_theme.dart';
@@ -18,6 +20,12 @@ import 'widgets/error_boundary.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 固定全局竖屏
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // 加载环境变量 (.env)
   try {
     await dotenv.load(fileName: ".env");
@@ -25,6 +33,10 @@ void main() async {
   } catch (e) {
     Logs.app.warning('⚠️ 环境变量加载失败: $e');
   }
+
+  // 初始化环境管理器（必须在 dotenv 加载后调用）
+  EnvironmentManager.initialize();
+  EnvironmentManager.printEnvironmentInfo();
 
   // 初始化高德地图隐私合规（必须在 runApp 之前或任何地图操作之前调用）
   _initAmapPrivacy();
@@ -36,17 +48,17 @@ void main() async {
 void _initAmapPrivacy() {
   try {
     const privacyStatement = AMapPrivacyStatement(
-      hasContains: true,
       hasShow: true,
       hasAgree: true,
     );
-    
+
     // 设置隐私合规（必须在任何地图操作之前调用）
     AMapInitializer.updatePrivacyAgree(privacyStatement);
-    
+
     Logs.map.info('✅ 高德地图隐私合规设置成功');
-  } catch (e) {
+  } catch (e, stackTrace) {
     Logs.map.warning('高德地图隐私合规初始化失败: $e');
+    Logs.map.warning('堆栈: $stackTrace');
   }
 }
 

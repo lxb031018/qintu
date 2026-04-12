@@ -65,4 +65,11 @@ class AppDurations {
 
   /// 保留的旧日志文件数量
   static const int maxRotatedLogFiles = 5;
+  // ==================== 提示/自动消失 ====================
+
+  /// Snackbar 显示时长
+  static const Duration snackbarShort = Duration(seconds: 2);
+
+  /// Snackbar 标准显示时长
+  static const Duration snackbarStandard = Duration(seconds: 3);
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/app_strings.dart';
+import '../../../constants/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/phone_utils.dart';
 
@@ -49,8 +50,8 @@ class CodeInputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackground = isDark ? const Color(0xFF2D2D2D) : Colors.white;
-    final inputTextColor = isDark ? Colors.white : const Color(0xFF212121);
+    final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.cardBackground;
+    final inputTextColor = isDark ? AppColors.darkInputTextColor : AppColors.textColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -86,7 +87,7 @@ class CodeInputCard extends StatelessWidget {
                 TextButton(
                   onPressed: onChangePhone,
                   child: Text(
-                    '修改',
+                    AppStrings.modify,
                     style: AppTextStyles.locationTitle.copyWith(
                       color: primaryColor,
                     ),
@@ -105,7 +106,7 @@ class CodeInputCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: primaryColor.withValues(alpha: 0.1),
+                color: isDark ? AppColors.blackOpacity15 : AppColors.blackOpacity5, // 改为标准阴影
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),

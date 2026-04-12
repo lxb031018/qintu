@@ -69,7 +69,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.brandGreen,
+        seedColor: AppColors.primaryColor,
         brightness: scaffoldColor == AppColors.backgroundColor ? Brightness.light : Brightness.dark,
       ),
       scaffoldBackgroundColor: scaffoldColor,
@@ -82,7 +82,7 @@ class AppTheme {
       inputDecorationTheme: _buildInputDecoration(inputFillColor, borderColor, focusedBorderColor, lightTextColor),
       elevatedButtonTheme: _buildButtonTheme(),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.brandGreen,
+        backgroundColor: AppColors.primaryColor,
         foregroundColor: fabColor,
       ),
     );
@@ -129,7 +129,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(UIConfig.borderRadius),
         borderSide: BorderSide(color: focusedBorderColor, width: 2),
       ),
-      labelStyle: TextStyle(color: AppColors.brandGreen, fontFamily: UIConfig.fontFamily),
+      labelStyle: TextStyle(color: AppColors.primaryColor, fontFamily: UIConfig.fontFamily),
       hintStyle: TextStyle(color: hintColor, fontFamily: UIConfig.fontFamily),
     );
   }
@@ -137,7 +137,7 @@ class AppTheme {
   static ElevatedButtonThemeData _buildButtonTheme() {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.brandGreen,
+        backgroundColor: AppColors.primaryColor,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, UIConfig.buttonHeight),
         shape: RoundedRectangleBorder(

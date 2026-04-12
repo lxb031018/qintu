@@ -1,36 +1,61 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../constants/api_endpoints.dart';
-import '../config/app_config.dart';
+import '../constants/app_durations.dart';
+import '../config/cloudbase_config.dart';
+import '../config/environments/environment_manager.dart';
 import '../models/auth_result.dart';
 import '../utils/logger.dart';
 import '../utils/exceptions.dart';
 import '../utils/phone_utils.dart';
 
-/// CloudBase 认证服务 - 封装所有与用户登录相关的 HTTP API 调用
+/// ============================================
+/// 认证服务（双模式自适应）
+/// ============================================
+///
+/// 根据当前运行环境自动选择认证路径：
+/// - 本地环境 → 自建后端 /auth/v1/* 接口
+/// - CloudBase 环境 → CloudBase Auth v2 官方 API
+///
+/// 与 AuthApiService 的区别：
+/// - 本服务：处理验证码发送/验证/登录注册
+/// - AuthApiService：调用自建后端通用认证接口（如 refresh-token）
+/// ============================================
 
 class CloudBaseAuthService {
   static final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-    sendTimeout: const Duration(seconds: 30),
+    connectTimeout: AppDurations.networkTimeout,
+    receiveTimeout: AppDurations.networkTimeout,
+    sendTimeout: AppDurations.networkTimeout,
   ));
 
-  /// CloudBase 环境配置
-  static String get envId => AppConfig.envId;
+  /// 是否本地环境（自建后端）
+  static bool get _isLocal => EnvironmentManager.isLocal;
 
-  /// 认证 API 基础地址（统一来源：ApiEndpoints）
-  static String get authBaseUrl => ApiEndpoints.authBaseUrl;
+  /// 认证 API 基础地址
+  /// - 本地环境 → 自建后端 baseUrl（完整路径由 ApiEndpoints 提供）
+  /// - CloudBase 环境 → CloudBase 网关
+  static String get _authBaseUrl {
+    return EnvironmentManager.baseUrl;
+  }
 
-  /// Publishable Key（从环境变量读取）
-  static String get publishableKey => AppConfig.publishableKey;
+  /// CloudBase 环境 ID（仅 CloudBase 环境需要）
+  static String get envId => CloudBaseConfig.envId;
 
-  /// 通用的请求头（包含 Publishable Key 认证）
+  /// Publishable Key（仅 CloudBase 环境需要）
+  static String get publishableKey => CloudBaseConfig.publishableKey;
+
+  /// 通用的请求头
+  /// - 本地环境：不需要 Publishable Key
+  /// - CloudBase 环境：需要 Bearer {publishableKey}
   static Map<String, String> get _headers {
+    if (_isLocal) {
+      return {
+        'Content-Type': 'application/json',
+      };
+    }
     final key = publishableKey;
-    // 打印 Key 的前 10 位以确认是否加载成功，避免泄露完整 Key
-    Logs.auth.info('🔑 获取请求头, Publishable Key: ${key.isEmpty ? "未加载 (空字符串)" : "${key.substring(0, 10)}..."}');
-
+    Logs.auth.info('🔑 CloudBase Auth, Publishable Key: ${key.isEmpty ? "未加载" : "${key.substring(0, 10)}..."}');
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $key',
@@ -45,10 +70,10 @@ class CloudBaseAuthService {
   ///
   /// 返回：verification_id（用于第 2 步验证）
   static Future<String> sendVerificationCode(String phoneNumber) async {
-    final url = Uri.parse('$authBaseUrl${ApiEndpoints.sendVerificationCode}');
+    final url = Uri.parse('$_authBaseUrl${ApiEndpoints.sendVerificationCode}');
 
-    Logs.auth.info('发送验证码');
-    Logs.api.info('API请求: POST ${url.toString()}');
+    Logs.auth.info('发送验证码 (${_isLocal ? "本地自建" : "CloudBase"})');
+    Logs.api.info('API请求: POST $url');
     Logs.api.info('请求体: phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
     try {
@@ -114,10 +139,10 @@ class CloudBaseAuthService {
   ///
   /// 返回：verification_token（用于第 3 步登录）
   static Future<String> verifyCode(String verificationId, String code) async {
-    final url = Uri.parse('$authBaseUrl${ApiEndpoints.verifyCode}');
+    final url = Uri.parse('$_authBaseUrl${ApiEndpoints.verifyCode}');
 
     Logs.auth.info('验证验证码');
-    Logs.api.info('API请求: POST ${url.toString()}');
+    Logs.api.info('API请求: POST $url');
     Logs.api.info('请求体: verification_id=$verificationId, code=$code');
 
     try {
@@ -188,14 +213,14 @@ class CloudBaseAuthService {
     required String verificationToken,
     required String phoneNumber,
   }) async {
-    Logs.auth.info('智能登录/注册');
+    Logs.auth.info('智能登录/注册 (${_isLocal ? "本地" : "CloudBase"})');
 
     try {
       // 先尝试登录（老用户）
-      Logs.auth.info('尝试登录（老用户）...');
-      final loginUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signIn}');
+      Logs.auth.info('尝试登录...');
+      final loginUrl = Uri.parse('$_authBaseUrl${ApiEndpoints.signIn}');
 
-      Logs.api.info('API请求: POST ${loginUrl.toString()}');
+      Logs.api.info('API请求: POST $loginUrl');
       Logs.api.info('请求体: verification_token=${verificationToken.substring(0, 20)}...');
 
       final loginResponse = await _dio.post(
@@ -253,8 +278,8 @@ class CloudBaseAuthService {
     required String verificationToken,
     required String phoneNumber,
   }) async {
-    final signupUrl = Uri.parse('$authBaseUrl${ApiEndpoints.signUp}');
-    Logs.api.info('API请求: POST ${signupUrl.toString()}');
+    final signupUrl = Uri.parse('$_authBaseUrl${ApiEndpoints.signUp}');
+    Logs.api.info('API请求: POST $signupUrl');
     Logs.api.info('请求体: verification_token=${verificationToken.substring(0, 20)}..., phone_number=${PhoneUtils.maskForLog(phoneNumber)}');
 
     final signupResponse = await _dio.post(

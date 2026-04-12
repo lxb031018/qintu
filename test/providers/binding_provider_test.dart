@@ -34,23 +34,20 @@ void main() {
       expect(bindingProvider.error, isNull);
     });
 
-    test('asSenderCount 和 asReceiverCount 初始值应该是 0', () {
-      expect(bindingProvider.asSenderCount, 0);
-      expect(bindingProvider.asReceiverCount, 0);
+    test('totalBindings 初始值应该是 0', () {
+      expect(bindingProvider.totalBindings, 0);
     });
 
-    test('isSenderLimitReached 和 isReceiverLimitReached 初始值应该是 false', () {
-      expect(bindingProvider.isSenderLimitReached, isFalse);
-      expect(bindingProvider.isReceiverLimitReached, isFalse);
+    test('isBindingLimitReached 初始值应该是 false', () {
+      expect(bindingProvider.isBindingLimitReached, isFalse);
     });
 
     test('hasActiveBindings 初始值应该是 false', () {
       expect(bindingProvider.hasActiveBindings, isFalse);
     });
 
-    test('senderBindings 和 receiverBindings 初始值应该是空列表', () {
-      expect(bindingProvider.senderBindings, isEmpty);
-      expect(bindingProvider.receiverBindings, isEmpty);
+    test('allBindings 初始值应该是空列表', () {
+      expect(bindingProvider.allBindings, isEmpty);
     });
 
     test('clearError 在没有错误时不应该改变状态', () {

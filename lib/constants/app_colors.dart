@@ -13,9 +13,6 @@ class AppColors {
   /// 珊瑚橙（主色调）
   static const Color primaryColor = Color(0xFFFF8C69);
 
-  /// 品牌绿（辅助主色调，用于 Logo、图标等）
-  static const Color brandGreen = Color(0xFF4CAF50);
-
   /// 天空蓝（辅助色）
   static const Color secondaryColor = Color(0xFF87CEEB);
 
@@ -58,13 +55,81 @@ class AppColors {
   /// 信息蓝色
   static const Color infoColor = Color(0xFF4299E1);
 
+  // ==================== 灰色层级 ====================
+
+  /// 浅灰（用于次要背景）
+  static const Color grey50 = Color(0xFFF7FAFC);
+
+  /// 浅灰（用于分割线）
+  static const Color grey100 = Color(0xFFEDF2F7);
+
+  /// 中浅灰（用于禁用状态）
+  static const Color grey200 = Color(0xFFE2E8F0);
+
+  /// 中灰（用于次要文字）
+  static const Color grey300 = Color(0xFFCBD5E0);
+
+  /// 中深灰（用于辅助文字）
+  static const Color grey400 = Color(0xFFA0AEC0);
+
+  /// 深灰（用于正文）
+  static const Color grey500 = Color(0xFF718096);
+
+  /// 更深灰（用于标题）
+  static const Color grey600 = Color(0xFF4A5568);
+
+  /// 深灰蓝（用于主文字）
+  static const Color grey700 = Color(0xFF2D3748);
+
+  /// 极深灰（用于强调文字）
+  static const Color grey800 = Color(0xFF1A202C);
+
+  /// 接近黑色
+  static const Color grey900 = Color(0xFF171923);
+
+  // ==================== 蓝色变体 ====================
+
+  /// 浅蓝（用于信息背景）
+  static const Color blue50 = Color(0xFFEBF8FF);
+
+  /// 浅蓝边框
+  static const Color blue200 = Color(0xFFBEE3F8);
+
+  /// 标准蓝（用于信息色）
+  static const Color blue700 = Color(0xFF2B6CB0);
+
+  /// 深蓝（用于强调）
+  static const Color blue900 = Color(0xFF2A4365);
+
+  // ==================== 橙色变体 ====================
+
+  /// 浅橙（用于警告背景）
+  static const Color orange100 = Color(0xFFFEFCBF);
+
+  // ==================== 绿色变体 ====================
+
+  /// 浅绿（用于成功背景）
+  static const Color green100 = Color(0xFFF0FFF4);
+
   // ==================== 透明度颜色 ====================
 
   /// 半透明白色（用于遮罩）
   static const Color whiteOpacity10 = Color(0x1AFFFFFF);
 
+  /// 半透明黑色（用于阴影）
+  static const Color blackOpacity5 = Color(0x0D000000);
+
   /// 半透明黑色（用于遮罩）
   static const Color blackOpacity10 = Color(0x1A000000);
+
+  /// 半透明黑色（15%）
+  static const Color blackOpacity15 = Color(0x26000000);
+
+  /// 半透明黑色（20 透明度值）
+  static const Color blackAlpha20 = Color(0x33000000);
+
+  /// 半透明黑色（87%）
+  static const Color black87 = Color(0xDD000000);
 
   /// 半透明主色
   static Color primaryOpacity10 = primaryColor.withValues(alpha: 0.1);

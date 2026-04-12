@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qintu/managers/auth_state_manager.dart';
+import 'package:qintu/providers/auth_state_manager.dart';
 import 'package:qintu/models/user_state.dart';
 
 void main() {
@@ -20,7 +20,6 @@ void main() {
       expect(authStateManager.state.authStatus, AuthStatus.unknown);
       expect(authStateManager.state.userId, isNull);
       expect(authStateManager.state.phoneNumber, isNull);
-      expect(authStateManager.state.userRole, isNull);
       expect(authStateManager.state.isLoading, isFalse);
       expect(authStateManager.state.errorMessage, isNull);
       expect(authStateManager.state.isLoggedIn, isFalse);
@@ -63,13 +62,11 @@ void main() {
           accessTokenExpiresIn: 3600,
           refreshTokenExpiresIn: 86400,
           phoneNumber: '+8613800138000',
-          userRole: 'receiver',
         );
 
         expect(authStateManager.state.authStatus, AuthStatus.authenticated);
         expect(authStateManager.state.userId, 'test_user_123');
         expect(authStateManager.state.phoneNumber, '+8613800138000');
-        expect(authStateManager.state.userRole, 'receiver');
         expect(authStateManager.state.isLoggedIn, isTrue);
       } catch (e) {
         // SecureStorage 未初始化时可能失败
@@ -84,28 +81,17 @@ void main() {
         expect(authStateManager.state.authStatus, AuthStatus.unauthenticated);
         expect(authStateManager.state.userId, isNull);
         expect(authStateManager.state.phoneNumber, isNull);
-        expect(authStateManager.state.userRole, isNull);
         expect(authStateManager.state.isLoggedIn, isFalse);
       } catch (e) {
         // SecureStorage 未初始化时可能失败
         expect(authStateManager.state.isLoading, isFalse);
       }
     });
-
-    test('updateUserRole 应该更新角色', () async {
-      try {
-        await authStateManager.updateUserRole('sender');
-        expect(authStateManager.state.userRole, 'sender');
-      } catch (e) {
-        // SecureStorage 未初始化时可能失败
-        expect(authStateManager.state.userRole, isNull);
-      }
-    });
   });
 
   group('UserState 模型测试', () {
     test('UserState.initial 应该创建初始状态', () {
-      const state = UserState.initial();
+      final state = UserState.initial();
 
       expect(state.authStatus, AuthStatus.unknown);
       expect(state.isLoading, isFalse);
@@ -113,13 +99,12 @@ void main() {
     });
 
     test('UserState.copyWith 应该正确更新字段', () {
-      const initialState = UserState.initial();
+      final initialState = UserState.initial();
 
       final updatedState = initialState.copyWith(
         authStatus: AuthStatus.authenticated,
         userId: 'user_123',
         phoneNumber: '+8613800138000',
-        userRole: 'receiver',
         isLoading: true,
         errorMessage: null,
       );
@@ -127,7 +112,6 @@ void main() {
       expect(updatedState.authStatus, AuthStatus.authenticated);
       expect(updatedState.userId, 'user_123');
       expect(updatedState.phoneNumber, '+8613800138000');
-      expect(updatedState.userRole, 'receiver');
       expect(updatedState.isLoading, isTrue);
     });
 

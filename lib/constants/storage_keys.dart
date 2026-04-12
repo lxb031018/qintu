@@ -23,10 +23,17 @@ class SecureStorageKeys {
   static const String phoneNumber = 'phone_number';
 
   /// 令牌过期时间
-  static const String tokenExpiresAt = 'token_expires_at';
+  static const String tokenExpiresAt = 'expires_in';
 
   /// 刷新令牌过期时间
   static const String refreshTokenExpiresAt = 'refresh_token_expires_at';
+
+  // 以下为 auth_config.dart 迁移过来的键
+  /// Access Token 保存时间
+  static const String accessTokenSaveTime = 'access_token_save_time';
+
+  /// Refresh Token 保存时间
+  static const String refreshTokenSaveTime = 'refresh_token_save_time';
 
   /// 所有键列表
   static const List<String> all = [
@@ -37,6 +44,8 @@ class SecureStorageKeys {
     phoneNumber,
     tokenExpiresAt,
     refreshTokenExpiresAt,
+    accessTokenSaveTime,
+    refreshTokenSaveTime,
   ];
 }
 

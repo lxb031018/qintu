@@ -8,14 +8,36 @@
 
 `docs/` 目录是给 AI 看的**交互/UI 参考和开发规范**，不是项目档案馆。
 
-- **写 UI/交互时** → 查 `docs/features/`
-- **写接口时** → 遵守 `docs/guides/API_CONTRACT.md`（以后端路由为准）
-- **状态管理时** → 遵守本文件中的架构规则
-- **部署时** → 查 `docs/operations/DEPLOY_GUIDE.md`
+### 文档导航
+
+| 场景 | 查阅文档 |
+|------|---------|
+| 写 UI/交互 | `docs/features/` |
+| 写接口 | `docs/guides/API_CONTRACT.md`（以后端路由为准） |
+| 状态管理 | 本文件中的架构规则 |
+| 部署 | `docs/operations/DEPLOY_GUIDE.md` |
+| 认证配置 | `docs/guides/AUTH_CONFIG.md` |
+| 高德地图 | `docs/guides/AMAP_GUIDE.md` |
+| MCP 工具技巧 | `docs/MCP_TIPS.md` |
+| 上线前检查 | `docs/CHECKLIST.md` |
 
 ---
 
 ## 🏗️ 架构规则
+
+### 前后端分离与环境解耦
+- **环境管理唯一入口**：所有服务器地址切换必须通过 `EnvironmentManager`（`config/environments/environment_manager.dart`）
+- **禁止硬编码 URL**：业务代码中禁止出现 `http://` 或 `https://` 开头的服务器地址，必须使用 `EnvironmentManager.baseUrl` 或 `ApiEndpoints`
+- **API 端点统一**：所有网络请求路径必须在 `constants/api_endpoints.dart` 中定义，禁止在业务代码中拼接 URL 字符串
+- **CloudBase 解耦**：
+  - `CloudBaseConfig` 仅保留 `envId`、`baseUrl`、`gatewayUrl`、`publishableKey` 4 个属性
+  - 禁止在业务代码中直接依赖 CloudBase SDK 进行数据请求，必须通过 `ApiClient`（HTTP API）
+  - 前端业务逻辑（`features/`）不应感知底层是 CloudBase 还是自建 Node.js 服务器
+- **配置职责分离**：
+  - `config/environments/`：管理不同部署环境（Local/Test/Prod）的 URL 和调试开关
+  - `constants/api_endpoints.dart`：管理 HTTP 路径常量
+  - `constants/`：管理颜色、字符串、布局常量
+- **后端可替换性**：更换服务器时，只需修改 `environments/` 下的环境配置，前端业务代码零改动
 
 ### 认证状态管理
 - **唯一认证源**：`AuthStateManager`（`managers/auth_state_manager.dart`）
@@ -73,6 +95,49 @@
 
 ---
 
+## 🚀 云函数部署规则
+
+### 使用 MCP 工具（不要用 CLI）
+
+**必须使用 MCP 工具或 CloudBase 控制台** 管理云函数和网关，CLI 工具不可靠：
+
+| 操作 | 正确方式 | 错误方式 |
+|------|---------|---------|
+| 创建 HTTP 云函数 | **CloudBase 控制台手动创建** | `cloudbase fn deploy` 或 `tcb fn deploy --httpFn` |
+| 更新云函数代码 | `tcb fn deploy <name> --force` | - |
+| 创建网关访问路径 | `manageGateway(action="createAccess", ...)` | `cloudbase service create` |
+| 查询网关配置 | `queryGateway(action="getAccess", ...)` | `cloudbase service list` |
+
+### ⚠️ 重要发现
+
+CloudBase CLI **无法正确创建 HTTP 类型的云函数**：
+- 即使 `cloudbaserc.json` 中设置了 `"type": "HTTP"`
+- 即使使用 `tcb fn deploy --httpFn --path /xxx`
+- 创建的函数仍然是 Event 类型，返回 `FUNCTION_PARAM_INVALID` 错误
+
+**唯一可靠的方法**：通过 CloudBase 控制台手动创建 HTTP 云函数
+
+### HTTP 云函数部署要求
+
+1. **函数类型**：`cloudbaserc.json` 中必须设置 `"type": "HTTP"`
+2. **网关配置**：必须使用 `manageGateway(createAccess)` 注册访问路径
+3. **传播等待**：网关配置后**至少等待 90 秒**才能测试
+4. **类型不可变**：HTTP/Event 类型创建后不可更改，错误必须删除重建
+
+### 常见错误处理
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| `INVALID_PATH` | 网关未配置或传播中 | 检查网关，等待 90 秒 |
+| `FUNCTION_PARAM_INVALID` | 函数类型错误 | 删除函数，重新创建为 HTTP 类型 |
+| 超时 30 秒 | 函数以 Event 模式运行 | 同上 |
+
+### 详细文档
+
+完整部署流程和踩坑经验见：`docs/guides/flutter-call-cloud-function.md`
+
+---
+
 ## 📝 文档规范
 
 - docs 中的文档是**给 AI 看的开发指南**，不是历史档案馆
@@ -85,3 +150,4 @@
 
 ## Qwen Added Memories
 - 【上线前清单已迁移至文件】上线前检查清单已移至 docs/CHECKLIST.md，无需再从记忆读取。上线前让 AI 阅读该文件即可。
+- 项目架构决策：完全统一发送者和接收者端页面，不再区分角色。统一主界面包含顶部Tab Bar（路线规划/关系绑定/设置），删除角色选择机制。绑定关系改为双向对等（A绑定B确认后，两人自动互相绑定）。导航消息传递功能暂缓实现，先完善现有功能。

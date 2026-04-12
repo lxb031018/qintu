@@ -30,6 +30,36 @@ class AppSnackbar {
     _show(context, message, AppColors.warningColor);
   }
 
+  /// 显示主题色提示（使用 Theme 的 primaryContainer）
+  static void showPrimary(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTextStyles.caption),
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
+      ),
+    );
+  }
+
+  /// 显示错误主题（使用 Theme 的 errorContainer）
+  static void showErrorTheme(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTextStyles.caption),
+        backgroundColor: Theme.of(context).colorScheme.errorContainer,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
+      ),
+    );
+  }
+
   /// 内部统一实现
   static void _show(BuildContext context, String message, Color backgroundColor) {
     if (!context.mounted) return;

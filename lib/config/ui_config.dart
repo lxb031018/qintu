@@ -24,7 +24,8 @@ class UIConfig {
   /// 输入框高度
   static const double textFieldHeight = 60.0;
 
-  /// 圆角大小
+  /// 圆角大小（已迁移至 constants/app_radii.dart，保留此处为向后兼容）
+  @Deprecated('使用 AppRadii.medium 代替')
   static const double borderRadius = 16.0;
 
   /// 图标大小
@@ -34,15 +35,17 @@ class UIConfig {
   static const double largeIconSize = 64.0;
 
   // ==================== 字体配置 ====================
-  // 注意：所有字体大小现在由 AppTextStyles 统一管理，支持动态缩放
-  // 请参考：lib/theme/app_text_styles.dart
 
   /// 字体家族
   static const String fontFamily = 'PingFang SC';
 
+  // 注意：所有字体大小现在由 AppTextStyles 统一管理，支持动态缩放
+  // 请参考：lib/theme/app_text_styles.dart
+
   // ==================== 动画配置 ====================
 
-  /// 默认动画时长（毫秒）
+  /// 默认动画时长（毫秒，已迁移至 constants/app_durations.dart，保留此处为向后兼容）
+  @Deprecated('使用 AppDurations.standardAnimation 代替')
   static const int animationDuration = 300;
 
   /// 启动页延迟（毫秒）
@@ -50,7 +53,8 @@ class UIConfig {
 
   // ==================== 网络配置 ====================
 
-  /// 网络请求超时（毫秒）
+  /// 网络请求超时（毫秒，已迁移至 constants/app_durations.dart，保留此处为向后兼容）
+  @Deprecated('使用 AppDurations.networkTimeout 代替')
   static const int networkTimeout = 30000; // 30 秒
 
   /// 重试次数

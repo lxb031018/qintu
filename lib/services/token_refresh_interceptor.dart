@@ -87,7 +87,6 @@ class TokenRefreshInterceptor extends Interceptor {
       refreshTokenExpiresIn: tokens['refreshExpiresIn'],
       phoneNumber: await SecureStorage.getPhoneNumber() ?? '',
       userId: await SecureStorage.getUserId() ?? '',
-      role: await SecureStorage.getUserRole(),
     );
 
     Logs.network.info('✅ Token 刷新成功,已保存新 Token');

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../constants/app_strings.dart';
+import '../../../constants/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// 手机号输入卡片
@@ -73,8 +74,8 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackground = isDark ? const Color(0xFF2D2D2D) : Colors.white;
-    final inputTextColor = isDark ? Colors.white : const Color(0xFF212121);
+    final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.cardBackground;
+    final inputTextColor = isDark ? AppColors.darkInputTextColor : AppColors.textColor;
 
     return Container(
       decoration: BoxDecoration(
@@ -82,7 +83,7 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: widget.primaryColor.withValues(alpha: 0.1),
+            color: isDark ? AppColors.blackOpacity15 : AppColors.blackOpacity5, // 改为标准阴影
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -117,7 +118,7 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
               color: widget.primaryColor,
             ),
             onPressed: _toggleVisibility,
-            tooltip: _obscureText ? '显示手机号' : '隐藏手机号',
+            tooltip: _obscureText ? AppStrings.showPhone : AppStrings.hidePhone,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),

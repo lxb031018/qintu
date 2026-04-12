@@ -1,4 +1,4 @@
-import '../config/app_config.dart';
+import '../constants/api_endpoints.dart';
 import '../services/api_client.dart';
 import '../utils/logger.dart';
 
@@ -23,7 +23,7 @@ class AuthApiService {
 
     try {
       final response = await ApiClient.instance.post<Map<String, dynamic>>(
-        '${AppConfig.apiPrefix}/auth/refresh-token',
+        '${ApiEndpoints.apiPrefix}/auth/refresh-token',
         data: {'refresh_token': refreshToken},
       );
 
@@ -71,7 +71,7 @@ class AuthApiService {
 
     try {
       final response = await ApiClient.instance.post(
-        '${AppConfig.apiPrefix}/auth/sign-out',
+        '${ApiEndpoints.apiPrefix}/auth/sign-out',
       );
 
       if (response.isSuccessful) {

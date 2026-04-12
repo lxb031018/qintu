@@ -1,0 +1,36 @@
+{
+  "routes": [
+    {
+      "path": "/api/auth",
+      "method": "ANY"
+    },
+    {
+      "path": "/api/users",
+      "method": "ANY"
+    },
+    {
+      "path": "/api/bindings",
+      "method": "ANY"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "ANY"
+    },
+    {
+      "path": "/api/locations",
+      "method": "ANY"
+    },
+    {
+      "path": "/health",
+      "method": "GET"
+    },
+    {
+      "path": "/test-db",
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "method": "ANY"
+    }
+  ]
+}

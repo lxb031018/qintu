@@ -22,8 +22,31 @@
       "Bash(git checkout *)",
       "Bash(select-string *)",
       "Bash(select-object *)",
-      "Bash(dart *)"
+      "Bash(dart *)",
+      "Bash(copy *)",
+      "Bash(mcp__cloudbase__managefunctions *)",
+      "mcp__cloudbase__auth",
+      "mcp__cloudbase__callCloudApi",
+      "Bash(git show *)",
+      "Bash(echo.)",
+      "Bash(jq *)",
+      "Bash(ipconfig)",
+      "Bash(taskkill *)",
+      "Bash(netstat *)",
+      "Bash(powershell *)",
+      "Bash(true)"
     ]
+  },
+  "mcpServers": {
+    "cloudbase": {
+      "command": "npx",
+      "args": [
+        "@cloudbase/cloudbase-mcp@latest"
+      ],
+      "env": {
+        "INTEGRATION_IDE": "CloudBaseCLI"
+      }
+    }
   },
   "$version": 3
 }

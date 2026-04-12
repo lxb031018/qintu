@@ -1,4 +1,4 @@
-/// ============================================
+﻿/// ============================================
 /// 应用字符串常量
 ///
 /// 统一定义应用中使用的所有文字
@@ -134,6 +134,15 @@ class AppStrings {
 
   // ==================== 底部导航 ====================
 
+  /// 路线规划（顶部导航Tab）
+  static const String tabRoutePlanning = '路线规划';
+
+  /// 关系绑定（顶部导航Tab）
+  static const String tabBindingRelation = '关系绑定';
+
+  /// 设置（顶部导航Tab）
+  static const String tabSettingsPage = '设置';
+
   /// 主页（底部导航Tab）
   static const String tabHome = '主页';
 
@@ -188,6 +197,83 @@ class AppStrings {
 
   /// 加载中
   static const String loadingText = '加载中...';
+
+  /// 下拉刷新提示
+  static const String pullToRefresh = '下拉刷新';
+
+  /// 正在获取位置
+  static const String fetchingLocation = '正在获取位置...';
+
+  /// 路线规划开发中
+  static const String routePlanningInDevelopment = '路线规划功能开发中...';
+
+  /// 路线规划标题
+  static const String routePlanningTitle = '路线规划';
+
+  /// 字体大小
+  static const String fontSize = '字体大小';
+
+  /// 主题设置
+  static const String themeSettings = '主题设置';
+
+  /// 浅色模式
+  static const String lightMode = '浅色模式';
+
+  /// 深色模式
+  static const String darkMode = '深色模式';
+
+  /// 跟随系统
+  static const String followSystem = '跟随系统';
+
+  /// 主题切换失败
+  static const String themeSwitchFailed = '主题切换失败';
+
+  /// 账号
+  static const String account = '账号';
+
+  /// 退出登录失败
+  static const String logoutFailed = '退出登录失败';
+
+  /// 我的绑定者
+  static const String myBindings = '我的绑定者';
+
+  /// 通知中心（按钮 tooltip）
+  static const String notificationCenterTooltip = '通知中心';
+
+  /// 显示手机号
+  static const String showPhone = '显示手机号';
+
+  /// 隐藏手机号
+  static const String hidePhone = '隐藏手机号';
+
+  /// 修改
+  static const String modify = '修改';
+
+  /// 取消请求（按钮）
+  static const String cancelRequestButton = '取消请求';
+
+  /// 请求即将过期
+  static const String requestExpiringSoon = '请求即将过期';
+
+  /// 发送于（相对时间显示，不依赖时区）
+  static String sentAtText(DateTime dt) {
+    // 确保使用本地时间
+    final localDt = dt.isUtc ? dt.toLocal() : dt;
+    return '${localDt.year}-${localDt.month.toString().padLeft(2, '0')}-${localDt.day.toString().padLeft(2, '0')} ${localDt.hour.toString().padLeft(2, '0')}:${localDt.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// 发送时间（简短相对时间，适合辅助显示）
+  static String sentAtShort(DateTime dt) {
+    final now = DateTime.now();
+    final localDt = dt.isUtc ? dt.toLocal() : dt;
+    final diff = now.difference(localDt);
+
+    if (diff.inMinutes < 1) return '刚刚';
+    if (diff.inHours < 1) return '${diff.inMinutes}分钟前';
+    if (diff.inDays < 1) return '${diff.inHours}小时前';
+    if (diff.inDays < 7) return '${diff.inDays}天前';
+    return '${localDt.month}月${localDt.day}日';
+  }
 
   /// 设置失败
   static const String settingFailed = '设置失败';
@@ -245,20 +331,29 @@ class AppStrings {
   /// 发送绑定请求
   static const String sendBindingRequest = '发送绑定请求';
 
-  /// 您的姓名
-  static const String yourName = '您的姓名（必填）';
+  /// 对方对您的称呼
+  static const String yourName = '对方对您的称呼';
 
   /// 对方手机号
-  static const String partnerPhone = '对方手机号（必填）';
+  static const String partnerPhone = '对方手机号';
 
   /// 发送请求
   static const String sendRequest = '发送请求';
 
+  /// 已与该用户建立绑定关系
+  static const String bindingAlreadyExists = '已与该用户建立绑定关系';
+
+  /// 绑定请求已发送，请等待对方确认
+  static const String bindingAlreadyPending = '绑定请求已发送，请等待对方确认';
+
   /// 绑定请求已发送
   static const String bindingRequestSent = '绑定请求已发送，等待对方确认';
 
-  /// 请填写您的姓名
-  static const String pleaseFillName = '请填写您的姓名';
+  /// 请填写对方对您的称呼
+  static const String pleaseFillName = '请填写对方对您的称呼';
+
+  /// 请填写您对对方的称呼
+  static const String pleaseFillNameForPartner = '请填写您对对方的称呼';
 
   /// 请输入正确的手机号
   static const String invalidPhone = '请输入正确的手机号';
@@ -317,7 +412,13 @@ class AppStrings {
   // ==================== 绑定对话框 ====================
 
   /// 绑定提示文本
-  static const String bindingHintText = '对方将看到您的姓名和手机号，请确认信息真实有效';
+  static const String bindingHintText = '对方将看到您填写的称呼和手机号，请确认信息准确';
+
+  /// 您对对方的称呼（标签）
+  static const String yourNameForPartner = '您对对方的称呼';
+
+  /// 绑定请求确认提示
+  static const String bindingRequestConfirmHint = '对方将在收到请求后确认，确认后即可建立绑定关系';
 
   // ==================== 通知和绑定请求 ====================
 
@@ -359,4 +460,118 @@ class AppStrings {
 
   /// 绑定请求详情提示
   static const String bindingRequestDetailHint = '对方希望通过此绑定关系与您建立连接，接受后对方将能够与您共享位置信息';
+
+  // ==================== 通知中心 ====================
+
+  /// 通知中心
+  static const String notificationCenter = '通知中心';
+
+  /// 收到的请求
+  static const String receivedRequests = '收到请求';
+
+  /// 发出的请求
+  static const String sentRequests = '发出请求';
+
+  /// 被拒绝
+  static const String rejectedRequests = '被拒绝';
+
+  /// 暂无收到的请求
+  static const String noReceivedRequests = '暂无收到请求';
+
+  /// 暂无发出的请求
+  static const String noSentRequests = '暂无发出请求';
+
+  /// 暂无被拒绝的请求
+  static const String noRejectedRequests = '暂无被拒绝的请求';
+
+  /// 取消请求
+  static const String cancelRequest = '取消请求';
+
+  /// 确认取消请求
+  static const String confirmCancelRequest = '确定要取消这个绑定请求吗？';
+
+  /// 不取消
+  static const String notCancel = '不取消';
+
+  /// 确认取消
+  static const String confirmCancel = '确认取消';
+
+  /// 已取消请求
+  static const String requestCancelled = '已取消请求';
+
+  /// 取消失败
+  static const String cancelRequestFailed = '取消失败';
+
+  /// 等待对方确认
+  static const String waitingForConfirmation = '等待对方确认';
+
+  /// 对方已拒绝
+  static const String requestRejected = '对方已拒绝';
+
+  /// 已过期
+  static const String requestExpired = '已过期';
+
+  /// 已绑定
+  static const String requestActive = '已绑定';
+
+  /// 未知状态
+  static const String unknownStatus = '未知状态';
+
+  /// 不足 1 小时
+  static const String lessThanOneHour = '不足 1 小时';
+
+  /// 小时后过期
+  static String hoursUntilExpire(int hours) => '$hours小时后过期';
+
+  /// 天后过期
+  static String daysUntilExpire(int days) => '$days天后过期';
+
+  /// 发送于
+  static String sentAt(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  // ==================== 环境切换 ====================
+
+  /// 环境切换（页面标题）
+  static const String environmentSwitch = '环境切换';
+
+  /// 选择环境
+  static const String selectEnvironment = '选择环境';
+
+  /// 切换环境（按钮）
+  static const String switchEnvironment = '切换环境';
+
+  /// 当前环境
+  static const String currentEnvironment = '当前环境';
+
+  /// 使用说明
+  static const String usageInstructions = '使用说明';
+
+  /// 确认切换环境
+  static const String confirmSwitchEnv = '确认切换环境';
+
+  /// 切换后需要重启 App 才能生效
+  static const String switchEnvRestartHint = '切换后需要重启 App 才能生效';
+
+  /// 环境已切换，请重启 App 生效
+  static const String envSwitchRestartHint = '环境已切换，请重启 App 生效';
+
+  /// 本地环境需要电脑和手机在同一 WiFi
+  static const String envSwitchWifiHint = '本地环境需要电脑和手机在同一 WiFi';
+
+  /// 生产环境上线前应移除本页面
+  static const String envSwitchProdHint = '生产环境上线前应移除本页面';
+
+  /// 开启
+  static const String enabled = '开启';
+
+  /// 关闭
+  static const String disabled = '关闭';
+
+  /// 请输入起点和终点
+  static const String pleaseFillRoute = '请输入起点和终点';
+
+  /// 取消失败（日志用）
+  static const String cancelFailedLog = '取消失败';
 }

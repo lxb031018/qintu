@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
-import '../../services/secure_storage.dart';
-import '../../managers/theme_manager.dart';
+import '../../providers/theme_manager.dart';
 import '../../theme/app_text_styles.dart';
-import 'widgets/role_switch_card.dart';
 import 'widgets/theme_selector_card.dart';
 import 'widgets/logout_card.dart';
 import 'widgets/font_size_selector_card.dart';
+import 'widgets/tab_switch_mode_card.dart';
 
 /// ============================================
 /// 设置页面
@@ -25,7 +24,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver {
-  String _currentRole = '';
   ThemeMode _currentThemeMode = ThemeMode.system;
   late ThemeManager _themeManager;
 
@@ -72,15 +70,11 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
 
   /// 加载设置信息
   Future<void> _loadSettings() async {
-    // 加载当前角色
-    final role = await SecureStorage.getUserRole();
-
     // 通过 ThemeManager 加载主题设置（确保与主应用同步）
     final themeMode = await ThemeManager.loadThemeMode();
 
     if (mounted) {
       setState(() {
-        _currentRole = role ?? '';
         _currentThemeMode = themeMode;
       });
     }
@@ -97,24 +91,16 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.settings),
-        centerTitle: true,
-        elevation: 0,
-      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 角色切换卡片
-          RoleSwitchCard(
-            currentRole: _currentRole,
-            onRoleChanged: _refreshSettings,
-          ),
+          // 字体大小设置卡片
+          const FontSizeSelectorCard(),
 
           const SizedBox(height: 16),
 
-          // 字体大小设置卡片
-          const FontSizeSelectorCard(),
+          // Tab 切换模式卡片
+          const TabSwitchModeCard(),
 
           const SizedBox(height: 16),
 

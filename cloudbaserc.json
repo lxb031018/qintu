@@ -3,21 +3,35 @@
   "functionRoot": "./functions",
   "functions": [
     {
+      "name": "hello-api",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "installDependency": true,
+      "functionCodePath": "hello-api",
+      "type": "HTTP",
+      "timeout": 10,
+      "memorySize": 256,
+      "envVariables": {
+        "NODE_ENV": "production"
+      }
+    },
+    {
       "name": "qintu-api",
       "runtime": "Nodejs18.15",
       "handler": "index.main",
       "installDependency": true,
       "functionCodePath": "qintu-api",
-      "functionType": "HTTP",
+      "type": "HTTP",
       "timeout": 30,
       "memorySize": 512,
       "envVariables": {
         "DB_HOST": "qintu-cloudebase-5f5bpuj13bc6467.ap-shanghai.tdsql.db.tencentcs.com",
         "DB_PORT": "3306",
         "DB_USER": "root",
-        "DB_PASSWORD": "Qintu@2026!DB",
+        "DB_PASSWORD": "{{env.DB_PASSWORD}}",
         "DB_NAME": "qintu",
         "ENV_ID": "qintu-cloudebase-5f5bpuj13bc6467",
+        "PUBLISHABLE_KEY": "{{env.PUBLISHABLE_KEY}}",
         "NODE_ENV": "production"
       }
     }
@@ -34,5 +48,6 @@
         "model": "deepseek-v3"
       }
     }
-  }
+  },
+  "region": "ap-shanghai"
 }

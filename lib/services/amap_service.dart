@@ -36,6 +36,14 @@ class AmapService {
         return false;
       }
 
+      // 🌟 在 init() 之前立即调用隐私合规（必须在任何地图操作之前）
+      const privacyStatement = AMapPrivacyStatement(
+        hasShow: true,
+        hasAgree: true,
+      );
+      AMapInitializer.updatePrivacyAgree(privacyStatement);
+      Logs.map.info('✅ 高德地图隐私合规已设置');
+
       Logs.map.info('开始设置高德地图 API Key...');
       final amapApiKey = AMapApiKey(androidKey: apiKey);
       AMapInitializer.init(context, apiKey: amapApiKey);

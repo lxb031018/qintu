@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import '../config/app_config.dart';
+import '../config/environments/environment_manager.dart';
+import '../constants/app_durations.dart';
 import '../services/secure_storage.dart';
 import '../services/api_response.dart';
 import '../services/token_refresh_interceptor.dart';
@@ -21,10 +22,10 @@ class ApiClient {
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
-      baseUrl: AppConfig.cloudBaseApiUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
+      baseUrl: EnvironmentManager.baseUrl,
+      connectTimeout: Duration(seconds: EnvironmentManager.current.connectTimeout),
+      receiveTimeout: Duration(seconds: EnvironmentManager.current.receiveTimeout),
+      sendTimeout: AppDurations.networkTimeout,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -32,6 +33,9 @@ class ApiClient {
     ));
 
     _setupInterceptors();
+
+    // 注册环境变化监听器
+    _registerEnvironmentListener();
   }
 
   /// 获取单例实例
@@ -54,6 +58,13 @@ class ApiClient {
           Logs.network.info('🔑 已注入 Access Token');
         }
 
+        // 注入 OpenID（后端认证中间件需要）
+        final userId = await SecureStorage.getUserId();
+        if (userId != null && userId.isNotEmpty) {
+          options.headers['X-User-OpenID'] = userId;
+          Logs.network.info('👤 已注入 X-User-OpenID: $userId');
+        }
+
         return handler.next(options);
       },
       onResponse: (response, handler) {
@@ -68,6 +79,20 @@ class ApiClient {
 
     // Token 刷新拦截器
     _dio.interceptors.add(TokenRefreshInterceptor());
+  }
+
+  /// 注册环境变化监听器
+  ///
+  /// 当环境切换时，自动更新 Dio 的 baseUrl 和超时配置
+  void _registerEnvironmentListener() {
+    EnvironmentManager.addListener((oldEnv, newEnv) {
+      final config = EnvironmentManager.current;
+      _dio.options.baseUrl = config.baseUrl;
+      _dio.options.connectTimeout = Duration(seconds: config.connectTimeout);
+      _dio.options.receiveTimeout = Duration(seconds: config.receiveTimeout);
+      Logs.network.info('🔄 环境已切换: ${config.name}');
+      Logs.network.info('📍 新 API 地址: ${config.baseUrl}');
+    });
   }
 
   /// GET 请求
@@ -198,7 +223,7 @@ class ApiClient {
 
   /// 处理 Dio 错误
   ApiResponse<T> _handleError<T>(DioException error) {
-    final message = HttpErrorHandler.handleDioError(error);
+    final message = HttpErrorHandler.handleDioError(error, error.response?.data);
     return ApiResponse<T>(
       statusCode: error.response?.statusCode ?? 0,
       success: false,

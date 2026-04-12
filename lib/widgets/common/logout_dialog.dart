@@ -44,7 +44,7 @@ class LogoutDialog extends StatelessWidget {
         textAlign: TextAlign.center,
         style: AppTextStyles.emojiLarge.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: AppColors.black87,
         ),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -57,7 +57,7 @@ class LogoutDialog extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.whiteText,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -78,7 +78,7 @@ class LogoutDialog extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(false),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.lightTextColor,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.whiteText,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

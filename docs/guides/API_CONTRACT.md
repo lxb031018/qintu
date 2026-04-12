@@ -74,25 +74,39 @@ endpoint: '/api/tasks/my?status=$status&page=$page&page_size=$pageSize'
 | 获取用户 | `getCurrentUser()` | `GET /api/users/me` | ✅ 已对齐 |
 | 更新用户 | `updateUser()` | `PUT /api/users/me` | ✅ 已对齐 |
 
-### 绑定管理（bindings.js）
+### 绑定管理（bindings.js / bindings-memory.js）
 
 **绑定流程说明**：
-发送者输入接收者手机号 → 发送绑定请求 → 接收者确认/拒绝 → 建立绑定关系
+发送者输入接收者手机号 + 对对方的称呼 + 对方对自己的称呼 → 发送绑定请求 → 接收者确认/拒绝 → 建立绑定关系
 
 | 功能 | 前端方法 | 后端路由 | 状态 |
 |------|---------|---------|------|
 | 发送绑定请求 | `requestPhoneBinding()` | `POST /api/bindings/request-phone` | ✅ 已对齐 |
+| 获取我的绑定 | `loadBindings()` | `GET /api/bindings/my` | ✅ 已对齐 |
 | 获取待确认请求 | `loadPendingRequests()` | `GET /api/bindings/pending` | ✅ 已对齐 |
 | 确认绑定请求 | `confirmRequest()` | `POST /api/bindings/confirm-request` | ✅ 已对齐 |
 | 拒绝绑定请求 | `rejectRequest()` | `POST /api/bindings/reject-request` | ✅ 已对齐 |
-| 获取绑定列表 | `loadBindings()` | `GET /api/bindings/my` | ✅ 已对齐 |
-| 解除绑定 | `revokeBinding()` | `DELETE /api/bindings/:id` | ✅ 已对齐 |
+| 获取发出请求 | `loadSentRequests()` | `GET /api/bindings/sent` | ✅ 已对齐 |
+| 取消发出请求 | `cancelSentRequest()` | `DELETE /api/bindings/:id` | ✅ 已对齐 |
+
+**请求体字段说明**：
+
+```dart
+// POST /api/bindings/request-phone
+{
+  'receiver_phone': '+86 13800138000',  // 对方手机号
+  'sender_name': '儿子',                // 对方对您的称呼
+  'receiver_name': '老妈',              // 您对对方的称呼
+}
+```
 
 **说明**：
 - 不再使用绑定码机制，手机号即为唯一标识
 - 所有绑定均通过 `request-phone` 发起，接收者确认后才生效
 - pending 请求 7 天自动过期
-- 操作日志自动记录
+- 发送者取消 pending 请求时，记录直接删除（不留痕迹）
+- 解除已生效绑定时，状态改为 `revoked`
+- 双向对等：A 绑定 B 确认后，A 和 B 自动互相绑定
 
 ### 任务管理（tasks.js）
 

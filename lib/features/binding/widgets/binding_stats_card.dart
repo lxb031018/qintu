@@ -2,20 +2,27 @@ import 'package:flutter/material.dart';
 import '../../../providers/binding_provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
-import '../../../utils/constants.dart';
+import '../../../constants/binding_limits.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// 绑定统计卡片
 class BindingStatsCard extends StatelessWidget {
   final BindingProvider provider;
 
-  const BindingStatsCard({super.key, required this.provider});
+  const BindingStatsCard({
+    super.key,
+    required this.provider,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackground = isDark ? AppColors.darkCardBackground : Colors.blue.shade50;
-    final borderColor = isDark ? AppColors.darkDividerColor : Colors.blue.shade200;
+    final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.blue50;
+    final borderColor = isDark ? AppColors.darkDividerColor : AppColors.blue200;
+
+    final count = provider.totalBindings;
+    final limit = BindingLimits.maxBindingsPerUser;
+    final isLimitReached = provider.isBindingLimitReached;
 
     return Container(
       width: double.infinity,
@@ -26,78 +33,37 @@ class BindingStatsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            AppStrings.currentBinding,
-            style: AppTextStyles.bodySmall,
+          Icon(
+            Icons.people_alt_outlined,
+            color: isLimitReached ? AppColors.errorColor : AppColors.infoColor,
+            size: 24,
           ),
-          const SizedBox(height: 12),
-          Row(
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _StatItem(
-                  icon: Icons.person_outlined,
-                  label: AppStrings.asSender,
-                  value: '${provider.asSenderCount}/${Constants.maxReceiversPerSender}',
-                  isLimitReached: provider.isSenderLimitReached,
+              Text(
+                AppStrings.myBindings,
+                style: AppTextStyles.statLabel,
+              ),
+              Text(
+                '$count/$limit',
+                style: AppTextStyles.statValue.copyWith(
+                  color: isLimitReached ? AppColors.errorColor : null,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatItem(
-                  icon: Icons.group_outlined,
-                  label: AppStrings.asReceiver,
-                  value: '${provider.asReceiverCount}/${Constants.maxSendersPerReceiver}',
-                  isLimitReached: provider.isReceiverLimitReached,
+              if (isLimitReached)
+                Text(
+                  AppStrings.limitReached,
+                  style: AppTextStyles.statUnit,
                 ),
-              ),
             ],
           ),
         ],
       ),
-    );
-  }
-}
-
-/// 统计项
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool isLimitReached;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.isLimitReached = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: isLimitReached ? AppColors.errorColor : Colors.blue),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.statLabel,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTextStyles.statValue.copyWith(
-            color: isLimitReached ? AppColors.errorColor : null,
-          ),
-        ),
-        if (isLimitReached)
-          Text(
-            AppStrings.limitReached,
-            style: AppTextStyles.statUnit,
-          ),
-      ],
     );
   }
 }

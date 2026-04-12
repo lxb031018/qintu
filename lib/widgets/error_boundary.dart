@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 import '../utils/logger.dart';
 import '../theme/app_text_styles.dart';
 
@@ -77,7 +78,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
               const Icon(
                 Icons.error_outline,
                 size: 80,
-                color: Colors.red,
+                color: AppColors.errorColor,
               ),
               const SizedBox(height: 24),
               const Text(
@@ -98,7 +99,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: AppColors.grey200,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -148,17 +149,17 @@ class SafeErrorWidget extends StatelessWidget {
     Logs.ui.error('堆栈: ${details.stack}');
 
     return Container(
-      color: Colors.red[50],
+      color: AppColors.errorOpacity10,
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error, color: Colors.red),
+          const Icon(Icons.error, color: AppColors.errorColor),
           const SizedBox(height: 8),
           Text(
             '组件加载失败',
             style: TextStyle(
-              color: Colors.red[700],
+              color: AppColors.errorColor,
               fontWeight: FontWeight.bold,
             ),
           ),

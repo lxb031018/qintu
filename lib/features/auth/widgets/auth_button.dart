@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_text_styles.dart';
+import '../../../constants/app_colors.dart';
 
 /// 认证按钮组件
 ///
@@ -32,20 +33,8 @@ class AuthButton extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            primaryColor,
-            const Color(0xFFFF9F7F),
-          ],
-        ),
+        color: primaryColor, // 改为纯色，与其他页面按钮一致
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.4),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
@@ -61,7 +50,7 @@ class AuthButton extends StatelessWidget {
                 height: 28,
                 width: 28,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: AppColors.whiteText,
                   strokeWidth: 3,
                 ),
               )
@@ -69,7 +58,7 @@ class AuthButton extends StatelessWidget {
                 text,
                 style: AppTextStyles.emojiIcon.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.whiteText,
                 ),
               ),
       ),

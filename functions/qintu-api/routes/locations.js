@@ -1,34 +1,26 @@
 /**
  * 实时位置管理路由
- * 
+ *
+ * 使用 CloudBase MySQL RESTful API
  * 路由列表：
- * POST   /api/locations/update      - 更新位置（接收者上传位置）
- * GET    /api/locations/:receiverOpenid  - 查询位置（发送者查看接收者位置）
- * POST   /api/locations/sharing/toggle   - 切换位置共享状态
+ * POST   /api/locations/update             - 更新位置（接收者上传位置）
+ * GET    /api/locations/:receiverOpenid    - 查询位置（发送者查看接收者位置）
+ * POST   /api/locations/sharing/toggle     - 切换位置共享状态
  */
 
 const express = require('express');
 const router = express.Router();
-const { query } = require('../lib/database');
+const { getTable, insertTable, updateTable } = require('../lib/database');
 const { success, validationError, error, notFound } = require('../lib/response');
 const { authMiddleware } = require('../middleware/auth');
+
+// ==========================================
+// 路由定义
+// ==========================================
 
 /**
  * POST /api/locations/update
  * 更新位置信息（接收者上传实时位置）
- * 
- * 需要认证（接收者角色）
- * 请求体：
- * {
- *   "task_id": "task_uuid",           // 可选，当前导航任务 ID
- *   "latitude": 39.9042,              // 必需
- *   "longitude": 116.4074,            // 必需
- *   "accuracy": 10.5,                 // 可选，定位精度（米）
- *   "speed": 45.5,                    // 可选，速度（km/h）
- *   "bearing": 180.0,                 // 可选，方向角（0-360度）
- *   "altitude": 50.0,                 // 可选，海拔（米）
- *   "is_navigating": true             // 可选，是否正在导航
- * }
  */
 router.post('/update', authMiddleware, async (req, res) => {
   try {
@@ -59,28 +51,13 @@ router.post('/update', authMiddleware, async (req, res) => {
       return validationError(res, '经纬度坐标超出有效范围');
     }
 
-    // 检查是否有进行中的任务
-    let taskId = task_id;
-    if (!taskId) {
-      const tasks = await query(
-        `SELECT task_id FROM navigation_tasks 
-         WHERE receiver_openid = ? AND status IN ('accepted', 'navigating')
-         ORDER BY created_at DESC LIMIT 1`,
-        [receiverOpenid]
-      );
-
-      if (tasks.length > 0) {
-        taskId = tasks[0].task_id;
-      }
-    }
-
     // 检查是否正在共享位置
-    const locations = await query(
-      'SELECT is_sharing FROM real_time_locations WHERE receiver_openid = ?',
-      [receiverOpenid]
-    );
+    const locations = await getTable('real_time_locations', {
+      filters: { receiver_openid: receiverOpenid }
+    });
 
-    const isSharing = locations.length > 0 && locations[0].is_sharing === 1;
+    const locationRecord = Array.isArray(locations) ? locations[0] : null;
+    const isSharing = locationRecord && locationRecord.is_sharing === 1;
 
     // 如果未共享位置，则不更新（节省资源）
     if (!isSharing) {
@@ -90,35 +67,42 @@ router.post('/update', authMiddleware, async (req, res) => {
       });
     }
 
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
     // 更新或插入位置（UPSERT）
-    await query(
-      `INSERT INTO real_time_locations (
-        receiver_openid, task_id, latitude, longitude, 
-        accuracy, speed, bearing, altitude, 
-        is_navigating, is_sharing, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
-      ON DUPLICATE KEY UPDATE
-        task_id = VALUES(task_id),
-        latitude = VALUES(latitude),
-        longitude = VALUES(longitude),
-        accuracy = VALUES(accuracy),
-        speed = VALUES(speed),
-        bearing = VALUES(bearing),
-        altitude = VALUES(altitude),
-        is_navigating = VALUES(is_navigating),
-        updated_at = NOW()`,
-      [
-        receiverOpenid,
-        taskId || null,
-        latitude,
-        longitude,
-        accuracy || null,
-        speed || null,
-        bearing || null,
-        altitude || null,
-        is_navigating !== undefined ? (is_navigating ? 1 : 0) : 1
-      ]
+    // RESTful API 不支持 ON DUPLICATE KEY UPDATE，先尝试更新，如果无记录则插入
+    const updateResult = await updateTable('real_time_locations',
+      { receiver_openid: receiverOpenid },
+      {
+        task_id: task_id || null,
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy || null,
+        speed: speed || null,
+        bearing: bearing || null,
+        altitude: altitude || null,
+        is_navigating: is_navigating !== undefined ? (is_navigating ? 1 : 0) : 1,
+        is_sharing: 1,
+        updated_at: now
+      }
     );
+
+    // 如果更新无影响行数（记录不存在），创建新记录
+    if (!updateResult || (Array.isArray(updateResult) && updateResult.length === 0)) {
+      await insertTable('real_time_locations', {
+        receiver_openid: receiverOpenid,
+        task_id: task_id || null,
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy || null,
+        speed: speed || null,
+        bearing: bearing || null,
+        altitude: altitude || null,
+        is_navigating: is_navigating !== undefined ? (is_navigating ? 1 : 0) : 1,
+        is_sharing: 1,
+        updated_at: now
+      });
+    }
 
     return success(res, {
       message: '位置已更新',
@@ -133,9 +117,6 @@ router.post('/update', authMiddleware, async (req, res) => {
 /**
  * GET /api/locations/:receiverOpenid
  * 查询接收者的实时位置（发送者查看）
- * 
- * 需要认证（发送者角色）
- * 注意：只能查看已绑定接收者的位置
  */
 router.get('/:receiverOpenid', authMiddleware, async (req, res) => {
   try {
@@ -148,48 +129,52 @@ router.get('/:receiverOpenid', authMiddleware, async (req, res) => {
     }
 
     // 验证绑定关系
-    const bindings = await query(
-      `SELECT id FROM user_bindings 
-       WHERE sender_openid = ? AND receiver_openid = ? AND status = 'active'`,
-      [senderOpenid, receiverOpenid]
-    );
+    const bindings = await getTable('user_bindings', {
+      filters: {
+        sender_openid: senderOpenid,
+        receiver_openid: receiverOpenid,
+        status: 'active'
+      }
+    });
 
-    if (bindings.length === 0) {
+    if (!Array.isArray(bindings) || bindings.length === 0) {
       return error(res, '与该接收者没有绑定关系', 'NO_BINDING', 403);
     }
 
     // 查询位置
-    const locations = await query(
-      `SELECT rtl.*,
-              nt.status as task_status,
-              nt.end_name,
-              nt.end_latitude,
-              nt.end_longitude
-       FROM real_time_locations rtl
-       LEFT JOIN navigation_tasks nt ON rtl.task_id = nt.task_id
-       WHERE rtl.receiver_openid = ? AND rtl.is_sharing = 1`,
-      [receiverOpenid]
-    );
+    const locations = await getTable('real_time_locations', {
+      filters: {
+        receiver_openid: receiverOpenid,
+        is_sharing: 1
+      }
+    });
 
-    if (locations.length === 0) {
+    if (!Array.isArray(locations) || locations.length === 0) {
       return notFound(res, '接收者未共享位置');
     }
 
     const location = locations[0];
 
-    // 计算与目的地的距离（简单直线距离）
+    // 如果有任务信息，查询任务获取目的地
     let distance_to_destination = null;
-    if (location.latitude && location.longitude && location.end_latitude && location.end_longitude) {
-      // Haversine 公式计算距离
-      const R = 6371000; // 地球半径（米）
-      const dLat = (location.end_latitude - location.latitude) * Math.PI / 180;
-      const dLon = (location.end_longitude - location.longitude) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(location.latitude * Math.PI / 180) * Math.cos(location.end_latitude * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      distance_to_destination = Math.round(R * c);
+    if (location.task_id) {
+      const tasks = await getTable('navigation_tasks', {
+        filters: { task_id: location.task_id }
+      });
+      const task = Array.isArray(tasks) ? tasks[0] : null;
+
+      if (task && task.end_latitude && task.end_longitude && location.latitude && location.longitude) {
+        // Haversine 公式计算距离
+        const R = 6371000; // 地球半径（米）
+        const dLat = (task.end_latitude - location.latitude) * Math.PI / 180;
+        const dLon = (task.end_longitude - location.longitude) * Math.PI / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(location.latitude * Math.PI / 180) * Math.cos(task.end_latitude * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distance_to_destination = Math.round(R * c);
+      }
     }
 
     return success(res, {
@@ -205,12 +190,6 @@ router.get('/:receiverOpenid', authMiddleware, async (req, res) => {
 /**
  * POST /api/locations/sharing/toggle
  * 切换位置共享状态
- * 
- * 需要认证（接收者角色）
- * 请求体：
- * {
- *   "is_sharing": true  // true=开始共享，false=停止共享
- * }
  */
 router.post('/sharing/toggle', authMiddleware, async (req, res) => {
   try {
@@ -227,28 +206,29 @@ router.post('/sharing/toggle', authMiddleware, async (req, res) => {
     }
 
     const sharingValue = is_sharing ? 1 : 0;
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-    // 更新共享状态
-    await query(
-      `UPDATE real_time_locations 
-       SET is_sharing = ?, updated_at = NOW()
-       WHERE receiver_openid = ?`,
-      [sharingValue, receiverOpenid]
-    );
+    // 尝试更新现有记录
+    const existingLocations = await getTable('real_time_locations', {
+      filters: { receiver_openid: receiverOpenid }
+    });
 
-    // 如果检查 affectedRows 为 0，说明记录不存在，创建新记录
-    const result = await query(
-      'SELECT ROW_COUNT() as affected'
-    );
-
-    if (result[0].affected === 0 && is_sharing) {
-      // 创建初始位置记录
-      await query(
-        `INSERT INTO real_time_locations (
-          receiver_openid, latitude, longitude, is_navigating, is_sharing, updated_at
-        ) VALUES (?, 0, 0, 0, ?, NOW())`,
-        [receiverOpenid, sharingValue]
+    if (Array.isArray(existingLocations) && existingLocations.length > 0) {
+      // 记录存在，更新状态
+      await updateTable('real_time_locations',
+        { receiver_openid: receiverOpenid },
+        { is_sharing: sharingValue, updated_at: now }
       );
+    } else if (is_sharing) {
+      // 记录不存在且要开启共享，创建初始记录
+      await insertTable('real_time_locations', {
+        receiver_openid: receiverOpenid,
+        latitude: 0,
+        longitude: 0,
+        is_navigating: 0,
+        is_sharing: sharingValue,
+        updated_at: now
+      });
     }
 
     return success(res, {

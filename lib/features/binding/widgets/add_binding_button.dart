@@ -16,8 +16,8 @@ class AddBindingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 如果发送者和接收者都达到上限，不显示按钮
-    if (provider.isSenderLimitReached && provider.isReceiverLimitReached) {
+    // 如果达到绑定上限，不显示按钮
+    if (provider.isBindingLimitReached) {
       return Container(
         padding: const EdgeInsets.all(16),
         child: const Text(

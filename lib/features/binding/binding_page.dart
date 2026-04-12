@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/binding_provider.dart';
-import '../../managers/auth_state_manager.dart';
-import '../../utils/logger.dart';
 import '../../constants/app_strings.dart';
-import 'widgets/phone_binding_dialog.dart';
 import 'widgets/binding_stats_card.dart';
 import 'widgets/binding_list_view.dart';
 import 'widgets/add_binding_button.dart';
 import 'widgets/empty_binding_view.dart';
 import 'widgets/error_view.dart';
-import 'widgets/pending_requests_view.dart';
+import 'binding_controller.dart';
 
 /// ============================================
 /// 绑定管理页面（绑定 Tab）
@@ -32,306 +29,185 @@ class BindingPage extends StatefulWidget {
 }
 
 class _BindingPageState extends State<BindingPage> {
-  bool _isInitialized = false;
+  /// 懒加载 Controller（每次创建新实例，因为 context 可能变化）
+  BindingController get _controller => BindingController(
+        context: context,
+        provider: context.read<BindingProvider>(),
+      );
 
   @override
   void initState() {
     super.initState();
-    // 延迟初始化，确保 Provider 已经创建
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initBindingProvider();
+      _loadData();
     });
   }
 
-  /// 初始化 BindingProvider
-  Future<void> _initBindingProvider() async {
-    if (_isInitialized) return;
-
-    final authStateManager = context.read<AuthStateManager>();
-    final bindingProvider = context.read<BindingProvider>();
-
-    // 检查是否已登录
-    final userId = authStateManager.state.userId;
-    if (userId == null) {
-      Logs.binding.warning('用户未登录，使用测试模式');
-      // 测试模式：不初始化，显示空状态
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-      return;
-    }
-
-    // 加载绑定列表（BindingProvider 内部使用 ApiClient）
-    await bindingProvider.loadBindings();
-    
-    // 如果有待确认请求，加载它们
-    if (authStateManager.state.pendingBindingCount > 0) {
-      await bindingProvider.loadPendingRequests();
-    }
-
-    if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
-    }
+  /// 加载数据
+  Future<void> _loadData() async {
+    final provider = context.read<BindingProvider>();
+    await provider.loadBindings();
+    await provider.loadPendingRequests();
+    await provider.loadSentRequests();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 刷新按钮栏
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Consumer<BindingProvider>(
-                builder: (context, provider, child) {
-                  // 如果有待确认请求，显示带数字的刷新按钮
-                  if (provider.pendingRequestsCount > 0) {
-                    return Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          onPressed: () => _refreshData(context),
-                          tooltip: AppStrings.refresh,
-                        ),
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              '${provider.pendingRequestsCount}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () => _refreshData(context),
-                    tooltip: AppStrings.refresh,
-                  );
-                },
-              ),
-            ],
-          ),
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildTopActionBar(),
+            _buildContentArea(),
+            _buildBottomButton(),
+          ],
         ),
-        // 绑定管理内容
-        Expanded(
-          child: Consumer<BindingProvider>(
-            builder: (context, provider, child) {
-              // 显示错误信息
-              if (provider.error != null) {
-                return ErrorView(
-                  error: provider.error!,
-                  onRetry: () => provider.loadBindings(),
-                  onClearError: () => provider.clearError(),
-                );
-              }
-
-              return Column(
-                children: [
-                  // 待确认请求列表（如果有）
-                  PendingRequestsView(
-                    provider: provider,
-                    onConfirm: (requestId) => _confirmRequest(context, requestId),
-                    onReject: (requestId) => _rejectRequest(context, requestId),
-                  ),
-                  
-                  // 绑定数量统计
-                  BindingStatsCard(provider: provider),
-
-                  // 绑定列表
-                  Expanded(
-                    child: provider.isLoading && provider.bindings.isEmpty
-                        ? const Center(child: CircularProgressIndicator())
-                        : provider.bindings.isEmpty
-                            ? const EmptyBindingView()
-                            : BindingListView(
-                                bindings: provider.bindings,
-                                onRevoke: (bindingId) => _confirmRevoke(context, bindingId),
-                              ),
-                  ),
-
-                  // 添加绑定按钮
-                  AddBindingButton(
-                    provider: provider,
-                    onPressed: () => _showBindingDialog(context),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 刷新数据
-  Future<void> _refreshData(BuildContext context) async {
-    final bindingProvider = context.read<BindingProvider>();
-    await bindingProvider.refresh();
-    await bindingProvider.loadPendingRequests();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(AppStrings.refreshSuccess),
-        duration: Duration(seconds: 1),
       ),
     );
   }
 
-  /// 确认绑定请求
-  Future<void> _confirmRequest(BuildContext context, int requestId) async {
-    final bindingProvider = context.read<BindingProvider>();
-    final success = await bindingProvider.confirmRequest(requestId);
-
-    if (!context.mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('绑定成功'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bindingProvider.error ?? '确认失败'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
+  /// 构建顶部操作栏
+  Widget _buildTopActionBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildNotificationButton(),
+          ),
+          Text(
+            AppStrings.pullToRefresh,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).hintColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 拒绝绑定请求
-  Future<void> _rejectRequest(BuildContext context, int requestId) async {
-    final bindingProvider = context.read<BindingProvider>();
-    final success = await bindingProvider.rejectRequest(requestId);
+  /// 构建通知按钮（带角标）
+  Widget _buildNotificationButton() {
+    return Consumer<BindingProvider>(
+      builder: (context, provider, child) {
+        // 计算总通知数：收到的请求 + 被拒绝的请求
+        final pendingCount = provider.pendingRequestsCount;
+        final rejectedCount = provider.sentRequests.where((r) => r.isRejected).length;
+        final totalCount = pendingCount + rejectedCount;
+        final hasNotifications = totalCount > 0;
 
-    if (!context.mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('已拒绝'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bindingProvider.error ?? '拒绝失败'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  /// 确认解除绑定
-  Future<void> _confirmRevoke(BuildContext context, int bindingId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(AppStrings.revokeBinding),
-          content: const Text(AppStrings.revokeBindingConfirm),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text(AppStrings.cancel),
+        return Stack(
+          children: [
+            IconButton(
+              icon: Icon(hasNotifications ? Icons.notifications_active : Icons.notifications_none_outlined),
+              onPressed: () => _controller.showNotificationCenter(),
+              tooltip: AppStrings.notificationCenterTooltip,
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text(AppStrings.revokeBinding),
-            ),
+            if (hasNotifications) _buildBadge(totalCount, Colors.red),
           ],
         );
       },
     );
-
-    if (confirmed == true) {
-      if (!context.mounted) return;
-
-      final bindingProvider = context.read<BindingProvider>();
-      final success = await bindingProvider.revokeBinding(bindingId);
-
-      if (!context.mounted) return;
-
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(AppStrings.revokeBindingSuccess),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(bindingProvider.error ?? AppStrings.revokeBindingFailed),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
   }
 
-  /// 显示绑定方式选择对话框
-  void _showBindingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(AppStrings.addNewBinding),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.phone_android, size: 40),
-                title: const Text(AppStrings.partnerPhone),
-                subtitle: const Text(AppStrings.sendBindingRequest),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showPhoneBindingDialog(context);
-                },
-              ),
-            ],
+  /// 构建角标组件
+  Widget _buildBadge(int count, Color color) {
+    return Positioned(
+      right: 6,
+      top: 6,
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+        child: Text(
+          '$count',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
           ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  /// 构建主内容区（支持下拉刷新）
+  Widget _buildContentArea() {
+    return Expanded(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return RefreshIndicator(
+            onRefresh: () => _loadData(),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+            backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: _buildContent(availableHeight: constraints.maxHeight),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 构建内容区域（根据状态显示不同视图）
+  Widget _buildContent({required double availableHeight}) {
+    return Consumer<BindingProvider>(
+      builder: (context, provider, child) {
+        if (provider.error != null) {
+          return ErrorView(
+            error: provider.error!,
+            onRetry: () => provider.loadBindings(),
+            onClearError: () => provider.clearError(),
+          );
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            BindingStatsCard(provider: provider),
+            _buildBindingList(provider, availableHeight),
+          ],
         );
       },
     );
   }
 
-  /// 显示手机号绑定对话框
-  Future<void> _showPhoneBindingDialog(BuildContext context) async {
-    await showDialog(
-      context: context,
-      builder: (dialogContext) => const PhoneBindingDialog(),
+  /// 构建绑定列表或空状态
+  Widget _buildBindingList(BindingProvider provider, double availableHeight) {
+    final displayBindings = provider.allBindings;
+
+    // 【空状态】直接显示空状态，不显示加载动画（由 RefreshIndicator 处理）
+    if (displayBindings.isEmpty) {
+      return SizedBox(
+        height: availableHeight,
+        child: const Center(child: EmptyBindingView()),
+      );
+    }
+
+    return BindingListView(
+      bindings: displayBindings,
+      onRevoke: (bindingId) => _controller.confirmRevoke(bindingId),
+    );
+  }
+
+  /// 构建底部按钮
+  Widget _buildBottomButton() {
+    return Consumer<BindingProvider>(
+      builder: (context, provider, child) {
+        return AddBindingButton(
+          provider: provider,
+          onPressed: () => _controller.showPhoneBindingDialog(),
+        );
+      },
     );
   }
 }

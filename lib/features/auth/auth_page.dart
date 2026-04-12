@@ -3,10 +3,12 @@ import 'package:flutter/widget_previews.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
+import '../../constants/api_endpoints.dart';
+import '../../constants/app_durations.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_client.dart';
 import '../../utils/logger.dart';
-import '../../managers/auth_state_manager.dart';
+import '../../providers/auth_state_manager.dart';
 import '../../router/app_router.dart';
 import '../../models/auth_result.dart';
 import '../../utils/error_mapper.dart';
@@ -47,19 +49,6 @@ class _AuthPageState extends State<AuthPage> {
   bool _isLoading = false;
   String? _errorMessage;
   int _countdown = 0;
-
-  // ==================== 颜色获取 ====================
-
-  Color get _primaryColor => AppColors.primaryColor;
-  Color get _backgroundColor => Theme.of(context).brightness == Brightness.dark
-      ? AppColors.darkBackgroundColor
-      : AppColors.backgroundColor;
-  Color get _textColor => Theme.of(context).brightness == Brightness.dark
-      ? AppColors.darkTextColor
-      : AppColors.textColor;
-  Color get _lightTextColor => Theme.of(context).brightness == Brightness.dark
-      ? AppColors.darkLightTextColor
-      : AppColors.lightTextColor;
 
   // ==================== 核心方法 ====================
 
@@ -145,7 +134,7 @@ class _AuthPageState extends State<AuthPage> {
         try {
           final apiClient = ApiClient();
           await apiClient.post(
-            '/api/users/sync',
+            ApiEndpoints.syncUser,
             data: {'openid': _authResult!.uid, 'phone': formattedPhone},
           );
           Logs.auth.info('用户同步成功');
@@ -153,9 +142,9 @@ class _AuthPageState extends State<AuthPage> {
           Logs.auth.warning('用户同步失败，将继续使用 CloudBase Auth', data: {'error': e.toString()});
         }
 
-        // 使用 go_router 跳转到角色选择页面（路由守卫会自动处理）
+        // 使用 go_router 跳转到统一主页（所有用户登录后进入此页面）
         if (mounted) {
-          context.goToRoleSelection();
+          context.goToUnifiedHome();
         }
       }
     } catch (e) {
@@ -193,7 +182,7 @@ class _AuthPageState extends State<AuthPage> {
     setState(() => _countdown = 60);
 
     Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(AppDurations.splashMinDuration);
       if (!mounted) return false;
 
       setState(() => _countdown--);
@@ -206,81 +195,66 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = AppColors.primaryColor; // 使用主色调（珊瑚橙）
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
-      extendBody: true,
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  _backgroundColor,
-                  _primaryColor.withValues(alpha: 0.05),
-                  _primaryColor.withValues(alpha: 0.1),
-                ],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
-                    AuthHeader(
-                      textColor: _textColor,
-                      lightTextColor: _lightTextColor,
-                    ),
-                    const SizedBox(height: 60),
-                    if (_step == 1) ...[
-                      PhoneInputCard(
-                        controller: _phoneController,
-                        primaryColor: _primaryColor,
-                        textColor: _textColor,
-                        lightTextColor: _lightTextColor,
-                      ),
-                      const SizedBox(height: 32),
-                      AuthButton(
-                        text: AppStrings.getVerificationCode,
-                        primaryColor: _primaryColor,
-                        isLoading: _isLoading,
-                        onPressed: _sendCode,
-                      ),
-                    ],
-                    if (_step == 2) ...[
-                      CodeInputCard(
-                        controller: _codeController,
-                        phoneNumber: _phoneController.text,
-                        primaryColor: _primaryColor,
-                        textColor: _textColor,
-                        lightTextColor: _lightTextColor,
-                        countdown: _countdown,
-                        onResend: _resendCode,
-                        onChangePhone: _changePhone,
-                      ),
-                      const SizedBox(height: 24),
-                      AuthButton(
-                        text: AppStrings.login,
-                        primaryColor: _primaryColor,
-                        isLoading: _isLoading,
-                        onPressed: _verifyAndLogin,
-                      ),
-                    ],
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 24),
-                      ErrorCard(message: _errorMessage!),
-                    ],
-                  ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                AuthHeader(
+                  textColor: theme.textTheme.bodyLarge!.color!,
+                  lightTextColor: theme.textTheme.bodyMedium!.color!,
                 ),
-              ),
+                const SizedBox(height: 60),
+                if (_step == 1) ...[
+                  PhoneInputCard(
+                    controller: _phoneController,
+                    primaryColor: primaryColor,
+                    textColor: theme.textTheme.bodyLarge!.color!,
+                    lightTextColor: theme.textTheme.bodyMedium!.color!,
+                  ),
+                  const SizedBox(height: 32),
+                  AuthButton(
+                    text: AppStrings.getVerificationCode,
+                    primaryColor: primaryColor,
+                    isLoading: _isLoading,
+                    onPressed: _sendCode,
+                  ),
+                ],
+                if (_step == 2) ...[
+                  CodeInputCard(
+                    controller: _codeController,
+                    phoneNumber: _phoneController.text,
+                    primaryColor: primaryColor,
+                    textColor: theme.textTheme.bodyLarge!.color!,
+                    lightTextColor: theme.textTheme.bodyMedium!.color!,
+                    countdown: _countdown,
+                    onResend: _resendCode,
+                    onChangePhone: _changePhone,
+                  ),
+                  const SizedBox(height: 24),
+                  AuthButton(
+                    text: AppStrings.login,
+                    primaryColor: primaryColor,
+                    isLoading: _isLoading,
+                    onPressed: _verifyAndLogin,
+                  ),
+                ],
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 24),
+                  ErrorCard(message: _errorMessage!),
+                ],
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

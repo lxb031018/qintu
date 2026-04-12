@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
+import '../utils/date_utils.dart';
 
 /// 位置缓存服务 - 缓存用户上次的位置信息
 
@@ -61,19 +62,6 @@ class LocationCacheService {
 
     final timestamp = cached[2].toInt();
     final time = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    final now = DateTime.now();
-    final diff = now.difference(time);
-
-    if (diff.inMinutes < 1) {
-      return '刚刚';
-    } else if (diff.inMinutes < 60) {
-      return '${diff.inMinutes} 分钟前';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours} 小时前';
-    } else if (diff.inDays < 7) {
-      return '${diff.inDays} 天前';
-    } else {
-      return '${time.month}/${time.day} ${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    }
+    return AppDateUtils.formatRelative(time);
   }
 }

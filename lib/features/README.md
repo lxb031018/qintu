@@ -1,125 +1,138 @@
-# Feature 模块结构规范
+# Features 目录
 
-## 📁 当前采用的目录结构
+按功能划分的页面和专属组件，采用 **Feature-First** 架构。
 
-每个 feature 模块采用**扁平结构**，按功能规模自然分层：
+## 目录结构
 
 ```
 features/
-└── auth/                           # Feature 名称
-    ├── auth_page.dart              # 页面入口
-    └── widgets/                    # 页面专属组件
-        ├── auth_header.dart
-        ├── code_input_widget.dart
-        └── ...
-```
-
-## 🎯 各部分职责
-
-### 页面文件 (`*_page.dart`)
-- **职责**: 页面入口，组织页面布局
-- **规则**:
-  - 保持简洁，UI 逻辑复杂时拆到 widgets/
-  - 业务逻辑放在全局 Provider（AuthStateManager、BindingProvider 等）
-  - 通过 `Provider.of<T>(context)` 获取状态和调用方法
-
-### 专属组件 (`widgets/`)
-- **职责**: 页面内的可复用 UI 组件
-- **规则**:
-  - 不包含跨 feature 的通用组件（那些放 `lib/widgets/common/`）
-  - 不做 API 调用，通过回调让页面处理
-  - 只关注 UI 状态展示
-
-## 📋 实际项目结构
-
-```
-lib/features/
-├── auth/                    # 认证功能
-│   ├── auth_page.dart
+├── auth/                    # 认证模块
+│   ├── auth_page.dart                      # 登录/注册页面入口
 │   └── widgets/
-├── binding/                 # 绑定关系管理
-│   ├── binding_page.dart
-│   └── widgets/
-├── common/                  # 通用功能（启动页等）
-│   └── splash_screen.dart
+│       ├── auth_button.dart                # 认证按钮组件
+│       ├── auth_header.dart                # 认证页头部（Logo/标题）
+│       ├── code_input_card.dart            # 验证码输入卡片
+│       ├── error_card.dart                 # 错误提示卡片
+│       └── phone_input_card.dart           # 手机号输入卡片
+├── binding/                 # 绑定系统
+│   ├── binding_page.dart                   # 绑定关系主页面
+│   ├── binding_controller.dart             # 绑定页面的业务逻辑控制器
+│   ├── widgets/                            # 绑定关系子组件
+│   │   ├── add_binding_button.dart         # 添加绑定的按钮/入口
+│   │   ├── binding_card.dart               # 单个绑定关系卡片
+│   │   ├── binding_list_view.dart          # 绑定关系列表视图
+│   │   ├── binding_stats_card.dart         # 绑定统计卡片
+│   │   ├── empty_binding_view.dart         # 空绑定状态页面
+│   │   ├── error_view.dart                 # 错误状态视图
+│   │   ├── notification_badge.dart         # 通知徽章（显示未读数量）
+│   │   └── phone_binding_dialog.dart       # 手机号绑定对话框
+│   └── requests/                           # 绑定请求（通知中心）
+│       ├── notification_center_page.dart   # 通知中心页面（3个Tab）
+│       └── widgets/
+│           ├── empty_state_widget.dart     # 通用空状态组件
+│           ├── pending_request_card.dart   # 待处理请求卡片（接受/拒绝）
+│           ├── received_requests_tab.dart  # 收到的请求 Tab
+│           ├── rejected_requests_tab.dart  # 已拒绝请求 Tab
+│           ├── sent_request_card.dart      # 已发送请求卡片
+│           └── sent_requests_tab.dart      # 已发送请求 Tab
+├── common/                  # 通用功能
+│   └── splash_screen.dart                  # 应用启动闪屏/加载页
 ├── receiver/                # 接收者端
-│   ├── receiver_home_page.dart
+│   ├── receiver_home_page.dart             # 接收者首页
 │   └── widgets/
-├── sender/                  # 发送者端
-│   ├── sender_main_screen.dart
-│   ├── sender_home_content.dart
-│   └── widgets/
+│       ├── receiver_location_info_card.dart  # 位置信息卡片
+│       ├── receiver_location_toggle.dart     # 位置共享开关
+│       └── receiver_map_widget.dart          # 地图组件（显示发送者位置）
 ├── role/                    # 角色选择
-│   └── role_selection_page.dart
-├── settings/                # 设置
-│   ├── settings_page.dart
-│   └── widgets/
-└── dev/                     # 开发调试（留空备用）
+│   └── role_selection_page.dart            # 角色选择页面（Sender/Receiver）
+├── sender/                  # 发送者端
+│   ├── sender_main_screen.dart             # 发送者主屏幕
+│   └── sender_home_page.dart               # 发送者首页
+└── settings/                # 设置
+    ├── settings_page.dart                  # 设置页面入口
+    ├── environment_switch_page.dart        # 环境切换页面（dev/test/prod）
+    └── widgets/
+        ├── font_size_selector_card.dart    # 字体大小选择卡片
+        ├── logout_card.dart                # 退出登录卡片
+        ├── role_switch_card.dart           # 角色切换卡片
+        ├── settings_section_card.dart      # 设置分组卡片
+        └── theme_selector_card.dart        # 主题选择卡片（亮色/暗色）
 ```
 
-## 📊 什么时候拆分层级？
+## 模块说明
 
-### 保持扁平结构（当前）
-- 页面数量 ≤ 3 个
-- 业务逻辑不复杂
-- 直接用全局 Provider 管理状态
+### auth/ - 认证模块
+| 文件 | 作用 |
+|------|------|
+| `auth_page.dart` | 登录/注册页面入口 |
+| `widgets/auth_button.dart` | 认证按钮组件 |
+| `widgets/auth_header.dart` | 认证页头部（Logo/标题） |
+| `widgets/code_input_card.dart` | 验证码输入卡片 |
+| `widgets/error_card.dart` | 错误提示卡片 |
+| `widgets/phone_input_card.dart` | 手机号输入卡片 |
 
-### 考虑拆分 provider/ 层
-- 某个 feature 有独立的复杂业务逻辑（如任务管理、消息系统）
-- 需要独立的状态管理，不适合放在全局 Provider
-- 需要单独测试该 feature 的业务逻辑
+### binding/ - 绑定系统
+| 文件 | 作用 |
+|------|------|
+| `binding_page.dart` | 绑定关系主页面 |
+| `binding_controller.dart` | 绑定页面的业务逻辑控制器 |
+| **widgets/** | **绑定关系子组件** |
+| `widgets/add_binding_button.dart` | 添加绑定的按钮/入口 |
+| `widgets/binding_card.dart` | 单个绑定关系卡片 |
+| `widgets/binding_list_view.dart` | 绑定关系列表视图 |
+| `widgets/binding_stats_card.dart` | 绑定统计卡片 |
+| `widgets/empty_binding_view.dart` | 空绑定状态页面 |
+| `widgets/error_view.dart` | 错误状态视图 |
+| `widgets/notification_badge.dart` | 通知徽章（显示未读数量） |
+| `widgets/phone_binding_dialog.dart` | 手机号绑定对话框 |
+| **requests/** | **绑定请求（通知中心）** |
+| `requests/notification_center_page.dart` | 通知中心页面（3个Tab） |
+| `requests/widgets/empty_state_widget.dart` | 通用空状态组件 |
+| `requests/widgets/pending_request_card.dart` | 待处理请求卡片（接受/拒绝） |
+| `requests/widgets/received_requests_tab.dart` | 收到的请求 Tab |
+| `requests/widgets/rejected_requests_tab.dart` | 已拒绝请求 Tab |
+| `requests/widgets/sent_request_card.dart` | 已发送请求卡片 |
+| `requests/widgets/sent_requests_tab.dart` | 已发送请求 Tab |
 
-### 考虑拆分 data/ 层
-- 某个 feature 有专属的数据源（独立的 Repository、本地缓存）
-- API 调用逻辑复杂，需要单独封装
+### common/ - 通用功能
+| 文件 | 作用 |
+|------|------|
+| `splash_screen.dart` | 应用启动闪屏/加载页 |
 
-> **原则：避免过度工程，功能复杂后再拆分。**
+### receiver/ - 接收者端
+| 文件 | 作用 |
+|------|------|
+| `receiver_home_page.dart` | 接收者首页 |
+| `widgets/receiver_location_info_card.dart` | 位置信息卡片 |
+| `widgets/receiver_location_toggle.dart` | 位置共享开关 |
+| `widgets/receiver_map_widget.dart` | 地图组件（显示发送者位置） |
 
-## 🔄 数据流向（当前架构）
+### role/ - 角色选择
+| 文件 | 作用 |
+|------|------|
+| `role_selection_page.dart` | 角色选择页面（Sender/Receiver） |
 
-```
-用户交互 (feature page)
-    ↓
-调用全局 Provider 方法 (AuthStateManager / BindingProvider)
-    ↓
-调用 ApiClient (services/api_client.dart)
-    ↓
-API 调用
-    ↓
-Provider 处理业务逻辑
-    ↓
-notifyListeners()
-    ↓
-UI 更新
-```
+### sender/ - 发送者端
+| 文件 | 作用 |
+|------|------|
+| `sender_main_screen.dart` | 发送者主屏幕 |
+| `sender_home_page.dart` | 发送者首页 |
 
-## ✅ 优势
+### settings/ - 设置
+| 文件 | 作用 |
+|------|------|
+| `settings_page.dart` | 设置页面入口 |
+| `environment_switch_page.dart` | 环境切换页面（dev/test/prod） |
+| `widgets/font_size_selector_card.dart` | 字体大小选择卡片 |
+| `widgets/logout_card.dart` | 退出登录卡片 |
+| `widgets/role_switch_card.dart` | 角色切换卡片 |
+| `widgets/settings_section_card.dart` | 设置分组卡片 |
+| `widgets/theme_selector_card.dart` | 主题选择卡片（亮色/暗色） |
 
-1. **简洁直接**: 小项目不需要复杂分层
-2. **代码位置可预测**: 页面文件直接在 feature 根目录
-3. **易于维护**: 文件少，一目了然
-4. **渐进式演进**: 功能变复杂时再拆分，不提前优化
+## 架构原则
 
-## ⚠️ 注意事项
-
-- **不要为了规范而规范**: 1 个页面的功能不需要创建 provider/ 和 data/
-- **保持一致性**: 同类型文件放在相同位置
-- **跨功能组件放全局**: 通用组件放 `lib/widgets/common/`，不要复制到各 feature
-
-## 📝 示例: 添加新功能
-
-假设要添加"消息中心"功能:
-
-1. **简单情况**（只有列表页）:
-   - 创建 `features/message/message_page.dart`
-   - 页面内嵌 UI，业务逻辑用全局 Provider
-
-2. **复杂情况**（独立业务逻辑）:
-   - 创建 `features/message/` + `message_page.dart`
-   - 添加 `providers/message_provider.dart` 管理消息状态
-   - 数据层直接调用 `ApiClient`，不需要额外 Repository
-
-## 📚 参考
-
-- [Flutter 架构最佳实践](https://docs.flutter.dev/get-started/flutter-for/android-devs#how-do-i-handle-state)
-- [Provider 包文档](https://pub.dev/packages/provider)
+1. **Feature-First**：每个功能模块包含页面和专属 widgets/
+2. **组件内聚**：专属组件放在模块内的 widgets/ 目录
+3. **通用组件**：跨模块复用的组件放在 `lib/widgets/`
+4. **职责单一**：每个组件只负责一个 UI 片段
+5. **状态外置**：组件通过参数接收数据，不直接读取 Provider

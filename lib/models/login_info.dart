@@ -4,13 +4,14 @@ import '../utils/phone_utils.dart';
 ///
 /// 强类型封装用户登录后的完整信息
 /// 替代原来的 `Map<String, dynamic>` 返回方式
+/// 
+/// 注意：已删除 userRole 字段，所有用户使用统一主页
 class LoginInfo {
   final String accessToken;
   final String? refreshToken;
   final int? expiresIn;
   final String? phoneNumber;
   final String? userId;
-  final String? userRole;
   final DateTime? accessTokenSaveTime;
   final DateTime? refreshTokenSaveTime;
 
@@ -20,7 +21,6 @@ class LoginInfo {
     this.expiresIn,
     this.phoneNumber,
     this.userId,
-    this.userRole,
     this.accessTokenSaveTime,
     this.refreshTokenSaveTime,
   });
@@ -32,7 +32,6 @@ class LoginInfo {
     int? expiresIn,
     String? phoneNumber,
     String? userId,
-    String? userRole,
     int? accessTokenSaveTime,
     int? refreshTokenSaveTime,
   }) {
@@ -42,7 +41,6 @@ class LoginInfo {
       expiresIn: expiresIn,
       phoneNumber: phoneNumber,
       userId: userId,
-      userRole: userRole,
       accessTokenSaveTime: accessTokenSaveTime != null
           ? DateTime.fromMillisecondsSinceEpoch(accessTokenSaveTime)
           : null,
@@ -63,7 +61,6 @@ class LoginInfo {
       'expires_in': expiresIn,
       'phone_number': phoneNumber,
       'user_id': userId,
-      'user_role': userRole,
       'access_token_save_time': accessTokenSaveTime?.millisecondsSinceEpoch,
       'refresh_token_save_time': refreshTokenSaveTime?.millisecondsSinceEpoch,
     };
@@ -71,6 +68,6 @@ class LoginInfo {
 
   @override
   String toString() {
-    return 'LoginInfo(userId: $userId, phone: ${PhoneUtils.maskPhone(phoneNumber ?? '')}, role: $userRole)';
+    return 'LoginInfo(userId: $userId, phone: ${PhoneUtils.maskPhone(phoneNumber ?? '')})';
   }
 }

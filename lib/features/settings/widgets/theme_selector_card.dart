@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../managers/theme_manager.dart';
+import '../../../providers/theme_manager.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_strings.dart';
 import '../../../theme/app_text_styles.dart';
+import '../../../utils/app_snackbar.dart';
 import 'settings_section_card.dart';
 
 /// ============================================
@@ -70,12 +72,7 @@ class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('主题切换失败：$e'),
-            backgroundColor: AppColors.errorColor,
-          ),
-        );
+        AppSnackbar.showError(context, '${AppStrings.themeSwitchFailed}：$e');
       }
     }
   }
@@ -148,24 +145,24 @@ class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
   @override
   Widget build(BuildContext context) {
     return SettingsSectionCard(
-      title: '主题设置',
+      title: AppStrings.themeSettings,
       child: Column(
         children: [
           _buildThemeOption(
             icon: Icons.light_mode,
-            title: '浅色模式',
+            title: AppStrings.lightMode,
             themeMode: ThemeMode.light,
           ),
           const SizedBox(height: 12),
           _buildThemeOption(
             icon: Icons.dark_mode,
-            title: '深色模式',
+            title: AppStrings.darkMode,
             themeMode: ThemeMode.dark,
           ),
           const SizedBox(height: 12),
           _buildThemeOption(
             icon: Icons.brightness_auto,
-            title: '跟随系统',
+            title: AppStrings.followSystem,
             themeMode: ThemeMode.system,
           ),
         ],

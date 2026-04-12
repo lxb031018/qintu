@@ -5,7 +5,8 @@
       "args": ["@cloudbase/cloudbase-mcp@latest"],
       "env": {
         "INTEGRATION_IDE": "Trae"
-      }
+      },
+      "disabled": true
     }
   }
 }

@@ -4,6 +4,7 @@
  * 路由列表：
  * POST   /api/bindings/request-phone  - 通过手机号请求绑定
  * GET    /api/bindings/pending        - 获取待确认的绑定请求
+ * GET    /api/bindings/sent           - 获取我发出的绑定请求
  * POST   /api/bindings/confirm-request - 接收者确认绑定
  * POST   /api/bindings/reject-request  - 接收者拒绝绑定
  * GET    /api/bindings/my             - 获取我的所有绑定关系
@@ -21,28 +22,17 @@ const { query, transaction } = require('../lib/database');
 const { success, validationError, error, notFound } = require('../lib/response');
 const { authMiddleware } = require('../middleware/auth');
 const { logOperation } = require('../lib/operation_logger');
+const config = require('../config');
+const { normalizePhone, isValidChinesePhone, maskPhone } = require('../lib/utils/phone');
+
+// 🌟 是否开发环境（控制调试日志）
+const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * 绑定关系常量
  */
-const BINDING_LIMITS = {
-  MAX_RECEIVERS_PER_SENDER: 5,   // 一个发送者最多绑定 5 个接收者（家庭场景）
-  MAX_SENDERS_PER_RECEIVER: 3    // 一个接收者最多被 3 个发送者绑定（避免过度监护）
-};
-
-const PENDING_REQUEST_EXPIRE_HOURS = 7 * 24; // pending 请求 7 天后过期
-
-/**
- * 标准化手机号格式
- * 移除空格、横杠、+86 等前缀，仅保留纯数字
- * @param {string} phone - 原始手机号
- * @returns {string} - 标准化后的手机号
- */
-function normalizePhone(phone) {
-  if (!phone) return '';
-  // 移除所有非数字字符
-  return phone.replace(/[^\d]/g, '');
-}
+const BINDING_LIMITS = config.LIMITS;
+const PENDING_REQUEST_EXPIRE_MS = config.BINDING.EXPIRES_MS;
 
 /**
  * GET /api/bindings/my
@@ -118,28 +108,33 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
     const binding = bindings[0];
 
-    // 验证权限（只有绑定双方可以解绑）
+    // 验证权限（只有绑定双方可以解绑/取消）
     if (binding.sender_openid !== openid && binding.receiver_openid !== openid) {
       return error(res, '无权操作此绑定关系', 'PERMISSION_DENIED', 403);
     }
 
+    // 根据当前状态决定操作类型
+    const action = binding.status === 'pending' ? 'CANCEL_BINDING_REQUEST' : 'REVOKE_BINDING';
+    const newStatus = binding.status === 'pending' ? 'revoked' : 'revoked';
+
     // 更新状态为已撤销
     await query(
       `UPDATE user_bindings
-       SET status = 'revoked', updated_at = NOW()
+       SET status = ?, updated_at = NOW()
        WHERE id = ?`,
-      [bindingId]
+      [newStatus, bindingId]
     );
 
     // 记录操作日志
     await logOperation({
       userOpenid: openid,
-      action: 'REVOKE_BINDING',
+      action: action,
       targetType: 'binding',
       targetId: bindingId.toString(),
       details: {
         sender_openid: binding.sender_openid,
-        receiver_openid: binding.receiver_openid
+        receiver_openid: binding.receiver_openid,
+        previous_status: binding.status
       },
       ipAddress: req.ip
     });
@@ -170,60 +165,64 @@ router.post('/request-phone', authMiddleware, async (req, res) => {
       return validationError(res, 'receiver_phone 是必填参数');
     }
 
-    // 标准化手机号（移除 +86、空格等）
     const normalizedPhone = normalizePhone(receiver_phone);
-    
-    if (normalizedPhone.length < 11) {
-      return error(res, '手机号格式不正确', 'INVALID_PHONE', 400);
+
+    if (isDev) {
+      console.log(`[Bindings] 📱 标准化后: "${normalizedPhone}", 原始: ${maskPhone(receiver_phone)}`);
     }
 
-    // 1. 查找接收者 openid（精确匹配标准化后的手机号）
-    const users = await query(
-      'SELECT openid, nickname FROM users WHERE phone IS NOT NULL AND REPLACE(REPLACE(phone, "+86 ", ""), " ", "") = ? AND status = "active"',
-      [normalizedPhone]
+    if (!isValidChinesePhone(normalizedPhone)) {
+      if (isDev) console.error(`[Bindings] ❌ 验证失败: "${normalizedPhone}"`);
+      return error(res, '手机号格式不正确（应为 11 位中国手机号）', 'INVALID_PHONE', 400);
+    }
+
+    // 🌟 优化：合并多次查询为 1 次，使用子查询获取所有需要的信息
+    // 🌟 直接查询标准化后的手机号，不再使用 REPLACE
+    const checkResult = await query(
+      `SELECT
+        u.openid as receiver_openid,
+        u.nickname as receiver_nickname,
+        (SELECT COUNT(*) FROM user_bindings WHERE sender_openid = ? AND status = 'active') as sender_active_count,
+        (SELECT COUNT(*) FROM user_bindings WHERE receiver_openid = u.openid AND status IN ('active', 'pending')) as receiver_pending_count,
+        (SELECT status FROM user_bindings WHERE sender_openid = ? AND receiver_openid = u.openid LIMIT 1) as existing_binding_status
+      FROM users u
+      WHERE u.phone IS NOT NULL
+        AND u.phone = ?
+        AND u.status = 'active'
+      LIMIT 1`,
+      [senderOpenid, senderOpenid, normalizedPhone]
     );
 
-    if (users.length === 0) {
+    if (checkResult.length === 0) {
       return error(res, '该手机号未注册亲途', 'USER_NOT_FOUND', 404);
     }
 
-    const receiverOpenid = users[0].openid;
+    const row = checkResult[0];
+    const receiverOpenid = row.receiver_openid;
 
     if (senderOpenid === receiverOpenid) {
       return error(res, '不能绑定自己', 'SELF_BINDING', 400);
     }
 
-    // 2. 检查绑定限制
-    const senderBindingsCount = await query(
-      `SELECT COUNT(*) as count FROM user_bindings WHERE sender_openid = ? AND status = 'active'`,
-      [senderOpenid]
-    );
-    if (senderBindingsCount[0].count >= BINDING_LIMITS.MAX_RECEIVERS_PER_SENDER) {
+    // 检查发送者绑定限制
+    if (row.sender_active_count >= BINDING_LIMITS.MAX_RECEIVERS_PER_SENDER) {
       return error(res, '发送者绑定人数已达上限', 'BINDING_LIMIT_EXCEEDED', 409);
     }
 
-    const receiverBindingsCount = await query(
-      `SELECT COUNT(*) as count FROM user_bindings WHERE receiver_openid = ? AND status IN ('active', 'pending')`,
-      [receiverOpenid]
-    );
-    if (receiverBindingsCount[0].count >= BINDING_LIMITS.MAX_SENDERS_PER_RECEIVER) {
+    // 检查接收者绑定限制
+    if (row.receiver_pending_count >= BINDING_LIMITS.MAX_SENDERS_PER_RECEIVER) {
       return error(res, '该接收者已被过多发送者绑定', 'RECEIVER_BINDING_FULL', 409);
     }
 
-    // 3. 检查是否已存在
-    const existingBindings = await query(
-      `SELECT id, status FROM user_bindings WHERE sender_openid = ? AND receiver_openid = ?`,
-      [senderOpenid, receiverOpenid]
-    );
-
-    if (existingBindings.length > 0) {
-      const status = existingBindings[0].status;
+    // 检查是否已存在绑定
+    if (row.existing_binding_status) {
+      const status = row.existing_binding_status;
       if (status === 'active') return error(res, '与该用户的绑定关系已生效', 'BINDING_EXISTS', 409);
       if (status === 'pending') return error(res, '已发送过绑定请求，请等待对方确认', 'PENDING_EXISTS', 409);
     }
 
     // 4. 创建 pending 记录（设置 7 天过期时间）
-    const expireAt = new Date(Date.now() + PENDING_REQUEST_EXPIRE_HOURS * 60 * 60 * 1000);
+    const expireAt = new Date(Date.now() + PENDING_REQUEST_EXPIRE_MS);
     
     const result = await query(
       `INSERT INTO user_bindings (sender_openid, receiver_openid, status, remark, expired_at, created_at)
@@ -262,11 +261,19 @@ router.get('/pending', authMiddleware, async (req, res) => {
 
     // 先将已过期的 pending 请求标记为 expired
     await query(
-      `UPDATE user_bindings 
+      `UPDATE user_bindings
        SET status = 'expired', updated_at = NOW()
-       WHERE receiver_openid = ? AND status = 'pending' 
+       WHERE status = 'pending'
        AND expired_at IS NOT NULL AND expired_at < NOW()`,
-      [receiverOpenid]
+      []
+    );
+
+    // 清理超过 30 天的过期记录和被拒绝的记录
+    await query(
+      `DELETE FROM user_bindings
+       WHERE (status = 'expired' OR status = 'revoked')
+       AND expired_at < NOW() - INTERVAL 30 DAY`,
+      []
     );
 
     // 查询有效的 pending 请求
@@ -291,6 +298,64 @@ router.get('/pending', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('获取待确认请求失败:', err);
     return error(res, '获取失败', 'GET_PENDING_FAILED', 500);
+  }
+});
+
+/**
+ * GET /api/bindings/sent
+ * 获取我发出的绑定请求（包括 pending/rejected/expired 状态）
+ */
+router.get('/sent', authMiddleware, async (req, res) => {
+  try {
+    const senderOpenid = req.user.openid;
+    if (isDev) console.log(`[DEBUG /sent] 查询已发出请求: senderOpenid=${senderOpenid}`);
+
+    // 先将已过期的 pending 请求标记为 expired
+    await query(
+      `UPDATE user_bindings
+       SET status = 'expired', updated_at = NOW()
+       WHERE status = 'pending'
+       AND expired_at IS NOT NULL AND expired_at < NOW()`,
+      []
+    );
+
+    // 清理超过 30 天的过期记录和被拒绝的记录
+    await query(
+      `DELETE FROM user_bindings
+       WHERE (status = 'expired' OR status = 'revoked')
+       AND expired_at < NOW() - INTERVAL 30 DAY`,
+      []
+    );
+
+    // 查询所有请求（pending/rejected/expired），最近 7 天的
+    const requests = await query(
+      `SELECT b.id, b.status, b.remark as sender_name, b.created_at, b.expired_at,
+              u.nickname as receiver_nickname, u.phone as receiver_phone
+       FROM user_bindings b
+       JOIN users u ON b.receiver_openid = u.openid
+       WHERE b.sender_openid = ?
+       AND b.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+       ORDER BY b.created_at DESC`,
+      [senderOpenid]
+    );
+
+    if (isDev) {
+      console.log(`[DEBUG /sent] 查询结果: ${requests.length} 条记录`);
+      if (requests.length > 0) {
+        console.log(`[DEBUG /sent] 请求详情:`, JSON.stringify(requests, null, 2));
+      }
+    }
+
+    // 手机号脱敏
+    const maskedRequests = requests.map(r => ({
+      ...r,
+      receiver_phone: r.receiver_phone ? r.receiver_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知'
+    }));
+
+    return success(res, maskedRequests);
+  } catch (err) {
+    console.error('获取已发出请求失败:', err);
+    return error(res, '获取失败', 'GET_SENT_FAILED', 500);
   }
 });
 

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
-import '../../../managers/auth_state_manager.dart';
+import '../../../providers/auth_state_manager.dart';
 import '../../../router/app_router.dart';
+import '../../../utils/app_snackbar.dart';
 import '../../../utils/logger.dart';
 import '../../../widgets/common/logout_dialog.dart';
 import 'settings_section_card.dart';
@@ -38,12 +39,7 @@ class LogoutCard extends StatelessWidget {
       } catch (e, stackTrace) {
         Logs.auth.error('退出登录失败: $e', stackTrace: stackTrace);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('退出登录失败: $e'),
-              backgroundColor: AppColors.errorColor,
-            ),
-          );
+          AppSnackbar.showError(context, '${AppStrings.logoutFailed}: $e');
         }
       }
     }
@@ -52,7 +48,7 @@ class LogoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SettingsSectionCard(
-      title: '账号',
+      title: AppStrings.account,
       child: ElevatedButton.icon(
         onPressed: () => _handleLogout(context),
         icon: const Icon(Icons.logout),

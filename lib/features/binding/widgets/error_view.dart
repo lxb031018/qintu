@@ -19,7 +19,7 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+    final titleColor = isDark ? AppColors.grey400 : AppColors.grey700;
 
     return Center(
       child: Padding(
