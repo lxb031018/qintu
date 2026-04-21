@@ -523,6 +523,9 @@ class AppStrings {
   /// 对方已拒绝
   static const String requestRejected = '对方已拒绝';
 
+  /// 对方已解除绑定
+  static const String bindingUnbound = '已解除绑定';
+
   /// 已过期
   static const String requestExpired = '已过期';
 

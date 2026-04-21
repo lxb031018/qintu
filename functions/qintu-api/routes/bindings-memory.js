@@ -20,6 +20,9 @@ router.use(requireAuth);
 const mockBindings = new Map();
 let bindingIdCounter = 1;
 
+// 🌟 用户位置存储（openid → 位置信息）
+const userLocations = {};
+
 // 绑定限制
 const BINDING_LIMITS = config.LIMITS;
 
@@ -108,8 +111,7 @@ router.get('/pending', (req, res) => {
 
         pendingRequests.push({
           id: parseInt(id),
-          sender_name: binding.sender_nickname,            // 🌟 "对方对您的称呼"（如"老妈"）
-          sender_nickname: binding.sender_nickname,       // 🌟 同上
+          sender_name: binding.sender_nickname,
           sender_phone: binding.sender_phone ?
             binding.sender_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
           created_at: binding.created_at,
@@ -173,10 +175,10 @@ router.get('/sent', (req, res) => {
         sentRequests.push({
           id: parseInt(id),
           status: binding.status,
-          receiver_name: binding.receiver_nickname || binding.remark, // 🌟 显示发送者填写的"您对对方的称呼"
+          receiver_nickname: binding.receiver_nickname,
           created_at: binding.created_at,
           expired_at: binding.expired_at,
-          receiver_nickname: binding.receiver_nickname,
+          rejected_at: binding.rejected_at || null, // 🌟 标记被拒绝时间
           receiver_phone: binding.receiver_phone ?
             binding.receiver_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知'
         });
@@ -384,6 +386,7 @@ router.post('/reject-request', (req, res) => {
 
     binding.status = 'revoked';
     binding.updated_at = new Date().toISOString();
+    binding.rejected_at = new Date().toISOString(); // 🌟 标记为被拒绝
 
     if (isDev) console.log(`[Bindings] ❌ 绑定已拒绝: id=${request_id}`);
 
@@ -465,6 +468,36 @@ router.delete('/:id', (req, res) => {
   } catch (err) {
     console.error('解除绑定失败:', err);
     return error(res, '解除绑定失败', 'REVOKE_BINDING_FAILED', 500);
+  }
+});
+
+/**
+ * GET /api/locations/:openid
+ * 获取指定用户的实时位置（内存版本）
+ */
+router.get('/api/locations/:openid', (req, res) => {
+  try {
+    const targetOpenid = req.params.openid;
+    const userMap = global.userPhoneMap || {};
+    const userLocs = global.userLocations || {};
+
+    const location = userLocs[targetOpenid];
+    if (!location) {
+      return notFound(res, '用户位置不可用');
+    }
+
+    if (isDev) console.log(`[Locations] 查询位置: ${targetOpenid} → ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`);
+
+    return success(res, {
+      receiver_openid: targetOpenid,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      updated_at: location.updatedAt,
+      is_sharing: true
+    });
+  } catch (err) {
+    console.error('查询位置失败:', err);
+    return error(res, '查询位置失败', 'GET_LOCATION_FAILED', 500);
   }
 });
 

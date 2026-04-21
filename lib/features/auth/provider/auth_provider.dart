@@ -136,6 +136,10 @@ class AuthNotifier extends Notifier<AuthPageState> {
 
       // 同步用户到后端
       await _syncUser(authResult.uid, formattedPhone);
+
+      // 登录成功，重置 authProvider 状态为初始状态
+      // 这样下次进入登录页面时是干净的
+      state = const AuthPageState();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -164,6 +168,11 @@ class AuthNotifier extends Notifier<AuthPageState> {
   /// 清除错误
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+
+  /// 重置到输入手机号状态（退出登录后调用）
+  void resetToInputPhone() {
+    state = const AuthPageState();
   }
 
   /// 同步用户到 MySQL

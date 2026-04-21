@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
+import '../../providers/auth_state_manager.dart';
 import 'provider/auth_provider.dart';
 import 'widgets/auth_header.dart';
 import 'widgets/auth_button.dart';
@@ -38,6 +40,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     final theme = Theme.of(context);
     final primaryColor = AppColors.primaryColor;
     final authState = ref.watch(authProvider);
+
+    // 监听全局认证状态变化
+    ref.listen(authStateProvider, (previous, next) {
+      if (next.isLoggedIn && previous?.isLoggedIn != true) {
+        // 登录成功，跳转到主页
+        context.go('/home');
+      }
+    });
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
