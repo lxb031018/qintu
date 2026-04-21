@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_spacings.dart';
+import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// ============================================
@@ -23,10 +26,10 @@ class SettingsSectionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacings.lg),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCardBackground : AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.all(AppRadii.medium),
         boxShadow: [
           BoxShadow(
             color: AppColors.blackOpacity5,
@@ -47,10 +50,30 @@ class SettingsSectionCard extends StatelessWidget {
                   : AppColors.lightTextColor,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppSpacings.lg),
           child,
         ],
       ),
     );
   }
+}
+
+@Preview(name: '设置分区卡片', group: 'settings')
+Widget previewSettingsSectionCard() {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      backgroundColor: const Color(0xFFF5F6F7),
+      body: Center(
+        child: SettingsSectionCard(
+          title: '示例设置',
+          child: const ListTile(
+            leading: Icon(Icons.settings),
+            title: Text('示例设置项'),
+            trailing: Icon(Icons.chevron_right),
+          ),
+        ),
+      ),
+    ),
+  );
 }

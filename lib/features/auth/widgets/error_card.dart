@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../constants/app_colors.dart';
+import '../../../constants/colors/app_colors.dart';
+import '../../../constants/app_spacings.dart';
+import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// ============================================
@@ -18,16 +20,16 @@ class ErrorCard extends StatelessWidget {
   const ErrorCard({
     super.key,
     required this.message,
-    this.errorColor = AppColors.errorColor,
+    this.errorColor = StatusColors.error,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppSpacings.xl),
       decoration: BoxDecoration(
         color: errorColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.all(AppRadii.large),
         border: Border.all(
           color: errorColor.withValues(alpha: 0.3),
         ),

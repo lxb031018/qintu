@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../constants/app_strings.dart';
-import '../../../constants/app_colors.dart';
+import '../../../constants/strings/app_strings.dart';
+import '../../../constants/colors/app_colors.dart';
+import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// 手机号输入卡片
@@ -74,16 +75,16 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.cardBackground;
-    final inputTextColor = isDark ? AppColors.darkInputTextColor : AppColors.textColor;
+    final cardBackground = isDark ? CardColors.bg : CardColors.bg;
+    final inputTextColor = isDark ? TextColors.body : TextColors.body;
 
     return Container(
       decoration: BoxDecoration(
         color: cardBackground,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.all(AppRadii.large),
         boxShadow: [
           BoxShadow(
-            color: isDark ? AppColors.blackOpacity15 : AppColors.blackOpacity5, // 改为标准阴影
+            color: Color(0x26000000),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -99,14 +100,14 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
           color: inputTextColor,
         ),
         decoration: InputDecoration(
-          labelText: AppStrings.phoneLabel,
-          labelStyle: AppTextStyles.inputLabel.copyWith(
-            color: widget.primaryColor,
-          ),
-          hintText: AppStrings.phoneHint,
-          hintStyle: AppTextStyles.inputHint.copyWith(
-            color: widget.lightTextColor,
-          ),
+              labelText: AuthStrings.phoneLabel,
+              labelStyle: AppTextStyles.inputLabel.copyWith(
+                color: widget.primaryColor,
+              ),
+              hintText: AuthStrings.phoneHint,
+              hintStyle: AppTextStyles.inputHint.copyWith(
+                color: widget.lightTextColor,
+              ),
           prefixText: '+86 ',
           prefixStyle: AppTextStyles.emojiIcon.copyWith(
             color: widget.primaryColor,
@@ -118,10 +119,10 @@ class _PhoneInputCardState extends State<PhoneInputCard> {
               color: widget.primaryColor,
             ),
             onPressed: _toggleVisibility,
-            tooltip: _obscureText ? AppStrings.showPhone : AppStrings.hidePhone,
+            tooltip: _obscureText ? BindingStrings.showPhone : BindingStrings.hidePhone,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(AppRadii.large),
             borderSide: BorderSide.none,
           ),
           filled: true,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../constants/app_strings.dart';
-import '../../../constants/app_colors.dart';
+import '../../../constants/strings/app_strings.dart';
+import '../../../constants/colors/app_colors.dart';
+import '../../../constants/app_spacings.dart';
+import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/phone_utils.dart';
 
@@ -50,18 +52,18 @@ class CodeInputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.cardBackground;
-    final inputTextColor = isDark ? AppColors.darkInputTextColor : AppColors.textColor;
+    final cardBackground = isDark ? CardColors.bg : CardColors.bg;
+    final inputTextColor = isDark ? TextColors.body : TextColors.body;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 手机号显示
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(AppSpacings.xl),
           decoration: BoxDecoration(
             color: cardBackground,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(AppRadii.large),
             border: Border.all(
               color: primaryColor.withValues(alpha: 0.3),
             ),
@@ -76,7 +78,7 @@ class CodeInputCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '${AppStrings.codeSent} ${PhoneUtils.maskPhone(phoneNumber)}',
+                  '${AuthStrings.codeSent} ${PhoneUtils.maskPhone(phoneNumber)}',
                   style: AppTextStyles.caption.copyWith(
                     color: textColor,
                   ),
@@ -87,7 +89,7 @@ class CodeInputCard extends StatelessWidget {
                 TextButton(
                   onPressed: onChangePhone,
                   child: Text(
-                    AppStrings.modify,
+                    BindingStrings.modify,
                     style: AppTextStyles.locationTitle.copyWith(
                       color: primaryColor,
                     ),
@@ -97,16 +99,16 @@ class CodeInputCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 24),
+        SizedBox(height: AppSpacings.xl),
 
         // 验证码输入框
         Container(
           decoration: BoxDecoration(
             color: cardBackground,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(AppRadii.large),
             boxShadow: [
               BoxShadow(
-                color: isDark ? AppColors.blackOpacity15 : AppColors.blackOpacity5, // 改为标准阴影
+                color: Color(0x26000000),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -120,16 +122,16 @@ class CodeInputCard extends StatelessWidget {
               color: inputTextColor,
             ),
             decoration: InputDecoration(
-              labelText: AppStrings.codeLabel,
+              labelText: AuthStrings.codeLabel,
               labelStyle: AppTextStyles.inputLabel.copyWith(
                 color: primaryColor,
               ),
-              hintText: AppStrings.codeHint,
+              hintText: AuthStrings.codeHint,
               hintStyle: AppTextStyles.bodySmall.copyWith(
                 color: lightTextColor,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.all(AppRadii.large),
                 borderSide: BorderSide.none,
               ),
               filled: true,
@@ -143,7 +145,7 @@ class CodeInputCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 16),
+        SizedBox(height: AppSpacings.lg),
 
         // 重新发送按钮
         Row(
@@ -156,7 +158,7 @@ class CodeInputCard extends StatelessWidget {
                 color: countdown > 0 ? lightTextColor : primaryColor,
               ),
               label: Text(
-                countdown > 0 ? AppStrings.resendCodeCountdown(countdown) : AppStrings.resendCode,
+                countdown > 0 ? AuthStrings.resendCodeCountdown(countdown) : AuthStrings.resendCode,
                 style: AppTextStyles.buttonSmall.copyWith(
                   color: countdown > 0 ? lightTextColor : primaryColor,
                 ),

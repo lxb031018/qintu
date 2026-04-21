@@ -1,41 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_durations.dart';
 import '../../../constants/app_strings.dart';
+import '../../../constants/app_spacings.dart';
+import '../../../constants/app_radii.dart';
 import '../../../constants/font_size_setting.dart';
 import '../../../providers/settings_manager.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/logger.dart';
 
 /// 字体大小选择卡片组件
-
-class FontSizeSelectorCard extends StatefulWidget {
+class FontSizeSelectorCard extends ConsumerWidget {
   const FontSizeSelectorCard({super.key});
 
   @override
-  State<FontSizeSelectorCard> createState() => _FontSizeSelectorCardState();
-}
-
-class _FontSizeSelectorCardState extends State<FontSizeSelectorCard> {
-  late SettingsManager _settingsManager;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _settingsManager = Provider.of<SettingsManager>(context, listen: false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
     final textColor = isDark ? AppColors.darkTextColor : AppColors.textColor;
+    final settingsState = ref.watch(settingsManagerProvider);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppSpacings.xl),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.all(AppRadii.large),
         boxShadow: [
           BoxShadow(
             color: AppColors.blackOpacity5,
@@ -61,24 +51,24 @@ class _FontSizeSelectorCardState extends State<FontSizeSelectorCard> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppSpacings.lg),
           // 选项网格
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: AppSpacings.md,
+              mainAxisSpacing: AppSpacings.md,
             ),
             itemCount: FontSizeOption.values.length,
             itemBuilder: (context, index) {
               final option = FontSizeOption.values[index];
-              final isSelected = option.scale == _settingsManager.fontSizeScale;
+              final isSelected = option.scale == settingsState.fontSizeScale;
               return _FontSizeOptionButton(
                 option: option,
                 isSelected: isSelected,
-                onTap: () => _selectFontSize(option.scale),
+                onTap: () => _selectFontSize(context, ref, option.scale),
               );
             },
           ),
@@ -87,14 +77,9 @@ class _FontSizeSelectorCardState extends State<FontSizeSelectorCard> {
     );
   }
 
-  Future<void> _selectFontSize(double scale) async {
-    await _settingsManager.setFontSizeScale(scale);
+  Future<void> _selectFontSize(BuildContext context, WidgetRef ref, double scale) async {
+    await ref.read(settingsManagerProvider.notifier).setFontSizeScale(scale);
     Logs.ui.info('字体大小已调整为 ${scale}x');
-    
-    // 触发全局刷新
-    if (mounted) {
-      setState(() {});
-    }
   }
 }
 
@@ -117,14 +102,14 @@ class _FontSizeOptionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppDurations.fastAnimation,
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryColor
               : isDark
                   ? AppColors.darkBackgroundColor
                   : AppColors.grey100,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(AppRadii.medium),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
@@ -142,7 +127,7 @@ class _FontSizeOptionButton extends StatelessWidget {
               color: isSelected ? AppColors.whiteText : AppColors.primaryColor,
               size: 24,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: AppSpacings.xs),
             Text(
               option.label,
               style: AppTextStyles.locationTitle.copyWith(

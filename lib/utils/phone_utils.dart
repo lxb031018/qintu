@@ -79,5 +79,20 @@ class PhoneUtils {
     // 格式化为 3-4-4
     return '${cleaned.substring(0, 3)} ${cleaned.substring(3, 7)} ${cleaned.substring(7)}';
   }
+
+  /// 格式化为 API 请求格式
+  ///
+  /// 将手机号格式化为 "+86 13800138000"（带空格）用于 API 请求
+  static String formatForApi(String phone) {
+    // 移除非数字字符
+    String cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+
+    // 如果超过 11 位，取最后 11 位
+    if (cleaned.length > 11) {
+      cleaned = cleaned.substring(cleaned.length - 11);
+    }
+
+    return '+86 $cleaned';
+  }
 }
 

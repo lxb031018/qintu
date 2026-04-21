@@ -130,12 +130,12 @@ class AppStrings {
   static const String endPointLabel = '终点';
 
   /// 规划路线
-  static const String planRoute = '规划路线';
+  static const String planRoute = '路线规划';
 
   // ==================== 底部导航 ====================
 
-  /// 路线规划（顶部导航Tab）
-  static const String tabRoutePlanning = '路线规划';
+  /// 地图导航（顶部导航Tab）
+  static const String tabRoutePlanning = '地图导航';
 
   /// 关系绑定（顶部导航Tab）
   static const String tabBindingRelation = '关系绑定';
@@ -173,6 +173,9 @@ class AppStrings {
   /// 退出
   static const String logout = '退出';
 
+  /// 正在退出
+  static const String loggingOut = '正在退出...';
+
   /// 退出确认标题
   static const String logoutConfirmTitle = '您确定退出嘛？>_<';
 
@@ -209,6 +212,18 @@ class AppStrings {
 
   /// 路线规划标题
   static const String routePlanningTitle = '路线规划';
+
+  /// 选择接收者
+  static const String selectReceiver = '选择接收者';
+
+  /// 选择规划对象
+  static const String selectPlanningTarget = '选择规划对象';
+
+  /// 暂无已绑定的接收者
+  static const String noBoundReceivers = '暂无已绑定的接收者，请先建立绑定关系';
+
+  /// 暂无已绑定的对象
+  static const String noBoundTargets = '暂无已绑定的对象，请先建立绑定关系';
 
   /// 字体大小
   static const String fontSize = '字体大小';
@@ -574,4 +589,9 @@ class AppStrings {
 
   /// 取消失败（日志用）
   static const String cancelFailedLog = '取消失败';
+
+  // ==================== 首页提示 ====================
+
+  /// 双击设置提示
+  static const String doubleTapSettingsHint = '💡 若初次使用本APP建议双击"设置"';
 }

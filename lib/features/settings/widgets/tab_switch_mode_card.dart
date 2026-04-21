@@ -1,41 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../providers/settings_manager.dart';
 import '../../../theme/app_text_styles.dart';
 import 'settings_section_card.dart';
 
-/// Tab 切换模式设置卡片
-class TabSwitchModeCard extends StatelessWidget {
+/// 防误触模式设置卡片
+class TabSwitchModeCard extends ConsumerWidget {
   const TabSwitchModeCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settingsManager = Provider.of<SettingsManager>(context);
+    final settingsState = ref.watch(settingsManagerProvider);
+    final notifier = ref.read(settingsManagerProvider.notifier);
 
     return SettingsSectionCard(
-      title: 'Tab 切换',
+      title: '防误触模式',
       child: SwitchListTile(
         title: Text(
-          settingsManager.doubleTapToSwitchTab
-              ? '双击切换页面'
-              : '单击切换页面',
+          settingsState.doubleTapToSwitchTab
+              ? '双击切换页面，已禁止路线规划'
+              : '单击切换页面，已启用路线规划',
           style: AppTextStyles.bodyMedium.copyWith(
             color: isDark ? AppColors.darkTextColor : AppColors.textColor,
           ),
         ),
         subtitle: Text(
-          settingsManager.doubleTapToSwitchTab
-              ? '防误触模式（推荐）'
-              : '单击顶部标签切换页面',
+          settingsState.doubleTapToSwitchTab
+              ? '避免误触顶部标签切换页面'
+              : '单击顶部标签即可切换页面',
           style: AppTextStyles.caption.copyWith(
             color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
           ),
         ),
-        value: settingsManager.doubleTapToSwitchTab,
+        value: settingsState.doubleTapToSwitchTab,
         onChanged: (value) {
-          settingsManager.setDoubleTapTab(value);
+          notifier.setDoubleTapTab(value);
         },
         activeThumbColor: AppColors.primaryColor,
       ),

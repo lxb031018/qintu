@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_text_styles.dart';
-import '../../../constants/app_colors.dart';
+import 'package:flutter/widget_previews.dart';
+import '../../../widgets/common/app_button.dart';
+import '../../../constants/colors/app_colors.dart';
+import '../../../constants/strings/app_strings.dart';
 
 /// 认证按钮组件
 ///
-/// 带渐变背景和加载状态的按钮
+/// 使用统一的 AppButton 组件，支持加载状态
 /// ============================================
 
 class AuthButton extends StatelessWidget {
@@ -30,38 +32,47 @@ class AuthButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AppButton(
+      text: text,
+      isLoading: isLoading,
+      onPressed: onPressed,
+      backgroundColor: primaryColor,
+      foregroundColor: TextColors.white,
       height: 60,
-      decoration: BoxDecoration(
-        color: primaryColor, // 改为纯色，与其他页面按钮一致
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                height: 28,
-                width: 28,
-                child: CircularProgressIndicator(
-                  color: AppColors.whiteText,
-                  strokeWidth: 3,
-                ),
-              )
-            : Text(
-                text,
-                style: AppTextStyles.emojiIcon.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.whiteText,
-                ),
-              ),
-      ),
     );
   }
+}
+
+@Preview(name: '认证按钮-正常', group: 'auth')
+Widget previewAuthButtonNormal() {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      body: Center(
+        child: AuthButton(
+          text: AuthStrings.login,
+          primaryColor: ButtonColors.primaryBg,
+          isLoading: false,
+          onPressed: () {},
+        ),
+      ),
+    ),
+  );
+}
+
+@Preview(name: '认证按钮-加载', group: 'auth')
+Widget previewAuthButtonLoading() {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      body: Center(
+        child: AuthButton(
+          text: AuthStrings.login,
+          primaryColor: ButtonColors.primaryBg,
+          isLoading: true,
+          onPressed: () {},
+        ),
+      ),
+    ),
+  );
 }

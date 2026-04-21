@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/theme_manager.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
+import '../../../constants/app_spacings.dart';
+import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/app_snackbar.dart';
 import 'settings_section_card.dart';
@@ -11,67 +13,17 @@ import 'settings_section_card.dart';
 /// 主题选择卡片组件
 ///
 /// 提供浅色/深色/跟随系统三种主题选项
-/// 通过 ThemeManager 统一管理主题状态
 /// ============================================
 
-class ThemeSelectorCard extends StatefulWidget {
-  final ThemeMode currentThemeMode;
-  final VoidCallback? onThemeChanged;
-
-  const ThemeSelectorCard({
-    super.key,
-    required this.currentThemeMode,
-    this.onThemeChanged,
-  });
-
-  @override
-  State<ThemeSelectorCard> createState() => _ThemeSelectorCardState();
-}
-
-class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
-  late ThemeMode _selectedThemeMode;
-  late ThemeManager _themeManager;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedThemeMode = widget.currentThemeMode;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 通过 Provider 获取共享的 ThemeManager 实例
-    _themeManager = Provider.of<ThemeManager>(context, listen: false);
-  }
-
-  @override
-  void didUpdateWidget(ThemeSelectorCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 当父组件传入的值变化时，更新本地状态
-    if (widget.currentThemeMode != oldWidget.currentThemeMode) {
-      _selectedThemeMode = widget.currentThemeMode;
-    }
-  }
+class ThemeSelectorCard extends ConsumerWidget {
+  const ThemeSelectorCard({super.key});
 
   /// 切换主题
-  Future<void> _switchTheme(ThemeMode themeMode) async {
-    if (_selectedThemeMode == themeMode) return;
-
+  Future<void> _switchTheme(BuildContext context, WidgetRef ref, ThemeMode themeMode) async {
     try {
-      // 通过 ThemeManager 切换主题，会自动保存到 SharedPreferences 并通知监听器
-      await _themeManager.setThemeMode(themeMode);
-
-      if (mounted) {
-        setState(() {
-          _selectedThemeMode = themeMode;
-        });
-
-        // 触发回调通知父组件
-        widget.onThemeChanged?.call();
-      }
+      await ref.read(themeManagerProvider.notifier).setThemeMode(themeMode);
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         AppSnackbar.showError(context, '${AppStrings.themeSwitchFailed}：$e');
       }
     }
@@ -79,23 +31,26 @@ class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
 
   /// 构建主题选项
   Widget _buildThemeOption({
+    required BuildContext context,
+    required ThemeMode currentMode,
+    required ThemeMode themeMode,
     required IconData icon,
     required String title,
-    required ThemeMode themeMode,
+    required WidgetRef ref,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSelected = _selectedThemeMode == themeMode;
+    final isSelected = currentMode == themeMode;
 
     return InkWell(
-      onTap: () => _switchTheme(themeMode),
-      borderRadius: BorderRadius.circular(8),
+      onTap: () => _switchTheme(context, ref, themeMode),
+      borderRadius: BorderRadius.all(AppRadii.small),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.md),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.all(AppRadii.small),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
@@ -143,27 +98,38 @@ class _ThemeSelectorCardState extends State<ThemeSelectorCard> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentThemeMode = ref.watch(themeManagerProvider);
+
     return SettingsSectionCard(
       title: AppStrings.themeSettings,
       child: Column(
         children: [
           _buildThemeOption(
+            context: context,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.light,
             icon: Icons.light_mode,
             title: AppStrings.lightMode,
-            themeMode: ThemeMode.light,
+            ref: ref,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacings.md),
           _buildThemeOption(
+            context: context,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.dark,
             icon: Icons.dark_mode,
             title: AppStrings.darkMode,
-            themeMode: ThemeMode.dark,
+            ref: ref,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacings.md),
           _buildThemeOption(
+            context: context,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.system,
             icon: Icons.brightness_auto,
             title: AppStrings.followSystem,
-            themeMode: ThemeMode.system,
+            ref: ref,
           ),
         ],
       ),
