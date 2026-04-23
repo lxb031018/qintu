@@ -5,7 +5,6 @@ import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
-import '../interaction/location_input_card_interaction.dart';
 
 /// ============================================
 /// 地点输入卡片
@@ -27,8 +26,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
   final TextEditingController _destinationController = TextEditingController();
   final FocusNode _originFocusNode = FocusNode();
   final FocusNode _destinationFocusNode = FocusNode();
-
-  final LocationInputCardInteraction _swapService = LocationInputCardInteraction();
 
   /// 记录手指按下时的 Y 坐标
   double? _dragStartY;
@@ -71,7 +68,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
 
   @override
   Widget build(BuildContext context) {
-    final notifier = ref.read(locationInputProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -102,7 +98,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             focusNode: _originFocusNode,
             onFocusChange: (hasFocus) {
               if (hasFocus) {
-                notifier.showList(isOrigin: true);
+                ref.read(locationInputProvider.notifier).showList(isOrigin: true);
               }
             },
           ),
@@ -119,7 +115,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             focusNode: _destinationFocusNode,
             onFocusChange: (hasFocus) {
               if (hasFocus) {
-                notifier.showList(isOrigin: false);
+                ref.read(locationInputProvider.notifier).showList(isOrigin: false);
               }
             },
           ),
@@ -175,22 +171,17 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     final state = ref.read(locationInputProvider);
     final notifier = ref.read(locationInputProvider.notifier);
 
-    // 调用 service 判断是否可以交换
-    if (!_swapService.canSwap(
-      origin: state.originPoi,
-      destination: state.destinationPoi,
-    )) {
+    // 判断是否可以交换
+    if (!notifier.canSwapOriginAndDestination()) {
       return;
     }
 
-    // 调用 service 获取交换后的 POI
-    final (newOrigin, newDestination) = _swapService.swapPois(
-      origin: state.originPoi,
-      destination: state.destinationPoi,
-    );
+    // 保存交换前的 POI（用于更新输入框）
+    final newOrigin = state.destinationPoi;
+    final newDestination = state.originPoi;
 
     // 更新 provider
-    notifier.swap();
+    notifier.swapOriginAndDestination(ref.read(mapNavigationProvider.notifier));
 
     // 同步更新输入框文本
     if (newOrigin != null) {

@@ -224,13 +224,25 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     state = state.copyWith(destinationPoi: null);
   }
 
-  /// 交换起点和终点
-  void swap() {
+  /// 判断是否可以交换起点和终点
+  bool canSwapOriginAndDestination() {
+    return state.originPoi != null || state.destinationPoi != null;
+  }
+
+  /// 交换起点和终点（同时更新两个 Provider）
+  ///
+  /// [mapNotifier] 用于同时更新 mapNavigationProvider
+  void swapOriginAndDestination(MapNavigationNotifier mapNotifier) {
+    final newOrigin = state.destinationPoi;
+    final newDestination = state.originPoi;
+
     state = state.copyWith(
-      originPoi: state.destinationPoi,
-      destinationPoi: state.originPoi,
+      originPoi: newOrigin,
+      destinationPoi: newDestination,
       isOriginFocused: false, // 交换后焦点切换到终点
     );
+
+    mapNotifier.swapOriginAndDestination();
   }
 
   /// 清除所有
