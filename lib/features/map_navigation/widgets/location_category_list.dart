@@ -70,10 +70,15 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     }
   }
 
+  /// 隐藏列表并收起键盘
+  void _hideListAndUnfocus() {
+    ref.read(locationInputProvider.notifier).hideList();
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(locationInputProvider);
-    final notifier = ref.read(locationInputProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -96,7 +101,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           // 分隔线
           Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
           // 列表内容区
-          _buildListContent(state, notifier),
+          _buildListContent(state),
         ],
       ),
     );
@@ -139,17 +144,14 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           LocationRouteButton(onTap: widget.onRouteTap),
           // 关闭按钮
           const Spacer(),
-          LocationCloseButton(onTap: () {
-              ref.read(locationInputProvider.notifier).hideList();
-              FocusScope.of(context).unfocus();
-            }),
+          LocationCloseButton(onTap: _hideListAndUnfocus),
         ],
       ),
     );
   }
 
   /// 构建列表内容区
-  Widget _buildListContent(LocationInputState state, LocationInputNotifier notifier) {
+  Widget _buildListContent(LocationInputState state) {
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
       child: SingleChildScrollView(
