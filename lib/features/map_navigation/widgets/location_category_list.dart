@@ -4,6 +4,7 @@ import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
 import '../../../widgets/map/amap_map_widget.dart';
+import '../api/poi_api.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
 import 'category_button.dart';
@@ -26,12 +27,6 @@ import 'route_button.dart';
 /// 列表内容由父组件通过枚举控制显示
 /// ============================================
 
-enum LocationCategory {
-  recommended, // 推荐地点
-  binder,     // 绑定者位置
-  history,    // 历史地点
-}
-
 class LocationCategoryList extends ConsumerStatefulWidget {
   final VoidCallback? onRouteTap;
   final AmapMapController? mapController;  // 地图控制器，用于获取当前位置
@@ -47,19 +42,19 @@ class LocationCategoryList extends ConsumerStatefulWidget {
 }
 
 class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
-  late LocationCategory _selectedCategory;
-
   @override
   void initState() {
     super.initState();
-    _selectedCategory = LocationCategory.recommended;
     ref.read(locationInputProvider.notifier).loadHistoryLocations();
   }
 
-  void _selectCategory(LocationCategory category) {
-    setState(() {
-      _selectedCategory = category;
-    });
+  /// 选择位置并收起键盘
+  void _selectLocationAndUnfocus(PoiSuggestion poi) {
+    ref.read(locationInputProvider.notifier).selectLocation(
+      poi,
+      ref.read(mapNavigationProvider.notifier),
+    );
+    FocusScope.of(context).unfocus();
   }
 
   /// 选择"我的位置"
@@ -71,11 +66,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       () => controller.getCurrentLocation(),
     );
     if (poi != null && mounted) {
-      ref.read(locationInputProvider.notifier).selectLocation(
-        poi,
-        ref.read(mapNavigationProvider.notifier),
-      );
-      FocusScope.of(context).unfocus();
+      _selectLocationAndUnfocus(poi);
     }
   }
 
@@ -101,7 +92,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 分类按钮栏
-          _buildCategoryBar(isDark),
+          _buildCategoryBar(state, isDark),
           // 分隔线
           Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
           // 列表内容区
@@ -112,7 +103,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建分类按钮栏
-  Widget _buildCategoryBar(bool isDark) {
+  Widget _buildCategoryBar(LocationInputState state, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacings.sm,
@@ -124,24 +115,24 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           LocationCategoryButton(
             label: '我的位置',
             icon: Icons.my_location,
-            isSelected: _selectedCategory == LocationCategory.recommended,
-            onTap: () => _selectCategory(LocationCategory.recommended),
+            isSelected: state.selectedCategory == LocationCategory.recommended,
+            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.recommended),
           ),
           const SizedBox(width: AppSpacings.sm),
           // 绑定者
           LocationCategoryButton(
             label: '绑定者',
             icon: Icons.people,
-            isSelected: _selectedCategory == LocationCategory.binder,
-            onTap: () => _selectCategory(LocationCategory.binder),
+            isSelected: state.selectedCategory == LocationCategory.binder,
+            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.binder),
           ),
           const SizedBox(width: AppSpacings.sm),
           // 历史
           LocationCategoryButton(
             label: '历史',
             icon: Icons.history,
-            isSelected: _selectedCategory == LocationCategory.history,
-            onTap: () => _selectCategory(LocationCategory.history),
+            isSelected: state.selectedCategory == LocationCategory.history,
+            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
           ),
           const SizedBox(width: AppSpacings.sm),
           // 路线按钮（点击弹出底部弹窗）
@@ -175,7 +166,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       return _buildPoiSearchResults(state);
     }
 
-    switch (_selectedCategory) {
+    switch (state.selectedCategory) {
       case LocationCategory.recommended:
         return _buildMyLocationContent();
       case LocationCategory.binder:
@@ -227,13 +218,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         iconColor: AppColors.primaryColor,
         title: poi.name,
         subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
-        onTap: () {
-          ref.read(locationInputProvider.notifier).selectLocation(
-            poi,
-            ref.read(mapNavigationProvider.notifier),
-          );
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => _selectLocationAndUnfocus(poi),
       )).toList(),
     );
   }
@@ -298,13 +283,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         iconColor: AppColors.grey600,
         title: poi.name,
         subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
-        onTap: () {
-          ref.read(locationInputProvider.notifier).selectLocation(
-            poi,
-            ref.read(mapNavigationProvider.notifier),
-          );
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => _selectLocationAndUnfocus(poi),
       )).toList(),
     );
   }

@@ -8,6 +8,16 @@ import '../service/location_category_service.dart';
 import 'map_navigation_provider.dart';
 
 /// ============================================
+/// 位置分类枚举
+/// ============================================
+
+enum LocationCategory {
+  recommended, // 推荐地点
+  binder,     // 绑定者位置
+  history,    // 历史地点
+}
+
+/// ============================================
 /// 地点输入状态
 /// ============================================
 
@@ -42,6 +52,9 @@ class LocationInputState {
   /// 是否正在加载历史位置
   final bool isLoadingHistory;
 
+  /// 当前选中的分类
+  final LocationCategory selectedCategory;
+
   const LocationInputState({
     this.listVisible = false,
     this.isOriginFocused = true,
@@ -53,6 +66,7 @@ class LocationInputState {
     this.searchError,
     this.historyItems = const [],
     this.isLoadingHistory = false,
+    this.selectedCategory = LocationCategory.recommended,
   });
 
   /// 获取搜索中心坐标
@@ -88,6 +102,7 @@ class LocationInputState {
     String? searchError,
     List<PoiSuggestion>? historyItems,
     bool? isLoadingHistory,
+    LocationCategory? selectedCategory,
   }) {
     return LocationInputState(
       listVisible: listVisible ?? this.listVisible,
@@ -100,6 +115,7 @@ class LocationInputState {
       searchError: searchError,
       historyItems: historyItems ?? this.historyItems,
       isLoadingHistory: isLoadingHistory ?? this.isLoadingHistory,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
     );
   }
 }
@@ -138,6 +154,11 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       historyItems: items,
       isLoadingHistory: false,
     );
+  }
+
+  /// 选择分类
+  void selectCategory(LocationCategory category) {
+    state = state.copyWith(selectedCategory: category);
   }
 
   /// 选择一个位置（根据 isOriginFocused 决定是起点还是终点）
