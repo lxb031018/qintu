@@ -4,8 +4,8 @@ import 'package:qintu/models/async_state.dart';
 import 'package:qintu/providers/binding_provider.dart';
 
 void main() {
-  group('BindingProvider', () {
-    late BindingProvider bindingProvider;
+  group('BindingNotifier', () {
+    late BindingNotifier bindingProvider;
 
     setUpAll(() async {
       // 加载 .env 文件（ApiClient 初始化需要）
@@ -13,7 +13,7 @@ void main() {
     });
 
     setUp(() {
-      bindingProvider = BindingProvider();
+      bindingProvider = BindingNotifier();
     });
 
     tearDown(() {
@@ -21,7 +21,7 @@ void main() {
     });
 
     test('初始状态应该是 AsyncInitial', () {
-      expect(bindingProvider.bindingsState, isA<AsyncInitial>());
+      expect(bindingProvider.state.bindingsState, isA<AsyncInitial>());
       expect(bindingProvider.bindings, isEmpty);
       expect(bindingProvider.bindingSummary, isNull);
     });

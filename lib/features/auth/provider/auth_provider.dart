@@ -1,11 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:qintu/providers/auth_state_manager.dart';
-import 'package:qintu/core/http/api_client.dart';
-import 'package:qintu/constants/api_endpoints.dart';
-import 'package:qintu/utils/logger.dart';
 import 'package:qintu/utils/exceptions.dart';
 import 'package:qintu/utils/phone_utils.dart';
-import '../api/auth_api.dart';
+import '../core/auth_api.dart';
 import '../service/auth_service.dart';
 
 /// ============================================
@@ -16,8 +14,8 @@ import '../service/auth_service.dart';
 
 /// 登录步骤枚举
 enum AuthStep {
-  inputPhone,   // 第1步：输入手机号
-  inputCode,     // 第2步：输入验证码
+  inputPhone,
+  inputCode,
 }
 
 /// 登录页面状态
@@ -58,73 +56,73 @@ class AuthPageState {
 }
 
 /// 登录 Provider
-class AuthNotifier extends Notifier<AuthPageState> {
-  @override
-  AuthPageState build() {
-    return const AuthPageState();
-  }
+class AuthNotifier extends ChangeNotifier {
+  AuthPageState _state = const AuthPageState();
+  AuthPageState get state => _state;
 
   /// 发送验证码
   Future<void> sendCode(String phone) async {
     if (phone.length != 11) {
-      state = state.copyWith(errorMessage: '请输入11位手机号');
+      _state = _state.copyWith(errorMessage: '请输入11位手机号');
+      notifyListeners();
       return;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    _state = _state.copyWith(isLoading: true, errorMessage: null);
+    notifyListeners();
 
     try {
       final formattedPhone = PhoneUtils.formatForApi(phone);
       final verificationId = await AuthApi.sendVerificationCode(formattedPhone);
-      state = state.copyWith(
+      _state = _state.copyWith(
         step: AuthStep.inputCode,
         isLoading: false,
         phone: phone,
         verificationId: verificationId,
       );
+      notifyListeners();
       _startCountdown();
     } catch (e) {
-      state = state.copyWith(
+      _state = _state.copyWith(
         isLoading: false,
         errorMessage: _parseError(e),
       );
+      notifyListeners();
     }
   }
 
   /// 验证并登录
-  Future<void> verifyAndLogin(String code) async {
+  Future<void> verifyAndLogin(String code, BuildContext context) async {
     if (code.length != 6) {
-      state = state.copyWith(errorMessage: '请输入6位验证码');
+      _state = _state.copyWith(errorMessage: '请输入6位验证码');
+      notifyListeners();
       return;
     }
 
-    if (state.verificationId == null) {
-      state = state.copyWith(errorMessage: '请先获取验证码');
+    if (_state.verificationId == null) {
+      _state = _state.copyWith(errorMessage: '请先获取验证码');
+      notifyListeners();
       return;
     }
 
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    _state = _state.copyWith(isLoading: true, errorMessage: null);
+    notifyListeners();
 
     try {
-      // 验证验证码
       final verificationToken = await AuthApi.verifyCode(
-        state.verificationId!,
+        _state.verificationId!,
         code,
       );
 
-      // 智能登录/注册
-      final formattedPhone = PhoneUtils.formatForApi(state.phone);
+      final formattedPhone = PhoneUtils.formatForApi(_state.phone);
       final authResult = await AuthService.signInOrSignUp(
         verificationToken: verificationToken,
         phone: formattedPhone,
       );
 
-      // 保存认证信息
       await AuthService.saveAuthResult(authResult, formattedPhone);
 
-      // 设置全局认证状态
-      final authStateNotifier = ref.read(authStateProvider.notifier);
-      await authStateNotifier.setAuthenticated(
+      await context.read<AuthStateNotifier>().setAuthenticated(
         userId: authResult.uid,
         accessToken: authResult.accessToken,
         refreshToken: authResult.refreshToken,
@@ -134,76 +132,59 @@ class AuthNotifier extends Notifier<AuthPageState> {
         pendingBindingCount: authResult.pendingCount,
       );
 
-      // 同步用户到后端
-      await _syncUser(authResult.uid, formattedPhone);
-
-      // 登录成功，重置 authProvider 状态为初始状态
-      // 这样下次进入登录页面时是干净的
-      state = const AuthPageState();
+      _state = const AuthPageState();
+      notifyListeners();
     } catch (e) {
-      state = state.copyWith(
+      _state = _state.copyWith(
         isLoading: false,
         errorMessage: _parseError(e),
       );
+      notifyListeners();
     }
   }
 
-  /// 重新发送验证码（返回第一步）
   void resendCode() {
-    state = state.copyWith(
+    _state = _state.copyWith(
       step: AuthStep.inputPhone,
       verificationId: null,
     );
+    notifyListeners();
   }
 
-  /// 修改手机号（返回第一步）
   void changePhone() {
-    state = state.copyWith(
+    _state = _state.copyWith(
       step: AuthStep.inputPhone,
       countdown: 0,
       verificationId: null,
     );
+    notifyListeners();
   }
 
-  /// 清除错误
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    _state = _state.copyWith(errorMessage: null);
+    notifyListeners();
   }
 
-  /// 重置到输入手机号状态（退出登录后调用）
   void resetToInputPhone() {
-    state = const AuthPageState();
+    _state = const AuthPageState();
+    notifyListeners();
   }
 
-  /// 同步用户到 MySQL
-  Future<void> _syncUser(String uid, String phone) async {
-    try {
-      final apiClient = ApiClient();
-      await apiClient.post(
-        ApiEndpoints.syncUser,
-        data: {'openid': uid, 'phone': phone},
-      );
-      Logs.auth.info('用户同步成功');
-    } catch (e) {
-      Logs.auth.warning('用户同步失败，将继续使用', data: {'error': e.toString()});
-    }
-  }
-
-  /// 启动倒计时
   void _startCountdown() {
-    state = state.copyWith(countdown: 60);
+    _state = _state.copyWith(countdown: 60);
+    notifyListeners();
     _countdownTimer();
   }
 
   Future<void> _countdownTimer() async {
-    while (state.countdown > 0) {
+    while (_state.countdown > 0) {
       await Future.delayed(const Duration(seconds: 1));
-      if (state.countdown <= 0) break;
-      state = state.copyWith(countdown: state.countdown - 1);
+      if (_state.countdown <= 0) break;
+      _state = _state.copyWith(countdown: _state.countdown - 1);
+      notifyListeners();
     }
   }
 
-  /// 解析错误信息
   String _parseError(dynamic e) {
     if (e is AppException) {
       return e.message;
@@ -213,6 +194,6 @@ class AuthNotifier extends Notifier<AuthPageState> {
 }
 
 /// Provider 导出
-final authProvider = NotifierProvider<AuthNotifier, AuthPageState>(
-  AuthNotifier.new,
+final authProvider = ChangeNotifierProvider<AuthNotifier>(
+  create: (_) => AuthNotifier(),
 );

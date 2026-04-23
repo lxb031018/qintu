@@ -30,9 +30,9 @@ class RouteGuards {
     // 确保 Provider 已经初始化
     if (!context.mounted) return null;
 
-    final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
-    final authStatus = authStateManager.state.authStatus;
-    final isLoggedIn = authStateManager.state.isLoggedIn;
+    final authStateNotifier = Provider.of<AuthStateNotifier>(context, listen: false);
+    final authStatus = authStateNotifier.state.authStatus;
+    final isLoggedIn = authStateNotifier.state.isLoggedIn;
 
     Logs.ui.info('🧭 [ROUTER] authStatus=$authStatus, isLoggedIn=$isLoggedIn');
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
+import '../models/map_overlay_models.dart';
 
 /// ============================================
 /// 路线规划结果底部弹窗
@@ -274,26 +275,4 @@ class _InfoChip extends StatelessWidget {
       ],
     );
   }
-}
-
-/// ============================================
-/// 路线结果数据模型（供 UI 使用）
-/// ============================================
-
-class RouteResultItem {
-  final String distance;
-  final String formattedDistance;
-  final String duration;
-  final String formattedDuration;
-  final String strategy;
-  final double? tolls;
-
-  const RouteResultItem({
-    required this.distance,
-    required this.formattedDistance,
-    required this.duration,
-    required this.formattedDuration,
-    required this.strategy,
-    this.tolls,
-  });
 }

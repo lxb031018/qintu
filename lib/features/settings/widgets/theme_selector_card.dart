@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart';
 import '../../../providers/theme_manager.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
@@ -15,17 +15,15 @@ import 'settings_section_card.dart';
 /// 提供浅色/深色/跟随系统三种主题选项
 /// ============================================
 
-class ThemeSelectorCard extends ConsumerWidget {
+class ThemeSelectorCard extends StatelessWidget {
   const ThemeSelectorCard({super.key});
 
   /// 切换主题
-  Future<void> _switchTheme(BuildContext context, WidgetRef ref, ThemeMode themeMode) async {
+  Future<void> _switchTheme(BuildContext context, ThemeMode themeMode) async {
     try {
-      await ref.read(themeManagerProvider.notifier).setThemeMode(themeMode);
+      await context.read<ThemeManager>().setThemeMode(themeMode);
     } catch (e) {
-      if (context.mounted) {
-        AppSnackbar.showError(context, '${AppStrings.themeSwitchFailed}：$e');
-      }
+      AppSnackbar.showError(context, '${AppStrings.themeSwitchFailed}：$e');
     }
   }
 
@@ -36,13 +34,12 @@ class ThemeSelectorCard extends ConsumerWidget {
     required ThemeMode themeMode,
     required IconData icon,
     required String title,
-    required WidgetRef ref,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = currentMode == themeMode;
 
     return InkWell(
-      onTap: () => _switchTheme(context, ref, themeMode),
+      onTap: () => _switchTheme(context, themeMode),
       borderRadius: BorderRadius.all(AppRadii.small),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.md),
@@ -98,8 +95,8 @@ class ThemeSelectorCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentThemeMode = ref.watch(themeManagerProvider);
+  Widget build(BuildContext context) {
+    final currentThemeMode = context.watch<ThemeManager>().themeMode;
 
     return SettingsSectionCard(
       title: AppStrings.themeSettings,
@@ -111,7 +108,6 @@ class ThemeSelectorCard extends ConsumerWidget {
             themeMode: ThemeMode.light,
             icon: Icons.light_mode,
             title: AppStrings.lightMode,
-            ref: ref,
           ),
           SizedBox(height: AppSpacings.md),
           _buildThemeOption(
@@ -120,7 +116,6 @@ class ThemeSelectorCard extends ConsumerWidget {
             themeMode: ThemeMode.dark,
             icon: Icons.dark_mode,
             title: AppStrings.darkMode,
-            ref: ref,
           ),
           SizedBox(height: AppSpacings.md),
           _buildThemeOption(
@@ -129,7 +124,6 @@ class ThemeSelectorCard extends ConsumerWidget {
             themeMode: ThemeMode.system,
             icon: Icons.brightness_auto,
             title: AppStrings.followSystem,
-            ref: ref,
           ),
         ],
       ),

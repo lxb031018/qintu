@@ -1,35 +1,32 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/font_size_setting.dart';
+import 'package:qintu/constants/font_size_setting.dart';
 
 /// ============================================
 /// 设置管理器
 ///
 /// 管理用户设置（字体大小等）
-/// 通过 Provider 进行依赖注入，不使用单例模式
+/// 通过 Riverpod 进行依赖注入，不使用单例模式
 /// ============================================
 
-class SettingsManager extends ChangeNotifier {
+class SettingsManager extends Notifier<SettingsState> {
   static const String _fontSizeKey = 'font_size_scale';
   static const String _doubleTapTabKey = 'double_tap_tab_switch';
 
-  /// 当前字体大小乘数
-  double _fontSizeScale = FontSizeOption.standard.scale;
+  @override
+  SettingsState build() {
+    _loadSettings();
+    return const SettingsState();
+  }
 
-  /// Tab 切换模式（默认双击）
-  bool _doubleTapToSwitchTab = true;
-
-  /// 获取当前字体大小乘数
-  double get fontSizeScale => _fontSizeScale;
-
-  /// 是否需要双击切换 Tab（默认 true）
-  bool get doubleTapToSwitchTab => _doubleTapToSwitchTab;
-
-  /// 初始化设置
-  Future<void> init() async {
-    _fontSizeScale = await loadFontSizeScale();
-    _doubleTapToSwitchTab = await loadDoubleTapTab();
-    notifyListeners();
+  /// 异步加载设置
+  Future<void> _loadSettings() async {
+    final fontSizeScale = await loadFontSizeScale();
+    final doubleTapTab = await loadDoubleTapTab();
+    state = state.copyWith(
+      fontSizeScale: fontSizeScale,
+      doubleTapToSwitchTab: doubleTapTab,
+    );
   }
 
   /// 加载字体大小设置
@@ -46,24 +43,20 @@ class SettingsManager extends ChangeNotifier {
 
   /// 设置 Tab 双击模式
   Future<void> setDoubleTapTab(bool value) async {
-    if (_doubleTapToSwitchTab == value) return;
+    if (state.doubleTapToSwitchTab == value) return;
 
-    _doubleTapToSwitchTab = value;
+    state = state.copyWith(doubleTapToSwitchTab: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_doubleTapTabKey, value);
-
-    notifyListeners();
   }
 
   /// 设置字体大小
   Future<void> setFontSizeScale(double scale) async {
-    if (_fontSizeScale == scale) return;
+    if (state.fontSizeScale == scale) return;
 
-    _fontSizeScale = scale;
+    state = state.copyWith(fontSizeScale: scale);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontSizeKey, scale);
-
-    notifyListeners();
   }
 
   /// 获取字体大小选项名称（用于显示）
@@ -75,3 +68,28 @@ class SettingsManager extends ChangeNotifier {
     return option.label;
   }
 }
+
+/// 设置状态
+class SettingsState {
+  final double fontSizeScale;
+  final bool doubleTapToSwitchTab;
+
+  const SettingsState({
+    this.fontSizeScale = FontSizeOption.standard.scale,
+    this.doubleTapToSwitchTab = true,
+  });
+
+  SettingsState copyWith({
+    double? fontSizeScale,
+    bool? doubleTapToSwitchTab,
+  }) {
+    return SettingsState(
+      fontSizeScale: fontSizeScale ?? this.fontSizeScale,
+      doubleTapToSwitchTab: doubleTapToSwitchTab ?? this.doubleTapToSwitchTab,
+    );
+  }
+}
+
+final settingsManagerProvider = NotifierProvider<SettingsManager, SettingsState>(
+  SettingsManager.new,
+);

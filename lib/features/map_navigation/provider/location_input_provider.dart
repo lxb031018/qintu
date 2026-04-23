@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/gps/gps_service.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
-import '../api/poi_api.dart';
+import '../core/poi_api.dart';
 import '../service/location_category_service.dart';
 import 'map_navigation_provider.dart';
 

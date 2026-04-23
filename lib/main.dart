@@ -17,6 +17,11 @@ import 'theme/app_theme.dart';
 import 'router/app_router.dart';
 import 'widgets/error_boundary.dart';
 
+export 'providers/auth_state_manager.dart' show authStateProvider;
+export 'providers/binding_provider.dart' show bindingProvider;
+export 'providers/settings_manager.dart' show SettingsManager;
+export 'providers/theme_manager.dart' show ThemeManager;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -71,7 +76,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final ThemeManager _themeManager;
-  late final AuthStateManager _authStateManager;
+  late final AuthStateNotifier _authStateNotifier;
   late final SettingsManager _settingsManager;
   late final GoRouter _router;
 
@@ -79,7 +84,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _themeManager = ThemeManager();
-    _authStateManager = AuthStateManager();
+    _authStateNotifier = AuthStateNotifier();
     _settingsManager = SettingsManager();
     _router = AppRouter.getRouter();
     _initializeAppState();
@@ -94,7 +99,7 @@ class _MyAppState extends State<MyApp> {
     await _themeManager.init();
 
     // 初始化认证状态
-    await _authStateManager.initialize();
+    await _authStateNotifier.initialize();
 
     // 初始化完成后，刷新路由以触发 redirect
     if (mounted) {
@@ -109,8 +114,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => BindingProvider()),
-        ChangeNotifierProvider.value(value: _authStateManager),
+        ChangeNotifierProvider(create: (_) => BindingNotifier()),
+        ChangeNotifierProvider.value(value: _authStateNotifier),
         ChangeNotifierProvider.value(value: _themeManager),
         ChangeNotifierProvider.value(value: _settingsManager),
       ],
@@ -147,7 +152,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    _authStateManager.dispose();
+    _authStateNotifier.dispose();
     super.dispose();
   }
 }

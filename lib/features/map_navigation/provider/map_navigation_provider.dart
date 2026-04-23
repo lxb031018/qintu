@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../api/poi_api.dart';
+import '../core/poi_api.dart';
 import '../service/amap_routing_service.dart';
 
 /// ============================================
@@ -127,9 +127,13 @@ class AsyncState<T> {
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
   final AmapRoutingService _routeService = AmapRoutingService();
   final PoiApi _poiService = PoiApi();
+  bool _disposed = false;
 
   @override
   MapNavigationState build() {
+    ref.onDispose(() {
+      _disposed = true;
+    });
     return const MapNavigationState();
   }
 
@@ -205,7 +209,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         location: state.originLocation,
       );
 
-      if (!ref.mounted) return;
+      if (_disposed) return;
 
       if (result.isSuccess) {
         state = state.copyWith(
@@ -217,7 +221,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
       }
     } catch (e) {
-      if (!ref.mounted) return;
+      if (_disposed) return;
       state = state.copyWith(
         searchState: AsyncState.failure(e.toString()),
       );
@@ -243,7 +247,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         destination: state.destinationLocation!,
       );
 
-      if (!ref.mounted) return;
+      if (_disposed) return;
 
       if (routes.isEmpty) {
         state = state.copyWith(
@@ -258,7 +262,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
       }
     } catch (e) {
-      if (!ref.mounted) return;
+      if (_disposed) return;
       state = state.copyWith(
         routesState: AsyncState.failure(e.toString()),
       );

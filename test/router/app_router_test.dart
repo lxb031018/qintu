@@ -123,36 +123,36 @@ void main() {
     });
   });
 
-  group('AuthStateManager 基础测试', () {
-    late AuthStateManager authStateManager;
+  group('AuthStateNotifier 基础测试', () {
+    late AuthStateNotifier authStateNotifier;
 
     setUp(() {
-      authStateManager = AuthStateManager();
+      authStateNotifier = AuthStateNotifier();
     });
 
     tearDown(() {
-      authStateManager.dispose();
+      authStateNotifier.dispose();
     });
 
     test('初始状态应该是 unknown', () {
-      expect(authStateManager.state.authStatus, AuthStatus.unknown);
-      expect(authStateManager.state.isLoggedIn, isFalse);
+      expect(authStateNotifier.state.authStatus, AuthStatus.unknown);
+      expect(authStateNotifier.state.isLoggedIn, isFalse);
     });
 
     test('setLoading 应该更新加载状态', () {
-      authStateManager.setLoading(true);
-      expect(authStateManager.state.isLoading, isTrue);
+      authStateNotifier.setLoading(true);
+      expect(authStateNotifier.state.isLoading, isTrue);
 
-      authStateManager.setLoading(false);
-      expect(authStateManager.state.isLoading, isFalse);
+      authStateNotifier.setLoading(false);
+      expect(authStateNotifier.state.isLoading, isFalse);
     });
 
     test('setError 和 clearError 应该正常工作', () {
-      authStateManager.setError('测试错误');
-      expect(authStateManager.state.errorMessage, '测试错误');
+      authStateNotifier.setError('测试错误');
+      expect(authStateNotifier.state.errorMessage, '测试错误');
 
-      authStateManager.clearError();
-      expect(authStateManager.state.errorMessage, isNull);
+      authStateNotifier.clearError();
+      expect(authStateNotifier.state.errorMessage, isNull);
     });
   });
 }

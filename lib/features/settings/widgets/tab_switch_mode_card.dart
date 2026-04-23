@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../providers/settings_manager.dart';
 import '../../../theme/app_text_styles.dart';
 import 'settings_section_card.dart';
 
 /// 防误触模式设置卡片
-class TabSwitchModeCard extends ConsumerWidget {
+class TabSwitchModeCard extends StatelessWidget {
   const TabSwitchModeCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settingsState = ref.watch(settingsManagerProvider);
-    final notifier = ref.read(settingsManagerProvider.notifier);
+    final settingsState = context.watch<SettingsManager>();
 
     return SettingsSectionCard(
       title: '防误触模式',
@@ -36,7 +35,7 @@ class TabSwitchModeCard extends ConsumerWidget {
         ),
         value: settingsState.doubleTapToSwitchTab,
         onChanged: (value) {
-          notifier.setDoubleTapTab(value);
+          context.read<SettingsManager>().setDoubleTapTab(value);
         },
         activeThumbColor: AppColors.primaryColor,
       ),

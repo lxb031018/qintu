@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/auth/user_state.dart';
-import 'package:qintu/features/auth/api/secure_storage.dart';
+import 'package:qintu/features/auth/core/secure_storage.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/config/auth_config.dart';
 
 /// ============================================
 /// 认证状态管理器
 ///
-/// Riverpod Notifier，负责：
+/// Notifier，负责：
 /// - 初始化和检查登录状态
 /// - 登录/登出操作
 /// - Token 管理
@@ -19,7 +19,7 @@ class AuthStateNotifier extends Notifier<UserState> {
     return const UserState();
   }
 
-  /// 初始化认证状态（应用启动时调用）
+  /// 初始化认证状态（首次访问时自动调用）
   Future<void> initialize() async {
     Logs.auth.info('[AuthStateNotifier] initialize 开始, 当前状态: ${state.authStatus}');
     Logs.auth.info('开始初始化认证状态');

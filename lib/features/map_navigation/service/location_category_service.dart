@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../api/poi_api.dart';
+import '../core/poi_api.dart';
 import '../../../models/location/lat_lng.dart';
 
 /// ============================================

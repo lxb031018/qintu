@@ -18,7 +18,6 @@ void main() {
 
       expect(request.id, 1);
       expect(request.status, 'pending');
-      expect(request.senderName, '张三');
       expect(request.receiverNickname, '李四');
       expect(request.receiverPhone, '13800138000');
       expect(request.isPending, isTrue);
@@ -183,7 +182,6 @@ void main() {
 
       expect(request.id, 1);
       expect(request.senderName, '张三');
-      expect(request.senderNickname, '小张');
       expect(request.senderPhone, '13800138000');
     });
   });

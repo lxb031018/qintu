@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:qintu/models/auth/auth_result.dart';
 import 'package:qintu/models/auth/login_info.dart';
 import 'package:qintu/utils/logger.dart';
-import '../api/auth_api.dart';
-import '../api/secure_storage.dart';
+import '../core/auth_api.dart';
+import '../core/secure_storage.dart';
 
 /// ============================================
 /// 认证服务层

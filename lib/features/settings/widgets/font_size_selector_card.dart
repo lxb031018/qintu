@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_strings.dart';
@@ -11,15 +11,15 @@ import '../../../theme/app_text_styles.dart';
 import '../../../utils/logger.dart';
 
 /// 字体大小选择卡片组件
-class FontSizeSelectorCard extends ConsumerWidget {
+class FontSizeSelectorCard extends StatelessWidget {
   const FontSizeSelectorCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
     final textColor = isDark ? AppColors.darkTextColor : AppColors.textColor;
-    final settingsState = ref.watch(settingsManagerProvider);
+    final settingsState = context.watch<SettingsManager>();
 
     return Container(
       padding: EdgeInsets.all(AppSpacings.xl),
@@ -68,7 +68,7 @@ class FontSizeSelectorCard extends ConsumerWidget {
               return _FontSizeOptionButton(
                 option: option,
                 isSelected: isSelected,
-                onTap: () => _selectFontSize(context, ref, option.scale),
+                onTap: () => _selectFontSize(context, option.scale),
               );
             },
           ),
@@ -77,8 +77,8 @@ class FontSizeSelectorCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _selectFontSize(BuildContext context, WidgetRef ref, double scale) async {
-    await ref.read(settingsManagerProvider.notifier).setFontSizeScale(scale);
+  Future<void> _selectFontSize(BuildContext context, double scale) async {
+    await context.read<SettingsManager>().setFontSizeScale(scale);
     Logs.ui.info('字体大小已调整为 ${scale}x');
   }
 }

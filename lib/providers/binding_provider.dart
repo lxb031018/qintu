@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide AsyncLoading, AsyncError;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/binding/binding.dart';
 import 'package:qintu/models/common/async_state.dart';
 import 'package:qintu/core/http/api_client.dart';
@@ -10,18 +10,15 @@ import 'package:qintu/constants/app_strings.dart';
 /// ============================================
 /// 绑定关系状态管理
 ///
-/// Riverpod AsyncNotifier，统一状态管理
+/// Notifier，统一状态管理
 /// ============================================
 
 class BindingNotifier extends Notifier<BindingListState> {
-  final ApiClient _apiClient;
-
-  BindingNotifier({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  ApiClient get _apiClient => ApiClient();
 
   @override
   BindingListState build() {
-    return BindingListState();
+    return const BindingListState();
   }
 
   // ==================== Getters ====================
@@ -354,7 +351,7 @@ class SentRequest {
   final String? receiverPhone;
   final DateTime createdAt;
   final DateTime? expiredAt;
-  final DateTime? rejectedAt; // 🌟 被拒绝时间，有值表示对方拒绝，无值表示对方解除绑定
+  final DateTime? rejectedAt;
 
   const SentRequest({
     required this.id,
@@ -367,9 +364,7 @@ class SentRequest {
   });
 
   bool get isPending => status == 'pending';
-  // 🌟 只有当 status == 'revoked' 且 rejectedAt 不为空时才表示"被拒绝"
   bool get isRejected => status == 'revoked' && rejectedAt != null;
-  // 🌟 status == 'revoked' 但 rejectedAt 为空表示"对方解除了绑定"
   bool get isUnbound => status == 'revoked' && rejectedAt == null;
   bool get isExpired => status == 'expired';
   bool get isActive => status == 'active';
@@ -379,7 +374,6 @@ class SentRequest {
       case 'pending':
         return AppStrings.waitingForConfirmation;
       case 'revoked':
-        // 🌟 区分是被拒绝还是对方解除绑定
         return isRejected ? AppStrings.requestRejected : AppStrings.bindingUnbound;
       case 'expired':
         return AppStrings.requestExpired;

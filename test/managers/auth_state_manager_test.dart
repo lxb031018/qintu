@@ -5,57 +5,57 @@ import 'package:qintu/models/user_state.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('AuthStateManager - 状态管理测试', () {
-    late AuthStateManager authStateManager;
+  group('AuthStateNotifier - 状态管理测试', () {
+    late AuthStateNotifier authStateNotifier;
 
     setUp(() {
-      authStateManager = AuthStateManager();
+      authStateNotifier = AuthStateNotifier();
     });
 
     tearDown(() {
-      authStateManager.dispose();
+      authStateNotifier.dispose();
     });
 
     test('初始状态应该是 unknown', () {
-      expect(authStateManager.state.authStatus, AuthStatus.unknown);
-      expect(authStateManager.state.userId, isNull);
-      expect(authStateManager.state.phoneNumber, isNull);
-      expect(authStateManager.state.isLoading, isFalse);
-      expect(authStateManager.state.errorMessage, isNull);
-      expect(authStateManager.state.isLoggedIn, isFalse);
+      expect(authStateNotifier.state.authStatus, AuthStatus.unknown);
+      expect(authStateNotifier.state.userId, isNull);
+      expect(authStateNotifier.state.phoneNumber, isNull);
+      expect(authStateNotifier.state.isLoading, isFalse);
+      expect(authStateNotifier.state.errorMessage, isNull);
+      expect(authStateNotifier.state.isLoggedIn, isFalse);
     });
 
     test('setLoading 应该更新加载状态', () {
-      authStateManager.setLoading(true);
-      expect(authStateManager.state.isLoading, isTrue);
+      authStateNotifier.setLoading(true);
+      expect(authStateNotifier.state.isLoading, isTrue);
 
-      authStateManager.setLoading(false);
-      expect(authStateManager.state.isLoading, isFalse);
+      authStateNotifier.setLoading(false);
+      expect(authStateNotifier.state.isLoading, isFalse);
     });
 
     test('setError 应该设置错误信息', () {
-      authStateManager.setError('测试错误信息');
-      expect(authStateManager.state.errorMessage, '测试错误信息');
+      authStateNotifier.setError('测试错误信息');
+      expect(authStateNotifier.state.errorMessage, '测试错误信息');
     });
 
     test('clearError 应该清除错误信息', () {
-      authStateManager.setError('测试错误信息');
-      expect(authStateManager.state.errorMessage, '测试错误信息');
+      authStateNotifier.setError('测试错误信息');
+      expect(authStateNotifier.state.errorMessage, '测试错误信息');
 
-      authStateManager.clearError();
-      expect(authStateManager.state.errorMessage, isNull);
+      authStateNotifier.clearError();
+      expect(authStateNotifier.state.errorMessage, isNull);
     });
 
     test('isLoggedIn 应该返回正确的认证状态', () {
       // 初始状态未登录
-      expect(authStateManager.state.isLoggedIn, isFalse);
+      expect(authStateNotifier.state.isLoggedIn, isFalse);
     });
 
     test('setAuthenticated 应该更新用户信息（不依赖 SecureStorage）', () async {
       // 注意: 这个测试会调用 SecureStorage,实际应该 mock
       // 这里只测试状态更新的逻辑
       try {
-        await authStateManager.setAuthenticated(
+        await authStateNotifier.setAuthenticated(
           userId: 'test_user_123',
           accessToken: 'test_access_token',
           refreshToken: 'test_refresh_token',
@@ -64,27 +64,27 @@ void main() {
           phoneNumber: '+8613800138000',
         );
 
-        expect(authStateManager.state.authStatus, AuthStatus.authenticated);
-        expect(authStateManager.state.userId, 'test_user_123');
-        expect(authStateManager.state.phoneNumber, '+8613800138000');
-        expect(authStateManager.state.isLoggedIn, isTrue);
+        expect(authStateNotifier.state.authStatus, AuthStatus.authenticated);
+        expect(authStateNotifier.state.userId, 'test_user_123');
+        expect(authStateNotifier.state.phoneNumber, '+8613800138000');
+        expect(authStateNotifier.state.isLoggedIn, isTrue);
       } catch (e) {
         // SecureStorage 未初始化时可能失败
-        expect(authStateManager.state.authStatus, AuthStatus.unauthenticated);
+        expect(authStateNotifier.state.authStatus, AuthStatus.unauthenticated);
       }
     });
 
     test('logout 应该清除认证状态', () async {
       try {
-        await authStateManager.logout();
+        await authStateNotifier.logout();
 
-        expect(authStateManager.state.authStatus, AuthStatus.unauthenticated);
-        expect(authStateManager.state.userId, isNull);
-        expect(authStateManager.state.phoneNumber, isNull);
-        expect(authStateManager.state.isLoggedIn, isFalse);
+        expect(authStateNotifier.state.authStatus, AuthStatus.unauthenticated);
+        expect(authStateNotifier.state.userId, isNull);
+        expect(authStateNotifier.state.phoneNumber, isNull);
+        expect(authStateNotifier.state.isLoggedIn, isFalse);
       } catch (e) {
         // SecureStorage 未初始化时可能失败
-        expect(authStateManager.state.isLoading, isFalse);
+        expect(authStateNotifier.state.isLoading, isFalse);
       }
     });
   });

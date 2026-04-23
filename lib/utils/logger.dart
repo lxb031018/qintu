@@ -224,4 +224,7 @@ class Logs {
 
   /// 高德地图日志
   static const Logger map = Logger('MAP');
+
+  /// 导航任务日志
+  static const Logger navigation = Logger('NAVIGATION');
 }

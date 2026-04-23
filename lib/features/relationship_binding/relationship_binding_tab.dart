@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart';
 import 'package:qintu/constants/app_strings.dart';
 import 'package:qintu/providers/binding_provider.dart';
 import 'package:qintu/widgets/common/app_confirm_dialog.dart';
@@ -17,14 +17,14 @@ import 'binding_notifications/binding_notifications_page.dart';
 /// 使用四层架构
 /// ============================================
 
-class RelationshipBindingTab extends ConsumerStatefulWidget {
+class RelationshipBindingTab extends StatefulWidget {
   const RelationshipBindingTab({super.key});
 
   @override
-  ConsumerState<RelationshipBindingTab> createState() => _RelationshipBindingTabState();
+  State<RelationshipBindingTab> createState() => _RelationshipBindingTabState();
 }
 
-class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab> {
+class _RelationshipBindingTabState extends State<RelationshipBindingTab> {
   @override
   void initState() {
     super.initState();
@@ -35,7 +35,7 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
   /// 加载数据
   Future<void> _loadData() async {
-    final notifier = ref.read(bindingProvider.notifier);
+    final notifier = context.read<BindingNotifier>();
     await notifier.loadBindings();
     await notifier.loadPendingRequests();
     await notifier.loadSentRequests();
@@ -88,7 +88,7 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
   /// 构建通知按钮（带角标）
   Widget _buildNotificationButton() {
-    final bindingState = ref.watch(bindingProvider);
+    final bindingState = context.watch<BindingNotifier>().state;
     final pendingCount = bindingState.pendingRequestsState.data?.length ?? 0;
     final rejectedCount = bindingState.sentRequests.where((r) => r.isRejected).length;
     final totalCount = pendingCount + rejectedCount;
@@ -133,14 +133,14 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
   /// 构建内容区域
   Widget _buildContent() {
-    final bindingState = ref.watch(bindingProvider);
+    final bindingState = context.watch<BindingNotifier>().state;
     final error = bindingState.bindingsState.errorMessage;
 
     if (error != null) {
       return ErrorView(
         error: error,
-        onRetry: () => ref.read(bindingProvider.notifier).loadBindings(),
-        onClearError: () => ref.read(bindingProvider.notifier).clearError(),
+        onRetry: () => context.read<BindingNotifier>().loadBindings(),
+        onClearError: () => context.read<BindingNotifier>().clearError(),
       );
     }
 
@@ -205,8 +205,8 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
     if (!mounted) return;
 
-    final bindingState = ref.read(bindingProvider);
-    final notifier = ref.read(bindingProvider.notifier);
+    final bindingState = context.read<BindingNotifier>().state;
+    final notifier = context.read<BindingNotifier>();
     final success = await notifier.revokeBinding(bindingId);
 
     if (!mounted) return;
