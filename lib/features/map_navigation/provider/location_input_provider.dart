@@ -4,6 +4,7 @@ import '../../../core/gps/gps_service.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
 import '../api/poi_api.dart';
+import '../service/location_category_service.dart';
 
 /// ============================================
 /// 地点输入状态
@@ -34,6 +35,12 @@ class LocationInputState {
   /// 搜索错误信息
   final String? searchError;
 
+  /// 历史位置列表
+  final List<PoiSuggestion> historyItems;
+
+  /// 是否正在加载历史位置
+  final bool isLoadingHistory;
+
   const LocationInputState({
     this.listVisible = false,
     this.isOriginFocused = true,
@@ -43,6 +50,8 @@ class LocationInputState {
     this.searchResults = const [],
     this.isSearching = false,
     this.searchError,
+    this.historyItems = const [],
+    this.isLoadingHistory = false,
   });
 
   /// 获取搜索中心坐标
@@ -76,6 +85,8 @@ class LocationInputState {
     List<PoiSuggestion>? searchResults,
     bool? isSearching,
     String? searchError,
+    List<PoiSuggestion>? historyItems,
+    bool? isLoadingHistory,
   }) {
     return LocationInputState(
       listVisible: listVisible ?? this.listVisible,
@@ -86,6 +97,8 @@ class LocationInputState {
       searchResults: searchResults ?? this.searchResults,
       isSearching: isSearching ?? this.isSearching,
       searchError: searchError,
+      historyItems: historyItems ?? this.historyItems,
+      isLoadingHistory: isLoadingHistory ?? this.isLoadingHistory,
     );
   }
 }
@@ -98,10 +111,32 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   Timer? _debounceTimer;
   final PoiApi _poiApi = PoiApi();
   final GpsService _gpsService = GpsService();
+  final LocationCategoryService _categoryService = LocationCategoryService();
 
   @override
   LocationInputState build() {
     return const LocationInputState();
+  }
+
+  /// 获取"我的位置" POI
+  ///
+  /// 通过 [getCurrentLocationFn] 获取 GPS 坐标，返回 PoiSuggestion
+  Future<PoiSuggestion?> getMyLocation(
+    Future<Map<String, dynamic>?> Function() getCurrentLocationFn,
+  ) async {
+    return await _categoryService.getMyLocation(getCurrentLocationFn);
+  }
+
+  /// 加载历史位置
+  Future<void> loadHistoryLocations() async {
+    state = state.copyWith(isLoadingHistory: true);
+
+    final items = await _categoryService.getHistoryLocations();
+
+    state = state.copyWith(
+      historyItems: items,
+      isLoadingHistory: false,
+    );
   }
 
   /// 显示列表

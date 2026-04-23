@@ -7,7 +7,6 @@ import '../../../widgets/map/amap_map_widget.dart';
 import '../api/poi_api.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
-import '../service/location_category_service.dart';
 
 /// ============================================
 /// 位置分类列表组件
@@ -46,26 +45,12 @@ class LocationCategoryList extends ConsumerStatefulWidget {
 
 class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   late LocationCategory _selectedCategory;
-  final LocationCategoryService _categoryService = LocationCategoryService();
-  List<PoiSuggestion> _historyItems = [];
-  bool _isLoadingHistory = false;
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = LocationCategory.recommended;
-    _loadHistoryItems();
-  }
-
-  Future<void> _loadHistoryItems() async {
-    setState(() => _isLoadingHistory = true);
-    final items = await _categoryService.getHistoryLocations();
-    if (mounted) {
-      setState(() {
-        _historyItems = items;
-        _isLoadingHistory = false;
-      });
-    }
+    ref.read(locationInputProvider.notifier).loadHistoryLocations();
   }
 
   void _selectCategory(LocationCategory category) {
@@ -79,7 +64,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     final controller = widget.mapController;
     if (controller == null) return;
 
-    final poi = await _categoryService.getMyLocation(
+    final poi = await ref.read(locationInputProvider.notifier).getMyLocation(
       () => controller.getCurrentLocation(),
     );
     if (poi != null && mounted) {
@@ -211,7 +196,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       case LocationCategory.binder:
         return _buildBinderPlaceholder();
       case LocationCategory.history:
-        return _buildHistoryContent();
+        return _buildHistoryContent(state);
     }
   }
 
@@ -290,8 +275,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// "历史" 内容
-  Widget _buildHistoryContent() {
-    if (_isLoadingHistory) {
+  Widget _buildHistoryContent(LocationInputState state) {
+    if (state.isLoadingHistory) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -303,7 +288,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       );
     }
 
-    if (_historyItems.isEmpty) {
+    if (state.historyItems.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -317,7 +302,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: _historyItems.map((poi) => _ListItem(
+      children: state.historyItems.map((poi) => _ListItem(
         icon: Icons.history,
         iconColor: AppColors.grey600,
         title: poi.name,
