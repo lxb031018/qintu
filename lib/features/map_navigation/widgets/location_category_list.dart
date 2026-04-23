@@ -6,6 +6,10 @@ import '../../../constants/app_spacings.dart';
 import '../../../widgets/map/amap_map_widget.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
+import 'category_button.dart';
+import 'close_button.dart';
+import 'location_list_item.dart';
+import 'route_button.dart';
 
 /// ============================================
 /// 位置分类列表组件
@@ -117,7 +121,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       child: Row(
         children: [
           // 我的位置
-          _CategoryButton(
+          LocationCategoryButton(
             label: '我的位置',
             icon: Icons.my_location,
             isSelected: _selectedCategory == LocationCategory.recommended,
@@ -125,7 +129,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           ),
           const SizedBox(width: AppSpacings.sm),
           // 绑定者
-          _CategoryButton(
+          LocationCategoryButton(
             label: '绑定者',
             icon: Icons.people,
             isSelected: _selectedCategory == LocationCategory.binder,
@@ -133,7 +137,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           ),
           const SizedBox(width: AppSpacings.sm),
           // 历史
-          _CategoryButton(
+          LocationCategoryButton(
             label: '历史',
             icon: Icons.history,
             isSelected: _selectedCategory == LocationCategory.history,
@@ -141,10 +145,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           ),
           const SizedBox(width: AppSpacings.sm),
           // 路线按钮（点击弹出底部弹窗）
-          _RouteButton(onTap: widget.onRouteTap),
+          LocationRouteButton(onTap: widget.onRouteTap),
           // 关闭按钮
           const Spacer(),
-          _CloseButton(onTap: () {
+          LocationCloseButton(onTap: () {
               ref.read(locationInputProvider.notifier).hideList();
               FocusScope.of(context).unfocus();
             }),
@@ -218,7 +222,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: state.searchResults.map((poi) => _ListItem(
+      children: state.searchResults.map((poi) => LocationListItem(
         icon: Icons.place,
         iconColor: AppColors.primaryColor,
         title: poi.name,
@@ -236,7 +240,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
   /// "我的位置" 内容
   Widget _buildMyLocationContent() {
-    return _ListItem(
+    return LocationListItem(
       icon: Icons.my_location,
       iconColor: AppColors.primaryColor,
       title: '我的位置',
@@ -289,7 +293,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: state.historyItems.map((poi) => _ListItem(
+      children: state.historyItems.map((poi) => LocationListItem(
         icon: Icons.history,
         iconColor: AppColors.grey600,
         title: poi.name,
@@ -302,215 +306,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           FocusScope.of(context).unfocus();
         },
       )).toList(),
-    );
-  }
-}
-
-/// ============================================
-/// 列表项组件
-/// ============================================
-
-class _ListItem extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ListItem({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacings.sm,
-          vertical: AppSpacings.xs,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: iconColor),
-            const SizedBox(width: AppSpacings.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
-                    ),
-                  ),
-                  if (subtitle.isNotEmpty)
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.grey500,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppColors.grey400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ============================================
-/// 分类按钮
-/// ============================================
-
-class _CategoryButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryButton({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacings.sm,
-          vertical: AppSpacings.xs,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryColor.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected
-                  ? AppColors.primaryColor
-                  : (isDark ? AppColors.darkLightTextColor : AppColors.grey600),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? AppColors.primaryColor
-                    : (isDark ? AppColors.darkLightTextColor : AppColors.grey600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ============================================
-/// 路线按钮（入口，不参与列表分类）
-/// ============================================
-
-class _RouteButton extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const _RouteButton({this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacings.sm,
-          vertical: AppSpacings.xs,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.route,
-              size: 16,
-              color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '路线',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ============================================
-/// 关闭按钮
-/// ============================================
-
-class _CloseButton extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const _CloseButton({this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacings.xs),
-        decoration: const BoxDecoration(
-          color: AppColors.grey200,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.close,
-          size: 16,
-          color: AppColors.grey600,
-        ),
-      ),
     );
   }
 }
