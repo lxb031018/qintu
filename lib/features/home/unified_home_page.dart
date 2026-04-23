@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../providers/settings_manager.dart';
-import '../binding/binding_page.dart';
 import '../map_navigation/map_navigation_tab.dart';
+import '../relationship_binding/relationship_binding_tab.dart';
 import '../settings/settings_page.dart';
 
 /// 统一主页 - 所有用户使用相同的界面
@@ -201,7 +201,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage>
               physics: const NeverScrollableScrollPhysics(),
               children: const [
                 MapNavigationTab(),
-                BindingPage(),
+                RelationshipBindingTab(),
                 SettingsPage(),
               ],
             ),
