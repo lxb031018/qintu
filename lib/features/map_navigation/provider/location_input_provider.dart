@@ -5,6 +5,7 @@ import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
 import '../api/poi_api.dart';
 import '../service/location_category_service.dart';
+import 'map_navigation_provider.dart';
 
 /// ============================================
 /// 地点输入状态
@@ -137,6 +138,21 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       historyItems: items,
       isLoadingHistory: false,
     );
+  }
+
+  /// 选择一个位置（根据 isOriginFocused 决定是起点还是终点）
+  ///
+  /// [poi] 选中的 POI
+  /// [mapNotifier] 用于同时更新 mapNavigationProvider
+  void selectLocation(PoiSuggestion poi, MapNavigationNotifier mapNotifier) {
+    if (state.isOriginFocused) {
+      setOrigin(poi);
+      mapNotifier.setOrigin(poi);
+    } else {
+      setDestination(poi);
+      mapNotifier.setDestination(poi);
+    }
+    hideList();
   }
 
   /// 显示列表

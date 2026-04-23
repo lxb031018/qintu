@@ -4,7 +4,6 @@ import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
 import '../../../widgets/map/amap_map_widget.dart';
-import '../api/poi_api.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
 
@@ -68,30 +67,12 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       () => controller.getCurrentLocation(),
     );
     if (poi != null && mounted) {
-      _handleLocationSelected(poi);
+      ref.read(locationInputProvider.notifier).selectLocation(
+        poi,
+        ref.read(mapNavigationProvider.notifier),
+      );
+      FocusScope.of(context).unfocus();
     }
-  }
-
-  /// 处理位置选择
-  void _handleLocationSelected(PoiSuggestion poi) {
-    final state = ref.read(locationInputProvider);
-    final notifier = ref.read(locationInputProvider.notifier);
-    final mapNotifier = ref.read(mapNavigationProvider.notifier);
-
-    if (state.isOriginFocused) {
-      notifier.setOrigin(poi);
-      mapNotifier.setOrigin(poi);
-    } else {
-      notifier.setDestination(poi);
-      mapNotifier.setDestination(poi);
-    }
-    notifier.hideList();
-    FocusScope.of(context).unfocus();
-  }
-
-  /// 选择历史位置
-  void _selectHistoryItem(PoiSuggestion poi) {
-    _handleLocationSelected(poi);
   }
 
   @override
@@ -242,7 +223,13 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         iconColor: AppColors.primaryColor,
         title: poi.name,
         subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
-        onTap: () => _handleLocationSelected(poi),
+        onTap: () {
+          ref.read(locationInputProvider.notifier).selectLocation(
+            poi,
+            ref.read(mapNavigationProvider.notifier),
+          );
+          FocusScope.of(context).unfocus();
+        },
       )).toList(),
     );
   }
@@ -307,7 +294,13 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         iconColor: AppColors.grey600,
         title: poi.name,
         subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
-        onTap: () => _selectHistoryItem(poi),
+        onTap: () {
+          ref.read(locationInputProvider.notifier).selectLocation(
+            poi,
+            ref.read(mapNavigationProvider.notifier),
+          );
+          FocusScope.of(context).unfocus();
+        },
       )).toList(),
     );
   }
