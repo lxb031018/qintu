@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_state_manager.dart';
 import '../features/auth/auth_page.dart';
-import '../features/home/unified_home_page.dart';
+import '../features/app_shell/unified_home_page.dart';
 import '../features/settings/settings_page.dart';
-import '../features/common/splash_screen.dart';
+import '../features/app_shell/splash_screen.dart';
 import '../tools/hello_api_test_page.dart';
 import 'app_routes.dart';
 import 'route_guards.dart';
@@ -49,9 +49,9 @@ class AppRouter {
           path: AppRoutes.unifiedHome,
           name: 'unified-home',
           builder: (context, state) {
-            final authStateManager = Provider.of<AuthStateManager>(context, listen: false);
+            final authStateNotifier = Provider.of<AuthStateNotifier>(context, listen: false);
             return UnifiedHomePage(
-              userId: authStateManager.state.userId ?? '',
+              userId: authStateNotifier.state.userId ?? '',
             );
           },
         ),
