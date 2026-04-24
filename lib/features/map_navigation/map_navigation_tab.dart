@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
-import 'widgets/amap_map_widget.dart';
+import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
 import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 import 'provider/location_input_provider.dart';
@@ -131,7 +131,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
         children: [
           // 地图层
           Positioned.fill(
-            child: AmapMapWidget(onMapCreated: _onMapCreated),
+            child: AmapMapView(onMapCreated: _onMapCreated),
           ),
 
           // 搜索栏层
