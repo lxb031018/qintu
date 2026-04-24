@@ -58,13 +58,6 @@ class AppRouter {
           name: 'settings',
           builder: (context, state) => const SettingsPage(),
         ),
-
-        // 开发测试页面
-        GoRoute(
-          path: AppRoutes.helloApiTest,
-          name: 'hello-api-test',
-          builder: (context, state) => const HelloApiTestPage(),
-        ),
       ],
     );
 
