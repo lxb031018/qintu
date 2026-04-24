@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/auth_state_manager.dart';
 import 'package:qintu/utils/logger.dart';
 
@@ -26,58 +25,44 @@ class SettingsPageState {
   }
 }
 
-/// 设置页面 Provider
-class SettingsPageNotifier extends ChangeNotifier {
-  /// 处理退出登录
-  ///
-  /// [context] 用于显示对话框
-  /// 返回 true 表示用户确认退出，false 表示用户取消
-  Future<bool> handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+/// 设置页面 Notifier
+class SettingsPageNotifier extends Notifier<SettingsPageState> {
+  @override
+  SettingsPageState build() {
+    return const SettingsPageState();
+  }
 
-    if (confirmed != true) {
-      return false;
-    }
-
-    _state = _state.copyWith(isLoggingOut: true);
-    notifyListeners();
+  /// 执行退出登录（由 widget 层在确认对话框后调用）
+  Future<void> logout() async {
+    state = state.copyWith(isLoggingOut: true);
 
     try {
       Logs.auth.info('执行退出登录');
-      await context.read<AuthStateNotifier>().logout();
+      await ref.read(authStateProvider.notifier).logout();
       Logs.auth.info('退出登录成功');
+    } catch (e, stackTrace) {
+      Logs.auth.error('退出登录失败: $e', stackTrace: stackTrace);
+    } finally {
+      state = state.copyWith(isLoggingOut: false);
+    }
+  }
+
+  /// 处理退出登录确认
+  ///
+  /// 返回 true 表示用户确认退出，false 表示用户取消
+  /// 注意：对话框逻辑应在 widget 层实现，此方法仅执行退出操作
+  Future<bool> handleLogout() async {
+    try {
+      await ref.read(authStateProvider.notifier).logout();
       return true;
     } catch (e, stackTrace) {
       Logs.auth.error('退出登录失败: $e', stackTrace: stackTrace);
       return false;
-    } finally {
-      _state = _state.copyWith(isLoggingOut: false);
-      notifyListeners();
     }
   }
-
-  SettingsPageState _state = const SettingsPageState();
-
-  SettingsPageState get state => _state;
 }
 
 /// Provider 导出
-final settingsPageProvider = ChangeNotifierProvider<SettingsPageNotifier>(
-  create: (_) => SettingsPageNotifier(),
+final settingsPageProvider = NotifierProvider<SettingsPageNotifier, SettingsPageState>(
+  SettingsPageNotifier.new,
 );

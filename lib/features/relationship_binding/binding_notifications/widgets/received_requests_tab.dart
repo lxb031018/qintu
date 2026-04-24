@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../providers/binding_provider.dart';
 import '../../../../../constants/app_strings.dart';
 import '../../../../../constants/app_spacings.dart';
@@ -13,7 +13,7 @@ import 'empty_state_widget.dart';
 /// 显示待确认/拒绝的绑定请求列表
 /// ============================================
 
-class ReceivedRequestsTab extends StatelessWidget {
+class ReceivedRequestsTab extends ConsumerWidget {
   final Future<void> Function() onRefresh;
   final Future<void> Function(int requestId) onConfirm;
   final Future<void> Function(int requestId) onReject;
@@ -26,8 +26,8 @@ class ReceivedRequestsTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final bindingState = context.watch<BindingNotifier>().state;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bindingState = ref.watch(bindingProvider);
     final requests = bindingState.pendingRequests;
 
     // 加载中

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/theme_manager.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_spacings.dart';
 import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../../utils/app_snackbar.dart';
 import 'settings_section_card.dart';
 
 /// ============================================
@@ -15,21 +14,56 @@ import 'settings_section_card.dart';
 /// 提供浅色/深色/跟随系统三种主题选项
 /// ============================================
 
-class ThemeSelectorCard extends StatelessWidget {
+class ThemeSelectorCard extends ConsumerWidget {
   const ThemeSelectorCard({super.key});
 
-  /// 切换主题
-  Future<void> _switchTheme(BuildContext context, ThemeMode themeMode) async {
-    try {
-      await context.read<ThemeManager>().setThemeMode(themeMode);
-    } catch (e) {
-      AppSnackbar.showError(context, '${AppStrings.themeSwitchFailed}：$e');
-    }
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentThemeMode = ref.watch(themeManagerProvider);
+
+    return SettingsSectionCard(
+      title: AppStrings.themeSettings,
+      child: Column(
+        children: [
+          _buildThemeOption(
+            context: context,
+            ref: ref,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.light,
+            icon: Icons.light_mode,
+            title: AppStrings.lightMode,
+          ),
+          SizedBox(height: AppSpacings.md),
+          _buildThemeOption(
+            context: context,
+            ref: ref,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.dark,
+            icon: Icons.dark_mode,
+            title: AppStrings.darkMode,
+          ),
+          SizedBox(height: AppSpacings.md),
+          _buildThemeOption(
+            context: context,
+            ref: ref,
+            currentMode: currentThemeMode,
+            themeMode: ThemeMode.system,
+            icon: Icons.brightness_auto,
+            title: AppStrings.followSystem,
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 构建主题选项
+  /// 切换主题
+  Future<void> _switchTheme(WidgetRef ref, ThemeMode themeMode) async {
+    await ref.read(themeManagerProvider.notifier).setThemeMode(themeMode);
+  }
+
   Widget _buildThemeOption({
     required BuildContext context,
+    required WidgetRef ref,
     required ThemeMode currentMode,
     required ThemeMode themeMode,
     required IconData icon,
@@ -39,7 +73,7 @@ class ThemeSelectorCard extends StatelessWidget {
     final isSelected = currentMode == themeMode;
 
     return InkWell(
-      onTap: () => _switchTheme(context, themeMode),
+      onTap: () => _switchTheme(ref, themeMode),
       borderRadius: BorderRadius.all(AppRadii.small),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.md),
@@ -90,42 +124,6 @@ class ThemeSelectorCard extends StatelessWidget {
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentThemeMode = context.watch<ThemeManager>().themeMode;
-
-    return SettingsSectionCard(
-      title: AppStrings.themeSettings,
-      child: Column(
-        children: [
-          _buildThemeOption(
-            context: context,
-            currentMode: currentThemeMode,
-            themeMode: ThemeMode.light,
-            icon: Icons.light_mode,
-            title: AppStrings.lightMode,
-          ),
-          SizedBox(height: AppSpacings.md),
-          _buildThemeOption(
-            context: context,
-            currentMode: currentThemeMode,
-            themeMode: ThemeMode.dark,
-            icon: Icons.dark_mode,
-            title: AppStrings.darkMode,
-          ),
-          SizedBox(height: AppSpacings.md),
-          _buildThemeOption(
-            context: context,
-            currentMode: currentThemeMode,
-            themeMode: ThemeMode.system,
-            icon: Icons.brightness_auto,
-            title: AppStrings.followSystem,
-          ),
-        ],
       ),
     );
   }

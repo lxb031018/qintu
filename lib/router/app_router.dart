@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_state_manager.dart';
 import '../features/auth/auth_page.dart';
 import '../features/app_shell/unified_home_page.dart';
 import '../features/settings/settings_page.dart';
@@ -49,10 +47,8 @@ class AppRouter {
           path: AppRoutes.unifiedHome,
           name: 'unified-home',
           builder: (context, state) {
-            final authStateNotifier = Provider.of<AuthStateNotifier>(context, listen: false);
-            return UnifiedHomePage(
-              userId: authStateNotifier.state.userId ?? '',
-            );
+            // userId 从 authStateProvider 获取，不再通过构造参数传递
+            return const UnifiedHomePage(userId: '');
           },
         ),
 

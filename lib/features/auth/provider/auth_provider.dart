@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/auth_state_manager.dart';
 import 'package:qintu/utils/exceptions.dart';
 import 'package:qintu/utils/phone_utils.dart';
@@ -9,7 +8,7 @@ import '../service/auth_service.dart';
 /// ============================================
 /// 认证 Provider 层
 ///
-/// 持有 UI 状态，通过 notifyListeners() 驱动 UI 更新
+/// Notifier，负责 UI 状态管理
 /// ============================================
 
 /// 登录步骤枚举
@@ -55,66 +54,61 @@ class AuthPageState {
   }
 }
 
-/// 登录 Provider
-class AuthNotifier extends ChangeNotifier {
-  AuthPageState _state = const AuthPageState();
-  AuthPageState get state => _state;
+/// 登录 Notifier
+class AuthNotifier extends Notifier<AuthPageState> {
+  @override
+  AuthPageState build() {
+    return const AuthPageState();
+  }
 
   /// 发送验证码
   Future<void> sendCode(String phone) async {
     if (phone.length != 11) {
-      _state = _state.copyWith(errorMessage: '请输入11位手机号');
-      notifyListeners();
+      state = state.copyWith(errorMessage: '请输入11位手机号');
       return;
     }
 
-    _state = _state.copyWith(isLoading: true, errorMessage: null);
-    notifyListeners();
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final formattedPhone = PhoneUtils.formatForApi(phone);
       final verificationId = await AuthApi.sendVerificationCode(formattedPhone);
-      _state = _state.copyWith(
+      state = state.copyWith(
         step: AuthStep.inputCode,
         isLoading: false,
         phone: phone,
         verificationId: verificationId,
       );
-      notifyListeners();
       _startCountdown();
     } catch (e) {
-      _state = _state.copyWith(
+      state = state.copyWith(
         isLoading: false,
         errorMessage: _parseError(e),
       );
-      notifyListeners();
     }
   }
 
   /// 验证并登录
-  Future<void> verifyAndLogin(String code, BuildContext context) async {
+  Future<void> verifyAndLogin(String code) async {
     if (code.length != 6) {
-      _state = _state.copyWith(errorMessage: '请输入6位验证码');
-      notifyListeners();
+      state = state.copyWith(errorMessage: '请输入6位验证码');
       return;
     }
 
-    if (_state.verificationId == null) {
-      _state = _state.copyWith(errorMessage: '请先获取验证码');
-      notifyListeners();
+    if (state.verificationId == null) {
+      state = state.copyWith(errorMessage: '请先获取验证码');
       return;
     }
 
-    _state = _state.copyWith(isLoading: true, errorMessage: null);
-    notifyListeners();
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final verificationToken = await AuthApi.verifyCode(
-        _state.verificationId!,
+        state.verificationId!,
         code,
       );
 
-      final formattedPhone = PhoneUtils.formatForApi(_state.phone);
+      final formattedPhone = PhoneUtils.formatForApi(state.phone);
       final authResult = await AuthService.signInOrSignUp(
         verificationToken: verificationToken,
         phone: formattedPhone,
@@ -122,7 +116,7 @@ class AuthNotifier extends ChangeNotifier {
 
       await AuthService.saveAuthResult(authResult, formattedPhone);
 
-      await context.read<AuthStateNotifier>().setAuthenticated(
+      await ref.read(authStateProvider.notifier).setAuthenticated(
         userId: authResult.uid,
         accessToken: authResult.accessToken,
         refreshToken: authResult.refreshToken,
@@ -132,56 +126,48 @@ class AuthNotifier extends ChangeNotifier {
         pendingBindingCount: authResult.pendingCount,
       );
 
-      _state = const AuthPageState();
-      notifyListeners();
+      state = const AuthPageState();
     } catch (e) {
-      _state = _state.copyWith(
+      state = state.copyWith(
         isLoading: false,
         errorMessage: _parseError(e),
       );
-      notifyListeners();
     }
   }
 
   void resendCode() {
-    _state = _state.copyWith(
+    state = state.copyWith(
       step: AuthStep.inputPhone,
       verificationId: null,
     );
-    notifyListeners();
   }
 
   void changePhone() {
-    _state = _state.copyWith(
+    state = state.copyWith(
       step: AuthStep.inputPhone,
       countdown: 0,
       verificationId: null,
     );
-    notifyListeners();
   }
 
   void clearError() {
-    _state = _state.copyWith(errorMessage: null);
-    notifyListeners();
+    state = state.copyWith(errorMessage: null);
   }
 
   void resetToInputPhone() {
-    _state = const AuthPageState();
-    notifyListeners();
+    state = const AuthPageState();
   }
 
   void _startCountdown() {
-    _state = _state.copyWith(countdown: 60);
-    notifyListeners();
+    state = state.copyWith(countdown: 60);
     _countdownTimer();
   }
 
-  Future<void> _countdownTimer() async {
-    while (_state.countdown > 0) {
+  void _countdownTimer() async {
+    while (state.countdown > 0) {
       await Future.delayed(const Duration(seconds: 1));
-      if (_state.countdown <= 0) break;
-      _state = _state.copyWith(countdown: _state.countdown - 1);
-      notifyListeners();
+      if (state.countdown <= 0) break;
+      state = state.copyWith(countdown: state.countdown - 1);
     }
   }
 
@@ -194,6 +180,6 @@ class AuthNotifier extends ChangeNotifier {
 }
 
 /// Provider 导出
-final authProvider = ChangeNotifierProvider<AuthNotifier>(
-  create: (_) => AuthNotifier(),
+final authProvider = NotifierProvider<AuthNotifier, AuthPageState>(
+  AuthNotifier.new,
 );

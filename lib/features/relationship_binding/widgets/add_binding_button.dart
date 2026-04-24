@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/constants/app_colors.dart';
 import 'package:qintu/constants/app_strings.dart';
 import 'package:qintu/constants/app_spacings.dart';
@@ -13,7 +13,7 @@ import 'package:qintu/widgets/common/app_button.dart';
 /// 使用统一的 AppButton 组件
 /// ============================================
 
-class AddBindingButton extends StatelessWidget {
+class AddBindingButton extends ConsumerWidget {
   final VoidCallback onPressed;
 
   const AddBindingButton({
@@ -22,8 +22,8 @@ class AddBindingButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final bindingState = context.watch<BindingNotifier>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bindingState = ref.watch(bindingProvider);
     final summary = bindingState.bindingSummary;
     final total = (summary?.asSender ?? 0) + (summary?.asReceiver ?? 0);
 

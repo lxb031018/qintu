@@ -75,7 +75,7 @@ class SettingsState {
   final bool doubleTapToSwitchTab;
 
   const SettingsState({
-    this.fontSizeScale = FontSizeOption.standard.scale,
+    this.fontSizeScale = 1.0, // FontSizeOption.standard.scale
     this.doubleTapToSwitchTab = true,
   });
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../theme/app_text_styles.dart';
@@ -13,16 +13,16 @@ import 'provider/settings_page_provider.dart';
 /// ============================================
 /// 设置页面
 ///
-/// 使用 Provider 层管理状态，遵循四层架构
+/// 使用 Riverpod Notifier 管理状态，遵循四层架构
 /// ============================================
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pageState = context.watch<SettingsPageNotifier>();
+    final pageState = ref.watch(settingsPageProvider);
 
     return Scaffold(
       body: ListView(
@@ -35,8 +35,8 @@ class SettingsPage extends StatelessWidget {
           const ThemeSelectorCard(),
           const SizedBox(height: 16),
           LogoutCard(
-            isLoading: pageState.state.isLoggingOut,
-            onLogout: () => _handleLogout(context),
+            isLoading: pageState.isLoggingOut,
+            onLogout: () => _handleLogout(context, ref),
           ),
           const SizedBox(height: 32),
           Center(
@@ -54,8 +54,8 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
-    final success = await context.read<SettingsPageNotifier>().handleLogout(context);
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final success = await ref.read(settingsPageProvider.notifier).handleLogout();
     if (success && context.mounted) {
       context.goToAuth();
     }

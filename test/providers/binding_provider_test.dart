@@ -16,9 +16,7 @@ void main() {
       bindingProvider = BindingNotifier();
     });
 
-    tearDown(() {
-      bindingProvider.dispose();
-    });
+    // Notifier 不需要 dispose
 
     test('初始状态应该是 AsyncInitial', () {
       expect(bindingProvider.state.bindingsState, isA<AsyncInitial>());

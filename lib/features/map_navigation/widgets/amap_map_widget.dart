@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
-import '../models/map_overlay_models.dart';
 
 /// ============================================
 /// 高德地图显示组件

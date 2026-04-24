@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_durations.dart';
 import '../../constants/app_strings.dart';
@@ -29,7 +29,7 @@ import '../settings/settings_page.dart';
 /// - 不会用的老人不接触看不懂的按钮即可
 /// - 年轻人发来规划路线，一键接收就直接开始导航
 
-class UnifiedHomePage extends StatefulWidget {
+class UnifiedHomePage extends ConsumerStatefulWidget {
   /// 用户ID，用于初始化认证状态
   final String userId;
 
@@ -42,10 +42,10 @@ class UnifiedHomePage extends StatefulWidget {
   });
 
   @override
-  State<UnifiedHomePage> createState() => _UnifiedHomePageState();
+  ConsumerState<UnifiedHomePage> createState() => _UnifiedHomePageState();
 }
 
-class _UnifiedHomePageState extends State<UnifiedHomePage>
+class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
     with SingleTickerProviderStateMixin {
   /// Tab 控制器，管理三个 Tab 的切换动画
   late TabController _tabController;
@@ -186,7 +186,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
-    final settingsState = context.watch<SettingsManager>();
+    final settingsState = ref.watch(settingsManagerProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,

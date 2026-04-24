@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_strings.dart';
 import '../../../providers/binding_provider.dart';
 import '../../../widgets/common/tab_badge.dart';
@@ -15,14 +15,14 @@ import 'widgets/rejected_requests_tab.dart';
 /// 使用四层架构
 /// ============================================
 
-class BindingNotificationsPage extends StatefulWidget {
+class BindingNotificationsPage extends ConsumerStatefulWidget {
   const BindingNotificationsPage({super.key});
 
   @override
-  State<BindingNotificationsPage> createState() => _BindingNotificationsPageState();
+  ConsumerState<BindingNotificationsPage> createState() => _BindingNotificationsPageState();
 }
 
-class _BindingNotificationsPageState extends State<BindingNotificationsPage>
+class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -43,14 +43,14 @@ class _BindingNotificationsPageState extends State<BindingNotificationsPage>
 
   /// 刷新通知数据
   Future<void> _loadNotifications() async {
-    final notifier = context.read<BindingNotifier>();
+    final notifier = ref.read(bindingProvider.notifier);
     await notifier.loadPendingRequests();
     await notifier.loadSentRequests();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bindingState = context.watch<BindingNotifier>().state;
+    final bindingState = ref.watch(bindingProvider);
     final sentRequests = bindingState.sentRequests;
     final pendingCount = sentRequests.where((r) => r.isPending).length;
     final receivedCount = bindingState.pendingRequestsState.data?.length ?? 0;
@@ -123,13 +123,13 @@ class _BindingNotificationsPageState extends State<BindingNotificationsPage>
 
   /// 确认绑定请求
   Future<void> _confirmRequest(int requestId) async {
-    final notifier = context.read<BindingNotifier>();
+    final notifier = ref.read(bindingProvider.notifier);
     final success = await notifier.confirmRequest(requestId);
     if (!mounted) return;
     _handleOperationResult(
       context,
       success,
-      context.read<BindingNotifier>().state.bindingsState.errorMessage,
+      ref.read(bindingProvider).bindingsState.errorMessage,
       AppStrings.acceptBindingRequestSuccess,
       AppStrings.acceptBindingRequestFailed,
     );
@@ -137,13 +137,13 @@ class _BindingNotificationsPageState extends State<BindingNotificationsPage>
 
   /// 拒绝绑定请求
   Future<void> _rejectRequest(int requestId) async {
-    final notifier = context.read<BindingNotifier>();
+    final notifier = ref.read(bindingProvider.notifier);
     final success = await notifier.rejectRequest(requestId);
     if (!mounted) return;
     _handleOperationResult(
       context,
       success,
-      context.read<BindingNotifier>().state.bindingsState.errorMessage,
+      ref.read(bindingProvider).bindingsState.errorMessage,
       AppStrings.rejectBindingRequestSuccess,
       AppStrings.rejectBindingRequestFailed,
     );
@@ -151,23 +151,22 @@ class _BindingNotificationsPageState extends State<BindingNotificationsPage>
 
   /// 取消发出的请求
   Future<void> _cancelRequest(int requestId) async {
-    final ctx = context;
-    final notifier = ctx.read<BindingNotifier>();
+    final notifier = ref.read(bindingProvider.notifier);
 
     AppConfirmDialog.show(
-      ctx,
+      context,
       title: AppStrings.cancelRequest,
       message: AppStrings.confirmCancelRequest,
       confirmText: AppStrings.confirmCancel,
-      confirmColor: Theme.of(ctx).colorScheme.error,
+      confirmColor: Theme.of(context).colorScheme.error,
       confirmTextColor: Colors.white,
       onConfirm: () async {
         final success = await notifier.cancelSentRequest(requestId);
-        if (!ctx.mounted) return;
+        if (!mounted) return;
         _handleOperationResult(
-          ctx,
+          context,
           success,
-          ctx.read<BindingNotifier>().state.lastErrorMessage,
+          ref.read(bindingProvider).lastErrorMessage,
           AppStrings.requestCancelled,
           AppStrings.cancelRequestFailed,
         );

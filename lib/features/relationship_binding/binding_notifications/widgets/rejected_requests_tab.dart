@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../providers/binding_provider.dart';
 import '../../../../../constants/app_strings.dart';
 import '../../../../../constants/app_spacings.dart';
@@ -13,7 +13,7 @@ import 'empty_state_widget.dart';
 /// 显示我发出但被对方拒绝的绑定请求
 /// ============================================
 
-class RejectedRequestsTab extends StatelessWidget {
+class RejectedRequestsTab extends ConsumerWidget {
   final Future<void> Function() onRefresh;
 
   const RejectedRequestsTab({
@@ -22,8 +22,8 @@ class RejectedRequestsTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final bindingState = context.watch<BindingNotifier>().state;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bindingState = ref.watch(bindingProvider);
     // 过滤出被拒绝的请求
     final rejectedRequests = bindingState.sentRequests.where((r) => r.isRejected).toList();
 

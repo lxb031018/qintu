@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/binding_provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/binding_limits.dart';
@@ -8,12 +8,12 @@ import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
 
 /// 绑定统计卡片
-class BindingStatsCard extends StatelessWidget {
+class BindingStatsCard extends ConsumerWidget {
   const BindingStatsCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final bindingState = context.watch<BindingNotifier>().state;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bindingState = ref.watch(bindingProvider);
     final summary = bindingState.bindingSummary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBackground = isDark ? AppColors.darkCardBackground : AppColors.blue50;

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
-import 'amap_map_widget.dart';
 import '../core/amap_map_controller.dart';
 import '../core/poi_api.dart';
 import '../provider/location_input_provider.dart';

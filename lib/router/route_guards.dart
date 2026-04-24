@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../providers/auth_state_manager.dart';
 import '../models/user_state.dart';
 import '../utils/logger.dart';
@@ -12,7 +12,7 @@ import 'app_routes.dart';
 /// - 检查用户认证状态
 /// - 根据登录状态决定重定向目标
 /// - 开发页面豁免认证
-/// 
+///
 /// 注意：已删除角色选择机制，所有登录后用户都进入统一主页
 
 class RouteGuards {
@@ -27,12 +27,14 @@ class RouteGuards {
   ) async {
     Logs.ui.info('🧭 [ROUTER] redirect 被调用, location=${state.matchedLocation}');
 
-    // 确保 Provider 已经初始化
+    // 确保 context 已挂载
     if (!context.mounted) return null;
 
-    final authStateNotifier = Provider.of<AuthStateNotifier>(context, listen: false);
-    final authStatus = authStateNotifier.state.authStatus;
-    final isLoggedIn = authStateNotifier.state.isLoggedIn;
+    // 通过 ProviderScope.containerOf 获取 container
+    final container = ProviderScope.containerOf(context);
+    final authState = container.read(authStateProvider);
+    final authStatus = authState.authStatus;
+    final isLoggedIn = authState.isLoggedIn;
 
     Logs.ui.info('🧭 [ROUTER] authStatus=$authStatus, isLoggedIn=$isLoggedIn');
 

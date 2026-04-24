@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:amap_map/amap_map.dart';
 import 'package:x_amap_base/x_amap_base.dart' show AMapPrivacyStatement;
 import 'constants/app_strings.dart';
-import 'providers/binding_provider.dart';
 import 'providers/auth_state_manager.dart';
 import 'providers/theme_manager.dart';
 import 'providers/settings_manager.dart';
@@ -19,8 +18,8 @@ import 'widgets/error_boundary.dart';
 
 export 'providers/auth_state_manager.dart' show authStateProvider;
 export 'providers/binding_provider.dart' show bindingProvider;
-export 'providers/settings_manager.dart' show SettingsManager;
-export 'providers/theme_manager.dart' show ThemeManager;
+export 'providers/settings_manager.dart' show settingsManagerProvider;
+export 'providers/theme_manager.dart' show themeManagerProvider;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,43 +66,45 @@ void _initAmapPrivacy() {
   }
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  late final ThemeManager _themeManager;
-  late final AuthStateNotifier _authStateNotifier;
-  late final SettingsManager _settingsManager;
+class _MyAppState extends ConsumerState<MyApp> {
   late final GoRouter _router;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _themeManager = ThemeManager();
-    _authStateNotifier = AuthStateNotifier();
-    _settingsManager = SettingsManager();
     _router = AppRouter.getRouter();
-    _initializeAppState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeAppState();
+      });
+    }
   }
 
   Future<void> _initializeAppState() async {
-    // 初始化设置（字体大小等）
-    await _settingsManager.init();
-    AppTextStyles.setFontSizeScale(_settingsManager.fontSizeScale);
+    // 触发 providers 的初始化（在 build 之后）
+    final settingsState = ref.read(settingsManagerProvider);
 
-    // 初始化主题
-    await _themeManager.init();
+    // 同步字体缩放到 AppTheme 和 AppTextStyles
+    AppTextStyles.setFontSizeScale(settingsState.fontSizeScale);
 
     // 初始化认证状态
-    await _authStateNotifier.initialize();
+    await ref.read(authStateProvider.notifier).initialize();
 
-    // 初始化完成后，刷新路由以触发 redirect
     if (mounted) {
-      setState(() {});
       // 刷新 go_router 以触发路由守卫
       _router.refresh();
       Logs.app.info('✅ 路由刷新完成，将自动跳转到对应页面');
@@ -112,47 +113,35 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => BindingNotifier()),
-        ChangeNotifierProvider.value(value: _authStateNotifier),
-        ChangeNotifierProvider.value(value: _themeManager),
-        ChangeNotifierProvider.value(value: _settingsManager),
-      ],
-      child: ErrorBoundary(
-        child: AnimatedBuilder(
-          animation: Listenable.merge([_themeManager, _settingsManager]),
-          builder: (context, child) {
-            // 同步字体缩放到 AppTheme 和 AppTextStyles
-            AppTheme.setFontSizeScale(_settingsManager.fontSizeScale);
+    final themeMode = ref.watch(themeManagerProvider);
+    final settingsState = ref.watch(settingsManagerProvider);
 
-            return MaterialApp.router(
-              title: AppStrings.appName,
-              debugShowCheckedModeBanner: false,
-              theme: AppTheme.buildLightTheme(),
-              darkTheme: AppTheme.buildDarkTheme(),
-              themeMode: _themeManager.themeMode,
-              // 禁用主题切换动画，实现瞬间切换
-              themeAnimationDuration: Duration.zero,
-              themeAnimationCurve: Curves.linear,
-              routerConfig: _router,
-              builder: (context, child) {
-                // 全局错误处理
-                ErrorWidget.builder = (FlutterErrorDetails details) {
-                  return SafeErrorWidget(details: details);
-                };
-                return child!;
-              },
-            );
-          },
-        ),
+    return ErrorBoundary(
+      child: Builder(
+        builder: (context) {
+          // 同步字体缩放到 AppTheme 和 AppTextStyles
+          AppTheme.setFontSizeScale(settingsState.fontSizeScale);
+
+          return MaterialApp.router(
+            title: AppStrings.appName,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.buildLightTheme(),
+            darkTheme: AppTheme.buildDarkTheme(),
+            themeMode: themeMode,
+            // 禁用主题切换动画，实现瞬间切换
+            themeAnimationDuration: Duration.zero,
+            themeAnimationCurve: Curves.linear,
+            routerConfig: _router,
+            builder: (context, child) {
+              // 全局错误处理
+              ErrorWidget.builder = (FlutterErrorDetails details) {
+                return SafeErrorWidget(details: details);
+              };
+              return child!;
+            },
+          );
+        },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _authStateNotifier.dispose();
-    super.dispose();
   }
 }

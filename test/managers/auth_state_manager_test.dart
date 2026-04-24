@@ -12,9 +12,7 @@ void main() {
       authStateNotifier = AuthStateNotifier();
     });
 
-    tearDown(() {
-      authStateNotifier.dispose();
-    });
+    // Notifier 不需要 dispose
 
     test('初始状态应该是 unknown', () {
       expect(authStateNotifier.state.authStatus, AuthStatus.unknown);

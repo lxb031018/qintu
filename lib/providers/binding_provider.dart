@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide AsyncLoading, AsyncError;
 import 'package:qintu/models/binding/binding.dart';
 import 'package:qintu/models/common/async_state.dart';
 import 'package:qintu/core/http/api_client.dart';
