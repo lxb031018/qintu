@@ -135,13 +135,26 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     return const LocationInputState();
   }
 
-  /// 获取"我的位置" POI
+  /// 直接将 GPS 位置填入当前焦点的输入框
   ///
-  /// 通过 [getCurrentLocationFn] 获取 GPS 坐标，返回 PoiSuggestion
-  Future<PoiSuggestion?> getMyLocation(
+  /// [getCurrentLocationFn] 获取 GPS 坐标的回调
+  /// [mapNotifier] 用于同步更新 mapNavigationProvider
+  Future<void> fillMyLocation(
     Future<Map<String, dynamic>?> Function() getCurrentLocationFn,
+    MapNavigationNotifier mapNotifier,
   ) async {
-    return await _categoryService.getMyLocation(getCurrentLocationFn);
+    final location = await getCurrentLocationFn();
+    if (location == null) return;
+
+    final poi = PoiSuggestion(
+      id: 'my_location',
+      name: '我的位置',
+      district: location['city'] ?? '',
+      address: 'GPS 定位',
+      location: '${location["longitude"]},${location["latitude"]}',
+    );
+
+    selectLocation(poi, mapNotifier);
   }
 
   /// 加载历史位置

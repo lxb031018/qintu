@@ -129,23 +129,7 @@ class LocationCategoryService {
     }
   }
 
-  /// "我的位置" - 通过 AmapMapController 获取 GPS
-  Future<PoiSuggestion?> getMyLocation(
-    Future<Map<String, dynamic>?> Function() getCurrentLocationFn,
-  ) async {
-    final location = await getCurrentLocationFn();
-    if (location != null) {
-      return PoiSuggestion(
-        id: 'my_location',
-        name: '我的位置',
-        district: location['city'] ?? '',
-        address: 'GPS 定位',
-        location: '${location["longitude"]},${location["latitude"]}',
-      );
-    }
-    return null;
-  }
-
+  
   /// "绑定者" - 返回空（暂不实现，显示占位）
   List<PoiSuggestion> getBinderLocations() {
     return [];

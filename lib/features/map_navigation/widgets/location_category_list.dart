@@ -10,6 +10,7 @@ import '../provider/map_navigation_provider.dart';
 import 'category_button.dart';
 import 'close_button.dart';
 import 'location_list_item.dart';
+import 'my_location_button.dart';
 import 'route_button.dart';
 
 /// ============================================
@@ -19,7 +20,7 @@ import 'route_button.dart';
 /// 顶部包含分类按钮栏，主体显示不同分类的位置列表
 ///
 /// 分类按钮：
-/// - 我的位置：使用 GPS 获取当前位置
+/// - 我的位置：点击直接获取 GPS 位置填入输入框
 /// - 绑定者：显示绑定的其他用户位置
 /// - 历史：显示搜索历史记录
 /// - 路线：点击弹出路线规划底部弹窗
@@ -27,7 +28,7 @@ import 'route_button.dart';
 ///
 /// 列表内容根据当前选中的分类动态切换：
 /// - 支持 POI 搜索结果显示
-/// - 支持我的位置、绑定者、历史三种分类
+/// - 支持绑定者、历史两种分类
 ///
 /// 依赖：
 /// - locationInputProvider：管理位置输入状态
@@ -69,21 +70,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       ref.read(mapNavigationProvider.notifier),
     );
     FocusScope.of(context).unfocus();
-  }
-
-  /// 选择"我的位置"
-  /// 
-  /// 通过地图控制器获取当前 GPS 位置，并设置为选中位置
-  Future<void> _selectMyLocation() async {
-    final controller = widget.mapController;
-    if (controller == null) return;
-
-    final poi = await ref.read(locationInputProvider.notifier).getMyLocation(
-      () => controller.getCurrentLocation(),
-    );
-    if (poi != null && mounted) {
-      _selectLocationAndUnfocus(poi);
-    }
   }
 
   /// 隐藏列表并收起键盘
@@ -141,11 +127,11 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       child: Row(
         children: [
           // 我的位置
-          LocationCategoryButton(
-            label: '我的位置',
-            icon: Icons.my_location,
-            isSelected: state.selectedCategory == LocationCategory.recommended,
-            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.recommended),
+          MyLocationButton(
+            onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
+              () => widget.mapController?.getCurrentLocation(),
+              ref.read(mapNavigationProvider.notifier),
+            ),
           ),
           const SizedBox(width: AppSpacings.sm),
           // 绑定者
@@ -200,7 +186,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     switch (state.selectedCategory) {
       case LocationCategory.recommended:
-        return _buildMyLocationContent();
+        // 推荐分类已移除，点击"我的位置"按钮直接填入坐标
+        return const SizedBox.shrink();
       case LocationCategory.binder:
         return _buildBinderPlaceholder();
       case LocationCategory.history:
@@ -258,19 +245,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
         onTap: () => _selectLocationAndUnfocus(poi),
       )).toList(),
-    );
-  }
-
-  /// "我的位置" 内容
-  /// 
-  /// 显示单个列表项，点击后获取 GPS 当前位置
-  Widget _buildMyLocationContent() {
-    return LocationListItem(
-      icon: Icons.my_location,
-      iconColor: AppColors.primaryColor,
-      title: '我的位置',
-      subtitle: '使用 GPS 获取当前位置',
-      onTap: _selectMyLocation,
     );
   }
 
