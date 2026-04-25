@@ -55,7 +55,9 @@
       "Bash(taskkill //F //PID 1513052 sleep 2 netstat -ano)",
       "Bash(git checkout *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(curl *)",
+      "Bash(tasklist *)"
     ]
   }
 }
