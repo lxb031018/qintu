@@ -5,7 +5,7 @@
  * 与前端 lib/constants 保持一致
  */
 
-// 🌟 CORS 白名单配置
+// CORS 白名单配置
 // 生产环境请替换为实际的域名
 const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
@@ -22,7 +22,7 @@ module.exports = {
     NODE_ENV: process.env.NODE_ENV || 'development',
   },
 
-  // 🌟 CORS 配置
+  // CORS 配置
   CORS: {
     origins: CORS_ORIGINS,
     credentials: true,
