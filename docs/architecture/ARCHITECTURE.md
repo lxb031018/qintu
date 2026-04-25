@@ -268,11 +268,20 @@ MultiProvider(
 
 ## 📦 HTTP 客户端规范
 
-### 规则：统一使用 ApiClient（Dio），不使用 http
+### 规则：统一使用 HTTP 客户端
 
-**已删除**：
-- `lib/services/api_service.dart`（基于 http）
-- `lib/services/api_response.dart`（旧的响应模型）
+| 类型 | 客户端 | 用途 |
+|------|--------|------|
+| 后端 API | `ApiClient` | 自己的服务器，带 Token 认证 |
+| 第三方 API | `ThirdPartyApiClient` | 高德地图等外部服务，API Key 认证 |
+
+**文件位置**：
+- `lib/core/http/api_client.dart` - 后端 API 客户端（单例）
+- `lib/core/http/third_party_api_client.dart` - 第三方 API 客户端（单例）
+
+**禁止**：
+- 在业务代码中创建独立 Dio 实例
+- 硬编码 http:// 或 https:// 开头的 URL
 
 ---
 
