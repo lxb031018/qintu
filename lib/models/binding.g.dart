@@ -33,7 +33,7 @@ Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
 
 Map<String, dynamic> _$BindingToJson(Binding instance) => <String, dynamic>{
   'id': instance.id,
-  if (instance.bindCode case final value?) 'bind_code': value,
+  'bind_code': ?instance.bindCode,
   'status': _$BindingStatusEnumMap[instance.status]!,
   'remark': instance.remark,
   'my_role': _$MyRoleEnumMap[instance.myRole],
