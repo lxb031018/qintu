@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:qintu/config/amap_web_config.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/core/http/third_party_api_client.dart';
 
 /// ============================================
 /// 高德地图步行路线规划 API
 ///
 /// 调用高德地图 RESTful API 实现步行路线规划
 /// API: /v3/direction/walking
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 class AmapWalkingApi {
   static final AmapWalkingApi _instance = AmapWalkingApi._internal();
@@ -16,10 +19,8 @@ class AmapWalkingApi {
 
   static AmapWalkingApi get instance => _instance;
 
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// 规划步行路线
   ///

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../core/http/third_party_api_client.dart';
 import '../../../config/amap_web_config.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/amap_error_handler.dart';
@@ -8,13 +9,13 @@ import '../../../utils/logger.dart';
 /// 高德 POI 搜索 API
 ///
 /// 纯 HTTP 调用，返回数据模型，无 Flutter 依赖
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 
 class PoiApi {
-  static final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 10),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// POI 关键字搜索
   Future<PoiSearchResult> searchPoi({

@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:qintu/config/amap_web_config.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/core/http/third_party_api_client.dart';
 
 /// ============================================
 /// 高德地图公交/地铁路线规划 API
 ///
 /// 调用高德地图 RESTful API 实现公交/地铁换乘路线规划
 /// API: /v3/direction/transit/integrated
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 class AmapTransitApi {
   static final AmapTransitApi _instance = AmapTransitApi._internal();
@@ -17,12 +20,11 @@ class AmapTransitApi {
   static AmapTransitApi get instance => _instance;
 
   /// 公交/地铁 API 地址 (v3)
-  static const String _transitApiBaseUrl = 'https://restapi.amap.com/v3/direction/transit/integrated';
+  /// 注意：这是完整 URL，因为 ThirdPartyApiClient 的 baseUrl 是 https://restapi.amap.com
+  static const String _transitApiPath = '/v3/direction/transit/integrated';
 
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// 规划公交/地铁路线
   ///
@@ -44,7 +46,7 @@ class AmapTransitApi {
     Logs.ui.info('🚌 规划公交/地铁路线: ${origin.latitude},${origin.longitude} → ${destination.latitude},${destination.longitude} (城市: $city)');
 
     try {
-      final response = await _dio.get(_transitApiBaseUrl, queryParameters: {
+      final response = await _dio.get(_transitApiPath, queryParameters: {
         'key': apiKey,
         'origin': '${origin.longitude},${origin.latitude}',
         'destination': '${destination.longitude},${destination.latitude}',

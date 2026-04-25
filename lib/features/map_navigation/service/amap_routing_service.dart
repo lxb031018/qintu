@@ -6,6 +6,7 @@ import 'package:qintu/features/map_navigation/core/routing_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_transit_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
+import 'package:qintu/core/http/third_party_api_client.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 export 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
@@ -22,6 +23,8 @@ export 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
 /// - AmapTransitApi: 公交/地铁路线规划
 ///
 /// 本文件作为统一入口，根据出行方式分发到各服务
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 class AmapRoutingService {
   static final AmapRoutingService _instance = AmapRoutingService._internal();
@@ -30,10 +33,8 @@ class AmapRoutingService {
 
   static AmapRoutingService get instance => _instance;
 
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// 各服务实例
   final _routingApi = RoutingApi();
@@ -99,7 +100,7 @@ class AmapRoutingService {
       final apiKey = AmapWebConfig.webApiKey;
       if (apiKey.isEmpty) return '';
 
-      final url = '${AmapWebConfig.routingApiBaseUrl}/geocode/regeo';
+      final url = '/v3/geocode/regeo';
       final response = await _dio.get(url, queryParameters: {
         'key': apiKey,
         'location': '${location.longitude},${location.latitude}',

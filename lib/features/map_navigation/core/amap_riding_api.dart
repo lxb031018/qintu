@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:qintu/config/amap_web_config.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/core/http/third_party_api_client.dart';
 
 /// ============================================
 /// 高德地图骑行路线规划 API
 ///
 /// 调用高德地图 RESTful API 实现骑行路线规划
 /// API: /v4/direction/bicycling (骑行API从v4开始)
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 class AmapRidingApi {
   static final AmapRidingApi _instance = AmapRidingApi._internal();
@@ -16,13 +19,12 @@ class AmapRidingApi {
 
   static AmapRidingApi get instance => _instance;
 
-  /// 骑行路线 API 地址 (v4)
-  static const String _ridingApiBaseUrl = 'https://restapi.amap.com/v4/direction/bicycling';
+  /// 骑行路线 API 路径 (v4)
+  /// 注意：这是完整 URL，因为 ThirdPartyApiClient 的 baseUrl 是 https://restapi.amap.com
+  static const String _ridingApiPath = '/v4/direction/bicycling';
 
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// 规划骑行路线
   ///
@@ -42,7 +44,7 @@ class AmapRidingApi {
     Logs.ui.info('🚴 规划骑行路线: ${origin.latitude},${origin.longitude} → ${destination.latitude},${destination.longitude}');
 
     try {
-      final response = await _dio.get(_ridingApiBaseUrl, queryParameters: {
+      final response = await _dio.get(_ridingApiPath, queryParameters: {
         'key': apiKey,
         'origin': '${origin.longitude},${origin.latitude}',
         'destination': '${destination.longitude},${destination.latitude}',

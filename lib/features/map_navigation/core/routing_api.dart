@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../core/http/third_party_api_client.dart';
 import '../../../config/amap_web_config.dart';
 import '../models/amap_routing_models.dart';
 import '../../../utils/logger.dart';
@@ -7,13 +8,13 @@ import '../../../utils/logger.dart';
 /// 高德路线规划 API
 ///
 /// 纯 HTTP 调用，返回数据模型，无 Flutter 依赖
+///
+/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
 /// ============================================
 
 class RoutingApi {
-  static final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  /// 使用统一的第三方 API 客户端
+  final Dio _dio = ThirdPartyApiClient.instance.dio;
 
   /// 规划驾车路线
   Future<List<RouteOption>> planDrivingRoute({
