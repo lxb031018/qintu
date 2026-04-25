@@ -5,6 +5,22 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// 读取 .env 文件获取环境变量
+// Flutter 项目根目录: D:\AllCodes\qintu
+val envFile = File("D:\\AllCodes\\qintu\\.env")
+val envMap = mutableMapOf<String, String>()
+if (envFile.exists()) {
+    envFile.readLines().forEach { line ->
+        val trimmed = line.trim()
+        if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+            val parts = trimmed.split("=", limit = 2)
+            if (parts.size == 2) {
+                envMap[parts[0].trim()] = parts[1].trim()
+            }
+        }
+    }
+}
+
 android {
     namespace = "me.lxb.qintu"
     compileSdk = flutter.compileSdkVersion
@@ -20,17 +36,16 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "me.lxb.qintu"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 28 // android 9.0 以上
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["appLabel"] = "亲途"
-        // 高德地图 API Key（从 .env 文件读取）
-        manifestPlaceholders["AMAP_ANDROID_API_KEY"] = System.getenv("AMAP_ANDROID_API_KEY") ?: ""
+        // 高德地图 API Key（优先从 .env 文件读取）
+        manifestPlaceholders["AMAP_ANDROID_API_KEY"] = envMap["AMAP_ANDROID_API_KEY"]
+            ?: System.getenv("AMAP_ANDROID_API_KEY")
+            ?: ""
     }
 
     buildTypes {
@@ -40,8 +55,6 @@ android {
             manifestPlaceholders["appLabel"] = "亲途(调试)"
         }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
             manifestPlaceholders["appLabel"] = "亲途"
         }
@@ -50,4 +63,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // 高德地图 Android SDK - 使用本地 jar
+    implementation(files("libs/AMap3DMap_11.1.001_AMapNavi_11.1.001_AMapSearch_9.7.4_AMapLocation_11.1.001_20260402.jar"))
 }
