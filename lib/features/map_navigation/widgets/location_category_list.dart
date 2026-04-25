@@ -57,8 +57,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   @override
   void initState() {
     super.initState();
-    // 初始化时加载历史位置记录
-    ref.read(locationInputProvider.notifier).loadHistoryLocations();
+    // 初始化时加载历史位置记录（延迟到 widget 构建完成后）
+    Future.microtask(() {
+      ref.read(locationInputProvider.notifier).loadHistoryLocations();
+    });
   }
 
   /// 选择位置并收起键盘
@@ -129,7 +131,9 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           // 我的位置
           MyLocationButton(
             onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
-              () => widget.mapController?.getCurrentLocation(),
+              () async => widget.mapController != null
+                  ? await widget.mapController!.getCurrentLocation()
+                  : null,
               ref.read(mapNavigationProvider.notifier),
             ),
           ),
