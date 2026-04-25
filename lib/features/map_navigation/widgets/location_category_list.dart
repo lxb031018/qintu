@@ -15,21 +15,32 @@ import 'route_button.dart';
 /// ============================================
 /// 位置分类列表组件
 ///
+/// 地图导航功能的核心 UI 组件，显示在地图顶部
 /// 顶部包含分类按钮栏，主体显示不同分类的位置列表
 ///
 /// 分类按钮：
-/// - 我的位置
-/// - 绑定者
-/// - 历史
-/// - 路线（点击弹出 route_result_bottom_sheet）
-/// - 关闭 (x)
+/// - 我的位置：使用 GPS 获取当前位置
+/// - 绑定者：显示绑定的其他用户位置
+/// - 历史：显示搜索历史记录
+/// - 路线：点击弹出路线规划底部弹窗
+/// - 关闭：隐藏列表并收起键盘
 ///
-/// 列表内容由父组件通过枚举控制显示
+/// 列表内容根据当前选中的分类动态切换：
+/// - 支持 POI 搜索结果显示
+/// - 支持我的位置、绑定者、历史三种分类
+///
+/// 依赖：
+/// - locationInputProvider：管理位置输入状态
+/// - mapNavigationProvider：管理地图导航状态
 /// ============================================
 
 class LocationCategoryList extends ConsumerStatefulWidget {
+  /// 路线按钮点击回调，用于弹出路线规划底部弹窗
   final VoidCallback? onRouteTap;
-  final AmapMapController? mapController;  // 地图控制器，用于获取当前位置
+  
+  /// 地图控制器，用于获取当前位置
+  /// 当用户点击"我的位置"时，通过此控制器获取 GPS 坐标
+  final AmapMapController? mapController;
 
   const LocationCategoryList({
     super.key,
@@ -45,10 +56,13 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   @override
   void initState() {
     super.initState();
+    // 初始化时加载历史位置记录
     ref.read(locationInputProvider.notifier).loadHistoryLocations();
   }
 
   /// 选择位置并收起键盘
+  /// 
+  /// 将选中的 POI 位置传递给导航状态管理器，并隐藏键盘
   void _selectLocationAndUnfocus(PoiSuggestion poi) {
     ref.read(locationInputProvider.notifier).selectLocation(
       poi,
@@ -58,6 +72,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 选择"我的位置"
+  /// 
+  /// 通过地图控制器获取当前 GPS 位置，并设置为选中位置
   Future<void> _selectMyLocation() async {
     final controller = widget.mapController;
     if (controller == null) return;
@@ -71,6 +87,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 隐藏列表并收起键盘
+  /// 
+  /// 调用状态管理器隐藏列表，同时隐藏键盘
   void _hideListAndUnfocus() {
     ref.read(locationInputProvider.notifier).hideList();
     FocusScope.of(context).unfocus();
@@ -78,10 +96,13 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
   @override
   Widget build(BuildContext context) {
+    // 监听位置输入状态
     final state = ref.watch(locationInputProvider);
+    // 判断当前是否为暗黑模式
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      // 卡片背景样式
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
         borderRadius: BorderRadius.all(AppRadii.large),
@@ -94,6 +115,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
         ],
       ),
       child: Column(
+        // 垂直布局，高度根据内容自适应
         mainAxisSize: MainAxisSize.min,
         children: [
           // 分类按钮栏
@@ -108,6 +130,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建分类按钮栏
+  /// 
+  /// 包含 5 个按钮：我的位置、绑定者、历史、路线、关闭
   Widget _buildCategoryBar(LocationInputState state, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -151,6 +175,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建列表内容区
+  /// 
+  /// 限制最大高度为 200，支持垂直滚动
   Widget _buildListContent(LocationInputState state) {
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
@@ -162,6 +188,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 根据当前分类构建内容
+  /// 
+  /// 优先级：
+  /// 1. 如果有搜索结果，优先显示搜索结果
+  /// 2. 否则根据选中的分类显示对应内容
   Widget _buildCategoryContent(LocationInputState state) {
     // 如果有搜索结果，显示搜索结果列表
     if (state.searchResults.isNotEmpty || state.isSearching || state.searchError != null) {
@@ -179,6 +209,12 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建 POI 搜索结果列表
+  /// 
+  /// 处理三种状态：
+  /// - 加载中：显示加载动画
+  /// - 搜索错误：显示错误信息
+  /// - 搜索结果为空：显示"未找到结果"
+  /// - 有结果：显示位置列表项
   Widget _buildPoiSearchResults(LocationInputState state) {
     if (state.isSearching) {
       return const Center(
@@ -226,6 +262,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// "我的位置" 内容
+  /// 
+  /// 显示单个列表项，点击后获取 GPS 当前位置
   Widget _buildMyLocationContent() {
     return LocationListItem(
       icon: Icons.my_location,
@@ -237,6 +275,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// "绑定者" 占位内容
+  /// 
+  /// 当前为占位实现，显示"暂无可用绑定者位置"
   Widget _buildBinderPlaceholder() {
     return const Center(
       child: Padding(
@@ -253,6 +293,11 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// "历史" 内容
+  /// 
+  /// 处理三种状态：
+  /// - 加载中：显示"加载中..."
+  /// - 无历史记录：显示"暂无历史位置"
+  /// - 有历史记录：显示历史位置列表
   Widget _buildHistoryContent(LocationInputState state) {
     if (state.isLoadingHistory) {
       return const Center(
