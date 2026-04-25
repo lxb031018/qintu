@@ -37,6 +37,22 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     _originController.addListener(_onOriginTextChanged);
     // 监听终点输入框文本变化
     _destinationController.addListener(_onDestinationTextChanged);
+    // 监听 provider 的 POI 变化，同步到 TextEditingController
+    ref.listen(locationInputProvider, (previous, next) {
+      _syncControllerFromProvider(next);
+    });
+  }
+
+  /// 将 provider 的 POI 同步到 TextEditingController
+  void _syncControllerFromProvider(LocationInputState state) {
+    final newOriginText = state.originPoi?.name ?? '';
+    final newDestinationText = state.destinationPoi?.name ?? '';
+    if (_originController.text != newOriginText) {
+      _originController.text = newOriginText;
+    }
+    if (_destinationController.text != newDestinationText) {
+      _destinationController.text = newDestinationText;
+    }
   }
 
   /// 起点文本变化监听：用户清空文本时清除 POI 状态
