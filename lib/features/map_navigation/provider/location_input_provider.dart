@@ -15,6 +15,7 @@ enum LocationCategory {
   recommended, // 推荐地点
   binder,     // 绑定者位置
   history,    // 历史地点
+  none,       // 无选中分类（搜索时使用）
 }
 
 /// ============================================
@@ -285,6 +286,9 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       state = state.copyWith(searchResults: [], isSearching: false, searchError: null);
       return;
     }
+
+    // 用户在输入框输入关键字时，清除分类选中状态（按钮失去高亮）
+    state = state.copyWith(selectedCategory: LocationCategory.none);
 
     // 显示搜索中状态
     state = state.copyWith(isSearching: true, searchError: null);
