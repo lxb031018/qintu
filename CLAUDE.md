@@ -1,6 +1,29 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # 项目规则
 
 > 每次对话自动加载，AI 必须遵守以下规则。
+
+## 常用命令
+
+```bash
+# 运行应用
+flutter run
+
+# 代码分析
+flutter analyze
+
+# 运行测试
+flutter test
+
+# 构建 APK
+flutter build apk --debug
+
+# 运行单文件测试
+flutter test test/path/to/file_test.dart
+```
 
 ## 架构（四层分离）
 
@@ -43,12 +66,56 @@ Feature 模块：api → service → provider → widget
 - 每完成一个完整事件 add + commit
 - commit 信息描述做的事，不描述改了哪些文件
 
+## 架构合规性检查
+
+**每次修改功能或增加新功能后，必须检查架构合规性：**
+
+1. **四层分离**：api → service → provider → widget，是否每层职责正确
+2. **禁止逆向调用**：provider 不能直接调 api 层，必须过 service 层
+3. **禁止在 ui 层写业务逻辑**
+4. **使用统一 HTTP 客户端**：后端用 `ApiClient`，第三方用 `ThirdPartyApiClient`
+5. **清理死代码**：删除不再使用的文件、函数、import
+6. **更新目录/函数名**：使用清晰、合适的命名
+
 ## 文档导航
+
+### 高频（每次开发都可能用到）
 
 | 场景 | 文档 |
 |------|------|
+| 开发规则 | CLAUDE.md（本文档） |
+| 架构规范 | docs/architecture/ARCHITECTURE.md |
 | 接口规范 | docs/guides/API_CONTRACT.md |
-| 部署上线 | docs/operations/DEPLOY_GUIDE.md |
-| 高德地图 | docs/guides/AMAP_GUIDE.md |
-| 上线前检查 | docs/CHECKLIST.md |
+| 工具使用 | docs/guides/UTILS_USAGE.md |
+
+### 中频（特定场景需要）
+
+| 场景 | 文档 |
+|------|------|
+| 高德地图集成 | docs/guides/AMAP_GUIDE.md |
+| 本地服务器测试 | docs/LOCAL_SERVER_SETUP.md |
+| 多环境配置 | docs/MULTI_ENV_SETUP.md |
+| 认证配置 | docs/guides/AUTH_CONFIG.md |
+| 绑定限制 | docs/guides/BINDING_LIMITS.md |
+
+### 低频（调试/特殊场景）
+
+| 场景 | 文档 |
+|------|------|
+| 测试环境 | docs/testing/TEST_ENV_SETUP.md |
+| 绑定功能测试 | docs/testing/BINDING_TEST_GUIDE.md |
+| 测试指南 | docs/testing/TEST_GUIDE.md |
 | 云函数部署 | docs/guides/flutter-call-cloud-function.md |
+| 云函数问题排查 | docs/CLOUDBASE_FUNCTION_TROUBLESHOOTING.md |
+| 部署上线 | docs/operations/DEPLOY_GUIDE.md |
+| MCP 工具技巧 | docs/MCP_TIPS.md |
+| 项目简介 | docs/README_PROJECT.md |
+| 上线前检查 | docs/CHECKLIST.md |
+
+### 示例代码
+
+| 场景 | 路径 |
+|------|------|
+| 高德地图示例 | examples/amap/ |
+| TTS 语音示例 | examples/tts/flutter_tts_example |
+| 高德 Android SDK | D:\AMap_Android_Navi_SDK_All |
