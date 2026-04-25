@@ -9,14 +9,10 @@
 export 'async_state.dart';
 
 // 认证相关
-export 'auth_result.dart';
-export 'login_info.dart';
+export 'auth/auth_result.dart';
 
 // 用户数据
 export 'auth/user_state.dart';
 
 // 绑定关系
-export 'binding.dart';
-
-// 位置
-export 'location.dart';
+export 'binding/binding.dart';
