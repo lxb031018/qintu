@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../../models/location/lat_lng.dart';
+import '../../../utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 
 /// ============================================
@@ -49,7 +50,7 @@ class AmapMapController {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ 获取当前位置失败: $e');
+      Logs.location.error('getCurrentLocation: Platform Channel异常', stackTrace: StackTrace.current);
       return null;
     }
   }

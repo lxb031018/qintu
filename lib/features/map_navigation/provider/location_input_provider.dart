@@ -145,8 +145,15 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     Future<Map<String, dynamic>?> Function() getCurrentLocationFn,
     MapNavigationNotifier mapNotifier,
   ) async {
+    Logs.location.debug('fillMyLocation: 开始获取GPS位置, isOrigin=${state.isOriginFocused}');
+
     final location = await getCurrentLocationFn();
-    if (location == null) return;
+    if (location == null) {
+      Logs.location.warning('fillMyLocation: getCurrentLocationFn返回null（地图控制器可能为空或GPS不可用）');
+      return;
+    }
+
+    Logs.location.info('fillMyLocation: 获取到GPS位置 city=${location['city']}, lat=${location['latitude']}, lng=${location['longitude']}');
 
     final poi = PoiSuggestion(
       id: 'my_location',
@@ -157,6 +164,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     );
 
     selectLocation(poi, mapNotifier);
+    Logs.location.info('fillMyLocation: 已填充位置 ${poi.name}');
   }
 
   /// 加载历史位置
