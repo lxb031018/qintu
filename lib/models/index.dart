@@ -13,7 +13,7 @@ export 'auth_result.dart';
 export 'login_info.dart';
 
 // 用户数据
-export 'user_state.dart';
+export 'auth/user_state.dart';
 
 // 绑定关系
 export 'binding.dart';

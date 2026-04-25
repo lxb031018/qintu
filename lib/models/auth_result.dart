@@ -17,6 +17,20 @@ class AuthResult with _$AuthResult {
 
   const AuthResult._();
 
+  // Getters implemented to satisfy mixin - delegates to _AuthResult
+  @override
+  String get accessToken => this is _AuthResult ? (this as _AuthResult).accessToken : '';
+  @override
+  String get refreshToken => this is _AuthResult ? (this as _AuthResult).refreshToken : '';
+  @override
+  int get accessTokenExpiresIn => this is _AuthResult ? (this as _AuthResult).accessTokenExpiresIn : 0;
+  @override
+  int get refreshTokenExpiresIn => this is _AuthResult ? (this as _AuthResult).refreshTokenExpiresIn : 0;
+  @override
+  String get uid => this is _AuthResult ? (this as _AuthResult).uid : '';
+  @override
+  int get pendingCount => this is _AuthResult ? (this as _AuthResult).pendingCount : 0;
+
   /// 从 JSON 创建实例
   factory AuthResult.fromJson(Map<String, dynamic> json) {
     // CloudBase Auth v2 API 响应格式:

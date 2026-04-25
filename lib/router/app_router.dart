@@ -4,7 +4,6 @@ import '../features/auth/auth_page.dart';
 import '../features/app_shell/unified_home_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/app_shell/splash_screen.dart';
-import '../tools/hello_api_test_page.dart';
 import 'app_routes.dart';
 import 'route_guards.dart';
 

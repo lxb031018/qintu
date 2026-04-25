@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_state_manager.dart';
-import '../models/user_state.dart';
+import '../models/auth/user_state.dart';
 import '../utils/logger.dart';
 import 'app_routes.dart';
 
