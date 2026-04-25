@@ -58,9 +58,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   @override
   void initState() {
     super.initState();
-    // 初始化时加载历史位置记录（延迟到 widget 构建完成后）
+    // 初始化时加载历史位置记录和绑定者位置（延迟到 widget 构建完成后）
     Future.microtask(() {
       ref.read(locationInputProvider.notifier).loadHistoryLocations();
+      ref.read(locationInputProvider.notifier).loadBinderLocations();
     });
   }
 
@@ -207,7 +208,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       case LocationCategory.binder:
       case LocationCategory.none:
         // none：搜索清除后默认显示绑定者内容
-        return _buildBinderPlaceholder();
+        return _buildBinderContent(state);
       case LocationCategory.history:
         return _buildHistoryContent(state);
     }
@@ -266,21 +267,46 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     );
   }
 
-  /// "绑定者" 占位内容
-  /// 
-  /// 当前为占位实现，显示"暂无可用绑定者位置"
-  Widget _buildBinderPlaceholder() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacings.md),
-        child: Text(
-          '暂无可用绑定者位置',
-          style: TextStyle(
-            color: AppColors.grey500,
-            fontSize: 14,
+  /// "绑定者" 内容
+  ///
+  /// 处理三种状态：
+  /// - 加载中（isLoadingBinderItems）：显示加载动画
+  /// - 无绑定者位置：显示"暂无绑定者位置"
+  /// - 有绑定者位置：显示位置列表
+  Widget _buildBinderContent(LocationInputState state) {
+    if (state.isLoadingBinderItems) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacings.md),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (state.binderItems.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacings.md),
+          child: Text(
+            '暂无绑定者位置',
+            style: TextStyle(
+              color: AppColors.grey500,
+              fontSize: 14,
+            ),
           ),
         ),
-      ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: state.binderItems.map((poi) => LocationListItem(
+        icon: Icons.people,
+        iconColor: AppColors.primaryColor,
+        title: poi.name,
+        subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
+        onTap: () => _selectLocationAndUnfocus(poi),
+      )).toList(),
     );
   }
 

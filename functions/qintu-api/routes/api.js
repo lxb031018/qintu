@@ -25,7 +25,7 @@ const authRoutes = require('../routes/mock_auth'); // 🌟 使用新的 Mock 认
 const bindingRoutes = require('../routes/bindings-memory'); // 🌟 使用内存版绑定路由（本地开发/测试）
 const userRoutes = require('../routes/users'); // 🌟 用户管理路由
 const taskRoutes = require('../routes/tasks'); // 🌟 导航任务管理路由（RESTful API 版）
-const locationRoutes = require('../routes/locations'); // 🌟 实时位置管理路由（RESTful API 版）
+const locationRoutes = require('../routes/locations-memory'); // 🌟 实时位置管理路由（内存版，本地测试）
 
 // 挂载路由
 router.use('/auth', authRoutes);

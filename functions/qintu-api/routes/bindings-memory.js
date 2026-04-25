@@ -20,8 +20,23 @@ router.use(requireAuth);
 const mockBindings = new Map();
 let bindingIdCounter = 1;
 
-// 🌟 用户位置存储（openid → 位置信息）
-const userLocations = {};
+// 🌟 挂载到 global 以供其他路由模块（如 locations-memory.js）访问
+global.mockBindings = mockBindings;
+global.userLocations = global.userLocations || {};
+
+// 🌟 初始化测试数据（用户 B 的位置，方便本地测试）
+if (Object.keys(global.userLocations).length === 0) {
+  global.userLocations['mock_openid_e15937fcd3f311b1'] = {
+    latitude: 22.8097,
+    longitude: 108.2510,
+    accuracy: 10,
+    speed: null,
+    bearing: null,
+    altitude: null,
+    updatedAt: new Date().toISOString(),
+  };
+  console.log('[Bindings] 📍 用户B初始位置已写入 global.userLocations');
+}
 
 // 绑定限制
 const BINDING_LIMITS = config.LIMITS;
@@ -468,36 +483,6 @@ router.delete('/:id', (req, res) => {
   } catch (err) {
     console.error('解除绑定失败:', err);
     return error(res, '解除绑定失败', 'REVOKE_BINDING_FAILED', 500);
-  }
-});
-
-/**
- * GET /api/locations/:openid
- * 获取指定用户的实时位置（内存版本）
- */
-router.get('/api/locations/:openid', (req, res) => {
-  try {
-    const targetOpenid = req.params.openid;
-    const userMap = global.userPhoneMap || {};
-    const userLocs = global.userLocations || {};
-
-    const location = userLocs[targetOpenid];
-    if (!location) {
-      return notFound(res, '用户位置不可用');
-    }
-
-    if (isDev) console.log(`[Locations] 查询位置: ${targetOpenid} → ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`);
-
-    return success(res, {
-      receiver_openid: targetOpenid,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      updated_at: location.updatedAt,
-      is_sharing: true
-    });
-  } catch (err) {
-    console.error('查询位置失败:', err);
-    return error(res, '查询位置失败', 'GET_LOCATION_FAILED', 500);
   }
 });
 

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/poi_api.dart';
+import '../core/binding_location_api.dart';
 import '../../../models/location/lat_lng.dart';
+import '../../relationship_binding/service/binding_service.dart';
 
 /// ============================================
 /// 位置分类 POI 列表 Service
@@ -130,9 +132,42 @@ class LocationCategoryService {
   }
 
   
-  /// "绑定者" - 返回空（暂不实现，显示占位）
-  List<PoiSuggestion> getBinderLocations() {
-    return [];
+  /// "绑定者" - 返回所有绑定者的实时位置
+  Future<List<PoiSuggestion>> getBinderLocations() async {
+    try {
+      // 获取所有 active 绑定关系
+      final bindingService = BindingService();
+      final bindings = await bindingService.getBindingsList();
+
+      if (bindings.isEmpty) return [];
+
+      final List<PoiSuggestion> results = [];
+
+      for (final binding in bindings) {
+        final partnerOpenid = binding.partnerOpenid;
+        if (partnerOpenid == null) continue;
+
+        try {
+          final result = await BindingLocationApi().getBinderLocation(partnerOpenid);
+          if (result.isSuccess && result.location != null) {
+            results.add(PoiSuggestion(
+              id: partnerOpenid,
+              name: binding.partnerNickname ?? '绑定者',
+              district: '',
+              address: result.location!.address ?? 'GPS定位',
+              location: '${result.location!.longitude},${result.location!.latitude}',
+            ));
+          }
+        } catch (e) {
+          // 单个绑定者获取失败不影响其他
+          continue;
+        }
+      }
+
+      return results;
+    } catch (e) {
+      return [];
+    }
   }
 
   /// "历史" - 从本地加载

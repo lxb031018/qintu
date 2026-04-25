@@ -64,8 +64,17 @@ const db = {
   // 待确认请求表
   pending_requests: [],
 
-  // 实时位置表
-  real_time_locations: [],
+  // 实时位置表（初始有用户 B 的模拟位置，方便本地测试）
+  real_time_locations: [
+    {
+      receiver_openid: 'mock_openid_e15937fcd3f311b1', // 用户B
+      latitude: 22.8097,
+      longitude: 108.2510,
+      accuracy: 10,
+      is_sharing: 1,
+      updated_at: new Date().toISOString(),
+    },
+  ],
 
   // 导航任务表
   navigation_tasks: [],

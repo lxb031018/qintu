@@ -53,6 +53,12 @@ class LocationInputState {
   /// 是否正在加载历史位置
   final bool isLoadingHistory;
 
+  /// 绑定者位置列表
+  final List<PoiSuggestion> binderItems;
+
+  /// 是否正在加载绑定者位置
+  final bool isLoadingBinderItems;
+
   /// 当前选中的分类
   final LocationCategory selectedCategory;
 
@@ -67,6 +73,8 @@ class LocationInputState {
     this.searchError,
     this.historyItems = const [],
     this.isLoadingHistory = false,
+    this.binderItems = const [],
+    this.isLoadingBinderItems = false,
     this.selectedCategory = LocationCategory.recommended,
   });
 
@@ -103,6 +111,8 @@ class LocationInputState {
     String? searchError,
     List<PoiSuggestion>? historyItems,
     bool? isLoadingHistory,
+    List<PoiSuggestion>? binderItems,
+    bool? isLoadingBinderItems,
     LocationCategory? selectedCategory,
   }) {
     return LocationInputState(
@@ -116,6 +126,8 @@ class LocationInputState {
       searchError: searchError,
       historyItems: historyItems ?? this.historyItems,
       isLoadingHistory: isLoadingHistory ?? this.isLoadingHistory,
+      binderItems: binderItems ?? this.binderItems,
+      isLoadingBinderItems: isLoadingBinderItems ?? this.isLoadingBinderItems,
       selectedCategory: selectedCategory ?? this.selectedCategory,
     );
   }
@@ -176,6 +188,18 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     state = state.copyWith(
       historyItems: items,
       isLoadingHistory: false,
+    );
+  }
+
+  /// 加载绑定者位置列表
+  Future<void> loadBinderLocations() async {
+    state = state.copyWith(isLoadingBinderItems: true);
+
+    final items = await _categoryService.getBinderLocations();
+
+    state = state.copyWith(
+      binderItems: items,
+      isLoadingBinderItems: false,
     );
   }
 
