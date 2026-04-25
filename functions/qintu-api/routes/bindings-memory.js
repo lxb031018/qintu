@@ -83,8 +83,19 @@ router.get('/pending', (req, res) => {
   try {
     const openid = req.user.openid;
 
+    if (isDev) console.log(`[DEBUG /pending] openid=${openid}, all bindings count=${mockBindings.size}`);
+
     if (openid === 'unknown_user') {
        return success(res, []);
+    }
+
+    // 调试：打印所有 pending 状态的 binding
+    if (isDev) {
+      mockBindings.forEach((binding, id) => {
+        if (binding.status === 'pending') {
+          console.log(`[DEBUG /pending] pending binding id=${id}, sender=${binding.sender_openid}, receiver=${binding.receiver_openid}`);
+        }
+      });
     }
 
     // 清理超过 30 天的过期记录和被拒绝的记录

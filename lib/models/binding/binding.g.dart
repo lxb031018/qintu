@@ -81,44 +81,44 @@ Map<String, dynamic> _$BindingListToJson(BindingList instance) =>
 PendingRequest _$PendingRequestFromJson(Map<String, dynamic> json) =>
     PendingRequest(
       id: (json['id'] as num).toInt(),
-      senderName: json['senderName'] as String?,
-      senderPhone: json['senderPhone'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      expiredAt: DateTime.parse(json['expiredAt'] as String),
+      senderName: json['sender_name'] as String?,
+      senderPhone: json['sender_phone'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      expiredAt: DateTime.parse(json['expired_at'] as String),
     );
 
 Map<String, dynamic> _$PendingRequestToJson(PendingRequest instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'senderName': instance.senderName,
-      'senderPhone': instance.senderPhone,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'expiredAt': instance.expiredAt.toIso8601String(),
+      'sender_name': instance.senderName,
+      'sender_phone': instance.senderPhone,
+      'created_at': instance.createdAt.toIso8601String(),
+      'expired_at': instance.expiredAt.toIso8601String(),
     };
 
 SentRequest _$SentRequestFromJson(Map<String, dynamic> json) => SentRequest(
   id: (json['id'] as num).toInt(),
   status: json['status'] as String,
-  receiverNickname: json['receiverNickname'] as String?,
-  receiverPhone: json['receiverPhone'] as String?,
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  expiredAt: json['expiredAt'] == null
+  receiverNickname: json['receiver_nickname'] as String?,
+  receiverPhone: json['receiver_phone'] as String?,
+  createdAt: DateTime.parse(json['created_at'] as String),
+  expiredAt: json['expired_at'] == null
       ? null
-      : DateTime.parse(json['expiredAt'] as String),
-  rejectedAt: json['rejectedAt'] == null
+      : DateTime.parse(json['expired_at'] as String),
+  rejectedAt: json['rejected_at'] == null
       ? null
-      : DateTime.parse(json['rejectedAt'] as String),
+      : DateTime.parse(json['rejected_at'] as String),
 );
 
 Map<String, dynamic> _$SentRequestToJson(SentRequest instance) =>
     <String, dynamic>{
       'id': instance.id,
       'status': instance.status,
-      'receiverNickname': instance.receiverNickname,
-      'receiverPhone': instance.receiverPhone,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'expiredAt': instance.expiredAt?.toIso8601String(),
-      'rejectedAt': instance.rejectedAt?.toIso8601String(),
+      'receiver_nickname': instance.receiverNickname,
+      'receiver_phone': instance.receiverPhone,
+      'created_at': instance.createdAt.toIso8601String(),
+      'expired_at': instance.expiredAt?.toIso8601String(),
+      'rejected_at': instance.rejectedAt?.toIso8601String(),
     };
 
 BindingLocation _$BindingLocationFromJson(Map<String, dynamic> json) =>

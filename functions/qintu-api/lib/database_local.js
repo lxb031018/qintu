@@ -27,54 +27,17 @@ function generateOpenid(phone) {
 // ==========================================
 
 const db = {
-  // 用户表
-  users: [
-    {
-      openid: 'mock_openid_05f0671d60250e79',
-      phone: '13800138001',
-      nickname: '用户A（发送者）',
-      status: 'active',
-      user_type: 'sender',
-      created_at: new Date().toISOString(),
-    },
-    {
-      openid: 'mock_openid_e15937fcd3f311b1',
-      phone: '13800138002',
-      nickname: '用户B（接收者）',
-      status: 'active',
-      user_type: 'receiver',
-      created_at: new Date().toISOString(),
-    },
-  ],
+  // 用户表（空，实际用户由 mock_auth.js 的 userPhoneMap 管理）
+  users: [],
 
-  // 绑定关系表
-  user_bindings: [
-    {
-      id: 1,
-      sender_openid: 'mock_openid_05f0671d60250e79',
-      receiver_openid: 'mock_openid_e15937fcd3f311b1',
-      status: 'active',
-      remark: '测试绑定',
-      expired_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ],
+  // 绑定关系表（空，实际绑定由 bindings-memory.js 的 mockBindings 管理）
+  user_bindings: [],
 
   // 待确认请求表
   pending_requests: [],
 
-  // 实时位置表（初始有用户 B 的模拟位置，方便本地测试）
-  real_time_locations: [
-    {
-      receiver_openid: 'mock_openid_e15937fcd3f311b1', // 用户B
-      latitude: 22.8097,
-      longitude: 108.2510,
-      accuracy: 10,
-      is_sharing: 1,
-      updated_at: new Date().toISOString(),
-    },
-  ],
+  // 实时位置表（空，实际位置由 locations-memory.js 的 global.userLocations 管理）
+  real_time_locations: [],
 
   // 导航任务表
   navigation_tasks: [],
@@ -479,7 +442,7 @@ async function deleteTable(table, conditions) {
 // ==========================================
 
 function initTestData() {
-  console.log('📦 本地内存数据库已初始化');
+  console.log('📦 本地内存数据库已初始化（无预置数据）');
   console.log(`   - users: ${db.users.length} 条`);
   console.log(`   - user_bindings: ${db.user_bindings.length} 条`);
   console.log(`   - real_time_locations: ${db.real_time_locations.length} 条`);

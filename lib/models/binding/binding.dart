@@ -169,9 +169,17 @@ class BindingList {
 @JsonSerializable()
 class PendingRequest {
   final int id;
+
+  @JsonKey(name: 'sender_name')
   final String? senderName;
+
+  @JsonKey(name: 'sender_phone')
   final String? senderPhone;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'expired_at')
   final DateTime expiredAt;
 
   const PendingRequest({
@@ -195,10 +203,20 @@ class PendingRequest {
 class SentRequest {
   final int id;
   final String status;
+
+  @JsonKey(name: 'receiver_nickname')
   final String? receiverNickname;
+
+  @JsonKey(name: 'receiver_phone')
   final String? receiverPhone;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'expired_at')
   final DateTime? expiredAt;
+
+  @JsonKey(name: 'rejected_at')
   final DateTime? rejectedAt;
 
   const SentRequest({
