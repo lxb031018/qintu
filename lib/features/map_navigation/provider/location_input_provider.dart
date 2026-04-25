@@ -129,6 +129,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   final PoiApi _poiApi = PoiApi();
   final GpsService _gpsService = GpsService();
   final LocationCategoryService _categoryService = LocationCategoryService();
+  bool _hasShownList = false;
 
   @override
   LocationInputState build() {
@@ -193,9 +194,18 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   /// [isOrigin] true=起点输入框被点击，false=终点输入框被点击
   void showList({required bool isOrigin}) {
     Logs.ui.debug('PROVIDER showList: isOrigin=$isOrigin, current listVisible=${state.listVisible}');
+
+    // 首次显示时默认选择"绑定者"分类
+    LocationCategory? categoryToSet;
+    if (!_hasShownList) {
+      categoryToSet = LocationCategory.binder;
+      _hasShownList = true;
+    }
+
     state = state.copyWith(
       listVisible: true,
       isOriginFocused: isOrigin,
+      selectedCategory: categoryToSet,
     );
     Logs.ui.debug('PROVIDER showList: after, new listVisible=${state.listVisible}');
   }
