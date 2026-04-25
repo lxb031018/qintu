@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:amap_map/amap_map.dart';
-import 'package:x_amap_base/x_amap_base.dart' show AMapPrivacyStatement;
 import 'constants/app_strings.dart';
 import 'providers/auth_state_manager.dart';
 import 'providers/theme_manager.dart';
@@ -42,28 +40,9 @@ void main() async {
   EnvironmentManager.initialize();
   EnvironmentManager.printEnvironmentInfo();
 
-  // 初始化高德地图隐私合规（必须在 runApp 之前或任何地图操作之前调用）
-  _initAmapPrivacy();
+  // 高德地图隐私合规已在 Android 原生端 (AmapMapPlugin.kt) 初始化
 
-  runApp(const MyApp());
-}
-
-/// 初始化高德地图隐私合规
-void _initAmapPrivacy() {
-  try {
-    const privacyStatement = AMapPrivacyStatement(
-      hasShow: true,
-      hasAgree: true,
-    );
-
-    // 设置隐私合规（必须在任何地图操作之前调用）
-    AMapInitializer.updatePrivacyAgree(privacyStatement);
-
-    Logs.map.info('✅ 高德地图隐私合规设置成功');
-  } catch (e, stackTrace) {
-    Logs.map.warning('高德地图隐私合规初始化失败: $e');
-    Logs.map.warning('堆栈: $stackTrace');
-  }
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerStatefulWidget {

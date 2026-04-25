@@ -12,10 +12,9 @@ dependencies:
   shared_preferences: ^2.5.5  # 本地存储，用于保存非敏感配置
   flutter_dotenv: ^6.0.0  # 环境变量管理
   flutter_secure_storage: ^10.0.0  # 安全存储，用于保存敏感 token
-  geolocator: ^14.0.2  # 位置服务，用于获取用户位置
   path_provider: ^2.1.5  # 获取文件路径，用于日志文件存储
   permission_handler: ^12.0.1  # 权限管理，用于位置权限请求
-  
+
   # 状态管理
   flutter_riverpod: ^3.3.1  # Riverpod 状态管理
   freezed_annotation: 3.1.0  # 不可变状态模型
@@ -23,13 +22,9 @@ dependencies:
 
   # 路由管理
   go_router: ^17.2.2  # 声明式路由管理
-  
+
   # 网络请求
   dio: ^5.9.2  # 强大的 HTTP 客户端，支持拦截器
-
-  # 地图服务
-  amap_map: ^1.0.15  # 高德地图 Flutter 插件
-  x_amap_base: ^1.0.3  # 高德地图基础类型
 
 dev_dependencies:
   flutter_test:
