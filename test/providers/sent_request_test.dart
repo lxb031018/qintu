@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qintu/providers/binding_provider.dart';
+import 'package:qintu/models/binding/binding.dart';
 
 void main() {
   group('SentRequest', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qintu/features/relationship_binding/binding_notifications/widgets/sent_request_card.dart';
-import 'package:qintu/providers/binding_provider.dart';
+import 'package:qintu/models/binding/binding.dart';
 
 void main() {
   group('SentRequestCard Widget', () {

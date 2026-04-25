@@ -105,6 +105,9 @@ SentRequest _$SentRequestFromJson(Map<String, dynamic> json) => SentRequest(
   expiredAt: json['expiredAt'] == null
       ? null
       : DateTime.parse(json['expiredAt'] as String),
+  rejectedAt: json['rejectedAt'] == null
+      ? null
+      : DateTime.parse(json['rejectedAt'] as String),
 );
 
 Map<String, dynamic> _$SentRequestToJson(SentRequest instance) =>
@@ -115,6 +118,7 @@ Map<String, dynamic> _$SentRequestToJson(SentRequest instance) =>
       'receiverPhone': instance.receiverPhone,
       'createdAt': instance.createdAt.toIso8601String(),
       'expiredAt': instance.expiredAt?.toIso8601String(),
+      'rejectedAt': instance.rejectedAt?.toIso8601String(),
     };
 
 BindingLocation _$BindingLocationFromJson(Map<String, dynamic> json) =>
@@ -124,10 +128,8 @@ BindingLocation _$BindingLocationFromJson(Map<String, dynamic> json) =>
       accuracy: (json['accuracy'] as num?)?.toInt(),
       timestamp: (json['timestamp'] as num?)?.toInt(),
       address: json['address'] as String?,
-      isSharing: (json['is_sharing'] is bool
-          ? json['is_sharing'] as bool
-          : (json['is_sharing'] == 1 || json['is_sharing'] == true)),
-      distanceToDestination: (json['distance_to_destination'] as num?)?.toInt(),
+      isSharing: json['isSharing'] as bool? ?? true,
+      distanceToDestination: (json['distanceToDestination'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$BindingLocationToJson(BindingLocation instance) =>
@@ -137,6 +139,6 @@ Map<String, dynamic> _$BindingLocationToJson(BindingLocation instance) =>
       'accuracy': instance.accuracy,
       'timestamp': instance.timestamp,
       'address': instance.address,
-      'is_sharing': instance.isSharing,
-      'distance_to_destination': instance.distanceToDestination,
+      'isSharing': instance.isSharing,
+      'distanceToDestination': instance.distanceToDestination,
     };

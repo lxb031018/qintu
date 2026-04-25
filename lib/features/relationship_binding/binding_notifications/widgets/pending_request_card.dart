@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../providers/binding_provider.dart';
+import 'package:qintu/models/binding/binding.dart';
 import '../../../../utils/phone_utils.dart';
 import '../../../../utils/date_utils.dart';
 import '../../../../constants/app_colors.dart';

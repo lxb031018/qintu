@@ -199,6 +199,7 @@ class SentRequest {
   final String? receiverPhone;
   final DateTime createdAt;
   final DateTime? expiredAt;
+  final DateTime? rejectedAt;
 
   const SentRequest({
     required this.id,
@@ -207,15 +208,53 @@ class SentRequest {
     this.receiverPhone,
     required this.createdAt,
     this.expiredAt,
+    this.rejectedAt,
   });
 
   factory SentRequest.fromJson(Map<String, dynamic> json) => _$SentRequestFromJson(json);
   Map<String, dynamic> toJson() => _$SentRequestToJson(this);
 
   bool get isPending => status == 'pending';
-  bool get isRejected => status == 'revoked';
+  bool get isRejected => status == 'revoked' && rejectedAt != null;
+  bool get isUnbound => status == 'revoked' && rejectedAt == null;
   bool get isExpired => status == 'expired';
   bool get isActive => status == 'active';
+
+  /// 显示用的状态文本
+  String get statusText {
+    switch (status) {
+      case 'pending':
+        return '待确认';
+      case 'revoked':
+        return isRejected ? '已拒绝' : '已解除';
+      case 'expired':
+        return '已过期';
+      case 'active':
+        return '已激活';
+      default:
+        return '未知状态';
+    }
+  }
+
+  /// 过期时间显示文本
+  String get expiredAtText {
+    if (isTimeExpired) return '已过期';
+    if (!isPending) return statusText;
+    if (expiredAt == null) return '已过期';
+    final hours = timeRemaining.inHours;
+    if (hours < 1) return '不足1小时';
+    if (hours < 24) return '$hours 小时后过期';
+    final days = (hours / 24).ceil();
+    return '$days 天后过期';
+  }
+
+  Duration get timeRemaining {
+    if (expiredAt == null) return Duration.zero;
+    return expiredAt!.difference(DateTime.now());
+  }
+
+  bool get isExpiringSoon => isPending && timeRemaining.inHours > 0 && timeRemaining.inHours < 24;
+  bool get isTimeExpired => isPending && timeRemaining.isNegative;
 }
 
 /// 绑定者位置信息
