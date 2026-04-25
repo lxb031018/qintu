@@ -37,16 +37,16 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     _originController.addListener(_onOriginTextChanged);
     // 监听终点输入框文本变化
     _destinationController.addListener(_onDestinationTextChanged);
-    // 监听 provider 的 POI 变化，同步到 TextEditingController
-    ref.listen(locationInputProvider, (previous, next) {
-      _syncControllerFromProvider(next);
-    });
   }
 
   /// 将 provider 的 POI 同步到 TextEditingController
+  ///
+  /// 仅当输入框当前文本与 POI 名称不同时才更新，
+  /// 避免用户正在输入时覆盖已有文字。
   void _syncControllerFromProvider(LocationInputState state) {
     final newOriginText = state.originPoi?.name ?? '';
     final newDestinationText = state.destinationPoi?.name ?? '';
+    // 仅在文本不同时才更新，避免覆盖用户正在输入的内容
     if (_originController.text != newOriginText) {
       _originController.text = newOriginText;
     }
@@ -85,6 +85,9 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 监听 provider 变化，同步 POI 到 TextEditingController
+    final state = ref.watch(locationInputProvider);
+    _syncControllerFromProvider(state);
 
     return Container(
       // 卡片内边距: sm（上下左右均为 sm，内容到卡边）
