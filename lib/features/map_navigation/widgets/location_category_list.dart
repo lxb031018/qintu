@@ -165,15 +165,40 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建列表内容区
-  /// 
-  /// 限制最大高度为 200，支持垂直滚动
+  ///
+  /// 使用 LayoutBuilder 动态计算最大高度：
+  /// - 顶部预留：输入框 + 间距 + 分类按钮栏（约 150px）
+  /// - 底部预留：当 RouteResultList 可见时留出其占用空间
+  ///   - RouteResultList 位于 bottom:80，占用 40% 屏幕高度
   Widget _buildListContent(LocationInputState state) {
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 200),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacings.sm),
-        child: _buildCategoryContent(state),
-      ),
+    // 判断路线结果是否可见
+    final navState = ref.watch(mapNavigationProvider);
+    final routeListVisible = navState.routes.isNotEmpty;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenHeight = MediaQuery.of(context).size.height;
+
+        // 顶部已占空间：输入框 + 间距 + 分类按钮栏
+        const topReserve = 150.0;
+        // RouteResultList 在 bottom:80，占 40% 屏幕高度
+        final routeReserve = routeListVisible ? (80 + screenHeight * 0.4) : 0.0;
+        // 底部额外间距
+        const bottomPadding = 16.0;
+
+        // 计算最大可用高度
+        final maxHeight = screenHeight - topReserve - routeReserve - bottomPadding;
+
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: maxHeight > 100 ? maxHeight : 200,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacings.sm),
+            child: _buildCategoryContent(state),
+          ),
+        );
+      },
     );
   }
 
