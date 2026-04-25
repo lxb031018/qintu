@@ -38,32 +38,27 @@ ipconfig
 
 ### 步骤 3: 修改 Flutter 配置
 
-编辑文件：`lib/utils/constants.dart`
+编辑 `.env.local`（**不会提交到 git**）：
 
-```dart
-// 云函数 URL（部署后替换为实际地址）
-static const String cloudFunctionBaseUrl =
-    'https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api-test';
-
-// 本地开发时使用 localhost
-static const String localhostBaseUrl = 'http://192.168.1.100:9000';  // 替换为你的 IP
-
-// 是否使用本地开发服务器
-static const bool useLocalServer = true;  // 改为 true 启用本地服务器
+```
+D:\AllCodes\qintu\.env.local
 ```
 
-**重要：**
-- `useLocalServer = true` 时使用本地服务器
-- `useLocalServer = false` 时使用 CloudBase 云函数
+```env
+LOCAL_SERVER_IP=192.168.126.106
+LOCAL_SERVER_PORT=9000
+```
+
+> `.env.local` 已在 `.gitignore` 中，各设备各自维护本地 IP。
+
+**WiFi IP 经常变化？** → 参考 [LOCAL_SERVER_IP.md](docs/guides/LOCAL_SERVER_IP.md) 设置固定 IP，彻底解决问题。
 
 ---
 
 ### 步骤 4: 重新运行 Flutter 应用
 
 ```bash
-flutter clean
-flutter pub get
-flutter run
+flutter clean && flutter run
 ```
 
 ---
@@ -102,11 +97,14 @@ http://192.168.1.100:9000/health
 
 ### 问题 1: 手机无法连接本地服务器
 
-**检查项：**
-1. ✅ 确认手机和电脑在同一 WiFi 网络
-2. ✅ 确认 Windows 防火墙允许 Node.js 访问网络
-3. ✅ 确认 IP 地址正确（`ipconfig` 查看）
-4. ✅ 确认服务器正在运行（`node index.js` 未关闭）
+**详细排查步骤请参考**：[LOCAL_SERVER_IP.md](docs/guides/LOCAL_SERVER_IP.md)
+
+快速检查清单：
+1. ✅ 手机和电脑在同一 WiFi 网络
+2. ✅ Windows 防火墙允许 Node.js 访问网络
+3. ✅ IP 地址正确（`netsh wlan show interfaces` 查看）
+4. ✅ 服务器正在运行（`node index.js` 未关闭）
+5. ✅ 手机浏览器能打开 `http://<PC_IP>:9000/health`
 
 **Windows 防火墙设置：**
 - 首次运行 `node.exe` 时，Windows 会弹出防火墙提示
@@ -161,17 +159,17 @@ nodemon index.js
 
 ### 切换云/本地服务器
 
-只需修改一个常量即可切换：
+当前使用 `EnvironmentManager` + `.env` 文件管理配置，无需代码修改：
 
-```dart
-// lib/utils/constants.dart
+| 环境 | 配置文件 | 说明 |
+|---|---|---|
+| 本地开发 | `.env.local` | 设置 `LOCAL_SERVER_IP` |
+| CloudBase 测试 | `.env.test` | 使用云函数 URL |
+| 生产 | `.env` | 使用正式环境 URL |
 
-// 使用本地服务器（开发测试）
-static const bool useLocalServer = true;
+环境切换由 `EnvironmentManager.currentType` 决定，当前代码硬编码为 `EnvironmentType.local`。如需切换环境，修改 `lib/config/environments/environment_manager.dart` 中的 `_currentEnv` 初始值。
 
-// 使用 CloudBase 云函数（生产环境）
-static const bool useLocalServer = false;
-```
+详细说明参考：[docs/guides/MULTI_ENV_SETUP.md](docs/guides/MULTI_ENV_SETUP.md)
 
 ---
 

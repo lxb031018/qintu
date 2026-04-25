@@ -38,6 +38,24 @@ if (Object.keys(global.userLocations).length === 0) {
   console.log('[Bindings] 📍 用户B初始位置已写入 global.userLocations');
 }
 
+// 🌟 初始化测试绑定数据（用户A ↔ 用户B，已 active）
+if (mockBindings.size === 0) {
+  mockBindings.set('1', {
+    id: 1,
+    sender_openid: 'mock_openid_05f0671d60250e79', // 用户A
+    receiver_openid: 'mock_openid_e15937fcd3f311b1', // 用户B
+    sender_nickname: '用户A（发送者）',
+    receiver_nickname: '用户B（接收者）',
+    sender_phone: '13800138001',
+    receiver_phone: '13800138002',
+    status: 'active',
+    remark: '测试绑定',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  console.log('[Bindings] 🔗 用户A↔用户B绑定关系已初始化');
+}
+
 // 绑定限制
 const BINDING_LIMITS = config.LIMITS;
 
