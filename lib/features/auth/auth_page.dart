@@ -18,11 +18,26 @@ import 'widgets/error_card.dart';
 /// 使用 Riverpod Notifier 管理状态，遵循四层架构
 /// ============================================
 
-class AuthPage extends ConsumerWidget {
+class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthPage> createState() => _AuthPageState();
+}
+
+class _AuthPageState extends ConsumerState<AuthPage> {
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = AppColors.primaryColor;
     final authNotifier = ref.watch(authProvider.notifier);
@@ -53,7 +68,7 @@ class AuthPage extends ConsumerWidget {
                 const SizedBox(height: 60),
                 if (authState.step == AuthStep.inputPhone) ...[
                   PhoneInputCard(
-                    controller: TextEditingController(),
+                    controller: _phoneController,
                     primaryColor: primaryColor,
                     textColor: theme.textTheme.bodyLarge!.color!,
                     lightTextColor: theme.textTheme.bodyMedium!.color!,
@@ -64,13 +79,13 @@ class AuthPage extends ConsumerWidget {
                     primaryColor: primaryColor,
                     isLoading: authState.isLoading,
                     onPressed: () {
-                      authNotifier.sendCode('13800138000'); // TODO: get from controller
+                      authNotifier.sendCode(_phoneController.text);
                     },
                   ),
                 ],
                 if (authState.step == AuthStep.inputCode) ...[
                   CodeInputCard(
-                    controller: TextEditingController(),
+                    controller: _codeController,
                     phoneNumber: authState.phone,
                     primaryColor: primaryColor,
                     textColor: theme.textTheme.bodyLarge!.color!,
@@ -85,7 +100,7 @@ class AuthPage extends ConsumerWidget {
                     primaryColor: primaryColor,
                     isLoading: authState.isLoading,
                     onPressed: () {
-                      authNotifier.verifyAndLogin('123456'); // TODO: get from controller
+                      authNotifier.verifyAndLogin(_codeController.text);
                     },
                   ),
                 ],
