@@ -1,0 +1,70 @@
+package me.lxb.qintu.map
+
+import android.content.Context
+import android.util.Log
+import android.view.View
+import com.amap.api.maps.MapView
+import com.amap.api.maps.model.MyLocationStyle
+import me.lxb.qintu.location.LocationClientImpl
+
+/**
+ * 地图视图工厂
+ *
+ * 负责创建原生 MapView
+ */
+class MapViewFactory(
+    private val context: Context,
+    private val locationClient: LocationClientImpl,
+    private val aMapHolder: AMapHolder
+) {
+
+    companion object {
+        private const val TAG = "MapViewFactory"
+    }
+
+    private var locationListener: com.amap.api.maps.LocationSource.OnLocationChangedListener? = null
+
+    /**
+     * 创建原生 MapView
+     */
+    fun createNativeView(): MapView {
+        return MapView(context)
+    }
+
+    /**
+     * 配置地图
+     */
+    fun configureMap(mapView: MapView) {
+        val aMap = mapView.map
+
+        // ✅ 配置原生定位蓝点样式（箭头样式，跟随旋转）
+        val myLocationStyle = MyLocationStyle()
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER)
+        myLocationStyle.interval(2000)
+        myLocationStyle.showMyLocation(true)
+        myLocationStyle.radiusFillColor(0x401890FF.toInt())
+        myLocationStyle.strokeColor(0x801890FF.toInt())
+        myLocationStyle.strokeWidth(3f)
+        aMap.myLocationStyle = myLocationStyle
+
+        // 🟢 关键步骤 1：先设置定位源
+        aMap.setLocationSource(object : com.amap.api.maps.LocationSource {
+            override fun activate(listener: com.amap.api.maps.LocationSource.OnLocationChangedListener?) {
+                locationListener = listener
+                locationClient.setMapLocationListener(listener)
+                Log.d(TAG, "🔥 高德地图 LocationSource 已被激活")
+            }
+
+            override fun deactivate() {
+                locationListener = null
+                locationClient.setMapLocationListener(null)
+                Log.d(TAG, "🔥 高德地图 LocationSource 已被取消激活")
+            }
+        })
+
+        // 🟢 关键步骤 2：再开启定位功能
+        aMap.isMyLocationEnabled = true
+
+        Log.d(TAG, "🔍 地图配置完成")
+    }
+}

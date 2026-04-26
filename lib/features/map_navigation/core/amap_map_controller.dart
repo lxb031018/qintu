@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../../models/location/lat_lng.dart';
@@ -19,10 +21,44 @@ import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 /// ============================================
 class AmapMapController {
   static const _channel = MethodChannel('com.qintu/amap_map_control');
+  static const _eventChannel = EventChannel('com.qintu/amap_location_event');
+
+  StreamSubscription? _locationSubscription;
+  bool _hasMovedToFirstLocation = false;
 
   /// 启动高德原生定位 (蓝点 + 箭头)
-  Future<void> startLocation() async {
+  ///
+  /// 如果 [autoMoveToFirstLocation] 为 true（默认），首次定位成功后会
+  /// 自动将相机移动到用户当前位置
+  Future<void> startLocation({bool autoMoveToFirstLocation = true}) async {
+    if (autoMoveToFirstLocation && !_hasMovedToFirstLocation) {
+      _listenFirstLocationEvent();
+    }
     await _channel.invokeMethod('startLocation');
+  }
+
+  /// 监听首次定位事件，自动移动相机到用户位置
+  void _listenFirstLocationEvent() {
+    _locationSubscription?.cancel();
+    _locationSubscription = _eventChannel.receiveBroadcastStream().listen(
+      (event) {
+        if (event['type'] == 'firstLocation' && !_hasMovedToFirstLocation) {
+          _hasMovedToFirstLocation = true;
+          final lat = event['latitude'] as double;
+          final lng = event['longitude'] as double;
+          debugPrint('🚀 首次定位成功，自动移动相机到: $lat, $lng');
+          moveCamera(lat: lat, lng: lng, zoom: 17);
+        }
+      },
+      onError: (error) {
+        debugPrint('❌ 首次定位事件监听失败: $error');
+      },
+    );
+  }
+
+  /// 释放资源
+  void dispose() {
+    _locationSubscription?.cancel();
   }
 
   /// 移动到我的位置（如果有定位结果则立即移动，否则触发单次定位）
