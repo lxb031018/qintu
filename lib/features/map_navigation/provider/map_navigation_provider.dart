@@ -45,8 +45,8 @@ class MapNavigationState {
   /// 错误信息
   final String? errorMessage;
 
-  /// 当前出行方式
-  final RouteType currentRouteType;
+  /// 当前出行方式（可空，未选择时为 null）
+  final RouteType? currentRouteType;
 
   /// 是否显示路线栏
   final bool showRoutesSheet;
@@ -64,7 +64,7 @@ class MapNavigationState {
     this.isOriginFocused = true,
     this.isLoading = false,
     this.errorMessage,
-    this.currentRouteType = RouteType.walking,
+    this.currentRouteType,
     this.showRoutesSheet = false,
   });
 
@@ -249,6 +249,11 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       return;
     }
 
+    if (state.currentRouteType == null) {
+      state = state.copyWith(errorMessage: '请选择出行方式');
+      return;
+    }
+
     state = state.copyWith(
       routesState: const AsyncState(isLoading: true),
       errorMessage: null,
@@ -256,7 +261,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
     try {
       final routes = await _routeService.planRoute(
-        type: state.currentRouteType,
+        type: state.currentRouteType!,
         origin: state.originLocation!,
         destination: state.destinationLocation!,
       );
@@ -275,7 +280,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           routesState: AsyncState.success(routes),
         );
         // 在地图上显示路线预览
-        mapDisplayService.showRoutes(routes, 0, state.currentRouteType);
+        mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
       }
     } catch (e) {
       if (_disposed) return;

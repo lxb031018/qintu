@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
+import 'models/amap_routing_models.dart'; // for RouteType
 import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
 import 'widgets/location_input_card.dart';
@@ -151,7 +152,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                   tolls: route.tolls,
                 )).toList(),
                 selectedIndex: navState.selectedRouteIndex,
-                currentRouteType: navState.currentRouteType,
+                currentRouteType: navState.currentRouteType ?? RouteType.driving,
                 onRouteSelected: (index) {
                   ref.read(mapNavigationProvider.notifier).selectRoute(index);
                 },
