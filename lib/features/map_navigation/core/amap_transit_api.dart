@@ -57,6 +57,7 @@ class AmapTransitApi {
       });
 
       final data = response.data;
+
       if (data['status'] != '1') {
         final errorMsg = data['info'] ?? '路线规划失败';
         Logs.ui.warning('❌ 公共交通路线规划失败: $errorMsg (infocode: ${data['infocode']})');
@@ -109,56 +110,58 @@ class AmapTransitApi {
       for (final segment in segments) {
         if (segment is! Map) continue;
 
-        // 解析公共交通线路
+        // 解析公共交通线路 (key 是 'bus' 不是 'buslines')
         final lines = <TransitLine>[];
-        final buslines = segment['buslines'];
-        if (buslines is List) {
-          for (final busline in buslines) {
-            if (busline is! Map) continue;
-            final name = busline['name']?.toString() ?? '';
-            // type 可能是 int 或 String，统一转为 int
-            final typeValue = busline['type'];
-            final type = typeValue is int ? typeValue : (int.tryParse(typeValue?.toString() ?? '') ?? 0);
-            // via_num 可能是 int 或 String
-            final stationCountValue = busline['via_num'];
-            final stationCount = stationCountValue is int
-                ? stationCountValue
-                : (int.tryParse(stationCountValue?.toString() ?? '') ?? 0);
+        final bus = segment['bus'];
+        if (bus is Map) {
+          // bus 里面可能有 buslines 数组
+          final buslines = bus['buslines'];
+          if (buslines is List) {
+            for (final busline in buslines) {
+              if (busline is! Map) continue;
+              final name = busline['name']?.toString() ?? '';
+              final typeValue = busline['type'];
+              final type = typeValue is int ? typeValue : (int.tryParse(typeValue?.toString() ?? '') ?? 0);
+              final stationCountValue = busline['via_num'];
+              final stationCount = stationCountValue is int
+                  ? stationCountValue
+                  : (int.tryParse(stationCountValue?.toString() ?? '') ?? 0);
 
-            if (name.isNotEmpty) {
-              lines.add(TransitLine(
-                name: name,
-                type: _parseTransitLineType(type),
-                stationCount: stationCount,
-              ));
-            }
+              if (name.isNotEmpty) {
+                lines.add(TransitLine(
+                  name: name,
+                  type: _parseTransitLineType(type),
+                  stationCount: stationCount,
+                ));
+              }
 
-            // 公交线路的 polyline
-            final polyline = busline['polyline'];
-            if (polyline is String) {
-              points.addAll(_parsePolyline(polyline));
-            }
+              // 公交线路的 polyline
+              final polyline = busline['polyline'];
+              if (polyline is String) {
+                points.addAll(_parsePolyline(polyline));
+              }
 
-            // 公交线路的 steps 中的 polyline
-            final busSteps = busline['steps'];
-            if (busSteps is List) {
-              for (final step in busSteps) {
-                if (step is! Map) continue;
-                final stepPolyline = step['polyline'];
-                if (stepPolyline is String) {
-                  points.addAll(_parsePolyline(stepPolyline));
+              // 公交线路的 steps 中的 polyline
+              final busSteps = busline['steps'];
+              if (busSteps is List) {
+                for (final step in busSteps) {
+                  if (step is! Map) continue;
+                  final stepPolyline = step['polyline'];
+                  if (stepPolyline is String) {
+                    points.addAll(_parsePolyline(stepPolyline));
+                  }
                 }
               }
             }
           }
         }
 
-        // 解析地铁/铁路
-        final railway = segment['railway'];
+        // 解析地铁/铁路 (key 是 'raillway' 不是 'railway')
+        final railway = segment['raillway'];
         if (railway is Map) {
           final name = railway['name']?.toString() ?? '';
           final time = double.tryParse(railway['time']?.toString() ?? '0') ?? 0;
-          final stationCount = (time / 180).round(); // 估算站数
+          final stationCount = (time / 180).round();
 
           if (name.isNotEmpty) {
             lines.add(TransitLine(
@@ -173,7 +176,6 @@ class AmapTransitApi {
             points.addAll(_parsePolyline(polyline));
           }
 
-          // 火车的 steps 中的 polyline
           final railSteps = railway['steps'];
           if (railSteps is List) {
             for (final step in railSteps) {
