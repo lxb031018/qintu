@@ -66,10 +66,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 选择位置并收起键盘
-  /// 
-  /// 将选中的 POI 位置传递给导航状态管理器，并隐藏键盘
   void _selectLocationAndUnfocus(PoiSuggestion poi) {
-    ref.read(locationInputProvider.notifier).selectLocation(
+    ref.read(locationInputProvider.notifier).selectPoi(
       poi,
       ref.read(mapNavigationProvider.notifier),
     );

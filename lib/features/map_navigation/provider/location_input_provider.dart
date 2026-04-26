@@ -19,21 +19,49 @@ enum LocationCategory {
 }
 
 /// ============================================
+/// 单个输入框的状态
+///
+/// 追踪输入框的文本和 POI 选择状态
+/// ============================================
+
+class InputFieldState {
+  final String text;
+  final PoiSuggestion? poi;
+
+  const InputFieldState({
+    this.text = '',
+    this.poi,
+  });
+
+  bool get hasText => text.isNotEmpty;
+  bool get isPoiSelected => poi != null;
+
+  InputFieldState copyWith({String? text, PoiSuggestion? poi, bool clearPoi = false}) {
+    return InputFieldState(
+      text: text ?? this.text,
+      poi: clearPoi ? null : (poi ?? this.poi),
+    );
+  }
+}
+
+/// ============================================
 /// 地点输入状态
+///
+/// 每个输入框有独立的状态，搜索相关状态独立管理
 /// ============================================
 
 class LocationInputState {
+  /// 起点输入框状态
+  final InputFieldState origin;
+
+  /// 终点输入框状态
+  final InputFieldState destination;
+
   /// 列表是否显示
   final bool listVisible;
 
   /// 当前焦点是否在起点输入框
   final bool isOriginFocused;
-
-  /// 选中的起点
-  final PoiSuggestion? originPoi;
-
-  /// 选中的终点
-  final PoiSuggestion? destinationPoi;
 
   /// 搜索关键词
   final String searchKeyword;
@@ -63,10 +91,10 @@ class LocationInputState {
   final LocationCategory selectedCategory;
 
   const LocationInputState({
+    this.origin = const InputFieldState(),
+    this.destination = const InputFieldState(),
     this.listVisible = false,
     this.isOriginFocused = true,
-    this.originPoi,
-    this.destinationPoi,
     this.searchKeyword = '',
     this.searchResults = const [],
     this.isSearching = false,
@@ -83,28 +111,28 @@ class LocationInputState {
   /// 其次使用：当前已选的坐标
   LatLng? get searchCenter {
     // 如果在终点输入框输入，优先用起点的位置
-    if (!isOriginFocused && originPoi != null) {
-      return originPoi!.latLng;
+    if (!isOriginFocused && origin.poi != null) {
+      return origin.poi!.latLng;
     }
     // 如果在起点输入框输入，优先用终点的位置
-    if (isOriginFocused && destinationPoi != null) {
-      return destinationPoi!.latLng;
+    if (isOriginFocused && destination.poi != null) {
+      return destination.poi!.latLng;
     }
     // 否则用起点或终点的位置（如果有）
-    if (originPoi != null) {
-      return originPoi!.latLng;
+    if (origin.poi != null) {
+      return origin.poi!.latLng;
     }
-    if (destinationPoi != null) {
-      return destinationPoi!.latLng;
+    if (destination.poi != null) {
+      return destination.poi!.latLng;
     }
     return null;
   }
 
   LocationInputState copyWith({
+    InputFieldState? origin,
+    InputFieldState? destination,
     bool? listVisible,
     bool? isOriginFocused,
-    PoiSuggestion? originPoi,
-    PoiSuggestion? destinationPoi,
     String? searchKeyword,
     List<PoiSuggestion>? searchResults,
     bool? isSearching,
@@ -114,12 +142,14 @@ class LocationInputState {
     List<PoiSuggestion>? binderItems,
     bool? isLoadingBinderItems,
     LocationCategory? selectedCategory,
+    bool clearOrigin = false,
+    bool clearDestination = false,
   }) {
     return LocationInputState(
+      origin: clearOrigin ? const InputFieldState() : (origin ?? this.origin),
+      destination: clearDestination ? const InputFieldState() : (destination ?? this.destination),
       listVisible: listVisible ?? this.listVisible,
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
-      originPoi: originPoi ?? this.originPoi,
-      destinationPoi: destinationPoi ?? this.destinationPoi,
       searchKeyword: searchKeyword ?? this.searchKeyword,
       searchResults: searchResults ?? this.searchResults,
       isSearching: isSearching ?? this.isSearching,
@@ -150,9 +180,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   }
 
   /// 直接将 GPS 位置填入当前焦点的输入框
-  ///
-  /// [getCurrentLocationFn] 获取 GPS 坐标的回调
-  /// [mapNotifier] 用于同步更新 mapNavigationProvider
   Future<void> fillMyLocation(
     Future<Map<String, dynamic>?> Function() getCurrentLocationFn,
     MapNavigationNotifier mapNotifier,
@@ -161,11 +188,11 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
     final location = await getCurrentLocationFn();
     if (location == null) {
-      Logs.location.warning('fillMyLocation: getCurrentLocationFn返回null（地图控制器可能为空或GPS不可用）');
+      Logs.location.warning('fillMyLocation: getCurrentLocationFn返回null');
       return;
     }
 
-    Logs.location.info('fillMyLocation: 获取到GPS位置 city=${location['city']}, lat=${location['latitude']}, lng=${location['longitude']}');
+    Logs.location.info('fillMyLocation: 获取到GPS位置 city=${location['city']}');
 
     final poi = PoiSuggestion(
       id: 'my_location',
@@ -175,7 +202,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       location: '${location["longitude"]},${location["latitude"]}',
     );
 
-    selectLocation(poi, mapNotifier);
+    selectPoi(poi, mapNotifier);
     Logs.location.info('fillMyLocation: 已填充位置 ${poi.name}');
   }
 
@@ -208,27 +235,22 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     state = state.copyWith(selectedCategory: category);
   }
 
-  /// 选择一个位置（根据 isOriginFocused 决定是起点还是终点）
-  ///
-  /// [poi] 选中的 POI
-  /// [mapNotifier] 用于同时更新 mapNavigationProvider
-  void selectLocation(PoiSuggestion poi, MapNavigationNotifier mapNotifier) {
+  /// 选择 POI
+  void selectPoi(PoiSuggestion poi, MapNavigationNotifier mapNotifier) {
     if (state.isOriginFocused) {
-      setOrigin(poi);
+      state = state.copyWith(origin: InputFieldState(text: poi.name, poi: poi));
       mapNotifier.setOrigin(poi);
     } else {
-      setDestination(poi);
+      state = state.copyWith(destination: InputFieldState(text: poi.name, poi: poi));
       mapNotifier.setDestination(poi);
     }
     hideList();
   }
 
   /// 显示列表
-  /// [isOrigin] true=起点输入框被点击，false=终点输入框被点击
   void showList({required bool isOrigin}) {
-    Logs.ui.debug('PROVIDER showList: isOrigin=$isOrigin, current listVisible=${state.listVisible}');
+    Logs.ui.debug('PROVIDER showList: isOrigin=$isOrigin');
 
-    // 首次显示时默认选择"绑定者"分类
     LocationCategory? categoryToSet;
     if (!_hasShownList) {
       categoryToSet = LocationCategory.binder;
@@ -240,19 +262,17 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       isOriginFocused: isOrigin,
       selectedCategory: categoryToSet,
     );
-    Logs.ui.debug('PROVIDER showList: after, new listVisible=${state.listVisible}');
   }
 
-  /// 隐藏列表（点击 x 按钮）
+  /// 隐藏列表
   void hideList() {
-    Logs.ui.debug('PROVIDER hideList: before, listVisible=${state.listVisible}');
+    Logs.ui.debug('PROVIDER hideList');
     state = state.copyWith(
       listVisible: false,
       searchKeyword: '',
       searchResults: [],
       isSearching: false,
     );
-    Logs.ui.debug('PROVIDER hideList: after, listVisible=${state.listVisible}');
   }
 
   /// 设置焦点
@@ -260,42 +280,50 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     state = state.copyWith(isOriginFocused: isOrigin);
   }
 
-  /// 设置起点
-  void setOrigin(PoiSuggestion poi) {
-    state = state.copyWith(originPoi: poi);
+  /// 更新输入框文本（仅更新文本，不清除 POI）
+  void updateText(bool isOrigin, String text) {
+    if (isOrigin) {
+      state = state.copyWith(origin: state.origin.copyWith(text: text));
+    } else {
+      state = state.copyWith(destination: state.destination.copyWith(text: text));
+    }
   }
 
-  /// 设置终点
-  void setDestination(PoiSuggestion poi) {
-    state = state.copyWith(destinationPoi: poi);
+  /// 清除输入框
+  void clearField(bool isOrigin, MapNavigationNotifier mapNotifier) {
+    if (isOrigin) {
+      state = state.copyWith(clearOrigin: true);
+      mapNotifier.clearOrigin();
+    } else {
+      state = state.copyWith(clearDestination: true);
+      mapNotifier.clearDestination();
+    }
   }
 
-  /// 清除起点
+  /// 清除起点（兼容旧 API）
   void clearOrigin() {
-    state = state.copyWith(originPoi: null);
+    state = state.copyWith(clearOrigin: true);
   }
 
-  /// 清除终点
+  /// 清除终点（兼容旧 API）
   void clearDestination() {
-    state = state.copyWith(destinationPoi: null);
+    state = state.copyWith(clearDestination: true);
   }
 
   /// 判断是否可以交换起点和终点
   bool canSwapOriginAndDestination() {
-    return state.originPoi != null || state.destinationPoi != null;
+    return state.origin.poi != null || state.destination.poi != null;
   }
 
-  /// 交换起点和终点（同时更新两个 Provider）
-  ///
-  /// [mapNotifier] 用于同时更新 mapNavigationProvider
+  /// 交换起点和终点
   void swapOriginAndDestination(MapNavigationNotifier mapNotifier) {
-    final newOrigin = state.destinationPoi;
-    final newDestination = state.originPoi;
+    final newOrigin = state.destination;
+    final newDestination = state.origin;
 
     state = state.copyWith(
-      originPoi: newOrigin,
-      destinationPoi: newDestination,
-      isOriginFocused: false, // 交换后焦点切换到终点
+      origin: newOrigin,
+      destination: newDestination,
+      isOriginFocused: false,
     );
 
     mapNotifier.swapOriginAndDestination();
@@ -310,22 +338,16 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   void updateSearchKeyword(String keyword) {
     state = state.copyWith(searchKeyword: keyword);
 
-    // 取消之前的定时器
     _debounceTimer?.cancel();
 
-    // 关键词太短，清空结果
     if (keyword.length < 2) {
       state = state.copyWith(searchResults: [], isSearching: false, searchError: null);
       return;
     }
 
-    // 用户在输入框输入关键字时，清除分类选中状态（按钮失去高亮）
     state = state.copyWith(selectedCategory: LocationCategory.none);
-
-    // 显示搜索中状态
     state = state.copyWith(isSearching: true, searchError: null);
 
-    // 300ms debounce
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       _performSearch(keyword);
     });
@@ -333,38 +355,31 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
   /// 执行 POI 搜索
   Future<void> _performSearch(String keyword) async {
-    if (keyword != state.searchKeyword) return; // 关键词已变化
+    if (keyword != state.searchKeyword) return;
 
     try {
-      // 获取搜索中心坐标
       var center = state.searchCenter;
       String? searchCity;
 
-      // 始终获取最新的 GPS 位置（确保 city 是最新的）
       Logs.ui.debug('开始获取 GPS 位置...');
       final gpsResult = await _gpsService.getCurrentLocation();
       Logs.ui.debug('GPS 结果: $gpsResult');
 
       if (gpsResult != null) {
-        // 设置搜索中心（如果有 POI 选中会用 POI 的位置，否则用 GPS 位置）
         center = state.searchCenter ?? LatLng(
           gpsResult['latitude'] as double,
           gpsResult['longitude'] as double,
         );
 
         final gpsCity = gpsResult['city'] as String?;
-        Logs.ui.debug('GPS city 原始值: "$gpsCity"');
-
         if (gpsCity != null && gpsCity.isNotEmpty) {
-          // 去掉"市"后缀，如"南宁市"→"南宁"
           searchCity = gpsCity.endsWith('市')
               ? gpsCity.substring(0, gpsCity.length - 1)
               : gpsCity;
         }
         Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
       } else {
-        // GPS 不可用时，使用 searchCenter（POI 位置）
-        Logs.ui.debug('GPS 不可用，使用 POI 位置: ${center?.latitude},${center?.longitude}');
+        Logs.ui.debug('GPS 不可用，使用 POI 位置');
         final cachedCity = _gpsService.lastKnownCity;
         if (cachedCity != null && cachedCity.isNotEmpty) {
           searchCity = cachedCity.endsWith('市')
@@ -377,12 +392,12 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
       final result = await _poiApi.searchPoi(
         keywords: keyword,
-        city: searchCity,    // 城市名，限制搜索范围
-        location: center,    // 坐标，用于距离排序；null 时高德使用 city 参数搜索
+        city: searchCity,
+        location: center,
         radius: 10000,
       );
 
-      if (keyword != state.searchKeyword) return; // 关键词已变化
+      if (keyword != state.searchKeyword) return;
 
       if (result.isSuccess) {
         Logs.ui.info('✅ 搜索到 ${result.suggestions.length} 条结果');

@@ -76,37 +76,37 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   /// 处理位置输入变化，移动地图到选中位置并显示标记
   void _handleLocationInputChange(LocationInputState? previous, LocationInputState next) {
     // 当起点 POI 变化时
-    if (next.originPoi != previous?.originPoi && next.originPoi != null) {
-      final latlng = next.originPoi!.latLng;
+    if (next.origin.poi != previous?.origin.poi && next.origin.poi != null) {
+      final latlng = next.origin.poi!.latLng;
       if (latlng != null) {
         _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
         _mapController?.addPoiMarker(PoiMarkerData(
           id: 'origin_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.originPoi!.name,
-          address: next.originPoi!.address,
+          name: next.origin.poi!.name,
+          address: next.origin.poi!.address,
           position: latlng,
         ));
       }
     }
     // 当终点 POI 变化时
-    if (next.destinationPoi != previous?.destinationPoi && next.destinationPoi != null) {
-      final latlng = next.destinationPoi!.latLng;
+    if (next.destination.poi != previous?.destination.poi && next.destination.poi != null) {
+      final latlng = next.destination.poi!.latLng;
       if (latlng != null) {
         _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
         _mapController?.addPoiMarker(PoiMarkerData(
           id: 'destination_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.destinationPoi!.name,
-          address: next.destinationPoi!.address,
+          name: next.destination.poi!.name,
+          address: next.destination.poi!.address,
           position: latlng,
         ));
       }
     }
     // 当起点被清除时
-    if (previous?.originPoi != null && next.originPoi == null) {
+    if (previous?.origin.poi != null && next.origin.poi == null) {
       _mapController?.clearPoiMarkers();
     }
     // 当终点被清除时
-    if (previous?.destinationPoi != null && next.destinationPoi == null) {
+    if (previous?.destination.poi != null && next.destination.poi == null) {
       _mapController?.clearPoiMarkers();
     }
   }

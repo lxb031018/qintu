@@ -12,6 +12,11 @@ import '../provider/map_navigation_provider.dart';
 /// 父组件，管理输入框和列表的显示状态
 /// 列表出现后只有点击 (x) 按钮才会消失
 /// 支持上下滑动交换起点和终点
+///
+/// 架构原则：单向数据流
+/// - 用户输入 → Provider（仅更新文本，不自动清除 POI）
+/// - POI 选择 → Provider → UI（由用户主动操作触发）
+/// - Provider 不自动覆盖用户输入
 /// ============================================
 
 class LocationInputCard extends ConsumerStatefulWidget {
@@ -33,48 +38,14 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
   @override
   void initState() {
     super.initState();
-    // 监听起点输入框文本变化
-    _originController.addListener(_onOriginTextChanged);
-    // 监听终点输入框文本变化
-    _destinationController.addListener(_onDestinationTextChanged);
-  }
-
-  /// 将 provider 的 POI 同步到 TextEditingController
-  ///
-  /// 仅当输入框当前文本与 POI 名称不同时才更新，
-  /// 避免用户正在输入时覆盖已有文字。
-  void _syncControllerFromProvider(LocationInputState state) {
-    final newOriginText = state.originPoi?.name ?? '';
-    final newDestinationText = state.destinationPoi?.name ?? '';
-    // 仅在文本不同时才更新，避免覆盖用户正在输入的内容
-    if (_originController.text != newOriginText) {
-      _originController.text = newOriginText;
-    }
-    if (_destinationController.text != newDestinationText) {
-      _destinationController.text = newDestinationText;
-    }
-  }
-
-  /// 起点文本变化监听：用户清空文本时清除 POI 状态
-  void _onOriginTextChanged() {
-    if (_originController.text.isEmpty) {
-      ref.read(locationInputProvider.notifier).clearOrigin();
-      ref.read(mapNavigationProvider.notifier).clearOrigin();
-    }
-  }
-
-  /// 终点文本变化监听：用户清空文本时清除 POI 状态
-  void _onDestinationTextChanged() {
-    if (_destinationController.text.isEmpty) {
-      ref.read(locationInputProvider.notifier).clearDestination();
-      ref.read(mapNavigationProvider.notifier).clearDestination();
-    }
+    // 初始化控制器文本
+    final state = ref.read(locationInputProvider);
+    _originController.text = state.origin.text;
+    _destinationController.text = state.destination.text;
   }
 
   @override
   void dispose() {
-    _originController.removeListener(_onOriginTextChanged);
-    _destinationController.removeListener(_onDestinationTextChanged);
     _originController.dispose();
     _destinationController.dispose();
     _originFocusNode.dispose();
@@ -82,15 +53,36 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     super.dispose();
   }
 
+  /// 处理起点输入框文本变化
+  void _onOriginTextChanged(String value) {
+    ref.read(locationInputProvider.notifier).updateText(true, value);
+    ref.read(locationInputProvider.notifier).updateSearchKeyword(value);
+  }
+
+  /// 处理终点输入框文本变化
+  void _onDestinationTextChanged(String value) {
+    ref.read(locationInputProvider.notifier).updateText(false, value);
+    ref.read(locationInputProvider.notifier).updateSearchKeyword(value);
+  }
+
+  /// 执行交换逻辑
+  void _performSwap() {
+    final notifier = ref.read(locationInputProvider.notifier);
+    if (!notifier.canSwapOriginAndDestination()) {
+      return;
+    }
+    notifier.swapOriginAndDestination(ref.read(mapNavigationProvider.notifier));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // 监听 provider 变化，同步 POI 到 TextEditingController
     final state = ref.watch(locationInputProvider);
-    _syncControllerFromProvider(state);
+
+    // 同步控制器文本（仅在必要时刻）
+    _syncControllers(state);
 
     return Container(
-      // 卡片内边距: sm（上下左右均为 sm，内容到卡边）
       padding: const EdgeInsets.all(AppSpacings.sm),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
@@ -115,13 +107,13 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             isOrigin: true,
             controller: _originController,
             focusNode: _originFocusNode,
+            state: state.origin,
             onFocusChange: (hasFocus) {
               if (hasFocus) {
                 ref.read(locationInputProvider.notifier).showList(isOrigin: true);
               }
             },
           ),
-          // 间距: sm（终点输入框上面的总间距为 sm）
           const SizedBox(height: AppSpacings.sm),
           // 终点输入框
           _buildSwappableInputRow(
@@ -132,6 +124,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             isOrigin: false,
             controller: _destinationController,
             focusNode: _destinationFocusNode,
+            state: state.destination,
             onFocusChange: (hasFocus) {
               if (hasFocus) {
                 ref.read(locationInputProvider.notifier).showList(isOrigin: false);
@@ -143,6 +136,17 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     );
   }
 
+  /// 同步控制器文本
+  /// 仅当 Provider 中的文本与控制器文本不同时才更新
+  void _syncControllers(LocationInputState state) {
+    if (_originController.text != state.origin.text) {
+      _originController.text = state.origin.text;
+    }
+    if (_destinationController.text != state.destination.text) {
+      _destinationController.text = state.destination.text;
+    }
+  }
+
   /// 构建可滑动的输入行
   Widget _buildSwappableInputRow({
     required BuildContext context,
@@ -152,6 +156,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     required bool isOrigin,
     required TextEditingController controller,
     required FocusNode focusNode,
+    required InputFieldState state,
     required ValueChanged<bool> onFocusChange,
   }) {
     return Listener(
@@ -164,7 +169,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         final deltaY = dragEndY - _dragStartY!;
         _dragStartY = null;
 
-        // 滑动了 50px 以上才认为是交换手势
         if (deltaY.abs() > 50) {
           _performSwap();
         }
@@ -177,49 +181,13 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         isOrigin: isOrigin,
         controller: controller,
         focusNode: focusNode,
+        state: state,
         onFocusChange: onFocusChange,
-        onTextChanged: (value) {
-          ref.read(locationInputProvider.notifier).updateSearchKeyword(value);
-        },
       ),
     );
   }
 
-  /// 执行交换逻辑
-  void _performSwap() {
-    final state = ref.read(locationInputProvider);
-    final notifier = ref.read(locationInputProvider.notifier);
-
-    // 判断是否可以交换
-    if (!notifier.canSwapOriginAndDestination()) {
-      return;
-    }
-
-    // 保存交换前的 POI（用于更新输入框）
-    final newOrigin = state.destinationPoi;
-    final newDestination = state.originPoi;
-
-    // 更新 provider
-    notifier.swapOriginAndDestination(ref.read(mapNavigationProvider.notifier));
-
-    // 同步更新输入框文本
-    if (newOrigin != null) {
-      _originController.text = newOrigin.name;
-    } else {
-      _originController.clear();
-    }
-    if (newDestination != null) {
-      _destinationController.text = newDestination.name;
-    } else {
-      _destinationController.clear();
-    }
-  }
-
   /// 构建输入行
-  /// - 输入框左/右边的总间距为 sm
-  /// - 输入框上面的总间距为 sm（首行由 Card 的 top padding 处理）
-  /// - 输入框下面的总间距为 sm（末行由 Card 的 bottom padding 处理）
-  /// - 图标在输入框内的左边距、上边距、右边距、下边距一样大（均为 sm）
   Widget _buildInputRow({
     required BuildContext context,
     required bool isDark,
@@ -228,14 +196,14 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     required bool isOrigin,
     required TextEditingController controller,
     required FocusNode focusNode,
+    required InputFieldState state,
     required ValueChanged<bool> onFocusChange,
-    ValueChanged<String>? onTextChanged,
   }) {
     return Focus(
       onFocusChange: onFocusChange,
       child: Row(
         children: [
-          // 图标: sm 内边距（上下左右均为 sm）
+          // 图标
           Padding(
             padding: const EdgeInsets.all(AppSpacings.sm),
             child: Icon(
@@ -244,12 +212,12 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
               color: isOrigin ? AppColors.primaryColor : AppColors.warningColor,
             ),
           ),
-          // 输入框: 占据剩余空间
+          // 输入框
           Expanded(
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              onChanged: onTextChanged,
+              onChanged: isOrigin ? _onOriginTextChanged : _onDestinationTextChanged,
               style: TextStyle(
                 fontSize: 15,
                 color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
@@ -270,6 +238,29 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
               ),
             ),
           ),
+          // 清除按钮
+          if (state.hasText)
+            GestureDetector(
+              onTap: () {
+                ref.read(locationInputProvider.notifier).clearField(
+                  isOrigin,
+                  ref.read(mapNavigationProvider.notifier),
+                );
+                if (isOrigin) {
+                  _originController.clear();
+                } else {
+                  _destinationController.clear();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacings.sm),
+                child: Icon(
+                  Icons.clear,
+                  size: 18,
+                  color: AppColors.grey400,
+                ),
+              ),
+            ),
         ],
       ),
     );
