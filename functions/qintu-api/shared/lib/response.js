@@ -25,7 +25,7 @@ function success(res, data = {}, status = 200) {
  * @param {string} code - 错误代码
  * @param {number} status - HTTP 状态码
  */
-function error(res, message = '操作失败', code = 'OPERATION_FAILED', status = 400) {
+function error(res, message = '操作失败', code = 'OPERATION_FAILED', status = 500) {
   return res.status(status).json({
     code,
     message

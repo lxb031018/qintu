@@ -14,7 +14,34 @@ const config = require('./config');
 const { authMiddleware } = require('./shared/middleware/auth.middleware');
 const { requestIdMiddleware } = require('./shared/middleware/requestId.middleware');
 const { errorHandler, notFoundHandler } = require('./shared/middleware/error.middleware');
+const { getMemoryRepositories } = require('./repositories');
 const routes = require('./shared/routes');
+
+// 创建 Service 实例
+const { userRepo, bindingRepo, locationRepo, taskRepo } = getMemoryRepositories();
+
+// 导入 Service 类
+const AuthService = require('./auth/services/auth.service');
+const BindingService = require('./binding/services/binding.service');
+const TaskService = require('./task/services/task.service');
+const LocationService = require('./location/services/location.service');
+const UserService = require('./user/services/user.service');
+
+// 创建 Service 实例
+const authService = new AuthService(userRepo);
+const bindingService = new BindingService(bindingRepo, userRepo);
+const taskService = new TaskService(bindingRepo, taskRepo);
+const locationService = new LocationService(bindingRepo, locationRepo, userRepo);
+const userService = new UserService(userRepo);
+
+// 导出 services 供路由使用
+const services = {
+  authService,
+  bindingService,
+  taskService,
+  locationService,
+  userService
+};
 
 const app = express();
 
@@ -32,11 +59,21 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.warn(`[CORS] 拒绝来源: ${origin}`);
-      callback(new Error(`来源 ${origin} 不在 CORS 白名单中`));
+      // 返回 false 而不是抛出异常，由 CORS 中间件返回标准 403 响应
+      callback(null, false);
     }
   },
   credentials: config.CORS.credentials,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  // 自定义 CORS 拒绝处理
+  notAllowedHandler: (req, res) => {
+    if (!res.headersSent) {
+      res.status(403).json({
+        code: 'CORS_NOT_ALLOWED',
+        message: '请求来源不在白名单中'
+      });
+    }
+  }
 };
 app.use(cors(corsOptions));
 
@@ -99,7 +136,7 @@ app.use((req, res, next) => {
 // 2. 路由挂载
 // ==========================================
 
-app.use(routes);
+app.use(routes(services));
 
 // ==========================================
 // 3. 系统接口

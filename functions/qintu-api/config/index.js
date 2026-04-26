@@ -7,14 +7,18 @@
 
 // CORS 白名单配置
 // 生产环境请替换为实际的域名
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : [
-      'http://localhost:3000',    // 本地开发
-      'http://localhost:8080',    // 本地开发备用
-      'http://127.0.0.1:3000',   // 本地开发
-      'http://127.0.0.1:8080',   // 本地开发备用
-    ];
+  : isDevelopment
+    ? [
+        'http://localhost:3000',    // 本地开发
+        'http://localhost:8080',    // 本地开发备用
+        'http://127.0.0.1:3000',   // 本地开发
+        'http://127.0.0.1:8080',   // 本地开发备用
+      ]
+    : [];
 
 module.exports = {
   SERVER: {
@@ -38,7 +42,7 @@ module.exports = {
     // Mock 验证码
     MOCK_CODE: '123456',
     CODE_EXPIRES_MS: 5 * 60 * 1000, // 5分钟
-    TOKEN_EXPIRES_S: 315360000,     // 10年（一次登录，永久保持，除非用户主动退出）
+    TOKEN_EXPIRES_S: 30 * 24 * 60 * 60, // 30天
   },
 
   // 数据格式前缀 (方便统一管理)
