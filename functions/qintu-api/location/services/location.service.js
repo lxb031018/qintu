@@ -8,9 +8,10 @@
  */
 
 class LocationService {
-  constructor(bindingRepository, locationRepository) {
+  constructor(bindingRepository, locationRepository, userRepository) {
     this.bindingRepo = bindingRepository;
     this.locationRepo = locationRepository;
+    this.userRepo = userRepository;
   }
 
   /**
@@ -27,6 +28,12 @@ class LocationService {
       throw Object.assign(new Error('经纬度坐标超出有效范围'), { code: 'INVALID_COORDS', status: 400 });
     }
 
+    // 调试模式：获取脱敏手机号用于日志
+    let maskedPhone = null;
+    if (process.env.NODE_ENV !== 'production') {
+      maskedPhone = await this.userRepo.findPhoneByOpenid(openid);
+    }
+
     await this.locationRepo.upsertLocation(openid, {
       latitude,
       longitude,
@@ -35,6 +42,19 @@ class LocationService {
       bearing,
       altitude
     });
+
+    // 调试模式：输出详细日志
+    if (process.env.NODE_ENV !== 'production') {
+      const debugInfo = [
+        maskedPhone ? `手机: ${maskedPhone}` : '手机: 未知',
+        `坐标: lat=${latitude.toFixed(6)}, lng=${longitude.toFixed(6)}`,
+        accuracy !== undefined ? `精度: ${accuracy}m` : null,
+        speed !== undefined ? `速度: ${speed}m/s` : null,
+        bearing !== undefined ? `方向: ${bearing}°` : null,
+        altitude !== undefined ? `海拔: ${altitude}m` : null,
+      ].filter(Boolean).join(', ');
+      console.log(`[Locations] ${debugInfo}`);
+    }
 
     return { message: '位置已更新' };
   }

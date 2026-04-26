@@ -40,6 +40,21 @@ class UserMemoryRepository {
   }
 
   /**
+   * 根据 openid 反查手机号（用于日志脱敏显示）
+   * @param {string} openid
+   * @returns {string|null} - 脱敏手机号或 null
+   */
+  async findPhoneByOpenid(openid) {
+    // 遍历 userPhoneMap 找到该 openid 对应的手机号
+    for (const [phone, oid] of this.userPhoneMap.entries()) {
+      if (oid === openid) {
+        return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      }
+    }
+    return null;
+  }
+
+  /**
    * 创建或更新用户
    * @param {string} openid
    * @param {Object} userData

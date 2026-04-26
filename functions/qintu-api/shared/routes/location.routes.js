@@ -10,8 +10,8 @@ const { createRepositories } = require('../../repositories');
 const { requireAuth } = require('../../shared/middleware/auth.middleware');
 
 // 创建依赖
-const { bindingRepo, locationRepo } = createRepositories('memory');
-const locationService = new LocationService(bindingRepo, locationRepo);
+const { bindingRepo, locationRepo, userRepo } = createRepositories('memory');
+const locationService = new LocationService(bindingRepo, locationRepo, userRepo);
 const locationController = new LocationController(locationService);
 
 // 需要认证

@@ -12,6 +12,7 @@ import 'widgets/route_result_list.dart';
 import 'widgets/location_status_button.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_spacings.dart';
+import 'service/location_sharing_service.dart';
 
 /// ============================================
 /// 地图导航 Tab
@@ -71,6 +72,8 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   void _onMapCreated(AmapMapController controller) {
     _mapController = controller;
     MapNavigationTab._setMapController(controller);
+    // 设置地图控制器到位置共享服务
+    locationSharingService.setMapController(controller);
   }
 
   /// 处理位置输入变化，移动地图到选中位置并显示标记

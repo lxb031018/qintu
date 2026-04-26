@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qintu/utils/logger.dart';
+import 'package:qintu/features/map_navigation/service/location_sharing_service.dart';
 
 /// ============================================
 /// 定位状态枚举
@@ -22,6 +23,7 @@ enum LocationStatus {
 /// - 检查和更新定位状态
 /// - 请求定位权限
 /// - 跳转系统设置
+/// - 自动启动/停止位置共享
 ///
 /// 使用方式：
 /// ```dart
@@ -36,8 +38,24 @@ enum LocationStatus {
 /// ```
 /// ============================================
 class LocationNotifier extends Notifier<LocationStatus> {
+  /// 上次的位置共享状态（用于避免重复启动/停止）
+  bool _wasSharing = false;
+
   @override
   LocationStatus build() => LocationStatus.unknown;
+
+  /// 根据当前定位状态启动/停止位置共享
+  void _updateLocationSharing() {
+    final shouldShare = state == LocationStatus.enabled;
+    if (shouldShare != _wasSharing) {
+      if (shouldShare) {
+        locationSharingService.startSharing();
+      } else {
+        locationSharingService.stopSharing();
+      }
+      _wasSharing = shouldShare;
+    }
+  }
 
   /// 检查定位状态
   Future<void> checkStatus() async {
@@ -58,6 +76,9 @@ class LocationNotifier extends Notifier<LocationStatus> {
       } else {
         state = LocationStatus.unknown;
       }
+
+      // 根据定位状态启动/停止位置共享
+      _updateLocationSharing();
 
       Logs.map.info('📍 定位状态已更新: $state');
     } catch (e) {
