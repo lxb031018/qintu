@@ -43,6 +43,9 @@ class LocationService {
       altitude
     });
 
+    // 更新定位状态为 enabled
+    this.locationRepo.setLocationStatus(openid, 'enabled');
+
     // 调试模式：输出详细日志
     if (process.env.NODE_ENV !== 'production') {
       const debugInfo = [
@@ -80,6 +83,9 @@ class LocationService {
       throw Object.assign(new Error('该用户暂无位置信息'), { code: 'LOCATION_NOT_FOUND', status: 404 });
     }
 
+    // 获取定位状态
+    const isLocationEnabled = this.locationRepo.isLocationEnabled(receiverOpenid);
+
     return {
       receiver_openid: receiverOpenid,
       latitude: location.latitude,
@@ -88,7 +94,8 @@ class LocationService {
       speed: location.speed,
       bearing: location.bearing,
       altitude: location.altitude,
-      updated_at: location.updatedAt
+      updated_at: location.updatedAt,
+      is_location_enabled: isLocationEnabled
     };
   }
 
@@ -110,10 +117,12 @@ class LocationService {
    */
   async deleteLocation(openid) {
     await this.locationRepo.deleteLocation(openid);
+    // 更新定位状态为 disabled
+    this.locationRepo.setLocationStatus(openid, 'disabled');
 
     if (process.env.NODE_ENV !== 'production') {
       const maskedPhone = await this.userRepo.findPhoneByOpenid(openid);
-      console.log(`[Locations] 删除位置: ${maskedPhone || openid}`);
+      console.log(`[Locations] 删除位置: ${maskedPhone || openid}, 定位状态: disabled`);
     }
 
     return { message: '位置已删除' };

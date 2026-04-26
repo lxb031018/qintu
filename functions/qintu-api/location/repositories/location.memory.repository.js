@@ -8,6 +8,8 @@ class LocationMemoryRepository {
   constructor() {
     // openid -> locationData
     this.locations = new Map();
+    // openid -> 'enabled' | 'disabled'（定位开关状态）
+    this.locationStatusMap = new Map();
   }
 
   /**
@@ -45,7 +47,26 @@ class LocationMemoryRepository {
    * @returns {boolean}
    */
   async deleteLocation(openid) {
+    this.locationStatusMap.delete(openid);
     return this.locations.delete(openid);
+  }
+
+  /**
+   * 设置用户定位状态
+   * @param {string} openid
+   * @param {string} status - 'enabled' | 'disabled'
+   */
+  setLocationStatus(openid, status) {
+    this.locationStatusMap.set(openid, status);
+  }
+
+  /**
+   * 获取用户定位状态
+   * @param {string} openid
+   * @returns {boolean} - true: enabled, false: disabled/null
+   */
+  isLocationEnabled(openid) {
+    return this.locationStatusMap.get(openid) === 'enabled';
   }
 
   /**
