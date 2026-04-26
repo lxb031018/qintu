@@ -102,6 +102,22 @@ class LocationService {
       is_sharing: true
     };
   }
+
+  /**
+   * 删除用户位置（定位关闭时调用）
+   * @param {string} openid
+   * @returns {Object}
+   */
+  async deleteLocation(openid) {
+    await this.locationRepo.deleteLocation(openid);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const maskedPhone = await this.userRepo.findPhoneByOpenid(openid);
+      console.log(`[Locations] 删除位置: ${maskedPhone || openid}`);
+    }
+
+    return { message: '位置已删除' };
+  }
 }
 
 module.exports = LocationService;

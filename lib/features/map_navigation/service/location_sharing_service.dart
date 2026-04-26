@@ -53,6 +53,20 @@ class LocationSharingService {
     _lastUploadedLat = null;
     _lastUploadedLng = null;
     Logs.location.info('LocationSharingService: 停止位置共享');
+
+    // 删除后端存储的位置信息（定位关闭时调用）
+    _deleteLocation();
+  }
+
+  /// 删除后端存储的位置信息
+  Future<void> _deleteLocation() async {
+    try {
+      final api = LocationUploadApi();
+      await api.deleteLocation();
+      Logs.location.info('LocationSharingService: 位置信息已删除');
+    } catch (e) {
+      Logs.location.warning('删除位置失败: $e');
+    }
   }
 
   /// 立即上传一次当前位置（不带距离判断，用于重启后首次上报）

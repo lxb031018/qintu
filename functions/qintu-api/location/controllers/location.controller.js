@@ -80,6 +80,21 @@ class LocationController {
       return error(res, err.message, 'TOGGLE_SHARING_FAILED', 500);
     }
   }
+
+  /**
+   * 删除位置
+   * DELETE /api/locations
+   */
+  async deleteLocation(req, res) {
+    try {
+      const openid = req.user.openid;
+      const result = await this.locationService.deleteLocation(openid);
+      return success(res, result);
+    } catch (err) {
+      console.error('删除位置失败:', err);
+      return error(res, err.message, 'DELETE_LOCATION_FAILED', 500);
+    }
+  }
 }
 
 module.exports = LocationController;

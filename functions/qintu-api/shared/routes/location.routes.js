@@ -26,4 +26,7 @@ router.get('/:receiverOpenid', (req, res) => locationController.getLocation(req,
 // 共享开关（兼容旧逻辑）
 router.post('/sharing/toggle', (req, res) => locationController.toggleSharing(req, res));
 
+// 删除位置
+router.delete('/', (req, res) => locationController.deleteLocation(req, res));
+
 module.exports = router;

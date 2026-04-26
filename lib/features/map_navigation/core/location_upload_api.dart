@@ -41,4 +41,15 @@ class LocationUploadApi {
       rethrow;
     }
   }
+
+  /// 删除本设备的位置信息（定位关闭时调用）
+  Future<void> deleteLocation() async {
+    try {
+      await _apiClient.delete('/api/locations');
+      Logs.location.info('位置信息已删除');
+    } catch (e) {
+      Logs.location.warning('删除位置失败: $e');
+      // 不抛出异常，因为定位关闭时位置信息本就不应该存在
+    }
+  }
 }
