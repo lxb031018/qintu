@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion, RouteType, RouteOption, LatLng
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
+import '../service/map_display_service.dart';
 
 /// ============================================
 /// 地图导航状态
@@ -47,6 +48,9 @@ class MapNavigationState {
   /// 当前出行方式
   final RouteType currentRouteType;
 
+  /// 是否显示路线栏
+  final bool showRoutesSheet;
+
   const MapNavigationState({
     this.searchKeyword = '',
     this.originPoi,
@@ -61,6 +65,7 @@ class MapNavigationState {
     this.isLoading = false,
     this.errorMessage,
     this.currentRouteType = RouteType.walking,
+    this.showRoutesSheet = false,
   });
 
   MapNavigationState copyWith({
@@ -77,6 +82,7 @@ class MapNavigationState {
     bool? isLoading,
     String? errorMessage,
     RouteType? currentRouteType,
+    bool? showRoutesSheet,
   }) {
     return MapNavigationState(
       searchKeyword: searchKeyword ?? this.searchKeyword,
@@ -92,6 +98,7 @@ class MapNavigationState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       currentRouteType: currentRouteType ?? this.currentRouteType,
+      showRoutesSheet: showRoutesSheet ?? this.showRoutesSheet,
     );
   }
 
@@ -267,6 +274,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           selectedRouteIndex: 0,
           routesState: AsyncState.success(routes),
         );
+        // 在地图上显示路线预览
+        mapDisplayService.showRoutes(routes, 0, state.currentRouteType);
       }
     } catch (e) {
       if (_disposed) return;
@@ -303,6 +312,16 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   /// 清除错误
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+
+  /// 显示路线栏
+  void showRoutesSheet() {
+    state = state.copyWith(showRoutesSheet: true);
+  }
+
+  /// 隐藏路线栏
+  void hideRoutesSheet() {
+    state = state.copyWith(showRoutesSheet: false);
   }
 }
 

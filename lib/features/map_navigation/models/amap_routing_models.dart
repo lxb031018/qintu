@@ -255,6 +255,7 @@ class RouteOption {
   final RouteType routeType; // 出行方式
   final List<TransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
+  final List<WalkStep>? rideSteps; // 骑行导航步骤详情（仅 riding 类型，结构与 WalkStep 相同）
 
   const RouteOption({
     required this.distance,
@@ -265,6 +266,7 @@ class RouteOption {
     required this.routeType,
     this.transitSegments,
     this.walkSteps,
+    this.rideSteps,
   });
 
   /// 距离显示文本

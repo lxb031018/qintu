@@ -88,10 +88,34 @@ class AmapRidingApi {
     final duration = double.tryParse(path['duration']?.toString() ?? '0') ?? 0;
 
     final points = <LatLng>[];
+    final rideSteps = <WalkStep>[];
+
     if (path['steps'] != null) {
       for (final step in path['steps']) {
+        // 解析每一步的坐标点
+        List<LatLng> stepPoints = [];
         if (step['polyline'] != null) {
-          points.addAll(_parsePolyline(step['polyline']));
+          stepPoints = _parsePolyline(step['polyline']);
+          points.addAll(stepPoints);
+        }
+
+        // 解析 step 详情
+        final stepDistance = double.tryParse(step['distance']?.toString() ?? '0') ?? 0;
+        final stepDuration = double.tryParse(step['duration']?.toString() ?? '0') ?? 0;
+        final stepInstruction = step['instruction']?.toString() ?? '';
+        final stepAction = step['action']?.toString() ?? '';
+        final stepRoad = step['road']?.toString() ?? '';
+
+        if (stepInstruction.isNotEmpty) {
+          rideSteps.add(WalkStep(
+            instruction: stepInstruction,
+            action: stepAction,
+            road: stepRoad,
+            distance: stepDistance,
+            duration: stepDuration,
+            points: stepPoints,
+            walkAction: WalkStep.parseAction(stepAction),
+          ));
         }
       }
     }
@@ -100,9 +124,10 @@ class AmapRidingApi {
       distance: distance,
       duration: duration,
       strategy: '骑行路线',
-      tolls: 0, // 骑行免费
+      tolls: 0,
       points: points,
       routeType: RouteType.riding,
+      rideSteps: rideSteps.isNotEmpty ? rideSteps : null,
     );
   }
 

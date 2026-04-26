@@ -4,9 +4,12 @@ import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
 import 'provider/location_input_provider.dart';
+import 'provider/map_navigation_provider.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/location_status_button.dart';
+import 'widgets/route_result_bottom_sheet.dart';
+import 'models/map_overlay_models.dart';
 import '../../../constants/app_spacings.dart';
 import 'service/location_sharing_service.dart';
 import 'service/map_display_service.dart';
@@ -93,6 +96,8 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       _handleLocationInputChange(previous, next);
     });
 
+    final navState = ref.watch(mapNavigationProvider);
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -129,6 +134,35 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
             bottom: 16,
             child: const LocationStatusButton(),
           ),
+
+          // 路线栏（不阻塞交互）
+          if (navState.showRoutesSheet && navState.routes.isNotEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: RouteResultBottomSheet(
+                routes: navState.routes.map((route) => RouteResultItem(
+                  distance: route.distance.toString(),
+                  formattedDistance: route.distanceText,
+                  duration: route.duration.toString(),
+                  formattedDuration: route.durationText,
+                  strategy: route.strategyText,
+                  tolls: route.tolls,
+                )).toList(),
+                selectedIndex: navState.selectedRouteIndex,
+                currentRouteType: navState.currentRouteType,
+                onRouteSelected: (index) {
+                  ref.read(mapNavigationProvider.notifier).selectRoute(index);
+                },
+                onRouteTypeChanged: (type) {
+                  ref.read(mapNavigationProvider.notifier).switchRouteType(type);
+                },
+                onClose: () {
+                  ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
+                },
+              ),
+            ),
         ],
       ),
     );

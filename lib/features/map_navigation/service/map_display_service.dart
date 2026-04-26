@@ -1,4 +1,5 @@
 import '../core/amap_map_controller.dart';
+import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import '../provider/location_input_provider.dart';
 
@@ -60,6 +61,37 @@ class MapDisplayService {
     if (previous?.destination.poi != null && next.destination.poi == null) {
       _mapController?.clearPoiMarkers();
     }
+  }
+
+  /// 显示路线预览
+  ///
+  /// [routes] 路线列表
+  /// [selectedIndex] 当前选中的路线索引
+  /// [routeType] 出行方式（决定路线颜色）
+  Future<void> showRoutes(
+    List<RouteOption> routes,
+    int selectedIndex,
+    RouteType routeType,
+  ) async {
+    if (routes.isEmpty) return;
+
+    // 提取路线坐标点
+    final routePoints = routes.map((r) => r.points).toList();
+
+    // 获取路线颜色
+    final colors = routes.map((r) => RouteColors.getColor(r.routeType)).toList();
+
+    // 调用地图控制器显示路线
+    await _mapController?.showRoutes(
+      routePoints,
+      selectIndex: selectedIndex,
+      colors: colors,
+    );
+  }
+
+  /// 清除路线预览
+  Future<void> clearRoutes() async {
+    await _mapController?.clearRoutes();
   }
 }
 
