@@ -20,7 +20,7 @@ export 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
 /// - RoutingApi: 驾车路线规划
 /// - AmapWalkingApi: 步行路线规划
 /// - AmapRidingApi: 骑行路线规划
-/// - AmapTransitApi: 公交/地铁路线规划
+/// - AmapTransitApi: 公共交通路线规划
 ///
 /// 本文件作为统一入口，根据出行方式分发到各服务
 ///
@@ -48,7 +48,7 @@ class AmapRoutingService {
   /// [origin] 起点坐标
   /// [destination] 终点坐标
   /// [strategy] 策略（驾车:0-速度最快,1-费用优先,2-距离最短; 公交:0-较快捷,1-较少换乘,2-较少步行,3-最短时间,4-不乘地铁）
-  /// [city] 城市名称，用于公交/地铁路线规划（自动从 origin 坐标逆地理编码获取）
+  /// [city] 城市名称，用于公共交通路线规划（自动从 origin 坐标逆地理编码获取）
   Future<List<RouteOption>> planRoute({
     required RouteType type,
     required LatLng origin,
@@ -56,7 +56,7 @@ class AmapRoutingService {
     int strategy = 0,
     String? city,
   }) async {
-    // 公交/地铁路线需要城市参数
+    // 公共交通路线需要城市参数
     String routeCity = city ?? '';
 
     switch (type) {
@@ -83,7 +83,7 @@ class AmapRoutingService {
           routeCity = await _getCityFromLocation(origin);
         }
         if (routeCity.isEmpty) {
-          throw const RoutingException('公交/地铁路线需要城市参数，请开启定位权限或手动输入城市');
+          throw const RoutingException('公共交通路线需要城市参数，请开启定位权限或手动输入城市');
         }
         return _transitService.planTransitRoute(
           origin: origin,

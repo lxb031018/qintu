@@ -8,20 +8,20 @@ enum RouteType {
   driving,   // 驾车
   walking,   // 步行
   riding,    // 骑行
-  transit,   // 公交/地铁
+  transit,   // 公共交通
 }
 
-/// 公交/地铁线路类型
+/// 公共交通线路类型
 enum TransitLineType {
   bus,      // 公交
   subway,   // 地铁
   suburban, // 郊区/市域铁路
 }
 
-/// 公交/地铁线路信息
+/// 公共交通线路信息
 class TransitLine {
   final String name;        // 线路名称，如 "1号线"、"特11路"
-  final TransitLineType type; // 类型：公交/地铁/郊区
+  final TransitLineType type; // 类型：公共交通/郊区
   final int stationCount;   // 站数
 
   const TransitLine({
@@ -53,9 +53,9 @@ class TransitLine {
   }
 }
 
-/// 路线段（用于公交/地铁路线）
+/// 路线段（用于公共交通路线）
 class TransitSegment {
-  final List<TransitLine> lines;      // 该段包含的线路（公交/地铁）
+  final List<TransitLine> lines;      // 该段包含的线路（公共交通）
   final int walkingDistance;           // 该段步行距离（米）
   final String? instruction;           // 引导提示，如 "步行500米到地铁站"
 
@@ -253,7 +253,7 @@ class RouteOption {
   final double tolls;       // 过路费（元）或公交费用
   final List<LatLng> points; // 路线坐标点
   final RouteType routeType; // 出行方式
-  final List<TransitSegment>? transitSegments; // 公交/地铁段详情（仅 transit 类型）
+  final List<TransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
 
   const RouteOption({
@@ -313,7 +313,7 @@ class RouteOption {
       case RouteType.riding:
         return '骑行路线';
       case RouteType.transit:
-        return '公交/地铁';
+        return '公共交通';
     }
   }
 
@@ -331,7 +331,7 @@ class RouteOption {
     }
   }
 
-  /// 获取公交/地铁路线详情文本
+  /// 获取公共交通路线详情文本
   /// 例如: "步行500米 → 地铁1号线(6站) → 步行200米 → 公交45路(4站)"
   String? get transitSummaryText {
     if (routeType != RouteType.transit || transitSegments == null) {
@@ -357,7 +357,7 @@ class RouteOption {
     return parts.join(' → ');
   }
 
-  /// 获取简化的公交/地铁线路列表
+  /// 获取简化的公共交通线路列表
   /// 例如: ["1号线", "45路", "10号线"]
   List<String> get transitLineNames {
     if (routeType != RouteType.transit || transitSegments == null) {

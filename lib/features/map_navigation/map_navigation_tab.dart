@@ -4,11 +4,13 @@ import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
 import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
+import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/route_result_list.dart';
+import 'widgets/route_result_bottom_sheet.dart';
 import 'widgets/location_status_button.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_spacings.dart';
@@ -114,6 +116,37 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     }
   }
 
+  /// 显示路线规划结果底部弹窗
+  void _showRouteResultSheet(BuildContext context, WidgetRef ref) {
+    final navState = ref.read(mapNavigationProvider);
+    // 将 RouteOption 转换为 RouteResultItem
+    final routeItems = navState.routes.map((route) => RouteResultItem(
+      distance: route.distance.toString(),
+      formattedDistance: route.distanceText,
+      duration: route.duration.toString(),
+      formattedDuration: route.durationText,
+      strategy: route.strategyText,
+      tolls: route.tolls,
+    )).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => RouteResultBottomSheet(
+        routes: routeItems,
+        selectedIndex: navState.selectedRouteIndex,
+        currentRouteType: RouteType.driving,
+        onRouteSelected: (index) {
+          ref.read(mapNavigationProvider.notifier).selectRoute(index);
+        },
+        onRouteTypeChanged: (type) {
+          // TODO: 切换出行方式并重新规划路线
+        },
+      ),
+    );
+  }
+
   @override
   bool get wantKeepAlive => true;
 
@@ -152,6 +185,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                     padding: const EdgeInsets.only(top: AppSpacings.sm),
                     child: LocationCategoryList(
                       mapController: _mapController,
+                      onRouteTap: () => _showRouteResultSheet(context, ref),
                     ),
                   ),
               ],

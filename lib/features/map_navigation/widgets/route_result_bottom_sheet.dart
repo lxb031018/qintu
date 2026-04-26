@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
+import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 
 /// ============================================
@@ -26,15 +27,21 @@ class RouteResultBottomSheet extends StatelessWidget {
   /// 包含多条路线的距离、耗时、策略等信息
   /// 简化版：真实数据由 Provider 提供
   final List<RouteResultItem> routes;
-  
+
   /// 当前选中的路线索引
   final int selectedIndex;
-  
+
   /// 路线选择回调，参数为选中的路线索引
   final ValueChanged<int>? onRouteSelected;
-  
+
   /// 关闭按钮点击回调
   final VoidCallback? onClose;
+
+  /// 当前选中的出行方式
+  final RouteType currentRouteType;
+
+  /// 出行方式切换回调
+  final ValueChanged<RouteType>? onRouteTypeChanged;
 
   const RouteResultBottomSheet({
     super.key,
@@ -42,6 +49,8 @@ class RouteResultBottomSheet extends StatelessWidget {
     this.selectedIndex = 0,
     this.onRouteSelected,
     this.onClose,
+    this.currentRouteType = RouteType.driving,
+    this.onRouteTypeChanged,
   });
 
   /// 显示底部弹窗的静态方法
@@ -85,6 +94,8 @@ class RouteResultBottomSheet extends StatelessWidget {
           _buildDragHandle(isDark),
           // 标题栏
           _buildHeader(isDark),
+          // 出行方式切换按钮
+          _buildRouteTypeTabs(isDark),
           // 路线列表（可滚动区域）
           Flexible(
             child: routes.isEmpty
@@ -112,35 +123,47 @@ class RouteResultBottomSheet extends StatelessWidget {
   }
 
   /// 构建标题栏
-  /// 
-  /// 包含标题文本和关闭按钮
+  ///
+  /// 已移除标题文本和关闭按钮
   Widget _buildHeader(bool isDark) {
+    return const SizedBox.shrink();
+  }
+
+  /// 构建出行方式切换标签
+  ///
+  /// 显示"步行""骑行""公共交通""驾车"四种切换按钮
+  Widget _buildRouteTypeTabs(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacings.md,
-        vertical: AppSpacings.md,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacings.md),
       child: Row(
         children: [
-          // 标题文本
-          Text(
-            '路线规划',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextColor : AppColors.textColor,
-            ),
+          _RouteTypeTab(
+            label: '步行',
+            icon: Icons.directions_walk,
+            isSelected: currentRouteType == RouteType.walking,
+            onTap: () => onRouteTypeChanged?.call(RouteType.walking),
+            isDark: isDark,
           ),
-          const Spacer(),
-          // 关闭按钮
-          IconButton(
-            onPressed: onClose,
-            icon: Icon(
-              Icons.close,
-              color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          _RouteTypeTab(
+            label: '骑行',
+            icon: Icons.directions_bike,
+            isSelected: currentRouteType == RouteType.riding,
+            onTap: () => onRouteTypeChanged?.call(RouteType.riding),
+            isDark: isDark,
+          ),
+          _RouteTypeTab(
+            label: '公共交通',
+            icon: Icons.directions_bus,
+            isSelected: currentRouteType == RouteType.transit,
+            onTap: () => onRouteTypeChanged?.call(RouteType.transit),
+            isDark: isDark,
+          ),
+          _RouteTypeTab(
+            label: '驾车',
+            icon: Icons.directions_car,
+            isSelected: currentRouteType == RouteType.driving,
+            onTap: () => onRouteTypeChanged?.call(RouteType.driving),
+            isDark: isDark,
           ),
         ],
       ),
@@ -304,10 +327,10 @@ class _RouteCard extends StatelessWidget {
 class _InfoChip extends StatelessWidget {
   /// 图标
   final IconData icon;
-  
+
   /// 标签文本
   final String label;
-  
+
   /// 是否为暗黑模式
   final bool isDark;
 
@@ -340,6 +363,85 @@ class _InfoChip extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// ============================================
+/// 出行方式标签（私有组件）
+///
+/// 显示单个出行方式按钮
+/// 支持选中/未选中状态
+/// ============================================
+
+class _RouteTypeTab extends StatelessWidget {
+  /// 标签文本
+  final String label;
+
+  /// 图标
+  final IconData icon;
+
+  /// 是否选中
+  final bool isSelected;
+
+  /// 点击回调
+  final VoidCallback? onTap;
+
+  /// 是否为暗黑模式
+  final bool isDark;
+
+  const _RouteTypeTab({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacings.sm),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryColor.withValues(alpha: 0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.all(AppRadii.small),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryColor
+                  : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : (isDark ? AppColors.darkLightTextColor : AppColors.grey500),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : (isDark ? AppColors.darkLightTextColor : AppColors.grey500),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

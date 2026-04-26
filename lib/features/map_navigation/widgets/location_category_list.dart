@@ -162,8 +162,13 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
             onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
           ),
           const SizedBox(width: AppSpacings.sm),
-          // 路线按钮（点击弹出底部弹窗）
-          LocationRouteButton(onTap: widget.onRouteTap),
+          // 路线按钮（点击弹出底部弹窗并隐藏列表）
+          LocationRouteButton(
+            onTap: () {
+              widget.onRouteTap?.call();
+              _hideListAndUnfocus();
+            },
+          ),
           // 关闭按钮
           const Spacer(),
           LocationCloseButton(onTap: _hideListAndUnfocus),

@@ -5,9 +5,9 @@ import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/core/http/third_party_api_client.dart';
 
 /// ============================================
-/// 高德地图公交/地铁路线规划 API
+/// 高德地图公共交通路线规划 API
 ///
-/// 调用高德地图 RESTful API 实现公交/地铁换乘路线规划
+/// 调用高德地图 RESTful API 实现公共交通换乘路线规划
 /// API: /v3/direction/transit/integrated
 ///
 /// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
@@ -19,14 +19,14 @@ class AmapTransitApi {
 
   static AmapTransitApi get instance => _instance;
 
-  /// 公交/地铁 API 地址 (v3)
+  /// 公共交通 API 地址 (v3)
   /// 注意：这是完整 URL，因为 ThirdPartyApiClient 的 baseUrl 是 https://restapi.amap.com
   static const String _transitApiPath = '/v3/direction/transit/integrated';
 
   /// 使用统一的第三方 API 客户端
   final Dio _dio = ThirdPartyApiClient.instance.dio;
 
-  /// 规划公交/地铁路线
+  /// 规划公共交通路线
   ///
   /// [origin] 起点坐标
   /// [destination] 终点坐标
@@ -43,7 +43,7 @@ class AmapTransitApi {
       throw const RoutingException('未配置高德地图 Web 服务 API Key');
     }
 
-    Logs.ui.info('🚌 规划公交/地铁路线: ${origin.latitude},${origin.longitude} → ${destination.latitude},${destination.longitude} (城市: $city)');
+    Logs.ui.info('🚌 规划公共交通路线: ${origin.latitude},${origin.longitude} → ${destination.latitude},${destination.longitude} (城市: $city)');
 
     try {
       final response = await _dio.get(_transitApiPath, queryParameters: {
@@ -59,29 +59,29 @@ class AmapTransitApi {
       final data = response.data;
       if (data['status'] != '1') {
         final errorMsg = data['info'] ?? '路线规划失败';
-        Logs.ui.warning('❌ 公交/地铁路线规划失败: $errorMsg (infocode: ${data['infocode']})');
+        Logs.ui.warning('❌ 公共交通路线规划失败: $errorMsg (infocode: ${data['infocode']})');
         throw RoutingException(errorMsg);
       }
 
       if (data['count'] == '0' || data['route'] == null || data['route']['transits'] == null) {
-        Logs.ui.warning('⚠️ 未找到公交/地铁路线');
+        Logs.ui.warning('⚠️ 未找到公共交通路线');
         return [];
       }
 
       final transits = data['route']['transits'] as List;
-      Logs.ui.info('✅ 获取到 ${transits.length} 条公交/地铁备选路线');
+      Logs.ui.info('✅ 获取到 ${transits.length} 条公共交通备选路线');
 
       return transits.map((transit) => _parseTransitRoute(transit)).toList();
     } on DioException catch (e) {
       Logs.ui.warning('🌐 网络请求失败: $e');
       throw RoutingException('网络请求失败: ${e.message}');
     } catch (e) {
-      Logs.ui.warning('❌ 公交/地铁路线规划异常: $e');
-      throw RoutingException('公交/地铁路线规划异常: $e');
+      Logs.ui.warning('❌ 公共交通路线规划异常: $e');
+      throw RoutingException('公共交通路线规划异常: $e');
     }
   }
 
-  /// 解析公交/地铁路线
+  /// 解析公共交通路线
   RouteOption _parseTransitRoute(Map<String, dynamic> transit) {
     try {
       final cost = transit['cost']?.toString() ?? '0';
@@ -98,7 +98,7 @@ class AmapTransitApi {
         return RouteOption(
           distance: distance,
           duration: duration,
-          strategy: '公交/地铁',
+          strategy: '公共交通',
           tolls: double.tryParse(cost) ?? 0,
           points: points,
           routeType: RouteType.transit,
@@ -109,7 +109,7 @@ class AmapTransitApi {
       for (final segment in segments) {
         if (segment is! Map) continue;
 
-        // 解析公交/地铁线路
+        // 解析公共交通线路
         final lines = <TransitLine>[];
         final buslines = segment['buslines'];
         if (buslines is List) {
@@ -228,7 +228,7 @@ class AmapTransitApi {
       return RouteOption(
         distance: distance,
         duration: duration,
-        strategy: '公交/地铁',
+        strategy: '公共交通',
         tolls: double.tryParse(cost) ?? 0,
         points: points,
         routeType: RouteType.transit,
@@ -240,7 +240,7 @@ class AmapTransitApi {
       return RouteOption(
         distance: 0,
         duration: 0,
-        strategy: '公交/地铁',
+        strategy: '公共交通',
         tolls: 0,
         points: [],
         routeType: RouteType.transit,
@@ -249,7 +249,7 @@ class AmapTransitApi {
     }
   }
 
-  /// 解析公交/地铁线路类型
+  /// 解析公共交通线路类型
   TransitLineType _parseTransitLineType(int type) {
     switch (type) {
       case 0:
