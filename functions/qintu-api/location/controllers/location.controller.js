@@ -32,10 +32,6 @@ class LocationController {
         altitude
       });
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[Locations] 位置更新: ${openid} → lat=${latitude.toFixed(6)}, lng=${longitude.toFixed(6)}`);
-      }
-
       return success(res, result);
     } catch (err) {
       console.error('更新位置失败:', err);
