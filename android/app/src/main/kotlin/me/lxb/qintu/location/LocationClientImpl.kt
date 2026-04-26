@@ -37,7 +37,7 @@ class LocationClientImpl(private val context: Context) : LocationSource {
                 // 高精度模式（GPS + WiFi + 基站）
                 locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
                 // 定位间隔 2 秒
-                interval = 2000
+                interval = 1000
                 isOnceLocation = false
                 // 🔥 关键优化：开启传感器（陀螺仪 + 地磁）辅助
                 isSensorEnable = true
@@ -105,7 +105,7 @@ class LocationClientImpl(private val context: Context) : LocationSource {
             isLocationCacheEnable = false
             isNeedAddress = true
             if (!once) {
-                interval = 2000
+                interval = 1000
             }
         }
         locationClient?.setLocationOption(option)
