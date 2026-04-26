@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/gps/gps_service.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
-import '../core/poi_api.dart';
+import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion
+import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
 import 'map_navigation_provider.dart';
 
@@ -169,7 +170,7 @@ class LocationInputState {
 
 class LocationInputNotifier extends Notifier<LocationInputState> {
   Timer? _debounceTimer;
-  final PoiApi _poiApi = PoiApi();
+  final PoiService _poiService = poiService;
   final GpsService _gpsService = GpsService();
   final LocationCategoryService _categoryService = LocationCategoryService();
   bool _hasShownList = false;
@@ -390,7 +391,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
       Logs.ui.info('🔍 搜索 POI: $keyword, 中心: ${center?.latitude},${center?.longitude}, 城市: $searchCity');
 
-      final result = await _poiApi.searchPoi(
+      final result = await _poiService.searchPoi(
         keywords: keyword,
         city: searchCity,
         location: center,

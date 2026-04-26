@@ -11,7 +11,6 @@ import 'category_button.dart';
 import 'close_button.dart';
 import 'location_list_item.dart';
 import 'my_location_button.dart';
-import 'route_button.dart';
 
 /// ============================================
 /// 位置分类列表组件
@@ -37,16 +36,12 @@ import 'route_button.dart';
 /// ============================================
 
 class LocationCategoryList extends ConsumerStatefulWidget {
-  /// 路线按钮点击回调，用于弹出路线规划底部弹窗
-  final VoidCallback? onRouteTap;
-  
   /// 地图控制器，用于获取当前位置
   /// 当用户点击"我的位置"时，通过此控制器获取 GPS 坐标
   final AmapMapController? mapController;
 
   const LocationCategoryList({
     super.key,
-    this.onRouteTap,
     this.mapController,
   });
 
@@ -162,13 +157,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
             onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
           ),
           const SizedBox(width: AppSpacings.sm),
-          // 路线按钮（点击弹出底部弹窗并隐藏列表）
-          LocationRouteButton(
-            onTap: () {
-              widget.onRouteTap?.call();
-              _hideListAndUnfocus();
-            },
-          ),
           // 关闭按钮
           const Spacer(),
           LocationCloseButton(onTap: _hideListAndUnfocus),

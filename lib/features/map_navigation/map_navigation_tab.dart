@@ -3,18 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
-import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
-import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'provider/location_input_provider.dart';
-import 'provider/map_navigation_provider.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
-import 'widgets/route_result_list.dart';
-import 'widgets/route_result_bottom_sheet.dart';
 import 'widgets/location_status_button.dart';
-import '../../../constants/app_colors.dart';
 import '../../../constants/app_spacings.dart';
 import 'service/location_sharing_service.dart';
+import 'service/map_display_service.dart';
 
 /// ============================================
 /// 地图导航 Tab
@@ -76,75 +71,14 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     MapNavigationTab._setMapController(controller);
     // 设置地图控制器到位置共享服务
     locationSharingService.setMapController(controller);
+    // 设置地图控制器到地图显示服务
+    mapDisplayService.setMapController(controller);
   }
 
   /// 处理位置输入变化，移动地图到选中位置并显示标记
   void _handleLocationInputChange(LocationInputState? previous, LocationInputState next) {
-    // 当起点 POI 变化时
-    if (next.origin.poi != previous?.origin.poi && next.origin.poi != null) {
-      final latlng = next.origin.poi!.latLng;
-      if (latlng != null) {
-        _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
-        _mapController?.addPoiMarker(PoiMarkerData(
-          id: 'origin_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.origin.poi!.name,
-          address: next.origin.poi!.address,
-          position: latlng,
-        ));
-      }
-    }
-    // 当终点 POI 变化时
-    if (next.destination.poi != previous?.destination.poi && next.destination.poi != null) {
-      final latlng = next.destination.poi!.latLng;
-      if (latlng != null) {
-        _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
-        _mapController?.addPoiMarker(PoiMarkerData(
-          id: 'destination_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.destination.poi!.name,
-          address: next.destination.poi!.address,
-          position: latlng,
-        ));
-      }
-    }
-    // 当起点被清除时
-    if (previous?.origin.poi != null && next.origin.poi == null) {
-      _mapController?.clearPoiMarkers();
-    }
-    // 当终点被清除时
-    if (previous?.destination.poi != null && next.destination.poi == null) {
-      _mapController?.clearPoiMarkers();
-    }
-  }
-
-  /// 显示路线规划结果底部弹窗
-  void _showRouteResultSheet(BuildContext context, WidgetRef ref) {
-    final navState = ref.read(mapNavigationProvider);
-    // 将 RouteOption 转换为 RouteResultItem
-    final routeItems = navState.routes.map((route) => RouteResultItem(
-      distance: route.distance.toString(),
-      formattedDistance: route.distanceText,
-      duration: route.duration.toString(),
-      formattedDuration: route.durationText,
-      strategy: route.strategyText,
-      tolls: route.tolls,
-    )).toList();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => RouteResultBottomSheet(
-        routes: routeItems,
-        selectedIndex: navState.selectedRouteIndex,
-        currentRouteType: RouteType.driving,
-        onRouteSelected: (index) {
-          ref.read(mapNavigationProvider.notifier).selectRoute(index);
-        },
-        onRouteTypeChanged: (type) {
-          // TODO: 切换出行方式并重新规划路线
-        },
-      ),
-    );
+    // 委托给地图显示服务处理
+    mapDisplayService.handleLocationInputChange(previous, next);
   }
 
   @override
@@ -153,8 +87,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final navState = ref.watch(mapNavigationProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // 监听位置输入变化，移动地图到选中位置并显示标记
     ref.listen(locationInputProvider, (previous, next) {
@@ -185,39 +117,11 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                     padding: const EdgeInsets.only(top: AppSpacings.sm),
                     child: LocationCategoryList(
                       mapController: _mapController,
-                      onRouteTap: () => _showRouteResultSheet(context, ref),
                     ),
                   ),
               ],
             ),
           ),
-
-          // 路线结果层
-          if (navState.routes.isNotEmpty)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 80,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.4,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkBackgroundColor
-                      : AppColors.backgroundColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: const RouteResultList(),
-              ),
-            ),
 
           // 定位状态按钮
           Positioned(

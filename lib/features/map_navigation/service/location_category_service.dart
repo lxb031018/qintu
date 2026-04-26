@@ -58,18 +58,11 @@ class BindingLocationItem {
 }
 
 /// 位置分类 POI 列表服务
+///
+/// 无状态，所有数据操作都直接访问 storage 或远程 API
 class LocationCategoryService {
   static const String _storageKey = 'route_planning_history';
   static const int _maxHistoryItems = 20;
-
-  static final LocationCategoryService _instance = LocationCategoryService._internal();
-  factory LocationCategoryService() => _instance;
-  LocationCategoryService._internal();
-
-  List<HistoryLocationItem> _history = [];
-
-  /// 获取历史记录
-  List<HistoryLocationItem> get history => List.unmodifiable(_history);
 
   /// 添加历史记录
   Future<void> addToHistory({
@@ -77,11 +70,13 @@ class LocationCategoryService {
     required String address,
     required LatLng location,
   }) async {
-    _history.removeWhere(
+    final history = await _loadHistoryFromStorage();
+
+    history.removeWhere(
       (item) => item.name == name && item.location == location,
     );
 
-    _history.insert(
+    history.insert(
       0,
       HistoryLocationItem(
         name: name,
@@ -91,47 +86,46 @@ class LocationCategoryService {
       ),
     );
 
-    if (_history.length > _maxHistoryItems) {
-      _history = _history.sublist(0, _maxHistoryItems);
+    if (history.length > _maxHistoryItems) {
+      history.removeRange(_maxHistoryItems, history.length);
     }
 
-    await _saveToStorage();
+    await _saveToStorage(history);
   }
 
   /// 清除历史记录
   Future<void> clearHistory() async {
-    _history = [];
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
   }
 
-  /// 从存储加载
-  Future<void> loadFromStorage() async {
+  /// 从存储加载历史记录
+  Future<List<HistoryLocationItem>> _loadHistoryFromStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
       if (jsonString != null) {
         final List<dynamic> jsonList = json.decode(jsonString);
-        _history = jsonList
+        return jsonList
             .map((json) => HistoryLocationItem.fromJson(json as Map<String, dynamic>))
             .toList();
       }
     } catch (e) {
-      _history = [];
+      // 忽略加载错误
     }
+    return [];
   }
 
-  Future<void> _saveToStorage() async {
+  Future<void> _saveToStorage(List<HistoryLocationItem> history) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = json.encode(_history.map((item) => item.toJson()).toList());
+      final jsonString = json.encode(history.map((item) => item.toJson()).toList());
       await prefs.setString(_storageKey, jsonString);
     } catch (e) {
       // 忽略存储错误
     }
   }
 
-  
   /// "绑定者" - 返回所有绑定者的实时位置
   Future<List<PoiSuggestion>> getBinderLocations() async {
     try {
@@ -172,8 +166,8 @@ class LocationCategoryService {
 
   /// "历史" - 从本地加载
   Future<List<PoiSuggestion>> getHistoryLocations() async {
-    await loadFromStorage();
-    return _history.map((item) {
+    final history = await _loadHistoryFromStorage();
+    return history.map((item) {
       return PoiSuggestion(
         id: 'history_${item.timestamp.millisecondsSinceEpoch}',
         name: item.name,
@@ -184,3 +178,6 @@ class LocationCategoryService {
     }).toList();
   }
 }
+
+/// 全局单例
+final locationCategoryService = LocationCategoryService();

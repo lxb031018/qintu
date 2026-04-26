@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/poi_api.dart';
+import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion, RouteType, RouteOption, LatLng
+import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
 
 /// ============================================
@@ -43,6 +44,9 @@ class MapNavigationState {
   /// 错误信息
   final String? errorMessage;
 
+  /// 当前出行方式
+  final RouteType currentRouteType;
+
   const MapNavigationState({
     this.searchKeyword = '',
     this.originPoi,
@@ -56,6 +60,7 @@ class MapNavigationState {
     this.isOriginFocused = true,
     this.isLoading = false,
     this.errorMessage,
+    this.currentRouteType = RouteType.walking,
   });
 
   MapNavigationState copyWith({
@@ -71,6 +76,7 @@ class MapNavigationState {
     bool? isOriginFocused,
     bool? isLoading,
     String? errorMessage,
+    RouteType? currentRouteType,
   }) {
     return MapNavigationState(
       searchKeyword: searchKeyword ?? this.searchKeyword,
@@ -85,6 +91,7 @@ class MapNavigationState {
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
+      currentRouteType: currentRouteType ?? this.currentRouteType,
     );
   }
 
@@ -126,7 +133,7 @@ class AsyncState<T> {
 
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
   final AmapRoutingService _routeService = AmapRoutingService();
-  final PoiApi _poiService = PoiApi();
+  final PoiService _poiService = poiService;
   bool _disposed = false;
 
   @override
@@ -242,7 +249,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
     try {
       final routes = await _routeService.planRoute(
-        type: RouteType.driving,
+        type: state.currentRouteType,
         origin: state.originLocation!,
         destination: state.destinationLocation!,
       );
@@ -267,6 +274,13 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         routesState: AsyncState.failure(e.toString()),
       );
     }
+  }
+
+  /// 切换出行方式并重新规划路线
+  Future<void> switchRouteType(RouteType type) async {
+    if (!state.canPlanRoute) return;
+    state = state.copyWith(currentRouteType: type);
+    await planRoute();
   }
 
   /// 选择路线

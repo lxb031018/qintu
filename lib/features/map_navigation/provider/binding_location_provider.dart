@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/binding/binding.dart';
-import 'package:qintu/features/map_navigation/core/binding_location_api.dart';
+import '../core/binding_location_api.dart'; // 仅导入类型 BindingLocationResult
+import '../service/binding_location_service.dart';
 
 /// ============================================
 /// 绑定者位置 Provider
@@ -52,7 +53,7 @@ class BinderLocationState {
 
 /// 绑定者位置 Notifier
 class BinderLocationNotifier extends Notifier<BinderLocationState> {
-  final BindingLocationApi _api = BindingLocationApi();
+  final BindingLocationService _service = bindingLocationService;
   bool _disposed = false;
 
   @override
@@ -75,7 +76,7 @@ class BinderLocationNotifier extends Notifier<BinderLocationState> {
     );
 
     try {
-      final result = await _api.getBinderLocation(openid);
+      final result = await _service.getBinderLocation(openid);
 
       if (_disposed) return result;
 
@@ -114,7 +115,7 @@ class BinderLocationNotifier extends Notifier<BinderLocationState> {
       loadingOpenids: binders.map((b) => b.openid).toSet(),
     );
 
-    final results = await _api.getBinderLocations(
+    final results = await _service.getBinderLocations(
       binders.map((b) => b.openid).toList(),
     );
 
