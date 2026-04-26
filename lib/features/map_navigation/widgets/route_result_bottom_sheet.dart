@@ -74,6 +74,7 @@ class RouteResultBottomSheet extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
 
     return Container(
+      width: double.infinity,
       // 限制最大高度为屏幕高度的 60%
       constraints: BoxConstraints(
         maxHeight: mediaQuery.size.height * 0.6,

@@ -196,37 +196,70 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     );
   }
 
-  /// 显示路线规划结果底部弹窗
+  /// 显示路线规划结果底部弹窗（全宽）
   void _showRouteResultSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Consumer(
-        builder: (context, ref, child) {
-          final navState = ref.watch(mapNavigationProvider);
-          final routeItems = navState.routes.map((route) => RouteResultItem(
-            distance: route.distance.toString(),
-            formattedDistance: route.distanceText,
-            duration: route.duration.toString(),
-            formattedDuration: route.durationText,
-            strategy: route.strategyText,
-            tolls: route.tolls,
-          )).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mediaQuery = MediaQuery.of(context);
 
-          return RouteResultBottomSheet(
-            routes: routeItems,
-            selectedIndex: navState.selectedRouteIndex,
-            currentRouteType: navState.currentRouteType,
-            onRouteSelected: (index) {
-              ref.read(mapNavigationProvider.notifier).selectRoute(index);
-            },
-            onRouteTypeChanged: (type) {
-              ref.read(mapNavigationProvider.notifier).switchRouteType(type);
-            },
-          );
-        },
-      ),
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            )),
+            child: Container(
+              width: mediaQuery.size.width,
+              constraints: BoxConstraints(
+                maxHeight: mediaQuery.size.height * 0.6,
+              ),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkCardBackground
+                    : AppColors.backgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: AppRadii.large,
+                ),
+              ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final navState = ref.watch(mapNavigationProvider);
+                  final routeItems = navState.routes.map((route) => RouteResultItem(
+                    distance: route.distance.toString(),
+                    formattedDistance: route.distanceText,
+                    duration: route.duration.toString(),
+                    formattedDuration: route.durationText,
+                    strategy: route.strategyText,
+                    tolls: route.tolls,
+                  )).toList();
+
+                  return RouteResultBottomSheet(
+                    routes: routeItems,
+                    selectedIndex: navState.selectedRouteIndex,
+                    currentRouteType: navState.currentRouteType,
+                    onRouteSelected: (index) {
+                      ref.read(mapNavigationProvider.notifier).selectRoute(index);
+                    },
+                    onRouteTypeChanged: (type) {
+                      ref.read(mapNavigationProvider.notifier).switchRouteType(type);
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
