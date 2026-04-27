@@ -130,7 +130,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
               }
             },
           ),
-          // 当起点和终点都有真实 POI 时，显示出行方式按钮和路线按钮
+          // 当起点和终点都有真实 POI 时，显示出行方式按钮
           if (state.origin.poi != null && state.destination.poi != null) ...[
             const SizedBox(height: AppSpacings.sm),
             Container(
@@ -147,7 +147,8 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
 
   /// 构建出行方式选择行
   ///
-  /// 显示四种出行方式按钮（步行、骑行、公共交通、驾车）和"路线"按钮
+  /// 显示四种出行方式按钮（步行、骑行、公共交通、驾车）
+  /// 选择任意出行方式后自动弹出路线结果
   Widget _buildRouteTypeRow(BuildContext context, WidgetRef ref, bool isDark) {
     final navState = ref.watch(mapNavigationProvider);
 
@@ -158,7 +159,10 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           label: '步行',
           icon: Icons.directions_walk,
           isSelected: navState.currentRouteType == RouteType.walking,
-          onTap: () => ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.walking),
+          onTap: () {
+            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.walking);
+            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+          },
           isDark: isDark,
         ),
         // 骑行
@@ -166,7 +170,10 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           label: '骑行',
           icon: Icons.directions_bike,
           isSelected: navState.currentRouteType == RouteType.riding,
-          onTap: () => ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.riding),
+          onTap: () {
+            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.riding);
+            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+          },
           isDark: isDark,
         ),
         // 公共交通
@@ -174,7 +181,10 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           label: '公共交通',
           icon: Icons.directions_bus,
           isSelected: navState.currentRouteType == RouteType.transit,
-          onTap: () => ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.transit),
+          onTap: () {
+            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.transit);
+            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+          },
           isDark: isDark,
         ),
         // 驾车
@@ -182,21 +192,14 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           label: '驾车',
           icon: Icons.directions_car,
           isSelected: navState.currentRouteType == RouteType.driving,
-          onTap: () => ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.driving),
+          onTap: () {
+            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.driving);
+            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+          },
           isDark: isDark,
-        ),
-        // 路线按钮
-        const SizedBox(width: AppSpacings.sm),
-        _RouteButton(
-          onTap: () => _showRouteResultSheet(ref),
         ),
       ],
     );
-  }
-
-  /// 显示路线栏
-  void _showRouteResultSheet(WidgetRef ref) {
-    ref.read(mapNavigationProvider.notifier).showRoutesSheet();
   }
 
   /// 同步控制器文本
@@ -392,36 +395,3 @@ class _RouteTypeButton extends StatelessWidget {
   }
 }
 
-/// 路线按钮
-class _RouteButton extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const _RouteButton({this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacings.md,
-          vertical: AppSpacings.xs,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primaryColor,
-          borderRadius: BorderRadius.all(AppRadii.small),
-        ),
-        child: Text(
-          '路线',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.darkTextColor : Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
