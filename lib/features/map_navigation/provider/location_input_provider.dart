@@ -293,16 +293,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     }
   }
 
-  /// 清除起点（兼容旧 API）
-  void clearOrigin() {
-    state = state.copyWith(clearOrigin: true);
-  }
-
-  /// 清除终点（兼容旧 API）
-  void clearDestination() {
-    state = state.copyWith(clearDestination: true);
-  }
-
   /// 判断是否可以交换起点和终点
   bool canSwapOriginAndDestination() {
     return state.origin.poi != null || state.destination.poi != null;

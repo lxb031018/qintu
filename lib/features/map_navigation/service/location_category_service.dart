@@ -42,21 +42,6 @@ class HistoryLocationItem {
       );
 }
 
-/// 绑定者位置项
-class BindingLocationItem {
-  final String userId;
-  final String name;
-  final LatLng location;
-  final DateTime? lastUpdated;
-
-  const BindingLocationItem({
-    required this.userId,
-    required this.name,
-    required this.location,
-    this.lastUpdated,
-  });
-}
-
 /// 位置分类 POI 列表服务
 ///
 /// 无状态，所有数据操作都直接访问 storage 或远程 API
