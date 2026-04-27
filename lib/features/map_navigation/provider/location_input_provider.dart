@@ -108,15 +108,14 @@ class LocationInputState {
   });
 
   /// 获取搜索中心坐标
-  /// 优先使用：对向位置已选的坐标
-  /// 其次使用：当前已选的坐标
+  /// 优先使用：对向位置的绑定者坐标
   LatLng? get searchCenter {
-    // 如果在终点输入框输入，优先用起点的位置
-    if (!isOriginFocused && origin.poi != null) {
+    // 如果在终点输入框输入，且起点是绑定者位置，优先用绑定者坐标
+    if (!isOriginFocused && origin.poi?.isBinderLocation == true) {
       return origin.poi!.latLng;
     }
-    // 如果在起点输入框输入，优先用终点的位置
-    if (isOriginFocused && destination.poi != null) {
+    // 如果在起点输入框输入，且终点是绑定者位置，优先用绑定者坐标
+    if (isOriginFocused && destination.poi?.isBinderLocation == true) {
       return destination.poi!.latLng;
     }
     // 否则用起点或终点的位置（如果有）
@@ -367,7 +366,9 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       Logs.ui.debug('GPS 结果: $gpsResult');
 
       if (gpsResult != null) {
-        center = state.searchCenter ?? LatLng(
+        // 仅当 searchCenter 为 null 时才使用 GPS 位置
+        // 如果起点已选 POI（绑定者位置），优先使用该位置作为搜索中心
+        center ??= LatLng(
           gpsResult['latitude'] as double,
           gpsResult['longitude'] as double,
         );
@@ -381,15 +382,27 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
       } else {
         Logs.ui.debug('GPS 不可用，使用 POI 位置');
-        final cachedCity = _gpsService.lastKnownCity;
-        if (cachedCity != null && cachedCity.isNotEmpty) {
-          searchCity = cachedCity.endsWith('市')
-              ? cachedCity.substring(0, cachedCity.length - 1)
-              : cachedCity;
+        // GPS 不可用时，尝试用搜索中心的坐标获取城市
+        if (center != null) {
+          searchCity = await _poiService.getCityFromLocation(center);
+          if (searchCity != null) {
+            searchCity = searchCity.endsWith('市')
+                ? searchCity.substring(0, searchCity.length - 1)
+                : searchCity;
+            Logs.ui.debug('从 POI 坐标获取城市: $searchCity');
+          }
+        }
+        if (searchCity == null) {
+          final cachedCity = _gpsService.lastKnownCity;
+          if (cachedCity != null && cachedCity.isNotEmpty) {
+            searchCity = cachedCity.endsWith('市')
+                ? cachedCity.substring(0, cachedCity.length - 1)
+                : cachedCity;
+          }
         }
       }
 
-      Logs.ui.info('🔍 搜索 POI: $keyword, 中心: ${center?.latitude},${center?.longitude}, 城市: $searchCity');
+      Logs.ui.info('🔍 搜索 POI: $keyword, 城市: $searchCity, 中心: ${center?.latitude},${center?.longitude}');
 
       final result = await _poiService.searchPoi(
         keywords: keyword,
