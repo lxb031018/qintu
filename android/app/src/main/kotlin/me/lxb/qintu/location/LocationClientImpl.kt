@@ -158,8 +158,12 @@ class LocationClientImpl(private val context: Context) : LocationSource {
         }
 
         Log.d(TAG, "📡 请求单次定位...")
+        var isResultHandled = false
         val onceLocationListener = object : AMapLocationListener {
             override fun onLocationChanged(location: AMapLocation?) {
+                if (isResultHandled) return
+                isResultHandled = true
+
                 if (location != null && location.errorCode == 0) {
                     Log.d(TAG, "✅ 单次定位成功: ${location.latitude}, ${location.longitude}")
                     lastKnownLocation = location

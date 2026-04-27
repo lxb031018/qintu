@@ -3,8 +3,6 @@ package me.lxb.qintu
 import android.content.Context
 import android.util.Log
 import android.view.View
-import com.amap.api.location.AMapLocation
-import com.amap.api.location.AMapLocationClientOption
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.MapsInitializer
 import com.amap.api.maps.model.LatLng
@@ -161,15 +159,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     cameraController?.moveCamera(lastLoc.latitude, lastLoc.longitude)
                     result.success(true)
                 } else {
-                    Log.d(TAG, "📡 尚无已知位置，请求单次定位...")
-                    val option = AMapLocationClientOption().apply {
-                        locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
-                        isOnceLocation = true
-                    }
-                    // 单次定位后移动相机
-                    locationClient.setLocationChangeListener { location ->
-                        cameraController?.moveCamera(location.latitude, location.longitude)
-                    }
+                    // 尚无已知位置，通过持续定位监听的回调移动相机
                     result.success(false)
                 }
             }

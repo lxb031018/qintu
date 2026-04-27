@@ -13,7 +13,7 @@ import com.amap.api.maps.model.PolylineOptions
 /**
  * 路线渲染器
  */
-class RouteRenderer(private val aMap: AMap?) : RouteSource {
+class RouteRenderer(private val aMap: AMap?) {
 
     companion object {
         private const val TAG = "RouteRenderer"
@@ -28,7 +28,7 @@ class RouteRenderer(private val aMap: AMap?) : RouteSource {
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
 
-    override fun showRoutes(routes: List<List<Map<String, Double>>>, selectIndex: Int): Int {
+    fun showRoutes(routes: List<List<Map<String, Double>>>, selectIndex: Int): Int {
         Log.d(TAG, "🗺️ [Native] showRoutes 开始执行")
 
         if (aMap == null) {
@@ -101,7 +101,7 @@ class RouteRenderer(private val aMap: AMap?) : RouteSource {
         return successCount
     }
 
-    override fun selectRoute(index: Int): Boolean {
+    fun selectRoute(index: Int): Boolean {
         Log.d(TAG, "🗺️ [Native] selectRoute 开始执行: index=$index")
 
         if (aMap == null) {
@@ -136,7 +136,7 @@ class RouteRenderer(private val aMap: AMap?) : RouteSource {
         return true
     }
 
-    override fun clearRoutes() {
+    fun clearRoutes() {
         Log.d(TAG, "🗺️ [Native] clearRoutes: 开始清除 ${routeOverlays.size} 条路线")
         for (polyline in routeOverlays) {
             try {
@@ -150,7 +150,7 @@ class RouteRenderer(private val aMap: AMap?) : RouteSource {
         clearMarkers()
     }
 
-    override fun setMarkers(
+    fun setMarkers(
         startLat: Double?,
         startLng: Double?,
         endLat: Double?,
@@ -201,7 +201,7 @@ class RouteRenderer(private val aMap: AMap?) : RouteSource {
         }
     }
 
-    override fun clearMarkers() {
+    fun clearMarkers() {
         try {
             startMarker?.let {
                 it.remove()
