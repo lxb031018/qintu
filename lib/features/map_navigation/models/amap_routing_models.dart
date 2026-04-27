@@ -245,7 +245,208 @@ class WalkStep {
   }
 }
 
-/// 路线选项数据模型
+/// ============================================
+/// 驾车方向动作枚举（对应高德 action 字段）
+/// ============================================
+enum DriveAction {
+  unknown,        // 未知
+  turnRight,       // 右转
+  turnLeft,        // 左转
+  leftAhead,       // 左转
+  rightAhead,      // 右转
+  leftBack,        // 左后方
+  rightBack,       // 右后方
+  leftTurnAround,  // 左转掉头
+  rightTurnAround, // 右转掉头
+  goAhead,         // 直行
+  slightLeft,      //向左前方
+  slightRight,     //向右前方
+  keepLeft,        //靠左
+  keepRight,       //靠右
+}
+
+/// 驾车导航步骤
+class DriveStep {
+  final String instruction;     // 导航指示，如 "沿XX路向东南方向行驶"
+  final String action;           // 动作代码，如 "1"=右转, "2"=左转
+  final String road;            // 道路名称
+  final double distance;        // 该步骤距离（米）
+  final double duration;        // 该步骤预计时间（秒）
+  final List<LatLng> points;    // 该步骤的坐标点
+  final DriveAction driveAction; // 解析后的动作枚举
+  final String? tmcStatus;      // 交通状态：畅通/缓行/拥堵/严重拥堵
+
+  const DriveStep({
+    required this.instruction,
+    required this.action,
+    required this.road,
+    required this.distance,
+    required this.duration,
+    required this.points,
+    required this.driveAction,
+    this.tmcStatus,
+  });
+
+  /// 解析动作代码
+  static DriveAction parseAction(String? action) {
+    if (action == null) return DriveAction.unknown;
+    switch (action) {
+      case '1':
+        return DriveAction.turnRight;
+      case '2':
+        return DriveAction.turnLeft;
+      case '3':
+        return DriveAction.leftAhead;
+      case '4':
+        return DriveAction.rightAhead;
+      case '5':
+        return DriveAction.leftBack;
+      case '6':
+        return DriveAction.rightBack;
+      case '7':
+        return DriveAction.leftTurnAround;
+      case '8':
+        return DriveAction.rightTurnAround;
+      case '9':
+        return DriveAction.goAhead;
+      case '10':
+        return DriveAction.slightLeft;
+      case '11':
+        return DriveAction.slightRight;
+      case '12':
+        return DriveAction.keepLeft;
+      case '13':
+        return DriveAction.keepRight;
+      default:
+        return DriveAction.unknown;
+    }
+  }
+
+  /// 获取方向图标
+  IconData get icon {
+    switch (driveAction) {
+      case DriveAction.turnRight:
+        return Icons.arrow_forward;
+      case DriveAction.turnLeft:
+        return Icons.arrow_back;
+      case DriveAction.leftAhead:
+        return Icons.subdirectory_arrow_left;
+      case DriveAction.rightAhead:
+        return Icons.subdirectory_arrow_right;
+      case DriveAction.leftBack:
+        return Icons.u_turn_left;
+      case DriveAction.rightBack:
+        return Icons.u_turn_right;
+      case DriveAction.leftTurnAround:
+        return Icons.u_turn_left;
+      case DriveAction.rightTurnAround:
+        return Icons.u_turn_right;
+      case DriveAction.goAhead:
+        return Icons.arrow_upward;
+      case DriveAction.slightLeft:
+        return Icons.turn_left;
+      case DriveAction.slightRight:
+        return Icons.turn_right;
+      case DriveAction.keepLeft:
+        return Icons.exit_to_app;
+      case DriveAction.keepRight:
+        return Icons.exit_to_app;
+      default:
+        return Icons.directions_car;
+    }
+  }
+
+  /// 获取友好的动作描述
+  String get actionText {
+    switch (driveAction) {
+      case DriveAction.turnRight:
+        return '右转';
+      case DriveAction.turnLeft:
+        return '左转';
+      case DriveAction.leftAhead:
+        return '向左前方';
+      case DriveAction.rightAhead:
+        return '向右前方';
+      case DriveAction.leftBack:
+        return '向左后方';
+      case DriveAction.rightBack:
+        return '向右后方';
+      case DriveAction.leftTurnAround:
+        return '左转掉头';
+      case DriveAction.rightTurnAround:
+        return '右转掉头';
+      case DriveAction.goAhead:
+        return '直行';
+      case DriveAction.slightLeft:
+        return '向左前方';
+      case DriveAction.slightRight:
+        return '向右前方';
+      case DriveAction.keepLeft:
+        return '靠左';
+      case DriveAction.keepRight:
+        return '靠右';
+      default:
+        return '行驶';
+    }
+  }
+
+  /// 距离显示文本
+  String get distanceText {
+    if (distance >= 1000) {
+      return '${(distance / 1000).toStringAsFixed(1)}公里';
+    }
+    return '${distance.toInt()}米';
+  }
+
+  /// 时长显示文本
+  String get durationText {
+    final minutes = (duration / 60).ceil();
+    if (minutes >= 60) {
+      final hours = minutes ~/ 60;
+      final mins = minutes % 60;
+      return '$hours小时${mins > 0 ? '$mins分钟' : ''}';
+    }
+    return '$minutes分钟';
+  }
+
+  /// 是否拥堵
+  bool get isCongested =>
+      tmcStatus == '拥堵' || tmcStatus == '严重拥堵';
+
+  /// 是否畅通
+  bool get isSmooth => tmcStatus == '畅通';
+}
+
+/// 驾车策略枚举
+enum DrivingStrategy {
+  fastest,   // 速度最快 (0)
+  cheapest,   // 费用优先 (1)
+  shortest,   // 距离最短 (2)
+}
+
+extension DrivingStrategyExtension on DrivingStrategy {
+  int get value {
+    switch (this) {
+      case DrivingStrategy.fastest:
+        return 0;
+      case DrivingStrategy.cheapest:
+        return 1;
+      case DrivingStrategy.shortest:
+        return 2;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case DrivingStrategy.fastest:
+        return '速度最快';
+      case DrivingStrategy.cheapest:
+        return '费用优先';
+      case DrivingStrategy.shortest:
+        return '距离最短';
+    }
+  }
+}
 class RouteOption {
   final double distance;    // 米
   final double duration;    // 秒
@@ -256,6 +457,7 @@ class RouteOption {
   final List<TransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
   final List<WalkStep>? rideSteps; // 骑行导航步骤详情（仅 riding 类型，结构与 WalkStep 相同）
+  final List<DriveStep>? driveSteps; // 驾车导航步骤详情（仅 driving 类型）
 
   const RouteOption({
     required this.distance,
@@ -267,6 +469,7 @@ class RouteOption {
     this.transitSegments,
     this.walkSteps,
     this.rideSteps,
+    this.driveSteps,
   });
 
   /// 距离显示文本

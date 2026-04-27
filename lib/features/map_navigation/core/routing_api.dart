@@ -63,11 +63,39 @@ class RoutingApi {
     final tolls = path['tolls']?.toString() ?? '0';
 
     final points = <LatLng>[];
+    final driveSteps = <DriveStep>[];
+
     if (path['steps'] != null) {
       for (final step in path['steps']) {
-        if (step['polyline'] != null) {
-          points.addAll(_parsePolyline(step['polyline']));
+        final stepPolyline = step['polyline']?.toString() ?? '';
+        final stepPoints = _parsePolyline(stepPolyline);
+
+        // 累积坐标点
+        points.addAll(stepPoints);
+
+        // 解析驾车步骤详情
+        final stepDistance = double.tryParse(step['distance']?.toString() ?? '0') ?? 0;
+        final stepDuration = double.tryParse(step['duration']?.toString() ?? '0') ?? 0;
+        final stepInstruction = step['instruction']?.toString() ?? '';
+        final stepAction = step['action']?.toString() ?? '';
+        final stepRoad = step['road']?.toString() ?? '';
+
+        // 解析 TMC 交通状态
+        String? tmcStatus;
+        if (step['tmc'] != null && step['tmc'] is List && (step['tmc'] as List).isNotEmpty) {
+          tmcStatus = step['tmc'][0]['status']?.toString();
         }
+
+        driveSteps.add(DriveStep(
+          instruction: stepInstruction,
+          action: stepAction,
+          road: stepRoad,
+          distance: stepDistance,
+          duration: stepDuration,
+          points: stepPoints,
+          driveAction: DriveStep.parseAction(stepAction),
+          tmcStatus: tmcStatus,
+        ));
       }
     }
 
@@ -78,6 +106,7 @@ class RoutingApi {
       tolls: double.tryParse(tolls) ?? 0,
       points: points,
       routeType: RouteType.driving,
+      driveSteps: driveSteps.isNotEmpty ? driveSteps : null,
     );
   }
 

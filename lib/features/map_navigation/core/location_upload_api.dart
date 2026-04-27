@@ -24,17 +24,19 @@ class LocationUploadApi {
     bool isNavigating = true,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'latitude': latitude,
+        'longitude': longitude,
+        'is_navigating': isNavigating,
+      };
+      if (accuracy != null) data['accuracy'] = accuracy;
+      if (speed != null) data['speed'] = speed;
+      if (bearing != null) data['bearing'] = bearing;
+      if (altitude != null) data['altitude'] = altitude;
+
       await _apiClient.post<Map<String, dynamic>>(
         '/api/locations/update',
-        data: {
-          'latitude': latitude,
-          'longitude': longitude,
-          if (accuracy != null) 'accuracy': accuracy,
-          if (speed != null) 'speed': speed,
-          if (bearing != null) 'bearing': bearing,
-          if (altitude != null) 'altitude': altitude,
-          'is_navigating': isNavigating,
-        },
+        data: data,
       );
     } catch (e) {
       Logs.location.warning('上传位置失败: $e');
