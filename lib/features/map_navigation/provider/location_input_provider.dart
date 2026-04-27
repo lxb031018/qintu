@@ -354,38 +354,36 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       var center = state.searchCenter;
       String? searchCity;
 
-      Logs.ui.debug('开始获取 GPS 位置...');
-      final gpsResult = await _gpsService.getCurrentLocation();
-      Logs.ui.debug('GPS 结果: $gpsResult');
-
-      if (gpsResult != null) {
-        // 仅当 searchCenter 为 null 时才使用 GPS 位置
-        // 如果起点已选 POI（绑定者位置），优先使用该位置作为搜索中心
-        center ??= LatLng(
-          gpsResult['latitude'] as double,
-          gpsResult['longitude'] as double,
-        );
-
-        final gpsCity = gpsResult['city'] as String?;
-        if (gpsCity != null && gpsCity.isNotEmpty) {
-          searchCity = gpsCity.endsWith('市')
-              ? gpsCity.substring(0, gpsCity.length - 1)
-              : gpsCity;
+      // 如果已有搜索中心（绑定者 POI 坐标），直接用其获取城市，跳过 GPS 调用
+      if (center != null) {
+        Logs.ui.debug('已有搜索中心，使用 POI 位置获取城市');
+        searchCity = await _poiService.getCityFromLocation(center);
+        if (searchCity != null) {
+          searchCity = searchCity.endsWith('市')
+              ? searchCity.substring(0, searchCity.length - 1)
+              : searchCity;
+          Logs.ui.debug('从 POI 坐标获取城市: $searchCity');
         }
-        Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
       } else {
-        Logs.ui.debug('GPS 不可用，使用 POI 位置');
-        // GPS 不可用时，尝试用搜索中心的坐标获取城市
-        if (center != null) {
-          searchCity = await _poiService.getCityFromLocation(center);
-          if (searchCity != null) {
-            searchCity = searchCity.endsWith('市')
-                ? searchCity.substring(0, searchCity.length - 1)
-                : searchCity;
-            Logs.ui.debug('从 POI 坐标获取城市: $searchCity');
+        Logs.ui.debug('开始获取 GPS 位置...');
+        final gpsResult = await _gpsService.getCurrentLocation();
+        Logs.ui.debug('GPS 结果: $gpsResult');
+
+        if (gpsResult != null) {
+          center = LatLng(
+            gpsResult['latitude'] as double,
+            gpsResult['longitude'] as double,
+          );
+
+          final gpsCity = gpsResult['city'] as String?;
+          if (gpsCity != null && gpsCity.isNotEmpty) {
+            searchCity = gpsCity.endsWith('市')
+                ? gpsCity.substring(0, gpsCity.length - 1)
+                : gpsCity;
           }
-        }
-        if (searchCity == null) {
+          Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
+        } else {
+          Logs.ui.debug('GPS 不可用，使用 POI 位置');
           final cachedCity = _gpsService.lastKnownCity;
           if (cachedCity != null && cachedCity.isNotEmpty) {
             searchCity = cachedCity.endsWith('市')
