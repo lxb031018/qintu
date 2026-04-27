@@ -105,7 +105,8 @@ yarn-error.log*
 # Backend build artifacts
 functions/qintu-api.zip
 
+# Map navigation widget (inactive)
+lib/features/map_navigation/widgets/route_result_bottom_sheet.dart
+
 # Example projects
 examples/
-
-.gitignore
