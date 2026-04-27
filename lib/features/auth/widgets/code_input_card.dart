@@ -4,7 +4,7 @@ import '../../../constants/colors/app_colors.dart';
 import '../../../constants/app_spacings.dart';
 import '../../../constants/app_radii.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../../utils/phone_utils.dart';
+import '../../../utils/platform/phone_utils.dart';
 
 /// ============================================
 /// 验证码输入卡片

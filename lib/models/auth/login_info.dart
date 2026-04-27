@@ -1,4 +1,4 @@
-import '../../utils/phone_utils.dart';
+import '../../utils/platform/phone_utils.dart';
 
 /// 登录信息模型
 ///

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/constants/app_strings.dart';
 import 'package:qintu/providers/binding_provider.dart';
 import 'package:qintu/widgets/common/app_confirm_dialog.dart';
-import 'package:qintu/utils/app_snackbar.dart';
+import 'package:qintu/utils/ui/app_snackbar.dart';
 import 'widgets/binding_stats_card.dart';
 import 'widgets/binding_list_view.dart';
 import 'widgets/add_binding_button.dart';

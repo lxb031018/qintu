@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qintu/models/binding/binding.dart';
-import '../../../../utils/phone_utils.dart';
-import '../../../../utils/date_utils.dart';
+import '../../../../utils/platform/phone_utils.dart';
+import '../../../../utils/platform/date_utils.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_strings.dart';
 import '../../../../constants/app_spacings.dart';

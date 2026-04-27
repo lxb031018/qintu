@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../core/http/third_party_api_client.dart';
 import '../../../config/amap_web_config.dart';
 import '../../../models/location/lat_lng.dart';
-import '../../../utils/amap_error_handler.dart';
+import '../../../utils/errors/amap_error_handler.dart';
 import '../../../utils/logger.dart';
 
 /// ============================================

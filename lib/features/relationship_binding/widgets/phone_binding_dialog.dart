@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../../utils/validators.dart';
-import '../../../utils/app_snackbar.dart';
+import '../../../utils/validation/validators.dart';
+import '../../../utils/ui/app_snackbar.dart';
 import '../provider/binding_page_provider.dart';
 
 /// ============================================

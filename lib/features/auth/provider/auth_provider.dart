@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/auth_state_manager.dart';
-import 'package:qintu/utils/exceptions.dart';
-import 'package:qintu/utils/phone_utils.dart';
+import 'package:qintu/utils/errors/exceptions.dart';
+import 'package:qintu/utils/platform/phone_utils.dart';
 import '../core/auth_api.dart';
 import '../service/auth_service.dart';
 

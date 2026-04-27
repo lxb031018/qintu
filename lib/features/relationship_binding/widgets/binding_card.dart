@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/binding/binding.dart';
-import '../../../utils/phone_utils.dart';
+import '../../../utils/platform/phone_utils.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_spacings.dart';

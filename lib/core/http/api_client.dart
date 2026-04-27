@@ -5,7 +5,7 @@ import 'package:qintu/features/auth/core/secure_storage.dart';
 import 'api_response.dart';
 import 'token_refresh_interceptor.dart';
 import '../../utils/logger.dart';
-import '../../utils/http_error_handler.dart';
+import '../../utils/errors/http_error_handler.dart';
 
 /// 统一的 HTTP 客户端
 ///

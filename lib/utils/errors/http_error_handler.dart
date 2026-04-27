@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../utils/logger.dart';
+import '../logger.dart';
 
 /// HTTP 错误处理工具
 /// 提供 Dio 错误的统一处理和错误消息映射

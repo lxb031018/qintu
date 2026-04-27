@@ -5,8 +5,8 @@ import '../../../constants/app_durations.dart';
 import '../../../config/environments/environment_manager.dart';
 import '../../../models/auth/auth_result.dart';
 import '../../../utils/logger.dart';
-import '../../../utils/exceptions.dart';
-import '../../../utils/phone_utils.dart';
+import '../../../utils/errors/exceptions.dart';
+import '../../../utils/platform/phone_utils.dart';
 
 /// ============================================
 /// 认证 API 层

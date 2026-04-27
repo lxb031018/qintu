@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/environments/index.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
-import '../../utils/app_snackbar.dart';
+import '../../utils/ui/app_snackbar.dart';
 
 /// 环境切换页面
 ///

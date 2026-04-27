@@ -4,7 +4,7 @@ import '../../../constants/app_strings.dart';
 import '../../../providers/binding_provider.dart';
 import '../../../widgets/common/tab_badge.dart';
 import '../../../widgets/common/app_confirm_dialog.dart';
-import '../../../utils/app_snackbar.dart';
+import '../../../utils/ui/app_snackbar.dart';
 import 'widgets/received_requests_tab.dart';
 import 'widgets/sent_requests_tab.dart';
 import 'widgets/rejected_requests_tab.dart';
