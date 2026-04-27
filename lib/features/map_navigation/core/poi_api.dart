@@ -49,7 +49,7 @@ class PoiApi {
       }
 
       final response = await _dio.get(
-        'https://restapi.amap.com/v3/place/text',
+        '/v3/place/text',
         queryParameters: params,
       );
 
@@ -93,7 +93,7 @@ class PoiApi {
 
     try {
       final response = await _dio.get(
-        'https://restapi.amap.com/v3/geocode/geo',
+        '/v3/geocode/geo',
         queryParameters: {
           'key': apiKey,
           'address': address,
@@ -123,7 +123,7 @@ class PoiApi {
 
     try {
       final response = await _dio.get(
-        'https://restapi.amap.com/v3/geocode/regeo',
+        '/v3/geocode/regeo',
         queryParameters: {
           'key': apiKey,
           'location': '${location.longitude},${location.latitude}',

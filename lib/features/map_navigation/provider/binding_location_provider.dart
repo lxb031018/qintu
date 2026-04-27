@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qintu/models/binding/binding.dart';
-import '../core/binding_location_api.dart'; // 仅导入类型 BindingLocationResult
-import '../service/binding_location_service.dart';
+import 'package:qintu/models/binding/binding.dart' show BindingLocation;
+import '../core/binding_location_api.dart' show BindingLocationResult;
+import '../service/binding_location_service.dart' show BindingLocationService, bindingLocationService;
 
 /// ============================================
 /// 绑定者位置 Provider
