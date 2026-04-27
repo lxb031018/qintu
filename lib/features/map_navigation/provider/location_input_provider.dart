@@ -108,23 +108,16 @@ class LocationInputState {
   });
 
   /// 获取搜索中心坐标
-  /// 优先使用：对向位置的绑定者坐标
+  /// 优先使用：对向位置已选的坐标，其次使用当前已选的坐标
   LatLng? get searchCenter {
-    // 如果在终点输入框输入，且起点是绑定者位置，优先用绑定者坐标
-    if (!isOriginFocused && origin.poi?.isBinderLocation == true) {
+    if (!isOriginFocused && origin.poi != null) {
       return origin.poi!.latLng;
     }
-    // 如果在起点输入框输入，且终点是绑定者位置，优先用绑定者坐标
-    if (isOriginFocused && destination.poi?.isBinderLocation == true) {
+    if (isOriginFocused && destination.poi != null) {
       return destination.poi!.latLng;
     }
-    // 否则用起点或终点的位置（如果有）
-    if (origin.poi != null) {
-      return origin.poi!.latLng;
-    }
-    if (destination.poi != null) {
-      return destination.poi!.latLng;
-    }
+    if (origin.poi != null) return origin.poi!.latLng;
+    if (destination.poi != null) return destination.poi!.latLng;
     return null;
   }
 

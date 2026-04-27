@@ -170,7 +170,6 @@ class PoiSuggestion {
   final String location;
   int? distance;
   final String? entrLocation;
-  final bool isBinderLocation; // 是否为绑定者位置
 
   PoiSuggestion({
     required this.id,
@@ -180,7 +179,6 @@ class PoiSuggestion {
     required this.location,
     this.distance,
     this.entrLocation,
-    this.isBinderLocation = false,
   });
 
   LatLng? get latLng {
@@ -205,7 +203,6 @@ class PoiSuggestion {
       location: map['location']?.toString() ?? '',
       distance: int.tryParse(map['distance']?.toString() ?? ''),
       entrLocation: map['entr_location']?.toString(),
-      isBinderLocation: map['is_binder_location'] == true,
     );
   }
 }

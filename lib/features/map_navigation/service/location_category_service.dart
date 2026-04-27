@@ -150,7 +150,6 @@ class LocationCategoryService {
               district: '',
               address: result.location!.address ?? 'GPS定位',
               location: '${result.location!.longitude},${result.location!.latitude}',
-              isBinderLocation: true,
             ));
           }
         } catch (e) {
