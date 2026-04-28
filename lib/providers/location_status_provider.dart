@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qintu/utils/logger.dart';
-import 'package:qintu/features/map_navigation/service/location_sharing_service.dart';
+import 'package:qintu/features/map_navigation/provider/location_sharing_provider.dart';
 
 /// ============================================
 /// 定位状态枚举
@@ -49,9 +49,10 @@ class LocationNotifier extends Notifier<LocationStatus> {
     final shouldShare = state == LocationStatus.enabled;
     if (shouldShare != _wasSharing) {
       if (shouldShare) {
-        locationSharingService.startSharing();
+        // 使用 provider 的 notifier 来启动共享
+        ref.read(locationSharingProvider.notifier).startSharing();
       } else {
-        locationSharingService.stopSharing();
+        ref.read(locationSharingProvider.notifier).stopSharing();
       }
       _wasSharing = shouldShare;
     }

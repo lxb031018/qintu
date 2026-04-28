@@ -6,13 +6,13 @@ import 'core/amap_map_controller.dart';
 import 'models/amap_routing_models.dart'; // for RouteType
 import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
+import 'provider/location_sharing_provider.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_spacings.dart';
-import 'service/location_sharing_service.dart';
 import 'service/map_display_service.dart';
 
 /// ============================================
@@ -73,8 +73,8 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   void _onMapCreated(AmapMapController controller) {
     _mapController = controller;
     MapNavigationTab._setMapController(controller);
-    // 设置地图控制器到位置共享服务
-    locationSharingService.setMapController(controller);
+    // 设置地图控制器到位置共享 Provider
+    ref.read(locationSharingProvider.notifier).setMapController(controller);
     // 设置地图控制器到地图显示服务
     mapDisplayService.setMapController(controller);
   }

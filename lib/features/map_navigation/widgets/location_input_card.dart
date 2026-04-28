@@ -15,9 +15,8 @@ import '../provider/map_navigation_provider.dart';
 /// 支持上下滑动交换起点和终点
 ///
 /// 架构原则：单向数据流
-/// - 用户输入 → Provider（仅更新文本，不自动清除 POI）
-/// - POI 选择 → Provider → UI（由用户主动操作触发）
-/// - Provider 不自动覆盖用户输入
+/// - Widget 通过 callback 与 Provider 交互
+/// - 不直接调用 notifier 方法
 /// ============================================
 
 class LocationInputCard extends ConsumerStatefulWidget {
@@ -54,29 +53,11 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     super.dispose();
   }
 
-  /// 处理起点输入框文本变化
-  void _onOriginTextChanged(String value) {
-    ref.read(locationInputProvider.notifier).updateText(true, value);
-    ref.read(locationInputProvider.notifier).updateSearchKeyword(value);
-  }
-
-  /// 处理终点输入框文本变化
-  void _onDestinationTextChanged(String value) {
-    ref.read(locationInputProvider.notifier).updateText(false, value);
-    ref.read(locationInputProvider.notifier).updateSearchKeyword(value);
-  }
-
-  /// 执行交换逻辑
-  void _performSwap() {
-    ref.read(locationInputProvider.notifier).swapOriginAndDestination(
-      ref.read(mapNavigationProvider.notifier),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(locationInputProvider);
+    final callbacks = state.callbacks;
 
     // 同步控制器文本（仅在必要时刻）
     _syncControllers(state);
@@ -108,9 +89,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             focusNode: _originFocusNode,
             state: state.origin,
             onFocusChange: (hasFocus) {
-              if (hasFocus) {
-                ref.read(locationInputProvider.notifier).showList(isOrigin: true);
-              }
+              callbacks?.onOriginFocusChanged?.call(hasFocus);
             },
           ),
           const SizedBox(height: AppSpacings.sm),
@@ -125,9 +104,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             focusNode: _destinationFocusNode,
             state: state.destination,
             onFocusChange: (hasFocus) {
-              if (hasFocus) {
-                ref.read(locationInputProvider.notifier).showList(isOrigin: false);
-              }
+              callbacks?.onDestinationFocusChanged?.call(hasFocus);
             },
           ),
           // 当起点和终点都有真实 POI 时，显示出行方式按钮
@@ -151,6 +128,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
   /// 选择任意出行方式后自动弹出路线结果
   Widget _buildRouteTypeRow(BuildContext context, WidgetRef ref, bool isDark) {
     final navState = ref.watch(mapNavigationProvider);
+    final callbacks = ref.read(locationInputProvider).callbacks;
 
     return Row(
       children: [
@@ -160,8 +138,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           icon: Icons.directions_walk,
           isSelected: navState.currentRouteType == RouteType.walking,
           onTap: () {
-            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.walking);
-            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+            callbacks?.onRouteTypeSelected?.call(RouteType.walking);
           },
           isDark: isDark,
         ),
@@ -171,8 +148,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           icon: Icons.directions_bike,
           isSelected: navState.currentRouteType == RouteType.riding,
           onTap: () {
-            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.riding);
-            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+            callbacks?.onRouteTypeSelected?.call(RouteType.riding);
           },
           isDark: isDark,
         ),
@@ -182,8 +158,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           icon: Icons.directions_bus,
           isSelected: navState.currentRouteType == RouteType.transit,
           onTap: () {
-            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.transit);
-            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+            callbacks?.onRouteTypeSelected?.call(RouteType.transit);
           },
           isDark: isDark,
         ),
@@ -193,8 +168,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           icon: Icons.directions_car,
           isSelected: navState.currentRouteType == RouteType.driving,
           onTap: () {
-            ref.read(mapNavigationProvider.notifier).switchRouteType(RouteType.driving);
-            ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+            callbacks?.onRouteTypeSelected?.call(RouteType.driving);
           },
           isDark: isDark,
         ),
@@ -236,7 +210,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         _dragStartY = null;
 
         if (deltaY.abs() > 50) {
-          _performSwap();
+          ref.read(locationInputProvider).callbacks?.onSwapRequested?.call();
         }
       },
       child: _buildInputRow(
@@ -265,6 +239,8 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     required InputFieldState state,
     required ValueChanged<bool> onFocusChange,
   }) {
+    final callbacks = ref.read(locationInputProvider).callbacks;
+
     return Focus(
       onFocusChange: onFocusChange,
       child: Row(
@@ -283,7 +259,13 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              onChanged: isOrigin ? _onOriginTextChanged : _onDestinationTextChanged,
+              onChanged: isOrigin
+                  ? (value) {
+                      callbacks?.onOriginTextChanged?.call(value);
+                    }
+                  : (value) {
+                      callbacks?.onDestinationTextChanged?.call(value);
+                    },
               style: TextStyle(
                 fontSize: 15,
                 color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
@@ -308,15 +290,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           if (state.hasText)
             GestureDetector(
               onTap: () {
-                ref.read(locationInputProvider.notifier).clearField(
-                  isOrigin,
-                  ref.read(mapNavigationProvider.notifier),
-                );
-                if (isOrigin) {
-                  _originController.clear();
-                } else {
-                  _destinationController.clear();
-                }
+                callbacks?.onClearField?.call(isOrigin);
               },
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacings.sm),
@@ -394,4 +368,3 @@ class _RouteTypeButton extends StatelessWidget {
     );
   }
 }
-

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/gps/gps_service.dart';
-import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
 import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion
 import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
+import '../models/amap_routing_models.dart';
 import 'map_navigation_provider.dart';
 
 /// ============================================
@@ -91,6 +91,9 @@ class LocationInputState {
   /// 当前选中的分类
   final LocationCategory selectedCategory;
 
+  /// 回调接口（Widget 通过回调与 Provider 交互）
+  final LocationInputCardCallbacks? callbacks;
+
   const LocationInputState({
     this.origin = const InputFieldState(),
     this.destination = const InputFieldState(),
@@ -105,6 +108,7 @@ class LocationInputState {
     this.binderItems = const [],
     this.isLoadingBinderItems = false,
     this.selectedCategory = LocationCategory.recommended,
+    this.callbacks,
   });
 
   /// 获取搜索中心坐标
@@ -135,6 +139,7 @@ class LocationInputState {
     List<PoiSuggestion>? binderItems,
     bool? isLoadingBinderItems,
     LocationCategory? selectedCategory,
+    LocationInputCardCallbacks? callbacks,
     bool clearOrigin = false,
     bool clearDestination = false,
   }) {
@@ -152,8 +157,34 @@ class LocationInputState {
       binderItems: binderItems ?? this.binderItems,
       isLoadingBinderItems: isLoadingBinderItems ?? this.isLoadingBinderItems,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      callbacks: callbacks ?? this.callbacks,
     );
   }
+}
+
+/// ============================================
+/// LocationInputCard 回调接口
+///
+/// Widget 通过回调与 Provider 交互，实现单向数据流
+/// ============================================
+class LocationInputCardCallbacks {
+  final void Function(String value)? onOriginTextChanged;
+  final void Function(String value)? onDestinationTextChanged;
+  final void Function()? onSwapRequested;
+  final void Function(bool isOrigin)? onClearField;
+  final void Function(bool hasFocus)? onOriginFocusChanged;
+  final void Function(bool hasFocus)? onDestinationFocusChanged;
+  final void Function(RouteType type)? onRouteTypeSelected;
+
+  const LocationInputCardCallbacks({
+    this.onOriginTextChanged,
+    this.onDestinationTextChanged,
+    this.onSwapRequested,
+    this.onClearField,
+    this.onOriginFocusChanged,
+    this.onDestinationFocusChanged,
+    this.onRouteTypeSelected,
+  });
 }
 
 /// ============================================
@@ -169,7 +200,41 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
   @override
   LocationInputState build() {
-    return const LocationInputState();
+    return LocationInputState(
+      callbacks: LocationInputCardCallbacks(
+        onOriginTextChanged: (value) {
+          updateText(true, value);
+          updateSearchKeyword(value);
+        },
+        onDestinationTextChanged: (value) {
+          updateText(false, value);
+          updateSearchKeyword(value);
+        },
+        onSwapRequested: () {
+          final mapNotifier = ref.read(mapNavigationProvider.notifier);
+          swapOriginAndDestination(mapNotifier);
+        },
+        onClearField: (isOrigin) {
+          final mapNotifier = ref.read(mapNavigationProvider.notifier);
+          clearField(isOrigin, mapNotifier);
+        },
+        onOriginFocusChanged: (hasFocus) {
+          if (hasFocus) {
+            showList(isOrigin: true);
+          }
+        },
+        onDestinationFocusChanged: (hasFocus) {
+          if (hasFocus) {
+            showList(isOrigin: false);
+          }
+        },
+        onRouteTypeSelected: (type) {
+          final mapNotifier = ref.read(mapNavigationProvider.notifier);
+          mapNotifier.switchRouteType(type);
+          mapNotifier.showRoutesSheet();
+        },
+      ),
+    );
   }
 
   /// 直接将 GPS 位置填入当前焦点的输入框

@@ -1,12 +1,10 @@
-import 'package:dio/dio.dart';
-import 'package:qintu/config/amap_web_config.dart';
-import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/features/map_navigation/core/routing_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_transit_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
-import 'package:qintu/core/http/third_party_api_client.dart';
+import 'package:qintu/features/map_navigation/core/poi_api.dart';
+import 'package:qintu/utils/logger.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 export 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
@@ -33,14 +31,17 @@ class AmapRoutingService {
 
   static AmapRoutingService get instance => _instance;
 
-  /// 使用统一的第三方 API 客户端
-  final Dio _dio = ThirdPartyApiClient.instance.dio;
-
   /// 各服务实例
   final _routingApi = RoutingApi();
   final _walkingService = AmapWalkingApi.instance;
   final _ridingService = AmapRidingApi.instance;
   final _transitService = AmapTransitApi.instance;
+  final _poiApi = PoiApi();
+
+  /// 城市缓存（key: "lat,lng", value: city name）
+  final Map<String, String> _cityCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const _cacheExpiry = Duration(minutes: 30);
 
   /// 规划路线（统一入口）
   ///
@@ -61,22 +62,22 @@ class AmapRoutingService {
 
     switch (type) {
       case RouteType.driving:
-        return _routingApi.planDrivingRoute(
+        return _withRetry(() => _routingApi.planDrivingRoute(
           origin: origin,
           destination: destination,
           strategy: strategy,
-        );
+        ));
       case RouteType.walking:
-        return _walkingService.planWalkingRoute(
+        return _withRetry(() => _walkingService.planWalkingRoute(
           origin: origin,
           destination: destination,
-        );
+        ));
       case RouteType.riding:
-        return _ridingService.planRidingRoute(
+        return _withRetry(() => _ridingService.planRidingRoute(
           origin: origin,
           destination: destination,
           strategy: strategy,
-        );
+        ));
       case RouteType.transit:
         // 如果没有提供城市，尝试从起点坐标逆地理编码获取
         if (routeCity.isEmpty) {
@@ -85,37 +86,57 @@ class AmapRoutingService {
         if (routeCity.isEmpty) {
           throw const RoutingException('公共交通路线需要城市参数，请开启定位权限或手动输入城市');
         }
-        return _transitService.planTransitRoute(
+        return _withRetry(() => _transitService.planTransitRoute(
           origin: origin,
           destination: destination,
           strategy: strategy,
           city: routeCity,
-        );
+        ));
     }
   }
 
-  /// 从坐标逆地理编码获取城市名称
-  Future<String> _getCityFromLocation(LatLng location) async {
-    try {
-      final apiKey = AmapWebConfig.webApiKey;
-      if (apiKey.isEmpty) return '';
+  /// 带重试的路由规划
+  Future<List<RouteOption>> _withRetry(
+    Future<List<RouteOption>> Function() request,
+  ) async {
+    const maxRetries = 2;
+    Exception? lastError;
 
-      final url = '/v3/geocode/regeo';
-      final response = await _dio.get(url, queryParameters: {
-        'key': apiKey,
-        'location': '${location.longitude},${location.latitude}',
-        'extensions': 'base',
-        'output': 'json',
-      });
-
-      final data = response.data;
-      if (data['status'] == '1' && data['regeocode'] != null) {
-        final addressComponent = data['regeocode']['addressComponent'];
-        return addressComponent['city'] as String? ?? '';
+    for (int attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await request();
+      } catch (e) {
+        lastError = e is Exception ? e : Exception(e.toString());
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 200 * (attempt + 1)));
+        }
       }
-    } catch (e) {
-      Logs.ui.warning('⚠️ 逆地理编码获取城市失败: $e');
     }
-    return '';
+    throw lastError ?? Exception('路由规划失败');
+  }
+
+  /// 从坐标逆地理编码获取城市名称（带缓存）
+  Future<String> _getCityFromLocation(LatLng location) async {
+    final cacheKey = '${location.latitude},${location.longitude}';
+
+    // 检查缓存
+    if (_cityCache.containsKey(cacheKey)) {
+      final age = DateTime.now().difference(_cacheTimestamps[cacheKey]!);
+      if (age < _cacheExpiry) {
+        return _cityCache[cacheKey]!;
+      }
+    }
+
+    try {
+      final city = await _poiApi.getCityFromLocation(location) ?? '';
+      if (city.isNotEmpty) {
+        _cityCache[cacheKey] = city;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+      }
+      return city;
+    } catch (e) {
+      Logs.ui.warning('获取城市失败: $e');
+      return '';
+    }
   }
 }

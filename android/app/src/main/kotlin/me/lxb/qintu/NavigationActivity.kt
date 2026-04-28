@@ -120,7 +120,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
         // 2. 从 Intent 获取参数
         mEnableVoice = intent.getBooleanExtra(EXTRA_ENABLE_VOICE, true)
-        mAMapNavi.setUseInnerVoice(mEnableVoice)
+        // 注意：setUseInnerVoice 在 onInitNaviSuccess 中调用，确保 SDK 初始化完成
 
         val routePointsJson = intent.getStringExtra(EXTRA_ROUTE_POINTS)
         if (routePointsJson.isNullOrEmpty()) {
@@ -238,8 +238,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         }
 
         // 5. 直接启动导航（无需 SDK 路线计算）
-        val ret = mAMapNavi.startNavi(NaviType.GPS)
-        Log.d(TAG, "   startNavi(GPS) 返回: $ret")
+        // 注意：startNavi 在 onInitNaviSuccess 中调用，确保 SDK 初始化完成且语音设置生效后再启动
     }
 
     /**
@@ -384,6 +383,15 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
     override fun onInitNaviSuccess() {
         Log.d(TAG, "✅ onInitNaviSuccess 导航初始化成功")
+        // 在 SDK 初始化完成后设置语音播报，确保生效
+        mAMapNavi.setUseInnerVoice(mEnableVoice)
+        Log.d(TAG, "   语音播报已开启: $mEnableVoice")
+
+        // 确保语音设置生效后再启动导航
+        if (mRoutePoints.size >= 2) {
+            val ret = mAMapNavi.startNavi(NaviType.GPS)
+            Log.d(TAG, "   startNavi(GPS) 返回: $ret")
+        }
     }
 
     override fun onInitNaviFailure() {
