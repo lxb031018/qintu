@@ -8,4 +8,29 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- 导航播报文字显示区域 -->
+    <LinearLayout
+        android:id="@+id/navi_text_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="120dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/navi_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#CC000000"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
 </FrameLayout>

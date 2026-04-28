@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.amap.api.navi.AMapNavi
@@ -63,6 +64,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var mEnableVoice: Boolean = true
     private var carOverlay: CarOverlay? = null
     private var routeOverLay: RouteOverLay? = null
+    private var naviTextView: TextView? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -130,6 +132,9 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         mAMapNaviView!!.viewOptions = options
 
         Log.d(TAG, "✅ AMapNaviView 初始化完成，autoDrawRoute=${options.isAutoDrawRoute}")
+
+        // 初始化导航播报 TextView
+        naviTextView = findViewById(R.id.navi_text)
 
         // GPS 定位配置
         mAMapNavi.setIsUseExtraGPSData(false)  // 不使用外部GPS数据，使用自带GPS
@@ -312,6 +317,12 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     override fun onGetNavigationText(type: Int, text: String?) {
         Log.d(TAG, "🗣️ 导航播报[$type]: $text")
         text?.let {
+            // 更新 UI 播报文字
+            runOnUiThread {
+                naviTextView?.text = it
+                naviTextView?.visibility = TextView.VISIBLE
+            }
+
             val intent = Intent(ACTION_NAVI_TEXT).apply {
                 putExtra("type", type)
                 putExtra("text", it)
