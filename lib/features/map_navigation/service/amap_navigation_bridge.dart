@@ -24,6 +24,8 @@ class NavigationState {
   final double? currentLat;         // 当前位置纬度
   final double? currentLng;         // 当前位置经度
   final String? roadName;           // 当前道路名称
+  final String? naviText;           // 导航播报文字
+  final int naviTextType;           // 导航播报类型（0=转向, 1=道路名, etc）
 
   NavigationState({
     required this.status,
@@ -34,6 +36,8 @@ class NavigationState {
     this.currentLat,
     this.currentLng,
     this.roadName,
+    this.naviText,
+    this.naviTextType = 0,
   });
 
   factory NavigationState.fromMap(Map<dynamic, dynamic> map) {
@@ -46,6 +50,8 @@ class NavigationState {
       currentLat: map['currentLat']?.toDouble(),
       currentLng: map['currentLng']?.toDouble(),
       roadName: map['roadName'],
+      naviText: map['naviText'],
+      naviTextType: (map['naviTextType'] ?? 0).toInt(),
     );
   }
 
@@ -75,7 +81,8 @@ class NavigationState {
         'speed: $currentSpeed km/h, '
         'distance: $remainingDistance m, '
         'duration: $remainingDuration s, '
-        'instruction: $nextInstruction)';
+        'instruction: $nextInstruction, '
+        'naviText: $naviText)';
   }
 }
 
