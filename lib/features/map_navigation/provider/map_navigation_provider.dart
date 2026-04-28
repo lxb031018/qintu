@@ -151,12 +151,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       originPoi: poi,
       originLocation: poi.latLng,
-      searchKeyword: '',
-      searchState: const AsyncState(data: []),
-      // 重新选择起点时清除旧路线
-      routes: const [],
-      showRoutesSheet: false,
     );
+    _resetSearchAndRoutes();
   }
 
   /// 设置终点
@@ -164,13 +160,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       destinationPoi: poi,
       destinationLocation: poi.latLng,
-      searchKeyword: '',
-      searchState: const AsyncState(data: []),
-      // 重新选择终点时清除旧路线和出行方式
-      routes: const [],
-      showRoutesSheet: false,
-      clearCurrentRouteType: true,
     );
+    _resetSearchAndRoutes(clearRouteType: true);
   }
 
   /// 清除起点
@@ -188,6 +179,17 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       destinationPoi: null,
       destinationLocation: null,
       clearCurrentRouteType: true,
+    );
+  }
+
+  /// 内部辅助方法：重置搜索状态和路线
+  void _resetSearchAndRoutes({bool clearRouteType = false}) {
+    state = state.copyWith(
+      searchKeyword: '',
+      searchState: const AsyncState(data: []),
+      routes: const [],
+      showRoutesSheet: false,
+      clearCurrentRouteType: clearRouteType,
     );
   }
 
