@@ -82,6 +82,7 @@ class MapNavigationState {
     bool? isLoading,
     String? errorMessage,
     RouteType? currentRouteType,
+    bool clearCurrentRouteType = false,
     bool? showRoutesSheet,
   }) {
     return MapNavigationState(
@@ -97,7 +98,7 @@ class MapNavigationState {
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
-      currentRouteType: currentRouteType ?? this.currentRouteType,
+      currentRouteType: clearCurrentRouteType ? null : (currentRouteType ?? this.currentRouteType),
       showRoutesSheet: showRoutesSheet ?? this.showRoutesSheet,
     );
   }
@@ -174,7 +175,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       // 重新选择终点时清除旧路线和出行方式
       routes: const [],
       showRoutesSheet: false,
-      currentRouteType: null,
+      clearCurrentRouteType: true,
     );
   }
 
@@ -183,7 +184,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       originPoi: null,
       originLocation: null,
-      currentRouteType: null,
+      clearCurrentRouteType: true,
     );
   }
 
@@ -192,7 +193,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       destinationPoi: null,
       destinationLocation: null,
-      currentRouteType: null,
+      clearCurrentRouteType: true,
     );
   }
 
