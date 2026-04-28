@@ -72,6 +72,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var endMarker: Marker? = null
     private var naviDistanceView: TextView? = null
     private var naviTimeView: TextView? = null
+    private var naviSpeedView: TextView? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -144,6 +145,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         naviTextView = findViewById(R.id.navi_text)
         naviDistanceView = findViewById(R.id.navi_distance)
         naviTimeView = findViewById(R.id.navi_time)
+        naviSpeedView = findViewById(R.id.navi_speed)
 
         // GPS 定位配置
         mAMapNavi.setIsUseExtraGPSData(false)  // 不使用外部GPS数据，使用自带GPS
@@ -293,6 +295,15 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
             if (map != null && carOverlay != null) {
                 val latLng = LatLng(coord.latitude, coord.longitude)
                 carOverlay?.draw(map, latLng, it.bearing)
+            }
+
+            // 更新速度显示
+            runOnUiThread {
+                val speedKmh = it.speed
+                if (speedKmh > 0) {
+                    naviSpeedView?.text = String.format("%.0f km/h", speedKmh)
+                    naviSpeedView?.visibility = TextView.VISIBLE
+                }
             }
 
             // 发送位置广播
