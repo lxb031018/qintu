@@ -45,8 +45,9 @@ class MapDisplayService {
           );
         }
       } else {
-        // 清除起点 marker
+        // 清除起点 marker 和路线
         _mapController?.clearSingleMarker(true);
+        _mapController?.clearRoutes();
       }
     }
 
@@ -69,8 +70,9 @@ class MapDisplayService {
           );
         }
       } else {
-        // 清除终点 marker
+        // 清除终点 marker 和路线
         _mapController?.clearSingleMarker(false);
+        _mapController?.clearRoutes();
       }
     }
   }
