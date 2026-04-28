@@ -95,6 +95,13 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     // 监听位置输入变化，移动地图到选中位置并显示标记
     ref.listen(locationInputProvider, (previous, next) {
       _handleLocationInputChange(previous, next);
+      // 交换起点终点后，如果两点都存在且路线应该显示，则重新显示路线
+      final navState = ref.read(mapNavigationProvider);
+      if (next.origin.poi != null && next.destination.poi != null) {
+        if (navState.showRoutesSheet && navState.routes.isNotEmpty && navState.currentRouteType != null) {
+          mapDisplayService.showRoutes(navState.routes, 0, navState.currentRouteType!);
+        }
+      }
     });
 
     // 监听路线显示状态变化，显示/隐藏路线
