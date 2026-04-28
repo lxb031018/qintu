@@ -182,6 +182,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       originPoi: null,
       originLocation: null,
+      currentRouteType: null,
     );
   }
 
@@ -190,6 +191,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       destinationPoi: null,
       destinationLocation: null,
+      currentRouteType: null,
     );
   }
 
