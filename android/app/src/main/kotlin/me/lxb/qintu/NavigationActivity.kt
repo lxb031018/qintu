@@ -29,6 +29,8 @@ import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.NaviInfo
 import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.maps.model.LatLng
+import com.amap.api.navi.view.RouteOverLay
+import com.amap.api.maps.model.PolylineOptions
 import me.lxb.qintu.overlay.CarOverlay
 import org.json.JSONArray
 
@@ -59,6 +61,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var mAMapNaviView: AMapNaviView? = null
     private var mEnableVoice: Boolean = true
     private var carOverlay: CarOverlay? = null
+    private var routeOverLay: RouteOverLay? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -112,8 +115,9 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
         // 配置导航视图选项
         val options = AMapNaviViewOptions().apply {
-            isAutoDrawRoute = true           // 自动绘制路线
+            isAutoDrawRoute = false          // 关闭自动绘制路线，由 RouteOverLay 手动绘制
             isSettingMenuEnabled = false     // 不显示设置菜单
+            isTrafficLine = false             // 不显示交通路况线条
         }
         mAMapNaviView!!.viewOptions = options
 
@@ -132,6 +136,38 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         // 初始化自定义车辆Overlay
         carOverlay = CarOverlay(this)
         Log.d(TAG, "✅ CarOverlay 初始化完成")
+
+        // 4. 直接用 PolylineOptions 绘制路线（不依赖 SDK 路线计算）
+        val map = mAMapNaviView?.map
+        if (map != null && mRoutePoints.size >= 2) {
+            try {
+                // 将 NaviLatLng 转换为 LatLng
+                val latLngPoints = mRoutePoints.map { LatLng(it.latitude, it.longitude) }
+                val polyline = map.addPolyline(
+                    PolylineOptions()
+                        .addAll(latLngPoints)
+                        .color(0xFF1890FF.toInt())
+                        .width(12f)
+                )
+                Log.d(TAG, "✅ 路线绘制完成: ${mRoutePoints.size} 个点")
+
+                // 移动相机到路线起点
+                val firstPoint = mRoutePoints.first()
+                map.moveCamera(
+                    com.amap.api.maps.CameraUpdateFactory.newLatLng(
+                        com.amap.api.maps.model.LatLng(firstPoint.latitude, firstPoint.longitude)
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ 路线绘制失败: ${e.message}")
+            }
+        } else {
+            Log.w(TAG, "⚠️ 地图或路线点为空，跳过路线绘制")
+        }
+
+        // 5. 直接启动导航（无需 SDK 路线计算）
+        val ret = mAMapNavi.startNavi(NaviType.GPS)
+        Log.d(TAG, "   startNavi(GPS) 返回: $ret")
     }
 
     /**
@@ -155,38 +191,10 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         }
     }
 
-    /**
-     * 驾车路径规划计算
-     * 用已有的路线点作为起点和终点
-     */
-    private fun calculateRoute() {
-        if (mRoutePoints.size < 2) return
-
-        val startPoint = mRoutePoints.first()
-        val endPoint = mRoutePoints.last()
-
-        Log.d(TAG, "🚀 调用 calculateDriveRoute: 起点(${startPoint.latitude},${startPoint.longitude}) → 终点(${endPoint.latitude},${endPoint.longitude})")
-        Log.d(TAG, "   策略: PathPlanningStrategy.DRIVING_DEFAULT = ${PathPlanningStrategy.DRIVING_DEFAULT}")
-
-        val startList = listOf(startPoint)
-        val endList = listOf(endPoint)
-
-        // 使用 SDK 的 calculateDriveRoute（4 参数版本）
-        val ret = mAMapNavi.calculateDriveRoute(
-            startList,
-            endList,
-            null,
-            PathPlanningStrategy.DRIVING_DEFAULT
-        )
-        Log.d(TAG, "   calculateDriveRoute 返回: $ret")
-    }
-
     // ==================== AMapNaviListener ====================
 
     override fun onInitNaviSuccess() {
-        Log.d(TAG, "✅ onInitNaviSuccess 导航初始化成功，开始计算路线")
-        // AMapNavi 初始化成功后再调用算路，否则回调不会触发
-        calculateRoute()
+        Log.d(TAG, "✅ onInitNaviSuccess 导航初始化成功")
     }
 
     override fun onInitNaviFailure() {
@@ -195,19 +203,14 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
     @Suppress("CONFLICTING_OVERRIDES")
     override fun onCalculateRouteSuccess(result: AMapCalcRouteResult?) {
-        // SDK 调用的是这个回调（AMapCalcRouteResult 版本）
-        Log.d(TAG, "✅ onCalculateRouteSuccess 路线计算成功，错误码=${result?.errorCode}")
-
-        // 注意：即使路线计算成功，如果 GPS 信号太弱，startNavi 后地图也可能不显示路线
-        val ret = mAMapNavi.startNavi(NaviType.GPS)
-        Log.d(TAG, "   startNavi(GPS) 返回: $ret")
-        Log.d(TAG, "   当前坐标: ${mRoutePoints.first().latitude}, ${mRoutePoints.first().longitude}")
+        // 由于不再调用 calculateDriveRoute，此回调不会被触发
+        Log.d(TAG, "onCalculateRouteSuccess 被调用但已不再需要")
     }
 
     @Suppress("CONFLICTING_OVERRIDES")
     override fun onCalculateRouteFailure(result: AMapCalcRouteResult?) {
-        Log.e(TAG, "❌ onCalculateRouteFailure 路线计算失败: 错误码=${result?.errorCode}, 描述=${result?.errorDescription}")
-        Log.e(TAG, "   可能原因：GPS 信号太弱、起点距道路太远、网络异常")
+        // 由于不再调用 calculateDriveRoute，此回调不会被触发
+        Log.d(TAG, "onCalculateRouteFailure 被调用但已不再需要")
     }
 
     // 以下两个方法是抽象接口方法的旧版签名，保留空实现以满足接口契约
@@ -489,6 +492,11 @@ override fun onNaviViewLoaded() {
         // 释放CarOverlay资源
         carOverlay?.destroy()
         carOverlay = null
+
+        // 释放RouteOverLay资源
+        routeOverLay?.removeFromMap()
+        routeOverLay?.destroy()
+        routeOverLay = null
 
         mAMapNaviView?.onDestroy()
         // 停止导航并释放资源
