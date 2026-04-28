@@ -70,6 +70,8 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var naviTextView: TextView? = null
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
+    private var naviDistanceView: TextView? = null
+    private var naviTimeView: TextView? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -140,6 +142,8 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
         // 初始化导航播报 TextView
         naviTextView = findViewById(R.id.navi_text)
+        naviDistanceView = findViewById(R.id.navi_distance)
+        naviTimeView = findViewById(R.id.navi_time)
 
         // GPS 定位配置
         mAMapNavi.setIsUseExtraGPSData(false)  // 不使用外部GPS数据，使用自带GPS
@@ -307,6 +311,30 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         // 导航信息更新（剩余距离、时间、下一指令等），发送给 Flutter
         naviInfo?.let {
             Log.d(TAG, "🧭 导航信息: 剩余距离=${it.pathRetainDistance}米, 剩余时间=${it.pathRetainTime}秒, 下一指令=${it.nextRoadName}")
+
+            // 更新 UI 显示剩余距离和时间
+            runOnUiThread {
+                val distanceKm = it.pathRetainDistance / 1000.0
+                val timeMin = it.pathRetainTime / 60
+                val timeHour = timeMin / 60
+                val timeMinPart = timeMin % 60
+
+                if (distanceKm >= 1) {
+                    naviDistanceView?.text = String.format("%.1f公里", distanceKm)
+                } else {
+                    naviDistanceView?.text = String.format("%d米", it.pathRetainDistance)
+                }
+
+                if (timeHour > 0) {
+                    naviTimeView?.text = String.format("%d小时%d分", timeHour, timeMinPart)
+                } else {
+                    naviTimeView?.text = String.format("%d分钟", timeMin)
+                }
+
+                naviDistanceView?.visibility = TextView.VISIBLE
+                naviTimeView?.visibility = TextView.VISIBLE
+            }
+
             // 发送导航信息广播
             val intent = Intent(ACTION_NAVI_INFO_UPDATE).apply {
                 putExtra("pathRetainDistance", it.pathRetainDistance)
