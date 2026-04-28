@@ -248,6 +248,28 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "showSingleMarker" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                val isStart = call.argument<Boolean>("isStart") ?: true
+                val label = call.argument<String>("label") ?: (if (isStart) "起点" else "终点")
+                Log.d(TAG, "📍 收到 showSingleMarker 调用: lat=$lat, lng=$lng, isStart=$isStart")
+
+                val success = if (lat != null && lng != null) {
+                    routeRenderer?.showSingleMarker(lat, lng, isStart, label) ?: false
+                } else {
+                    false
+                }
+                result.success(success)
+            }
+
+            "clearSingleMarker" -> {
+                val isStart = call.argument<Boolean>("isStart") ?: true
+                Log.d(TAG, "📍 收到 clearSingleMarker 调用: isStart=$isStart")
+                routeRenderer?.clearSingleMarker(isStart)
+                result.success(true)
+            }
+
             "moveCamera" -> {
                 val lat = call.argument<Double>("lat")
                 val lng = call.argument<Double>("lng")

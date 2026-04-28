@@ -369,4 +369,45 @@ class AmapMapController {
       }
     });
   }
+
+  /// 显示单条路线标记（起点绿色/终点红色，可单独显示）
+  ///
+  /// [lat] 纬度
+  /// [lng] 经度
+  /// [isStart] 是否为起点（true=绿色起点，false=红色终点）
+  /// [label] 标签文字
+  Future<bool> showSingleMarker({
+    required double lat,
+    required double lng,
+    required bool isStart,
+    String? label,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('showSingleMarker', {
+        'lat': lat,
+        'lng': lng,
+        'isStart': isStart,
+        'label': label ?? (isStart ? '起点' : '终点'),
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ [Flutter] 显示单条路线标记失败: $e');
+      return false;
+    }
+  }
+
+  /// 清除单条路线标记
+  ///
+  /// [isStart] 是否为起点（true=清除起点，false=清除终点）
+  Future<bool> clearSingleMarker(bool isStart) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('clearSingleMarker', {
+        'isStart': isStart,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ [Flutter] 清除单条路线标记失败: $e');
+      return false;
+    }
+  }
 }

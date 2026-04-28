@@ -20,46 +20,58 @@ class MapDisplayService {
 
   /// 处理位置输入变化，更新地图视图
   ///
-  /// 当 origin/destination POI 变化时：
-  /// - 移动相机到选中位置
-  /// - 添加 POI 标记
+  /// 起点 marker 只在起点输入框有地点后显示
+  /// 终点 marker 只在终点输入框有地点后显示
   void handleLocationInputChange(
     LocationInputState? previous,
     LocationInputState next,
   ) {
     // 当起点 POI 变化时
-    if (next.origin.poi != previous?.origin.poi && next.origin.poi != null) {
-      final latlng = next.origin.poi!.latLng;
-      if (latlng != null) {
-        _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
-        _mapController?.addPoiMarker(PoiMarkerData(
-          id: 'origin_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.origin.poi!.name,
-          address: next.origin.poi!.address,
-          position: latlng,
-        ));
+    if (next.origin.poi != previous?.origin.poi) {
+      if (next.origin.poi != null) {
+        final latlng = next.origin.poi!.latLng;
+        if (latlng != null) {
+          // 显示起点 marker，移动相机到起点
+          _mapController?.showSingleMarker(
+            lat: latlng.latitude,
+            lng: latlng.longitude,
+            isStart: true,
+            label: next.origin.poi!.name,
+          );
+          _mapController?.moveCamera(
+            lat: latlng.latitude,
+            lng: latlng.longitude,
+            zoom: 17,
+          );
+        }
+      } else {
+        // 清除起点 marker
+        _mapController?.clearSingleMarker(true);
       }
     }
+
     // 当终点 POI 变化时
-    if (next.destination.poi != previous?.destination.poi && next.destination.poi != null) {
-      final latlng = next.destination.poi!.latLng;
-      if (latlng != null) {
-        _mapController?.moveCamera(lat: latlng.latitude, lng: latlng.longitude, zoom: 17);
-        _mapController?.addPoiMarker(PoiMarkerData(
-          id: 'destination_${DateTime.now().millisecondsSinceEpoch}',
-          name: next.destination.poi!.name,
-          address: next.destination.poi!.address,
-          position: latlng,
-        ));
+    if (next.destination.poi != previous?.destination.poi) {
+      if (next.destination.poi != null) {
+        final latlng = next.destination.poi!.latLng;
+        if (latlng != null) {
+          // 显示终点 marker，移动相机到终点
+          _mapController?.showSingleMarker(
+            lat: latlng.latitude,
+            lng: latlng.longitude,
+            isStart: false,
+            label: next.destination.poi!.name,
+          );
+          _mapController?.moveCamera(
+            lat: latlng.latitude,
+            lng: latlng.longitude,
+            zoom: 17,
+          );
+        }
+      } else {
+        // 清除终点 marker
+        _mapController?.clearSingleMarker(false);
       }
-    }
-    // 当起点被清除时
-    if (previous?.origin.poi != null && next.origin.poi == null) {
-      _mapController?.clearPoiMarkers();
-    }
-    // 当终点被清除时
-    if (previous?.destination.poi != null && next.destination.poi == null) {
-      _mapController?.clearPoiMarkers();
     }
   }
 

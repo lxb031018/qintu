@@ -97,6 +97,20 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       _handleLocationInputChange(previous, next);
     });
 
+    // 监听路线显示状态变化，显示/隐藏路线
+    ref.listen(mapNavigationProvider.select((s) => (
+      s.showRoutesSheet,
+      s.routes,
+      s.currentRouteType,
+    )), (previous, next) {
+      final (showRoutesSheet, routes, routeType) = next;
+      if (showRoutesSheet && routes.isNotEmpty && routeType != null) {
+        mapDisplayService.showRoutes(routes, 0, routeType);
+      } else if (!showRoutesSheet) {
+        mapDisplayService.clearRoutes();
+      }
+    });
+
     final navState = ref.watch(mapNavigationProvider);
 
     return Scaffold(

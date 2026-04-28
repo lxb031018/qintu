@@ -101,7 +101,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           _buildSwappableInputRow(
             context: context,
             isDark: isDark,
-            icon: Icons.my_location,
+            icon: Icons.place,
             placeholder: '起点',
             isOrigin: true,
             controller: _originController,
@@ -275,7 +275,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             child: Icon(
               icon,
               size: 20,
-              color: isOrigin ? AppColors.primaryColor : AppColors.warningColor,
+              color: isOrigin ? AppColors.successColor : AppColors.errorColor,
             ),
           ),
           // 输入框

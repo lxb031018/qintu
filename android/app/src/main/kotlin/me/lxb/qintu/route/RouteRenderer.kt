@@ -147,7 +147,7 @@ class RouteRenderer(private val aMap: AMap?) {
         }
         routeOverlays.clear()
         selectedRouteIndex = -1
-        clearMarkers()
+        // 注意：不调用 clearMarkers()，标记独立于路线管理
     }
 
     fun setMarkers(
@@ -213,6 +213,69 @@ class RouteRenderer(private val aMap: AMap?) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 清除路线标记失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 显示单条路线标记（起点绿色/终点红色，可单独显示）
+     */
+    fun showSingleMarker(
+        lat: Double,
+        lng: Double,
+        isStart: Boolean,
+        label: String
+    ): Boolean {
+        if (aMap == null) {
+            Log.e(TAG, "❌ [Native] 地图未初始化!")
+            return false
+        }
+
+        try {
+            val position = LatLng(lat, lng)
+            val markerOptions = MarkerOptions()
+                .position(position)
+                .title(label)
+                .snippet("")
+                .icon(BitmapDescriptorFactory.defaultMarker(
+                    if (isStart) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_RED
+                ))
+
+            if (isStart) {
+                startMarker?.remove()
+                startMarker = aMap!!.addMarker(markerOptions)
+                Log.d(TAG, "✅ [Native] 已添加起点标记: $label ($lat, $lng)")
+            } else {
+                endMarker?.remove()
+                endMarker = aMap!!.addMarker(markerOptions)
+                Log.d(TAG, "✅ [Native] 已添加终点标记: $label ($lat, $lng)")
+            }
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [Native] 显示单条路线标记失败: ${e.message}")
+            return false
+        }
+    }
+
+    /**
+     * 清除单条路线标记
+     */
+    fun clearSingleMarker(isStart: Boolean) {
+        try {
+            if (isStart) {
+                startMarker?.let {
+                    it.remove()
+                    startMarker = null
+                }
+                Log.d(TAG, "🗑️ [Native] 已清除起点标记")
+            } else {
+                endMarker?.let {
+                    it.remove()
+                    endMarker = null
+                }
+                Log.d(TAG, "🗑️ [Native] 已清除终点标记")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [Native] 清除单条路线标记失败: ${e.message}")
         }
     }
 }
