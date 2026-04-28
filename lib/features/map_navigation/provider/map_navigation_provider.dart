@@ -198,13 +198,23 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   }
 
   /// 交换起点和终点
-  void swapOriginAndDestination() {
+  Future<void> swapOriginAndDestination() async {
     state = state.copyWith(
       originPoi: state.destinationPoi,
       originLocation: state.destinationLocation,
       destinationPoi: state.originPoi,
       destinationLocation: state.originLocation,
+      routes: const [],
+      showRoutesSheet: false,
     );
+
+    // 清除地图上的路线预览
+    mapDisplayService.clearRoutes();
+
+    // 如果已有出行方式，自动重新规划路线
+    if (state.canPlanRoute && state.currentRouteType != null) {
+      await planRoute();
+    }
   }
 
   /// 更新搜索关键词
