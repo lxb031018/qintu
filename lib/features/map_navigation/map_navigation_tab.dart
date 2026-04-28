@@ -102,11 +102,14 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       s.showRoutesSheet,
       s.routes,
       s.currentRouteType,
+      s.originLocation,
+      s.destinationLocation,
     )), (previous, next) {
-      final (showRoutesSheet, routes, routeType) = next;
-      if (showRoutesSheet && routes.isNotEmpty && routeType != null) {
+      final (showRoutesSheet, routes, routeType, originLocation, destinationLocation) = next;
+      if (showRoutesSheet && routes.isNotEmpty && routeType != null
+          && originLocation != null && destinationLocation != null) {
         mapDisplayService.showRoutes(routes, 0, routeType);
-      } else if (!showRoutesSheet) {
+      } else {
         mapDisplayService.clearRoutes();
       }
     });
