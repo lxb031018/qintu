@@ -39,9 +39,6 @@ class MapNavigationState {
   /// 出发地/目的地输入框焦点
   final bool isOriginFocused;
 
-  /// 加载状态
-  final bool isLoading;
-
   /// 错误信息
   final String? errorMessage;
 
@@ -62,7 +59,6 @@ class MapNavigationState {
     this.routesState = const AsyncState(isLoading: true),
     this.searchState = const AsyncState(isLoading: true),
     this.isOriginFocused = true,
-    this.isLoading = false,
     this.errorMessage,
     this.currentRouteType,
     this.showRoutesSheet = false,
@@ -79,7 +75,6 @@ class MapNavigationState {
     AsyncState<List<RouteOption>>? routesState,
     AsyncState<List<PoiSuggestion>>? searchState,
     bool? isOriginFocused,
-    bool? isLoading,
     String? errorMessage,
     RouteType? currentRouteType,
     bool clearCurrentRouteType = false,
@@ -96,7 +91,6 @@ class MapNavigationState {
       routesState: routesState ?? this.routesState,
       searchState: searchState ?? this.searchState,
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
-      isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       currentRouteType: clearCurrentRouteType ? null : (currentRouteType ?? this.currentRouteType),
       showRoutesSheet: showRoutesSheet ?? this.showRoutesSheet,
@@ -217,11 +211,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
   }
 
-  /// 更新搜索关键词
-  void updateSearchKeyword(String keyword) {
-    state = state.copyWith(searchKeyword: keyword);
-  }
-
   /// 搜索 POI
   Future<void> searchPoi(String keywords) async {
     if (keywords.length < 2) {
@@ -327,16 +316,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   /// 切换起点/终点输入框焦点
   void setOriginFocused(bool focused) {
     state = state.copyWith(isOriginFocused: focused);
-  }
-
-  /// 清除所有数据
-  void clearAll() {
-    state = const MapNavigationState();
-  }
-
-  /// 清除错误
-  void clearError() {
-    state = state.copyWith(errorMessage: null);
   }
 
   /// 显示路线栏
