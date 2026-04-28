@@ -144,8 +144,10 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 // routePoints 格式: List<Map< String, Double>>，每个 Map 包含 latitude 和 longitude
                 @Suppress("UNCHECKED_CAST")
                 val routePointsList = call.argument<List<Map<String, Double>>>("routePoints") ?: emptyList()
+                @Suppress("UNCHECKED_CAST")
+                val stepsList = call.argument<List<Map<String, Any>>>("steps") ?: emptyList()
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true
-                handleStartNavigation(routePointsList, enableVoice, result)
+                handleStartNavigation(routePointsList, stepsList, enableVoice, result)
             }
 
             "startRouteActivity" -> {
@@ -186,7 +188,12 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
      *
      * @param routePoints 路线点列表，每个 Map 包含 latitude 和 longitude
      */
-    private fun handleStartNavigation(routePoints: List<Map<String, Double>>, enableVoice: Boolean, result: Result) {
+    private fun handleStartNavigation(
+        routePoints: List<Map<String, Double>>,
+        steps: List<Map<String, Any>>,
+        enableVoice: Boolean,
+        result: Result
+    ) {
         try {
             val act = activity ?: run {
                 result.error("ACTIVITY_NULL", "Activity 为空", null)
@@ -203,8 +210,18 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 "[$lat,$lng]"
             }
 
+            // 将步骤 List<Map> 转换为 JSON 数组
+            val stepsJson = steps.joinToString(",", "[", "]") { step ->
+                val instruction = step["instruction"] ?: ""
+                val road = step["road"] ?: ""
+                val distance = step["distance"] ?: 0.0
+                val action = step["action"] ?: ""
+                """{"instruction":"$instruction","road":"$road","distance":$distance,"action":"$action"}"""
+            }
+
             val intent = Intent(act, NavigationActivity::class.java)
             intent.putExtra(NavigationActivity.EXTRA_ROUTE_POINTS, jsonArray)
+            intent.putExtra(NavigationActivity.EXTRA_STEPS, stepsJson)
             intent.putExtra(NavigationActivity.EXTRA_ENABLE_VOICE, enableVoice)
             // 使用 Activity context 启动在同一任务栈中运行
             act.startActivity(intent)

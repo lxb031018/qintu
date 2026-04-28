@@ -143,12 +143,14 @@ class AmapNavigationBridge {
   }
 
   /// 开始导航
-  /// 
+  ///
   /// [routePoints] 路线坐标点列表（至少 2 个点）
+  /// [steps] 导航步骤详情（用于在导航页面显示转弯节点）
   /// [enableVoice] 是否开启语音播报（默认 true）
   /// [enableTts] 是否开启 TTS 详细播报（默认 true）
   static Future<bool> startNavigation({
     required List<LatLng> routePoints,
+    List<Map<String, dynamic>>? steps,
     bool enableVoice = true,
     bool enableTts = true,
   }) async {
@@ -170,6 +172,7 @@ class AmapNavigationBridge {
 
       final result = await _methodChannel.invokeMethod<bool>('startNavigation', {
         'routePoints': pointsData,
+        'steps': steps,
         'enableVoice': enableVoice,
         'enableTts': enableTts,
       });

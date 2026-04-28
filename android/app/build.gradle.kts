@@ -74,4 +74,6 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.1.0")
     // LocalBroadcastManager（导航状态传递需要）
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
+    // RecyclerView（导航步骤列表需要）
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
 }

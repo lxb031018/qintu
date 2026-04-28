@@ -6,8 +6,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
@@ -37,6 +41,7 @@ import com.amap.api.navi.view.RouteOverLay
 import com.amap.api.maps.model.PolylineOptions
 import me.lxb.qintu.overlay.CarOverlay
 import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * 实时 GPS 导航页面
@@ -56,6 +61,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         private const val TAG = "NavigationActivity"
         const val EXTRA_ROUTE_POINTS = "routePoints"
         const val EXTRA_ENABLE_VOICE = "enableVoice"
+        const val EXTRA_STEPS = "steps"
         const val ACTION_LOCATION_UPDATE = "me.lxb.qintu.LOCATION_UPDATE"
         const val ACTION_NAVI_INFO_UPDATE = "me.lxb.qintu.NAVI_INFO_UPDATE"
         const val ACTION_STOP_NAVIGATION = "STOP_NAVIGATION"
@@ -74,9 +80,17 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var naviTimeView: TextView? = null
     private var naviSpeedView: TextView? = null
     private var naviCurrentRoadView: TextView? = null
+    private var stepsContainer: LinearLayout? = null
+    private var stepsListView: RecyclerView? = null
+    private var btnSteps: Button? = null
+    private var stepsAdapter: StepsAdapter? = null
+    private var stepsVisible = false
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
+
+    // 导航步骤详情
+    private val mSteps = mutableListOf<NaviStep>()
 
     // 停止导航广播接收器
     private val stopNavReceiver = object : BroadcastReceiver() {
@@ -117,6 +131,10 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
         parseRoutePoints(routePointsJson)
 
+        // 解析导航步骤
+        val stepsJson = intent.getStringExtra(EXTRA_STEPS)
+        parseSteps(stepsJson)
+
         if (mRoutePoints.size < 2) {
             Log.e(TAG, "路线点不足，至少需要 2 个点")
             finish()
@@ -148,6 +166,25 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         naviTimeView = findViewById(R.id.navi_time)
         naviSpeedView = findViewById(R.id.navi_speed)
         naviCurrentRoadView = findViewById(R.id.navi_current_road)
+        stepsContainer = findViewById(R.id.steps_container)
+        stepsListView = findViewById(R.id.steps_list)
+        btnSteps = findViewById(R.id.btn_steps)
+
+        // 设置步骤列表 RecyclerView
+        stepsAdapter = StepsAdapter(mSteps)
+        stepsListView?.layoutManager = LinearLayoutManager(this)
+        stepsListView?.adapter = stepsAdapter
+
+        // 步骤列表按钮点击事件
+        btnSteps?.setOnClickListener {
+            stepsVisible = !stepsVisible
+            stepsContainer?.visibility = if (stepsVisible) LinearLayout.VISIBLE else LinearLayout.GONE
+        }
+
+        // 如果有步骤数据，显示按钮
+        if (mSteps.isNotEmpty()) {
+            btnSteps?.visibility = Button.VISIBLE
+        }
 
         // GPS 定位配置
         mAMapNavi.setIsUseExtraGPSData(false)  // 不使用外部GPS数据，使用自带GPS
@@ -223,6 +260,95 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
             Log.d(TAG, "   终点: ${mRoutePoints.last().latitude}, ${mRoutePoints.last().longitude}")
         } catch (e: Exception) {
             Log.e(TAG, "❌ 解析路线点失败: $e")
+        }
+    }
+
+    /**
+     * 解析导航步骤 JSON
+     * 格式: List<Map>，每个 Map 包含 instruction, road, distance
+     */
+    private fun parseSteps(stepsJson: String?) {
+        if (stepsJson.isNullOrEmpty()) return
+        try {
+            val jsonArray = JSONArray(stepsJson)
+            for (i in 0 until jsonArray.length()) {
+                val step = jsonArray.getJSONObject(i)
+                val instruction = step.optString("instruction", "")
+                val road = step.optString("road", "")
+                val distance = step.optDouble("distance", 0.0)
+                val action = step.optString("action", "")
+                mSteps.add(NaviStep(instruction, road, distance, action))
+            }
+            Log.d(TAG, "✅ 解析到 ${mSteps.size} 个导航步骤")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 解析导航步骤失败: $e")
+        }
+    }
+
+    /**
+     * 导航步骤数据类
+     */
+    data class NaviStep(
+        val instruction: String,  // 导航指示
+        val road: String,          // 道路名称
+        val distance: Double,      // 距离（米）
+        val action: String         // 动作代码
+    )
+
+    /**
+     * 导航步骤 RecyclerView Adapter
+     */
+    class StepsAdapter(private val steps: List<NaviStep>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
+            val iconView: TextView = itemView.findViewById(R.id.step_icon)
+            val instructionView: TextView = itemView.findViewById(R.id.step_instruction)
+            val distanceView: TextView = itemView.findViewById(R.id.step_distance)
+        }
+
+        override fun getItemCount(): Int = steps.size
+
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val view = android.view.LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_step, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            val step = steps[position]
+            val vh = holder as ViewHolder
+
+            // 设置动作图标
+            val icon = getActionIcon(step.action)
+            vh.iconView.text = icon
+
+            // 设置指示文本
+            vh.instructionView.text = step.instruction
+
+            // 设置距离
+            val distKm = step.distance / 1000.0
+            vh.distanceView.text = if (distKm >= 1) {
+                String.format("%.1f公里", distKm)
+            } else {
+                String.format("%.0f米", step.distance)
+            }
+        }
+
+        private fun getActionIcon(action: String): String {
+            return when (action) {
+                "1" -> "↱"     // 右转
+                "2" -> "↰"     // 左转
+                "3" -> "↑"     // 左前方
+                "4" -> "↑"     // 右前方
+                "5" -> "↙"     // 左后方
+                "6" -> "↘"     // 右后方
+                "7" -> "↩"    // 左转掉头
+                "8" -> "↪"    // 右转掉头
+                "9" -> "↑"     // 直行
+                "10" -> "↖"   // 左偏
+                "11" -> "↗"   // 右偏
+                else -> "•"
+            }
         }
     }
 

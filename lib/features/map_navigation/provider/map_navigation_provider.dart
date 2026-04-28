@@ -346,8 +346,40 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       return;
     }
 
+    // 提取步骤详情
+    List<Map<String, dynamic>>? steps;
+    if (route.driveSteps != null) {
+      steps = route.driveSteps!
+          .map((s) => {
+                'instruction': s.instruction,
+                'road': s.road,
+                'distance': s.distance,
+                'action': s.action,
+              })
+          .toList();
+    } else if (route.walkSteps != null) {
+      steps = route.walkSteps!
+          .map((s) => {
+                'instruction': s.instruction,
+                'road': s.road,
+                'distance': s.distance,
+                'action': s.action,
+              })
+          .toList();
+    } else if (route.rideSteps != null) {
+      steps = route.rideSteps!
+          .map((s) => {
+                'instruction': s.instruction,
+                'road': s.road,
+                'distance': s.distance,
+                'action': s.action,
+              })
+          .toList();
+    }
+
     final success = await AmapNavigationBridge.startNavigation(
       routePoints: route.points,
+      steps: steps,
       enableVoice: true,
       enableTts: true,
     );

@@ -114,4 +114,54 @@
 
     </LinearLayout>
 
+    <!-- 导航步骤列表按钮 -->
+    <Button
+        android:id="@+id/btn_steps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="80dp"
+        android:background="#CC000000"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:text="路线详情"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- 导航步骤列表（可折叠） -->
+    <LinearLayout
+        android:id="@+id/steps_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="200dp"
+        android:background="#EE000000"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="路线详情"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="8dp"
+            android:background="#444444" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/steps_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="300dp" />
+
+    </LinearLayout>
+
 </FrameLayout>
