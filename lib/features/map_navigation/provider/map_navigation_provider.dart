@@ -158,16 +158,22 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       originLocation: poi.latLng,
       searchKeyword: '',
       searchState: const AsyncState(data: []),
+      // 重新选择起点时清除旧路线
+      routes: const [],
+      showRoutesSheet: false,
     );
   }
 
-  /// 清除终点
+  /// 设置终点
   void setDestination(PoiSuggestion poi) {
     state = state.copyWith(
       destinationPoi: poi,
       destinationLocation: poi.latLng,
       searchKeyword: '',
       searchState: const AsyncState(data: []),
+      // 重新选择终点时清除旧路线
+      routes: const [],
+      showRoutesSheet: false,
     );
   }
 
