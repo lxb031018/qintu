@@ -29,7 +29,10 @@ import com.amap.api.navi.model.AimLessModeStat
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.NaviInfo
 import com.amap.api.navi.model.NaviLatLng
+import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.Marker
+import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.navi.view.RouteOverLay
 import com.amap.api.maps.model.PolylineOptions
 import me.lxb.qintu.overlay.CarOverlay
@@ -65,6 +68,8 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var carOverlay: CarOverlay? = null
     private var routeOverLay: RouteOverLay? = null
     private var naviTextView: TextView? = null
+    private var startMarker: Marker? = null
+    private var endMarker: Marker? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -170,6 +175,9 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
                 )
                 Log.d(TAG, "✅ 路线绘制完成: ${mRoutePoints.size} 个点")
 
+                // 添加起点和终点标记
+                addStartEndMarkers(map)
+
                 // 移动相机到路线起点
                 val firstPoint = mRoutePoints.first()
                 map.moveCamera(
@@ -208,6 +216,34 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         } catch (e: Exception) {
             Log.e(TAG, "❌ 解析路线点失败: $e")
         }
+    }
+
+    /**
+     * 添加起点和终点标记
+     */
+    private fun addStartEndMarkers(map: com.amap.api.maps.AMap) {
+        if (mRoutePoints.size < 2) return
+
+        val startPoint = LatLng(mRoutePoints.first().latitude, mRoutePoints.first().longitude)
+        val endPoint = LatLng(mRoutePoints.last().latitude, mRoutePoints.last().longitude)
+
+        // 添加起点标记（绿色旗帜图标）
+        startMarker = map.addMarker(
+            MarkerOptions()
+                .position(startPoint)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.amap_start))
+                .title("起点")
+        )
+
+        // 添加终点标记（红色旗帜图标）
+        endMarker = map.addMarker(
+            MarkerOptions()
+                .position(endPoint)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.amap_end))
+                .title("终点")
+        )
+
+        Log.d(TAG, "✅ 起点/终点标记已添加")
     }
 
     // ==================== AMapNaviListener ====================
@@ -533,6 +569,12 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         routeOverLay?.removeFromMap()
         routeOverLay?.destroy()
         routeOverLay = null
+
+        // 释放起点/终点标记资源
+        startMarker?.remove()
+        startMarker = null
+        endMarker?.remove()
+        endMarker = null
 
         mAMapNaviView?.onDestroy()
         // 停止导航并释放资源
