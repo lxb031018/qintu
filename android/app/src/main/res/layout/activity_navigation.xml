@@ -8,7 +8,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- 顶部导航信息栏（剩余距离/时间/速度） -->
+    <!-- 顶部导航信息栏（当前道路/距离/时间/速度） -->
     <LinearLayout
         android:id="@+id/navi_info_container"
         android:layout_width="match_parent"
@@ -16,51 +16,76 @@
         android:layout_gravity="top"
         android:layout_marginTop="80dp"
         android:gravity="center"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp">
 
+        <!-- 当前道路名称 -->
         <TextView
-            android:id="@+id/navi_distance"
+            android:id="@+id/navi_current_road"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="#CC000000"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:textColor="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="6dp"
+            android:textColor="#FFFF00"
             android:textSize="14sp"
             android:visibility="gone" />
 
         <View
-            android:layout_width="12dp"
-            android:layout_height="1dp" />
+            android:layout_width="1dp"
+            android:layout_height="8dp" />
 
-        <TextView
-            android:id="@+id/navi_time"
+        <!-- 第二行：距离/时间/速度 -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#CC000000"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:visibility="gone" />
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <View
-            android:layout_width="12dp"
-            android:layout_height="1dp" />
+            <TextView
+                android:id="@+id/navi_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#CC000000"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/navi_speed"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="#CC000000"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            android:textColor="#00FF00"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
+            <View
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <TextView
+                android:id="@+id/navi_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#CC000000"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <TextView
+                android:id="@+id/navi_speed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#CC000000"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:textColor="#00FF00"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

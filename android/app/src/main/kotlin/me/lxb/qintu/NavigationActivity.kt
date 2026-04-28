@@ -73,6 +73,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     private var naviDistanceView: TextView? = null
     private var naviTimeView: TextView? = null
     private var naviSpeedView: TextView? = null
+    private var naviCurrentRoadView: TextView? = null
 
     // 导航路线点（从 Flutter 传入）
     private val mRoutePoints = mutableListOf<NaviLatLng>()
@@ -146,6 +147,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         naviDistanceView = findViewById(R.id.navi_distance)
         naviTimeView = findViewById(R.id.navi_time)
         naviSpeedView = findViewById(R.id.navi_speed)
+        naviCurrentRoadView = findViewById(R.id.navi_current_road)
 
         // GPS 定位配置
         mAMapNavi.setIsUseExtraGPSData(false)  // 不使用外部GPS数据，使用自带GPS
@@ -344,6 +346,15 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
 
                 naviDistanceView?.visibility = TextView.VISIBLE
                 naviTimeView?.visibility = TextView.VISIBLE
+
+                // 更新当前道路名称
+                val currentRoad = it.currentRoadName
+                if (!currentRoad.isNullOrEmpty()) {
+                    naviCurrentRoadView?.text = currentRoad
+                    naviCurrentRoadView?.visibility = TextView.VISIBLE
+                } else {
+                    naviCurrentRoadView?.visibility = TextView.GONE
+                }
             }
 
             // 发送导航信息广播
