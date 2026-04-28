@@ -171,9 +171,10 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       destinationLocation: poi.latLng,
       searchKeyword: '',
       searchState: const AsyncState(data: []),
-      // 重新选择终点时清除旧路线
+      // 重新选择终点时清除旧路线和出行方式
       routes: const [],
       showRoutesSheet: false,
+      currentRouteType: null,
     );
   }
 
