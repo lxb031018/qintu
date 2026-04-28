@@ -68,4 +68,10 @@ flutter {
 dependencies {
     // 高德地图 Android SDK - 使用本地 jar
     implementation(files("libs/AMap3DMap_11.1.001_AMapNavi_11.1.001_AMapSearch_9.7.4_AMapLocation_11.1.001_20260402.jar"))
+    // 语音播报需要的 MSC.jar
+    implementation(files("libs/Msc.jar"))
+    // AndroidX AppCompat（NavigationActivity 需要）
+    implementation("androidx.appcompat:appcompat:1.1.0")
+    // LocalBroadcastManager（导航状态传递需要）
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
 }

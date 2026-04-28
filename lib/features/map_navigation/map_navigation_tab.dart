@@ -179,6 +179,13 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 onClose: () {
                   ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
                 },
+                onStartNavigation: () {
+                  ref.read(mapNavigationProvider.notifier).startNavigation();
+                },
+                // TODO(Phase 2): 实现分享功能
+                onShare: () {
+                  // 暂时不处理，后续接 NavigationTaskService
+                },
               ),
             ),
         ],

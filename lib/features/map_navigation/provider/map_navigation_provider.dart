@@ -3,6 +3,7 @@ import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion, RouteType, Rout
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
 import '../service/map_display_service.dart';
+import '../service/amap_navigation_bridge.dart';
 
 /// ============================================
 /// 地图导航状态
@@ -328,6 +329,32 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   /// 隐藏路线栏
   void hideRoutesSheet() {
     state = state.copyWith(showRoutesSheet: false);
+  }
+
+  /// 开始导航
+  ///
+  /// 调用原生 GPS 导航，传入当前选中的路线
+  Future<void> startNavigation() async {
+    final route = state.selectedRoute;
+    if (route == null) {
+      state = state.copyWith(errorMessage: '请先选择路线');
+      return;
+    }
+
+    if (route.points.isEmpty) {
+      state = state.copyWith(errorMessage: '路线数据异常');
+      return;
+    }
+
+    final success = await AmapNavigationBridge.startNavigation(
+      routePoints: route.points,
+      enableVoice: true,
+      enableTts: true,
+    );
+
+    if (!success) {
+      state = state.copyWith(errorMessage: '启动导航失败');
+    }
   }
 }
 

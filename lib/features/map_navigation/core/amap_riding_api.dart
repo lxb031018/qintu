@@ -54,6 +54,12 @@ class AmapRidingApi {
       final data = response.data;
       Logs.ui.info('🚴 骑行 API 返回: $data');
 
+      // 检查返回的数据结构
+      Logs.ui.info('🚴 [DEBUG] data keys: ${data.keys.toList()}');
+      if (data['data'] != null) {
+        Logs.ui.info('🚴 [DEBUG] data.data keys: ${(data['data'] as Map).keys.toList()}');
+      }
+
       // v4 版本返回结构是 data 对象
       if (data['data'] == null) {
         final errorMsg = data['info'] ?? data['errmsg'] ?? '路线规划失败';
@@ -86,6 +92,8 @@ class AmapRidingApi {
   RouteOption _parseRidingRoute(Map<String, dynamic> path) {
     final distance = double.tryParse(path['distance']?.toString() ?? '0') ?? 0;
     final duration = double.tryParse(path['duration']?.toString() ?? '0') ?? 0;
+
+    Logs.ui.info('🚴 [_parseRidingRoute] 原始数据: distance=$distance, duration=$duration');
 
     final points = <LatLng>[];
     final rideSteps = <WalkStep>[];
