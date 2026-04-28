@@ -55,6 +55,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         const val ACTION_LOCATION_UPDATE = "me.lxb.qintu.LOCATION_UPDATE"
         const val ACTION_NAVI_INFO_UPDATE = "me.lxb.qintu.NAVI_INFO_UPDATE"
         const val ACTION_STOP_NAVIGATION = "STOP_NAVIGATION"
+        const val ACTION_NAVI_TEXT = "me.lxb.qintu.NAVI_TEXT"
     }
 
     private lateinit var mAMapNavi: AMapNavi
@@ -72,6 +73,13 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
             if (intent?.action == ACTION_STOP_NAVIGATION) {
                 finish()
             }
+        }
+    }
+
+    // 导航播报文字广播接收器
+    private val naviTextReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            // 导航文字由 Flutter 处理，此处仅用于调试
         }
     }
 
@@ -131,6 +139,12 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         LocalBroadcastManager.getInstance(this).registerReceiver(
             stopNavReceiver,
             IntentFilter(ACTION_STOP_NAVIGATION)
+        )
+
+        // 注册导航播报广播接收器
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            naviTextReceiver,
+            IntentFilter(ACTION_NAVI_TEXT)
         )
 
         // 初始化自定义车辆Overlay
@@ -281,11 +295,14 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     }
 
     override fun onReCalculateRouteForYaw() {
-        Log.d(TAG, "偏航，重新计算路线")
+        Log.d(TAG, "🚨 偏航检测到，重新计算路线")
+        // 由于我们不依赖 SDK 路线计算，此处仅记录偏航事件
+        // Flutter 可以通过 EventChannel 收到偏航通知，用于更新 UI 或重新规划路线
     }
 
     override fun onReCalculateRouteForTrafficJam() {
-        Log.d(TAG, "拥堵，重新计算路线")
+        Log.d(TAG, "🚦 拥堵检测到，重新计算路线")
+        // 同上，仅记录事件
     }
 
     override fun onArrivedWayPoint(wayPointID: Int) {
@@ -293,11 +310,18 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
     }
 
     override fun onGetNavigationText(type: Int, text: String?) {
-        Log.d(TAG, "导航播报[$type]: $text")
+        Log.d(TAG, "🗣️ 导航播报[$type]: $text")
+        text?.let {
+            val intent = Intent(ACTION_NAVI_TEXT).apply {
+                putExtra("type", type)
+                putExtra("text", it)
+            }
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+        }
     }
 
     override fun onGetNavigationText(s: String?) {
-        Log.d(TAG, "导航播报: $s")
+        Log.d(TAG, "🗣️ 导航播报: $s")
     }
 
     override fun onEndEmulatorNavi() {
@@ -420,7 +444,7 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         // 地图锁定状态变化
     }
 
-override fun onNaviViewLoaded() {
+    override fun onNaviViewLoaded() {
         Log.d(TAG, "导航视图加载完成")
     }
 
@@ -488,6 +512,7 @@ override fun onNaviViewLoaded() {
         super.onDestroy()
         // 注销广播接收器
         LocalBroadcastManager.getInstance(this).unregisterReceiver(stopNavReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(naviTextReceiver)
 
         // 释放CarOverlay资源
         carOverlay?.destroy()

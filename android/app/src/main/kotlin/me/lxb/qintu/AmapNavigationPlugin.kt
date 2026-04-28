@@ -109,6 +109,16 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         @Suppress("UNCHECKED_CAST")
                         eventSink?.success(data as Map<String, Any>)
                     }
+                    NavigationActivity.ACTION_NAVI_TEXT -> {
+                        val textType = intent.getIntExtra("type", 0)
+                        val text = intent.getStringExtra("text") ?: ""
+                        val data = mutableMapOf<String, Any?>()
+                        data["type"] = "naviText"
+                        data["textType"] = textType
+                        data["text"] = text
+                        @Suppress("UNCHECKED_CAST")
+                        eventSink?.success(data as Map<String, Any>)
+                    }
                 }
             }
         }
@@ -116,6 +126,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         val filter = IntentFilter().apply {
             addAction(NavigationActivity.ACTION_LOCATION_UPDATE)
             addAction(NavigationActivity.ACTION_NAVI_INFO_UPDATE)
+            addAction(NavigationActivity.ACTION_NAVI_TEXT)
         }
         context?.let {
             LocalBroadcastManager.getInstance(it).registerReceiver(navEventReceiver!!, filter)
