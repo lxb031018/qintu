@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
-import '../core/amap_map_controller.dart';
-import '../core/poi_api.dart';
+import '../models/poi_models.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
+import '../provider/map_controller_provider.dart';
 import 'category_button.dart';
 import 'close_button.dart';
 import 'location_list_item.dart';
@@ -36,14 +36,7 @@ import 'my_location_button.dart';
 /// ============================================
 
 class LocationCategoryList extends ConsumerStatefulWidget {
-  /// 地图控制器，用于获取当前位置
-  /// 当用户点击"我的位置"时，通过此控制器获取 GPS 坐标
-  final AmapMapController? mapController;
-
-  const LocationCategoryList({
-    super.key,
-    this.mapController,
-  });
+  const LocationCategoryList({super.key});
 
   @override
   ConsumerState<LocationCategoryList> createState() => _LocationCategoryListState();
@@ -53,14 +46,12 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   @override
   void initState() {
     super.initState();
-    // 初始化时加载历史位置记录和绑定者位置（延迟到 widget 构建完成后）
     Future.microtask(() {
       ref.read(locationInputProvider.notifier).loadHistoryLocations();
       ref.read(locationInputProvider.notifier).loadBinderLocations();
     });
   }
 
-  /// 选择位置并收起键盘
   void _selectLocationAndUnfocus(PoiSuggestion poi) {
     ref.read(locationInputProvider.notifier).selectPoi(
       poi,
@@ -69,9 +60,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     FocusScope.of(context).unfocus();
   }
 
-  /// 隐藏列表并收起键盘
-  /// 
-  /// 调用状态管理器隐藏列表，同时隐藏键盘
   void _hideListAndUnfocus() {
     ref.read(locationInputProvider.notifier).hideList();
     FocusScope.of(context).unfocus();
@@ -79,13 +67,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
   @override
   Widget build(BuildContext context) {
-    // 监听位置输入状态
     final state = ref.watch(locationInputProvider);
-    // 判断当前是否为暗黑模式
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      // 卡片背景样式
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
         borderRadius: BorderRadius.all(AppRadii.large),
@@ -122,6 +107,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   /// 5. Spacer（弹性空间）
   /// 6. 关闭按钮
   Widget _buildCategoryBar(LocationInputState state, bool isDark) {
+    final mapController = ref.watch(mapControllerNotifierProvider);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacings.sm,
@@ -129,11 +115,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       ),
       child: Row(
         children: [
-          // 我的位置
           MyLocationButton(
             onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
-              () async => widget.mapController != null
-                  ? await widget.mapController!.getCurrentLocation()
+              () async => mapController != null
+                  ? await mapController.getCurrentLocation()
                   : null,
               ref.read(mapNavigationProvider.notifier),
             ),

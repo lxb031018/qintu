@@ -4,20 +4,13 @@ import '../../../config/amap_web_config.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/errors/amap_error_handler.dart';
 import '../../../utils/logger.dart';
+import '../models/poi_models.dart';
 
-/// ============================================
-/// 高德 POI 搜索 API
-///
-/// 纯 HTTP 调用，返回数据模型，无 Flutter 依赖
-///
-/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
-/// ============================================
+export '../models/poi_models.dart';
 
 class PoiApi {
-  /// 使用统一的第三方 API 客户端
   final Dio _dio = ThirdPartyApiClient.instance.dio;
 
-  /// POI 关键字搜索
   Future<PoiSearchResult> searchPoi({
     required String keywords,
     String? city,
@@ -67,7 +60,6 @@ class PoiApi {
       final pois = data['pois'] as List? ?? [];
       final suggestions = pois.map((poi) => PoiSuggestion.fromMap(poi)).toList();
 
-      // 计算距离并排序
       if (location != null && suggestions.isNotEmpty) {
         for (final poi in suggestions) {
           final poiLatLng = poi.distanceLatLng;
@@ -86,7 +78,6 @@ class PoiApi {
     }
   }
 
-  /// 地理编码：地址转坐标
   Future<LatLng?> geocodeAddress(String address) async {
     final apiKey = AmapWebConfig.webApiKey;
     if (apiKey.isEmpty) return null;
@@ -116,7 +107,6 @@ class PoiApi {
     }
   }
 
-  /// 逆地理编码：坐标转城市
   Future<String?> getCityFromLocation(LatLng location) async {
     final apiKey = AmapWebConfig.webApiKey;
     if (apiKey.isEmpty) return null;
@@ -143,66 +133,5 @@ class PoiApi {
       Logs.map.warning('逆地理编码异常: $e');
       return null;
     }
-  }
-}
-
-/// POI 搜索结果
-class PoiSearchResult {
-  final List<PoiSuggestion> suggestions;
-  final int errorCode;
-  final String? errorMessage;
-
-  const PoiSearchResult({
-    this.suggestions = const [],
-    this.errorCode = 0,
-    this.errorMessage,
-  });
-
-  bool get isSuccess => errorCode == 0 && suggestions.isNotEmpty;
-}
-
-/// POI 搜索结果项
-class PoiSuggestion {
-  final String id;
-  final String name;
-  final String district;
-  final String address;
-  final String location;
-  int? distance;
-  final String? entrLocation;
-
-  PoiSuggestion({
-    required this.id,
-    required this.name,
-    required this.district,
-    required this.address,
-    required this.location,
-    this.distance,
-    this.entrLocation,
-  });
-
-  LatLng? get latLng {
-    if (location.isEmpty || location == '[]') return null;
-    final parts = location.split(',');
-    if (parts.length != 2) return null;
-    return LatLng.fromAmapString(location);
-  }
-
-  LatLng? get distanceLatLng {
-    final locStr = entrLocation ?? location;
-    if (locStr.isEmpty || locStr == '[]') return null;
-    return LatLng.fromAmapString(locStr);
-  }
-
-  factory PoiSuggestion.fromMap(Map<String, dynamic> map) {
-    return PoiSuggestion(
-      id: map['id']?.toString() ?? '',
-      name: map['name']?.toString() ?? '',
-      district: map['district']?.toString() ?? '',
-      address: map['address']?.toString() ?? '',
-      location: map['location']?.toString() ?? '',
-      distance: int.tryParse(map['distance']?.toString() ?? ''),
-      entrLocation: map['entr_location']?.toString(),
-    );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:qintu/features/map_navigation/core/poi_api.dart';
+import 'package:qintu/features/map_navigation/models/poi_models.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
 /// ============================================

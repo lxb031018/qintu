@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion, RouteType, RouteOption, LatLng
+import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
-import '../service/map_display_service.dart';
+import 'map_display_service_provider.dart';
 import '../service/amap_navigation_bridge.dart';
 
 /// ============================================
@@ -137,10 +137,12 @@ class AsyncState<T> {
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
   final AmapRoutingService _routeService = AmapRoutingService();
   final PoiService _poiService = poiService;
+  late final MapDisplayService _mapDisplayService;
   bool _disposed = false;
 
   @override
   MapNavigationState build() {
+    _mapDisplayService = ref.watch(mapDisplayServiceProvider);
     ref.onDispose(() {
       _disposed = true;
     });
@@ -206,7 +208,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     );
 
     // 清除地图上的路线预览
-    mapDisplayService.clearRoutes();
+    _mapDisplayService.clearRoutes();
 
     // 如果已有出行方式，自动重新规划路线
     if (state.canPlanRoute && state.currentRouteType != null) {
@@ -292,7 +294,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           routesState: AsyncState.success(routes),
         );
         // 在地图上显示路线预览
-        mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
+        _mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
       }
     } catch (e) {
       if (_disposed) return;

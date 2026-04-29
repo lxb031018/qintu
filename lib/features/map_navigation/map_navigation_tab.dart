@@ -3,17 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'core/amap_map_controller.dart';
-import 'models/amap_routing_models.dart'; // for RouteType
+import 'models/amap_routing_models.dart';
 import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
 import 'provider/location_sharing_provider.dart';
+import 'provider/map_controller_provider.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_spacings.dart';
-import 'service/map_display_service.dart';
+import 'provider/map_display_service_provider.dart';
 
 /// ============================================
 /// 地图导航 Tab
@@ -32,24 +33,14 @@ class MapNavigationTab extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<MapNavigationTab> createState() => _MapNavigationTabState();
-
-  /// 获取当前的地图控制器（供子组件访问）
-  static AmapMapController? getMapController() => _currentMapController;
-  static void _setMapController(AmapMapController? controller) {
-    _currentMapController = controller;
-  }
 }
-
-AmapMapController? _currentMapController;
 
 class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
-  AmapMapController? _mapController;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // 初始化时检查定位状态
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).checkStatus();
     });
@@ -59,7 +50,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // 应用回到前台时重新检查定位状态
       ref.read(locationProvider.notifier).checkStatus();
     }
   }
@@ -71,18 +61,12 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   }
 
   void _onMapCreated(AmapMapController controller) {
-    _mapController = controller;
-    MapNavigationTab._setMapController(controller);
-    // 设置地图控制器到位置共享 Provider
+    ref.read(mapControllerNotifierProvider.notifier).setController(controller);
     ref.read(locationSharingProvider.notifier).setMapController(controller);
-    // 设置地图控制器到地图显示服务
-    mapDisplayService.setMapController(controller);
   }
 
-  /// 处理位置输入变化，移动地图到选中位置并显示标记
   void _handleLocationInputChange(LocationInputState? previous, LocationInputState next) {
-    // 委托给地图显示服务处理
-    mapDisplayService.handleLocationInputChange(previous, next);
+    ref.read(mapDisplayServiceProvider).handleLocationInputChange(previous, next);
   }
 
   @override
@@ -92,12 +76,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // 监听位置输入变化，移动地图到选中位置并显示标记
     ref.listen(locationInputProvider, (previous, next) {
       _handleLocationInputChange(previous, next);
     });
 
-    // 监听路线显示状态变化，显示/隐藏路线
     ref.listen(mapNavigationProvider.select((s) => (
       s.showRoutesSheet,
       s.routes,
@@ -108,9 +90,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       final (showRoutesSheet, routes, routeType, originLocation, destinationLocation) = next;
       if (showRoutesSheet && routes.isNotEmpty && routeType != null
           && originLocation != null && destinationLocation != null) {
-        mapDisplayService.showRoutes(routes, 0, routeType);
+        ref.read(mapDisplayServiceProvider).showRoutes(routes, 0, routeType);
       } else {
-        mapDisplayService.clearRoutes();
+        ref.read(mapDisplayServiceProvider).clearRoutes();
       }
     });
 
@@ -120,12 +102,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 地图层
           Positioned.fill(
             child: AmapMapView(onMapCreated: _onMapCreated),
           ),
 
-          // 搜索栏层
           Positioned(
             left: AppSpacings.smd,
             right: AppSpacings.smd,
@@ -134,26 +114,21 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const LocationInputCard(),
-                // 列表显示在输入框下方（独立卡片）
                 if (ref.watch(locationInputProvider).listVisible)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacings.sm),
-                    child: LocationCategoryList(
-                      mapController: _mapController,
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacings.sm),
+                    child: LocationCategoryList(),
                   ),
               ],
             ),
           ),
 
-          // 定位状态按钮
           Positioned(
             left: 12,
             bottom: 16,
             child: const LocationStatusButton(),
           ),
 
-          // 路线栏（不阻塞交互）
           if (navState.showRoutesSheet && navState.routes.isNotEmpty)
             Positioned(
               left: 0,
@@ -182,9 +157,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 onStartNavigation: () {
                   ref.read(mapNavigationProvider.notifier).startNavigation();
                 },
-                // TODO(Phase 2): 实现分享功能
                 onShare: () {
-                  // 暂时不处理，后续接 NavigationTaskService
                 },
               ),
             ),

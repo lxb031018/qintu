@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
+import '../provider/map_controller_provider.dart';
 
 /// ============================================
 /// 高德地图显示组件
@@ -31,36 +33,37 @@ class AmapMapView extends StatefulWidget {
 }
 
 class _AmapMapViewState extends State<AmapMapView> {
-  late AmapMapController _controller;
-
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
       return const Center(child: Text('地图暂不支持 Web 平台'));
     }
 
-    return AndroidView(
-      viewType: 'com.qintu/amap_map_view',
-      onPlatformViewCreated: _onPlatformViewCreated,
-      creationParams: <String, dynamic>{},
-      creationParamsCodec: const StandardMessageCodec(),
-      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-        Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+    return Consumer(
+      builder: (context, ref, child) {
+        return AndroidView(
+          viewType: 'com.qintu/amap_map_view',
+          onPlatformViewCreated: (id) => _onPlatformViewCreated(id, ref),
+          creationParams: <String, dynamic>{},
+          creationParamsCodec: const StandardMessageCodec(),
+          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+            Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+          },
+        );
       },
     );
   }
 
-  Future<void> _onPlatformViewCreated(int id) async {
-    _controller = AmapMapController();
+  Future<void> _onPlatformViewCreated(int id, WidgetRef ref) async {
+    final controller = AmapMapController();
+    ref.read(mapControllerNotifierProvider.notifier).setController(controller);
 
-    // 🚀 立即启动高德原生定位
-    _controller.startLocation();
+    controller.startLocation();
 
-    // 绘制路线
     if (widget.routePoints != null && widget.routePoints!.isNotEmpty) {
-      await _controller.addPolyline(widget.routePoints!);
+      await controller.addPolyline(widget.routePoints!);
     }
 
-    widget.onMapCreated?.call(_controller);
+    widget.onMapCreated?.call(controller);
   }
 }

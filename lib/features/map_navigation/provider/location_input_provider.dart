@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/gps/gps_service.dart';
 import '../../../utils/logger.dart';
-import '../core/poi_api.dart'; // 仅导入类型 PoiSuggestion
+import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
 import '../models/amap_routing_models.dart';

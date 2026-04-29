@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/poi_api.dart';
-import '../core/binding_location_api.dart';
+import '../models/poi_models.dart';
+import 'binding_location_service.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../relationship_binding/service/binding_service.dart';
 
@@ -127,7 +127,7 @@ class LocationCategoryService {
         if (partnerOpenid == null) continue;
 
         try {
-          final result = await BindingLocationApi().getBinderLocation(partnerOpenid);
+          final result = await bindingLocationService.getBinderLocation(partnerOpenid);
           if (result.isSuccess && result.location != null) {
             results.add(PoiSuggestion(
               id: partnerOpenid,
