@@ -4,7 +4,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val envFile = rootProject.file(".env")
+val envFile = file("${project.rootDir}/../.env")
 val envMap = mutableMapOf<String, String>()
 if (envFile.exists()) {
     envFile.readLines().forEach { line ->

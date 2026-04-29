@@ -156,6 +156,22 @@ class AmapConfig {
 1. 检查 Android 权限是否已授予
 2. 使用 `permission_handler` 请求运行时权限
 
+### 问题 4：API Key 为空，SDK 报 10001 错误
+
+**原因**：Gradle 中 `.env` 文件路径解析错误。在 `android/app/build.gradle.kts` 中使用 `rootProject.file(".env")` 时，路径相对于 Gradle 根项目（即 `android/` 目录），而非 Flutter 项目根目录，导致找不到 `.env` 文件，API Key 为空。
+
+**解决**：修正 `.env` 文件路径为 Flutter 根目录：
+```kotlin
+// 错误示例
+val envFile = rootProject.file(".env")
+
+// 正确示例
+val envFile = file("${project.rootDir}/../.env")
+```
+或者使用 `rootProject.rootDir` 向上定位到 Flutter 项目根目录的 `.env` 文件。
+
+**验证**：构建后检查 `android/app/build/intermediate/processed_res/org/release/processReleaseResources/out/output.json` 中 `AMAP_ANDROID_API_KEY` 是否有值。
+
 ---
 
 ## 📝 日志

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:qintu/models/location/lat_lng.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/navigation_models.dart';
+import '../models/amap_routing_models.dart';
 
 /// 高德导航桥接层
 /// 
@@ -58,6 +58,139 @@ class AmapNavigationBridge {
       Logs.navigation.error('❌ 初始化高德导航 SDK 未知错误: $e');
       return false;
     }
+  }
+
+  /// 通过原生导航 SDK 计算路线（替代 Web API）
+  ///
+  /// [type] 出行方式（driving/walking/riding）
+  /// [origin] 起点坐标
+  /// [destination] 终点坐标
+  /// [strategy] 驾车策略: 0=高速优先, 1=避免收费, 2=距离最短
+  /// [multiRoute] 是否请求多路径（默认 true）
+  static Future<List<RouteOption>> calculateRoute({
+    required RouteType type,
+    required LatLng origin,
+    required LatLng destination,
+    int strategy = 0,
+    bool multiRoute = true,
+  }) async {
+    if (type == RouteType.transit) {
+      throw const RoutingException('公交路线暂不支持原生 SDK 算路');
+    }
+
+    try {
+      Logs.navigation.info('🗺️ SDK 算路: $type, ($origin → $destination), strategy=$strategy');
+
+      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'calculateRoute',
+        {
+          'routeType': _routeTypeToString(type),
+          'fromLat': origin.latitude,
+          'fromLng': origin.longitude,
+          'toLat': destination.latitude,
+          'toLng': destination.longitude,
+          'strategy': strategy,
+          'multiRoute': multiRoute,
+        },
+      );
+
+      if (result == null) {
+        Logs.navigation.warning('⚠️ SDK 算路返回为空');
+        return [];
+      }
+
+      final routesList = result['routes'] as List<dynamic>? ?? [];
+      Logs.navigation.info('✅ SDK 算路成功: ${routesList.length} 条路线');
+
+      return routesList
+          .map((r) => _parseRouteResponse(r as Map<dynamic, dynamic>, type))
+          .toList();
+    } on PlatformException catch (e) {
+      Logs.navigation.error('❌ SDK 算路失败: ${e.message}');
+      throw RoutingException(e.message ?? '算路失败');
+    } catch (e) {
+      Logs.navigation.error('❌ SDK 算路异常: $e');
+      throw RoutingException('算路异常: $e');
+    }
+  }
+
+  static String _routeTypeToString(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return 'driving';
+      case RouteType.walking:
+        return 'walking';
+      case RouteType.riding:
+        return 'riding';
+      case RouteType.transit:
+        return 'transit';
+    }
+  }
+
+  static RouteOption _parseRouteResponse(Map<dynamic, dynamic> map, RouteType type) {
+    final pointsList = map['points'] as List<dynamic>? ?? [];
+    final points = pointsList.map((p) {
+      final pm = p as Map<dynamic, dynamic>;
+      return LatLng(
+        (pm['lat'] as num).toDouble(),
+        (pm['lng'] as num).toDouble(),
+      );
+    }).toList();
+
+    final stepsList = map['steps'] as List<dynamic>? ?? [];
+
+    return RouteOption(
+      distance: (map['distance'] as num?)?.toDouble() ?? 0,
+      duration: (map['duration'] as num?)?.toDouble() ?? 0,
+      strategy: map['strategy']?.toString() ?? '',
+      tolls: (map['tolls'] as num?)?.toDouble() ?? 0,
+      points: points,
+      routeType: type,
+      driveSteps: type == RouteType.driving
+          ? stepsList
+              .map((s) => _parseDriveStep(s as Map<dynamic, dynamic>))
+              .toList()
+          : null,
+      walkSteps: type == RouteType.walking
+          ? stepsList
+              .map((s) => _parseWalkStep(s as Map<dynamic, dynamic>))
+              .toList()
+          : null,
+      rideSteps: type == RouteType.riding
+          ? stepsList
+              .map((s) => _parseWalkStep(s as Map<dynamic, dynamic>))
+              .toList()
+          : null,
+    );
+  }
+
+  static DriveStep _parseDriveStep(Map<dynamic, dynamic> map) {
+    return DriveStep(
+      instruction: map['instruction']?.toString() ?? '',
+      action: map['action']?.toString() ?? '',
+      road: map['road']?.toString() ?? '',
+      distance: (map['distance'] as num?)?.toDouble() ?? 0,
+      duration: (map['duration'] as num?)?.toDouble() ?? 0,
+      points: const [],
+      driveAction: DriveStep.parseAction(map['action']?.toString()),
+      tmcStatus: map['tmcStatus']?.toString(),
+      lat: (map['lat'] as num?)?.toDouble() ?? 0,
+      lng: (map['lng'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  static WalkStep _parseWalkStep(Map<dynamic, dynamic> map) {
+    return WalkStep(
+      instruction: map['instruction']?.toString() ?? '',
+      action: map['action']?.toString() ?? '',
+      road: map['road']?.toString() ?? '',
+      distance: (map['distance'] as num?)?.toDouble() ?? 0,
+      duration: (map['duration'] as num?)?.toDouble() ?? 0,
+      points: const [],
+      walkAction: WalkStep.parseAction(map['action']?.toString()),
+      lat: (map['lat'] as num?)?.toDouble() ?? 0,
+      lng: (map['lng'] as num?)?.toDouble() ?? 0,
+    );
   }
 
   /// 开始导航

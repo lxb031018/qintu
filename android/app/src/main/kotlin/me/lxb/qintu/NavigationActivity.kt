@@ -112,6 +112,14 @@ class NavigationActivity : AppCompatActivity(), AMapNaviListener, AMapNaviViewLi
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_navigation)
 
+        // ✅ 隐私合规：必须在 AMapNavi.getInstance() 之前调用（SDK 8.1.0+）
+        // Maps SDK 隐私合规
+        com.amap.api.maps.MapsInitializer.updatePrivacyShow(applicationContext, true, true)
+        com.amap.api.maps.MapsInitializer.updatePrivacyAgree(applicationContext, true)
+        // Navi SDK 隐私合规
+        com.amap.api.navi.NaviSetting.updatePrivacyShow(applicationContext, true, true)
+        com.amap.api.navi.NaviSetting.updatePrivacyAgree(applicationContext, true)
+
         // 1. 获取 AMapNavi 单例
         mAMapNavi = AMapNavi.getInstance(applicationContext)
         mAMapNavi.addAMapNaviListener(this)

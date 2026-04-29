@@ -106,6 +106,8 @@ class WalkStep {
   final double duration;        // 该步骤预计时间（秒）
   final List<LatLng> points;    // 该步骤的坐标点
   final WalkAction walkAction;  // 解析后的动作枚举
+  final double lat;             // 步骤起始纬度
+  final double lng;             // 步骤起始经度
 
   const WalkStep({
     required this.instruction,
@@ -115,6 +117,8 @@ class WalkStep {
     required this.duration,
     required this.points,
     required this.walkAction,
+    this.lat = 0,
+    this.lng = 0,
   });
 
   /// 获取方向图标
@@ -275,6 +279,8 @@ class DriveStep {
   final List<LatLng> points;    // 该步骤的坐标点
   final DriveAction driveAction; // 解析后的动作枚举
   final String? tmcStatus;      // 交通状态：畅通/缓行/拥堵/严重拥堵
+  final double lat;             // 步骤起始纬度
+  final double lng;             // 步骤起始经度
 
   const DriveStep({
     required this.instruction,
@@ -285,6 +291,8 @@ class DriveStep {
     required this.points,
     required this.driveAction,
     this.tmcStatus,
+    this.lat = 0,
+    this.lng = 0,
   });
 
   /// 解析动作代码

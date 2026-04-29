@@ -1,28 +1,17 @@
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
-import 'package:qintu/features/map_navigation/core/routing_api.dart';
-import 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
 import 'package:qintu/features/map_navigation/core/amap_transit_api.dart';
-import 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
 import 'package:qintu/features/map_navigation/core/poi_api.dart';
 import 'package:qintu/utils/logger.dart';
+import 'amap_navigation_bridge.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
-export 'package:qintu/features/map_navigation/core/amap_walking_api.dart';
 export 'package:qintu/features/map_navigation/core/amap_transit_api.dart';
-export 'package:qintu/features/map_navigation/core/amap_riding_api.dart';
 
 /// ============================================
 /// 高德地图路线规划服务（统一入口）
 ///
-/// 拆分后各服务：
-/// - RoutingApi: 驾车路线规划
-/// - AmapWalkingApi: 步行路线规划
-/// - AmapRidingApi: 骑行路线规划
-/// - AmapTransitApi: 公共交通路线规划
-///
-/// 本文件作为统一入口，根据出行方式分发到各服务
-///
-/// 依赖 ThirdPartyApiClient 统一管理第三方 HTTP 请求
+/// 驾车/步行/骑行 → 通过原生导航 SDK 算路
+/// 公共交通 → 保留 Web API
 /// ============================================
 class AmapRoutingService {
   static final AmapRoutingService _instance = AmapRoutingService._internal();
@@ -31,10 +20,6 @@ class AmapRoutingService {
 
   static AmapRoutingService get instance => _instance;
 
-  /// 各服务实例
-  final _routingApi = RoutingApi();
-  final _walkingService = AmapWalkingApi.instance;
-  final _ridingService = AmapRidingApi.instance;
   final _transitService = AmapTransitApi.instance;
   final _poiApi = PoiApi();
 
@@ -62,21 +47,14 @@ class AmapRoutingService {
 
     switch (type) {
       case RouteType.driving:
-        return _withRetry(() => _routingApi.planDrivingRoute(
-          origin: origin,
-          destination: destination,
-          strategy: strategy,
-        ));
       case RouteType.walking:
-        return _withRetry(() => _walkingService.planWalkingRoute(
-          origin: origin,
-          destination: destination,
-        ));
       case RouteType.riding:
-        return _withRetry(() => _ridingService.planRidingRoute(
+        return _withRetry(() => AmapNavigationBridge.calculateRoute(
+          type: type,
           origin: origin,
           destination: destination,
           strategy: strategy,
+          multiRoute: true,
         ));
       case RouteType.transit:
         // 如果没有提供城市，尝试从起点坐标逆地理编码获取
