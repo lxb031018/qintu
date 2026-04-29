@@ -435,15 +435,37 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
             searchCity = gpsCity.endsWith('市')
                 ? gpsCity.substring(0, gpsCity.length - 1)
                 : gpsCity;
+          } else {
+            // GPS 返回的城市为空，尝试从坐标逆地理编码获取城市
+            searchCity = await _poiService.getCityFromLocation(center);
+            if (searchCity != null) {
+              searchCity = searchCity.endsWith('市')
+                  ? searchCity.substring(0, searchCity.length - 1)
+                  : searchCity;
+              Logs.ui.debug('从 GPS 坐标逆地理编码获取城市: $searchCity');
+            }
           }
           Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
         } else {
-          Logs.ui.debug('GPS 不可用，使用 POI 位置');
-          final cachedCity = _gpsService.lastKnownCity;
-          if (cachedCity != null && cachedCity.isNotEmpty) {
-            searchCity = cachedCity.endsWith('市')
-                ? cachedCity.substring(0, cachedCity.length - 1)
-                : cachedCity;
+          Logs.ui.debug('GPS 不可用，尝试获取设备缓存位置...');
+          final lastLoc = await _gpsService.getLastKnownLocation();
+          if (lastLoc != null) {
+            center = lastLoc;
+            searchCity = await _poiService.getCityFromLocation(lastLoc);
+            if (searchCity != null) {
+              searchCity = searchCity.endsWith('市')
+                  ? searchCity.substring(0, searchCity.length - 1)
+                  : searchCity;
+              Logs.ui.debug('从缓存位置获取城市: $searchCity');
+            }
+          } else {
+            Logs.ui.debug('无缓存位置，使用 lastKnownCity');
+            final cachedCity = _gpsService.lastKnownCity;
+            if (cachedCity != null && cachedCity.isNotEmpty) {
+              searchCity = cachedCity.endsWith('市')
+                  ? cachedCity.substring(0, cachedCity.length - 1)
+                  : cachedCity;
+            }
           }
         }
       }

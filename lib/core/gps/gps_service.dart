@@ -45,4 +45,20 @@ class GpsService {
     }
     return null;
   }
+
+  /// 获取设备上一次缓存的位置（无需发起 GPS 请求）
+  /// 用于在 GPS 未就绪时获取城市信息以限定搜索范围
+  Future<LatLng?> getLastKnownLocation() async {
+    try {
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('getLastKnownLocation');
+      if (result != null) {
+        _lastKnownCity = result['city'] as String? ?? '';
+        return LatLng(
+          result['latitude'] as double,
+          result['longitude'] as double,
+        );
+      }
+    } catch (e) { }
+    return null;
+  }
 }

@@ -169,6 +169,22 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 locationClient.getCurrentLocation(result)
             }
 
+            "getLastKnownLocation" -> {
+                Log.d(TAG, "📍 收到 getLastKnownLocation 调用")
+                val loc = locationClient.getLastKnownLocation()
+                if (loc != null) {
+                    result.success(mapOf(
+                        "latitude" to loc.latitude,
+                        "longitude" to loc.longitude,
+                        "accuracy" to loc.accuracy,
+                        "timestamp" to loc.time,
+                        "city" to (loc.city ?: "")
+                    ))
+                } else {
+                    result.success(null)
+                }
+            }
+
             "geocodeAddress" -> {
                 val address = call.argument<String>("address")
                 if (address.isNullOrEmpty()) {
