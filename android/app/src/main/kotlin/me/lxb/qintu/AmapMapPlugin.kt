@@ -334,6 +334,13 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
+            "setLocationDotEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.isMyLocationEnabled = enabled
+                Log.d(TAG, "📍 定位蓝点: ${if (enabled) "显示" else "隐藏"}")
+                result.success(true)
+            }
+
             else -> result.notImplemented()
         }
     }

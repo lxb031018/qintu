@@ -442,8 +442,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       showRoutesSheet: false,
     );
 
-    // 开启跟随模式
+    // 开启跟随模式，隐藏定位蓝点（用车载标记替代）
     ref.read(mapControllerNotifierProvider)?.setFollowMode(true);
+    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(false);
 
     // 选中路线（多路径时需要）
     await AmapNavigationBridge.selectRouteId(state.selectedRouteIndex);
@@ -465,6 +466,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   Future<void> stopNavigation() async {
     await AmapNavigationBridge.stopNavigation();
     ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
+    ref.read(mapControllerNotifierProvider)?.clearCarMarker();
+    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
     _handleNavEnd();
   }
 }

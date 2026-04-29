@@ -453,4 +453,17 @@ class AmapMapController {
       return false;
     }
   }
+
+  /// 显示/隐藏定位蓝点
+  Future<bool> setLocationDotEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setLocationDotEnabled', {
+        'enabled': enabled,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ 设置定位蓝点失败: $e');
+      return false;
+    }
+  }
 }

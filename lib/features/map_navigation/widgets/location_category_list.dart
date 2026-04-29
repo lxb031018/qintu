@@ -402,6 +402,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       children: state.historyItems.map((poi) => _HistoryListItem(
         poi: poi,
         isSelected: state.selectedHistoryIds.contains(poi.id),
+        isSelectionMode: state.isHistorySelectionMode,
         onTap: () => _onHistoryTap(poi),
         onLongPress: () => _onHistoryLongPress(poi),
       )).toList(),
@@ -415,12 +416,14 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 class _HistoryListItem extends StatelessWidget {
   final PoiSuggestion poi;
   final bool isSelected;
+  final bool isSelectionMode;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
   const _HistoryListItem({
     required this.poi,
     required this.isSelected,
+    required this.isSelectionMode,
     required this.onTap,
     required this.onLongPress,
   });
@@ -437,27 +440,32 @@ class _HistoryListItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // 选择圆圈
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.errorColor : AppColors.grey400,
-                  width: 2,
+            // 选择圆圈 - 仅在选择模式下显示
+            if (isSelectionMode)
+              AnimatedOpacity(
+                opacity: isSelectionMode ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? AppColors.primaryColor : AppColors.grey400,
+                      width: 2,
+                    ),
+                    color: isSelected ? AppColors.primaryColor : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          size: 14,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
-                color: isSelected ? AppColors.errorColor : Colors.transparent,
               ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: AppSpacings.sm),
+            if (isSelectionMode) const SizedBox(width: AppSpacings.sm),
             // 图标
             const Icon(
               Icons.history,
