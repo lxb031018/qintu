@@ -84,6 +84,27 @@ class LocationCategoryService {
     await prefs.remove(_storageKey);
   }
 
+  /// 删除指定的历史记录项
+  Future<void> deleteHistoryItems(Set<String> poiIds) async {
+    final history = await _loadHistoryFromStorage();
+
+    // 从 poiId 中提取 timestamp 来匹配
+    final timestampsToRemove = <int>{};
+    for (final id in poiIds) {
+      if (id.startsWith('history_')) {
+        final timestampStr = id.substring(8); // 'history_' 长度为 8
+        final timestamp = int.tryParse(timestampStr);
+        if (timestamp != null) {
+          timestampsToRemove.add(timestamp);
+        }
+      }
+    }
+
+    history.removeWhere((item) => timestampsToRemove.contains(item.timestamp.millisecondsSinceEpoch));
+
+    await _saveToStorage(history);
+  }
+
   /// 从存储加载历史记录
   Future<List<HistoryLocationItem>> _loadHistoryFromStorage() async {
     try {

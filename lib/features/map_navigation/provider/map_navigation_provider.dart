@@ -196,9 +196,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           _handleNavEnd();
           break;
         case NavigationStatus.stopped:
-        case NavigationStatus.idle:
           _handleNavEnd();
           break;
+        case NavigationStatus.idle:
         case NavigationStatus.offRoute:
         case NavigationStatus.recalculating:
           break;

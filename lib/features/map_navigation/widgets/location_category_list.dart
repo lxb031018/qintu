@@ -62,7 +62,39 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
   void _hideListAndUnfocus() {
     ref.read(locationInputProvider.notifier).hideList();
+    ref.read(locationInputProvider.notifier).exitHistorySelectionMode();
     FocusScope.of(context).unfocus();
+  }
+
+  void _onHistoryLongPress(PoiSuggestion poi) {
+    final notifier = ref.read(locationInputProvider.notifier);
+    final currentState = ref.read(locationInputProvider);
+    if (!currentState.isHistorySelectionMode) {
+      notifier.enterHistorySelectionMode();
+    }
+    notifier.toggleHistorySelection(poi.id);
+  }
+
+  void _onHistoryTap(PoiSuggestion poi) {
+    final notifier = ref.read(locationInputProvider.notifier);
+    final currentState = ref.read(locationInputProvider);
+    if (currentState.isHistorySelectionMode) {
+      notifier.toggleHistorySelection(poi.id);
+    } else {
+      _selectLocationAndUnfocus(poi);
+    }
+  }
+
+  void _onSelectAll() {
+    ref.read(locationInputProvider.notifier).selectAllHistory();
+  }
+
+  void _onDeleteSelected() {
+    ref.read(locationInputProvider.notifier).deleteSelectedHistory();
+  }
+
+  void _onExitSelectionMode() {
+    ref.read(locationInputProvider.notifier).exitHistorySelectionMode();
   }
 
   @override
@@ -90,6 +122,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
           _buildCategoryBar(state, isDark),
           // 分隔线
           Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
+          // 历史选择模式的操作栏
+          if (state.isHistorySelectionMode) _buildHistorySelectionBar(),
           // 列表内容区
           _buildListContent(state),
         ],
@@ -98,7 +132,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建分类按钮栏
-  /// 
+  ///
   /// 包含 6 个元素（从左到右）：
   /// 1. 我的位置按钮
   /// 2. 绑定者按钮
@@ -150,8 +184,54 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     );
   }
 
+  /// 构建历史选择模式的操作栏
+  Widget _buildHistorySelectionBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.md,
+        vertical: AppSpacings.sm,
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _onSelectAll,
+            child: const Text(
+              '全选',
+              style: TextStyle(
+                color: AppColors.primaryColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacings.lg),
+          GestureDetector(
+            onTap: _onDeleteSelected,
+            child: const Text(
+              '清除',
+              style: TextStyle(
+                color: AppColors.errorColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: _onExitSelectionMode,
+            child: const Icon(
+              Icons.close,
+              size: 20,
+              color: AppColors.grey600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建列表内容区
-  /// 
+  ///
   /// 限制最大高度为 200，支持垂直滚动
   Widget _buildListContent(LocationInputState state) {
     return Container(
@@ -164,7 +244,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 根据当前分类构建内容
-  /// 
+  ///
   /// 优先级：
   /// 1. 如果有搜索结果（或正在搜索、搜索错误），优先显示搜索结果
   /// 2. 否则根据选中的分类显示对应内容：
@@ -191,7 +271,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// 构建 POI 搜索结果列表
-  /// 
+  ///
   /// 处理四种状态：
   /// - 加载中（isSearching）：显示加载动画
   /// - 搜索错误（searchError）：显示错误信息
@@ -287,7 +367,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   /// "历史" 内容
-  /// 
+  ///
   /// 处理三种状态：
   /// - 加载中（isLoadingHistory）：显示"加载中..."
   /// - 无历史记录：显示"暂无历史位置"
@@ -319,13 +399,103 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: state.historyItems.map((poi) => LocationListItem(
-        icon: Icons.history,
-        iconColor: AppColors.grey600,
-        title: poi.name,
-        subtitle: poi.address.isNotEmpty ? poi.address : poi.district,
-        onTap: () => _selectLocationAndUnfocus(poi),
+      children: state.historyItems.map((poi) => _HistoryListItem(
+        poi: poi,
+        isSelected: state.selectedHistoryIds.contains(poi.id),
+        onTap: () => _onHistoryTap(poi),
+        onLongPress: () => _onHistoryLongPress(poi),
       )).toList(),
+    );
+  }
+}
+
+/// ============================================
+/// 历史位置列表项（带选择功能）
+/// ============================================
+class _HistoryListItem extends StatelessWidget {
+  final PoiSuggestion poi;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _HistoryListItem({
+    required this.poi,
+    required this.isSelected,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacings.sm,
+          horizontal: AppSpacings.xs,
+        ),
+        child: Row(
+          children: [
+            // 选择圆圈
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.errorColor : AppColors.grey400,
+                  width: 2,
+                ),
+                color: isSelected ? AppColors.errorColor : Colors.transparent,
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+            const SizedBox(width: AppSpacings.sm),
+            // 图标
+            const Icon(
+              Icons.history,
+              color: AppColors.grey600,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacings.sm),
+            // 文字信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    poi.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.grey700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (poi.address.isNotEmpty)
+                    Text(
+                      poi.address,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.grey500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
