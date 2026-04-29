@@ -315,7 +315,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         bearing.toFloat()
                     )
                     if (isFollowMode) {
-                        cameraController?.moveCamera(lat, lng)
+                        cameraController?.animateCamera(lat, lng)
                     }
                     result.success(true)
                 } else {

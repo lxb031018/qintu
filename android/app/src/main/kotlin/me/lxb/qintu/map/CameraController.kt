@@ -23,4 +23,15 @@ class CameraController(private val aMap: AMap) {
             com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, zoom)
         )
     }
+
+    /**
+     * 平滑动画移动相机到指定位置
+     */
+    fun animateCamera(lat: Double, lng: Double, zoom: Float = 17f) {
+        val latLng = LatLng(lat, lng)
+        Log.d(TAG, "🎥 动画移动相机到: lat=$lat, lng=$lng, zoom=$zoom")
+        aMap.animateCamera(
+            com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, zoom)
+        )
+    }
 }

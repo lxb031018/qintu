@@ -37,14 +37,11 @@ class MapViewFactory(
     fun configureMap(mapView: MapView) {
         val aMap = mapView.map
 
-        // ✅ 配置原生定位蓝点样式（箭头样式，跟随旋转）
+        // ✅ 配置原生定位蓝点样式（纯箭头，无精度圆）
         val myLocationStyle = MyLocationStyle()
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER)
         myLocationStyle.interval(2000)
         myLocationStyle.showMyLocation(true)
-        myLocationStyle.radiusFillColor(0x401890FF.toInt())
-        myLocationStyle.strokeColor(0x801890FF.toInt())
-        myLocationStyle.strokeWidth(3f)
         aMap.myLocationStyle = myLocationStyle
 
         // 🟢 关键步骤 1：先设置定位源
