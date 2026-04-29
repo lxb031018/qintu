@@ -57,8 +57,23 @@ Feature 模块：api → service → provider → widget
 
 ## Android 原生集成
 
+### 三层架构
+
+Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用**三层架构**：
+
+| 层 | 职责 | 示例文件 |
+|---|---|---|
+| Plugin 层 | 实现 `FlutterPlugin`，暴露 MethodChannel/EventChannel 与 Flutter 通信 | `AmapMapPlugin.kt`、`AmapNavigationPlugin.kt` |
+| Activity 层 | 原生页面（持有 UI），处理用户交互和生命周期 | `NavigationActivity.kt` |
+| 功能模块层 | 封装高德 SDK 能力（定位、地图、导航、地理编码等） | `LocationClientImpl.kt`、`RouteRenderer.kt` |
+
+**Plugin 层是 Flutter 与原生通信的桥接点**，禁止在 Plugin 层编写业务逻辑。
+
+### 集成规则
+
 - 定位/地图：高德 Android SDK（原生集成，非 Flutter 插件）
 - 插件注册：`MainActivity.configureFlutterEngine()`
+- Platform Channel 名称：在 `lib/core/constants/` 集中定义常量，Dart/Kotlin 两边共享
 - 禁止：业务代码直接调用 Platform Channel
 
 ## Git 工作流
@@ -70,12 +85,20 @@ Feature 模块：api → service → provider → widget
 
 **每次修改功能或增加新功能后，必须检查架构合规性：**
 
+### Flutter 侧
+
 1. **四层分离**：api → service → provider → widget，是否每层职责正确
 2. **禁止逆向调用**：provider 不能直接调 api 层，必须过 service 层
 3. **禁止在 ui 层写业务逻辑**
 4. **使用统一 HTTP 客户端**：后端用 `ApiClient`，第三方用 `ThirdPartyApiClient`
 5. **清理死代码**：删除不再使用的文件、函数、import
 6. **更新目录/函数名**：使用清晰、合适的命名
+
+### Android 原生侧
+
+1. **三层分离**：Plugin 层 → Activity 层 → 功能模块层，是否每层职责正确
+2. **Plugin 层禁止业务逻辑**：Plugin 只负责 Flutter 通信，不编写业务代码
+3. **Platform Channel 名称一致**：Dart 和 Kotlin 两边使用同一常量定义
 
 ## 文档导航
 
