@@ -3,6 +3,7 @@ import 'package:qintu/config/amap_web_config.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/core/http/third_party_api_client.dart';
+import '../service/polyline_service.dart';
 
 /// ============================================
 /// 高德地图骑行路线规划 API
@@ -141,14 +142,5 @@ class AmapRidingApi {
 
   /// 解析 polyline 坐标串
   /// 格式: "lon1,lat1;lon2,lat2;lon3,lat3"
-  List<LatLng> _parsePolyline(String polyline) {
-    try {
-      return polyline.split(';').map((coord) {
-        return LatLng.fromAmapString(coord);
-      }).toList();
-    } catch (e) {
-      Logs.ui.warning('⚠️ Polyline 解析失败: $e');
-      return [];
-    }
-  }
+  List<LatLng> _parsePolyline(String polyline) => parsePolyline(polyline);
 }

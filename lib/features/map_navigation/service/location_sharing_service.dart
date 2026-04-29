@@ -1,5 +1,5 @@
-import 'dart:math' as math;
 import 'location_upload_service.dart';
+import 'location_distance_service.dart';
 
 /// ============================================
 /// 位置共享服务
@@ -75,16 +75,7 @@ class LocationSharingService {
     double lat2,
     double lng2,
   ) {
-    const R = 6371000.0;
-    final dLat = math.pi / 180 * (lat2 - lat1);
-    final dLng = math.pi / 180 * (lng2 - lng1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(math.pi / 180 * lat1) *
-            math.cos(math.pi / 180 * lat2) *
-            math.sin(dLng / 2) *
-            math.sin(dLng / 2);
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return R * c;
+    return calculateHaversineDistance(lat1: lat1, lng1: lng1, lat2: lat2, lng2: lng2);
   }
 }
 
