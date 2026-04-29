@@ -19,6 +19,7 @@ import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.map.CameraController
 import me.lxb.qintu.map.MapViewFactory
 import me.lxb.qintu.route.RouteRenderer
+import me.lxb.qintu.overlay.CarOverlay
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
@@ -49,6 +50,8 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var mapViewFactory: MapViewFactory
     private var cameraController: CameraController? = null
     private var routeRenderer: RouteRenderer? = null
+    private var carOverlay: CarOverlay? = null
+    private var isFollowMode = false
     private lateinit var geocodeImpl: GeocodeImpl
 
     // 共享状态
@@ -296,6 +299,39 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 } else {
                     result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
                 }
+            }
+
+            "updateCarMarker" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                val bearing = call.argument<Double>("bearing") ?: 0.0
+                if (lat != null && lng != null) {
+                    if (carOverlay == null) {
+                        carOverlay = context?.let { CarOverlay(it) }
+                    }
+                    carOverlay?.draw(
+                        aMapHolder.aMap,
+                        LatLng(lat, lng),
+                        bearing.toFloat()
+                    )
+                    if (isFollowMode) {
+                        cameraController?.moveCamera(lat, lng)
+                    }
+                    result.success(true)
+                } else {
+                    result.success(false)
+                }
+            }
+
+            "setFollowMode" -> {
+                isFollowMode = call.argument<Boolean>("enabled") ?: false
+                result.success(true)
+            }
+
+            "clearCarMarker" -> {
+                carOverlay?.destroy()
+                carOverlay = null
+                result.success(true)
             }
 
             else -> result.notImplemented()

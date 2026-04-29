@@ -193,39 +193,31 @@ class AmapNavigationBridge {
     );
   }
 
-  /// 开始导航
-  ///
-  /// [routePoints] 路线坐标点列表（至少 2 个点）
-  /// [steps] 导航步骤详情（用于在导航页面显示转弯节点）
-  /// [enableVoice] 是否开启语音播报（默认 true）
-  /// [enableTts] 是否开启 TTS 详细播报（默认 true）
-  static Future<bool> startNavigation({
-    required List<LatLng> routePoints,
-    List<Map<String, dynamic>>? steps,
-    bool enableVoice = true,
-    bool enableTts = true,
-  }) async {
-    if (routePoints.length < 2) {
-      Logs.navigation.warning('⚠️ 路线点数不足，至少需要 2 个点');
+  /// 选中路线（多路径时选择导航路线）
+  static Future<bool> selectRouteId(int routeId) async {
+    try {
+      await _methodChannel.invokeMethod('selectRouteId', {'routeId': routeId});
+      return true;
+    } catch (e) {
+      Logs.navigation.error('❌ 选择路线失败: $e');
       return false;
     }
+  }
 
+  /// 开始无 View 导航（同地图，不跳转页面）
+  ///
+  /// [isEmulator] 是否为模拟导航
+  /// [enableVoice] 是否开启语音播报
+  static Future<bool> startNavigation({
+    bool isEmulator = false,
+    bool enableVoice = true,
+  }) async {
     try {
-      Logs.navigation.info('🗺️ 开始导航，路线点数: ${routePoints.length}');
-      Logs.navigation.info('   语音播报: $enableVoice, TTS: $enableTts');
-
-      final pointsData = routePoints
-          .map((p) => {
-                'latitude': p.latitude,
-                'longitude': p.longitude,
-              })
-          .toList();
+      Logs.navigation.info('🗺️ 开始无View导航, isEmulator=$isEmulator');
 
       final result = await _methodChannel.invokeMethod<bool>('startNavigation', {
-        'routePoints': pointsData,
-        'steps': steps,
+        'isEmulator': isEmulator,
         'enableVoice': enableVoice,
-        'enableTts': enableTts,
       });
 
       if (result == true) {
@@ -233,7 +225,6 @@ class AmapNavigationBridge {
       } else {
         Logs.navigation.warning('❌ 导航启动失败');
       }
-      
       return result ?? false;
     } on PlatformException catch (e) {
       Logs.navigation.error('❌ 开始导航异常: ${e.message}');
@@ -246,13 +237,7 @@ class AmapNavigationBridge {
 
   /// 直接开始导航（跳过路线规划页面，直接进入导航）
   /// 
-  /// [originName] 起点名称
-  /// [originLat] 起点纬度
-  /// [originLng] 起点经度
-  /// [destinationName] 终点名称
-  /// [destinationLat] 终点纬度
-  /// [destinationLng] 终点经度
-  /// [enableVoice] 是否开启语音播报
+  /// 内部调用 calculateRoute + startNavigation
   static Future<Map<dynamic, dynamic>> startDirectNavigation({
     required String originName,
     required double originLat,

@@ -67,9 +67,9 @@ dependencies {
     implementation(files("libs/AMap3DMap_11.1.001_AMapNavi_11.1.001_AMapSearch_9.7.4_AMapLocation_11.1.001_20260402.jar"))
     // 语音播报需要的 MSC.jar
     implementation(files("libs/Msc.jar"))
-    // AndroidX AppCompat（NavigationActivity 需要）
+    // AndroidX AppCompat
     implementation("androidx.appcompat:appcompat:1.1.0")
-    // LocalBroadcastManager（导航状态传递需要）
+    // LocalBroadcastManager
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
     // RecyclerView（导航步骤列表需要）
     implementation("androidx.recyclerview:recyclerview:1.2.1")

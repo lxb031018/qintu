@@ -333,9 +333,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(showRoutesSheet: false);
   }
 
-  /// 开始导航
-  ///
-  /// 调用原生 GPS 导航，传入当前选中的路线
+  /// 开始导航（无 View，同地图导航）
   Future<void> startNavigation() async {
     final route = state.selectedRoute;
     if (route == null) {
@@ -348,42 +346,15 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       return;
     }
 
-    // 提取步骤详情
-    List<Map<String, dynamic>>? steps;
-    if (route.driveSteps != null) {
-      steps = route.driveSteps!
-          .map((s) => {
-                'instruction': s.instruction,
-                'road': s.road,
-                'distance': s.distance,
-                'action': s.action,
-              })
-          .toList();
-    } else if (route.walkSteps != null) {
-      steps = route.walkSteps!
-          .map((s) => {
-                'instruction': s.instruction,
-                'road': s.road,
-                'distance': s.distance,
-                'action': s.action,
-              })
-          .toList();
-    } else if (route.rideSteps != null) {
-      steps = route.rideSteps!
-          .map((s) => {
-                'instruction': s.instruction,
-                'road': s.road,
-                'distance': s.distance,
-                'action': s.action,
-              })
-          .toList();
-    }
+    // 选中路线（多路径时需要）
+    await AmapNavigationBridge.selectRouteId(state.selectedRouteIndex);
 
+    // 清除旧路线，保留起终点标记
+    _mapDisplayService.clearRoutes();
+
+    // 启动无 View 导航
     final success = await AmapNavigationBridge.startNavigation(
-      routePoints: route.points,
-      steps: steps,
       enableVoice: true,
-      enableTts: true,
     );
 
     if (!success) {

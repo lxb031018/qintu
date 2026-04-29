@@ -1,12 +1,8 @@
 package me.lxb.qintu
 
 import android.app.Activity
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.amap.api.maps.MapsInitializer
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Poi
@@ -21,6 +17,7 @@ import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.AMapTravelInfo
 import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.navi.model.NaviPoi
+import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.TransportType
 import com.amap.api.navi.enums.TravelStrategy
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -56,7 +53,6 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
     private var activity: Activity? = null
-    private var navEventReceiver: BroadcastReceiver? = null
     private var mAMapNavi: AMapNavi? = null
     private var pendingRouteResult: MethodChannel.Result? = null
 
@@ -91,71 +87,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             }
         })
 
-        // 注册导航事件广播接收器
-        registerNavigationEventReceiver()
-
         Log.d(TAG, "导航插件已注册")
-    }
-
-    /**
-     * 注册导航事件广播接收器，将导航状态转发到 EventChannel
-     */
-    private fun registerNavigationEventReceiver() {
-        navEventReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    NavigationActivity.ACTION_LOCATION_UPDATE -> {
-                        val lat = intent.getDoubleExtra("lat", 0.0)
-                        val lng = intent.getDoubleExtra("lng", 0.0)
-                        val speed = intent.getDoubleExtra("speed", 0.0)
-                        val bearing = intent.getDoubleExtra("bearing", 0.0)
-                        val accuracy = intent.getDoubleExtra("accuracy", 0.0)
-                        val data = mutableMapOf<String, Any?>()
-                        data["type"] = "locationUpdate"
-                        data["lat"] = lat
-                        data["lng"] = lng
-                        data["speed"] = speed
-                        data["bearing"] = bearing
-                        data["accuracy"] = accuracy
-                        @Suppress("UNCHECKED_CAST")
-                        eventSink?.success(data as Map<String, Any>)
-                    }
-                    NavigationActivity.ACTION_NAVI_INFO_UPDATE -> {
-                        val remainingDistance = intent.getIntExtra("pathRetainDistance", 0)
-                        val remainingTime = intent.getIntExtra("pathRetainTime", 0)
-                        val nextRoadName = intent.getStringExtra("nextRoadName") ?: ""
-                        val currentRoadName = intent.getStringExtra("currentRoadName") ?: ""
-                        val data = mutableMapOf<String, Any?>()
-                        data["type"] = "naviInfo"
-                        data["remainingDistance"] = remainingDistance
-                        data["remainingTime"] = remainingTime
-                        data["nextRoadName"] = nextRoadName
-                        data["currentRoadName"] = currentRoadName
-                        @Suppress("UNCHECKED_CAST")
-                        eventSink?.success(data as Map<String, Any>)
-                    }
-                    NavigationActivity.ACTION_NAVI_TEXT -> {
-                        val textType = intent.getIntExtra("type", 0)
-                        val text = intent.getStringExtra("text") ?: ""
-                        val data = mutableMapOf<String, Any?>()
-                        data["type"] = "naviText"
-                        data["textType"] = textType
-                        data["text"] = text
-                        @Suppress("UNCHECKED_CAST")
-                        eventSink?.success(data as Map<String, Any>)
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter().apply {
-            addAction(NavigationActivity.ACTION_LOCATION_UPDATE)
-            addAction(NavigationActivity.ACTION_NAVI_INFO_UPDATE)
-            addAction(NavigationActivity.ACTION_NAVI_TEXT)
-        }
-        context?.let {
-            LocalBroadcastManager.getInstance(it).registerReceiver(navEventReceiver!!, filter)
-        }
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -166,15 +98,35 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
 
             "calculateRoute" -> handleCalculateRoute(call, result)
 
+            "selectRouteId" -> {
+                val routeId = call.argument<Int>("routeId") ?: 0
+                mAMapNavi?.selectRouteId(routeId)
+                result.success(true)
+            }
+
             "startNavigation" -> {
-                // 启动独立 GPS 导航 Activity（传入路线点）
-                // routePoints 格式: List<Map< String, Double>>，每个 Map 包含 latitude 和 longitude
-                @Suppress("UNCHECKED_CAST")
-                val routePointsList = call.argument<List<Map<String, Double>>>("routePoints") ?: emptyList()
-                @Suppress("UNCHECKED_CAST")
-                val stepsList = call.argument<List<Map<String, Any>>>("steps") ?: emptyList()
+                val isEmulator = call.argument<Boolean>("isEmulator") ?: false
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true
-                handleStartNavigation(routePointsList, stepsList, enableVoice, result)
+                handleStartHeadlessNavigation(isEmulator, enableVoice, result)
+            }
+
+            "stopNavigation" -> {
+                try {
+                    mAMapNavi?.stopNavi()
+                    sendNavEvent("naviStatus", "status" to "stopped")
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.error("STOP_ERROR", e.message, null)
+                }
+            }
+
+            "togglePause" -> {
+                try {
+                    mAMapNavi?.pauseNavi()
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.error("PAUSE_ERROR", e.message, null)
+                }
             }
 
             "startRouteActivity" -> {
@@ -193,122 +145,9 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
                 )
             }
 
-            "stopNavigation" -> {
-                // 停止导航并关闭 NavigationActivity
-                try {
-                    val intent = Intent(NavigationActivity.ACTION_STOP_NAVIGATION)
-                    context?.let { LocalBroadcastManager.getInstance(it).sendBroadcast(intent) }
-                    result.success(true)
-                } catch (e: Exception) {
-                    result.error("STOP_ERROR", e.message, null)
-                }
-            }
-
             else -> {
                 result.notImplemented()
             }
-        }
-    }
-
-    /**
-     * 启动独立 GPS 导航 Activity
-     *
-     * @param routePoints 路线点列表，每个 Map 包含 latitude 和 longitude
-     */
-    private fun handleStartNavigation(
-        routePoints: List<Map<String, Double>>,
-        steps: List<Map<String, Any>>,
-        enableVoice: Boolean,
-        result: Result
-    ) {
-        try {
-            val act = activity ?: run {
-                result.error("ACTIVITY_NULL", "Activity 为空", null)
-                return
-            }
-
-            Log.d(TAG, "启动 GPS 导航 Activity，路线点数: ${routePoints.size}")
-            Log.d(TAG, "Activity context: ${act.javaClass.name}, hash: ${act.hashCode()}")
-
-            // 将 List<Map> 转换为 JSON 字符串传递给 Activity
-            val jsonArray = routePoints.joinToString(",", "[", "]") { point ->
-                val lat = point["latitude"] ?: 0.0
-                val lng = point["longitude"] ?: 0.0
-                "[$lat,$lng]"
-            }
-
-            // 将步骤 List<Map> 转换为 JSON 数组
-            val stepsJson = steps.joinToString(",", "[", "]") { step ->
-                val instruction = step["instruction"] ?: ""
-                val road = step["road"] ?: ""
-                val distance = step["distance"] ?: 0.0
-                val action = step["action"] ?: ""
-                """{"instruction":"$instruction","road":"$road","distance":$distance,"action":"$action"}"""
-            }
-
-            val intent = Intent(act, NavigationActivity::class.java)
-            intent.putExtra(NavigationActivity.EXTRA_ROUTE_POINTS, jsonArray)
-            intent.putExtra(NavigationActivity.EXTRA_STEPS, stepsJson)
-            intent.putExtra(NavigationActivity.EXTRA_ENABLE_VOICE, enableVoice)
-            // 使用 Activity context 启动在同一任务栈中运行
-            act.startActivity(intent)
-            Log.d(TAG, "startActivity 已调用")
-
-            result.success(true)
-        } catch (e: Exception) {
-            Log.e(TAG, "启动 GPS 导航失败", e)
-            result.error("START_NAVIGATION_ERROR", e.message, null)
-        }
-    }
-
-    /**
-     * 启动高德官方导航组件（路线规划界面）
-     */
-    private fun handleStartRouteActivity(
-        originName: String?, originLat: Double?, originLng: Double?,
-        destinationName: String, destinationLat: Double, destinationLng: Double,
-        enableVoice: Boolean, result: Result
-    ) {
-        try {
-            if (destinationLat == 0.0 || destinationLng == 0.0) {
-                result.error("INVALID_PARAMS", "终点坐标不能为空", null)
-                return
-            }
-
-            // 构建起点（为空则使用"我的位置"）
-            val start: Poi? = if (originLat != null && originLng != null && originLat != 0.0) {
-                Poi(originName ?: "起点", LatLng(originLat, originLng), "")
-            } else {
-                null
-            }
-
-            // 构建终点
-            val end = Poi(destinationName, LatLng(destinationLat, destinationLng), "")
-
-            // 构建导航组件参数
-            val params = AmapNaviParams(
-                start,                            // 起点（null=我的位置）
-                null,                             // 途经点列表
-                end,                              // 终点
-                AmapNaviType.DRIVER,              // 驾车导航
-                AmapPageType.ROUTE                // 路线规划界面
-            )
-
-            // 配置导航参数
-            params.setUseInnerVoice(enableVoice)                     // 使用内部语音播报
-            params.setNeedCalculateRouteWhenPresent(true)            // 启动后自动算路
-            params.setNeedDestroyDriveManagerInstanceWhenNaviExit(true)
-
-            // 启动官方导航组件
-            Log.d(TAG, "启动高德导航组件: ${originName ?: "我的位置"} → $destinationName")
-
-            AmapNaviPage.getInstance().showRouteActivity(context!!, params, null)
-
-            result.success(true)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "启动导航失败", e)
-            result.error("START_NAVIGATION_ERROR", e.message, null)
         }
     }
 
@@ -463,21 +302,68 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
     override fun onCalculateRouteSuccess(ints: IntArray?) {}
     override fun onCalculateRouteFailure(errorCode: Int) {}
 
-    // 以下 AMapNaviListener 回调保留空实现，仅满足接口契约
-    override fun onInitNaviSuccess() {}
-    override fun onInitNaviFailure() {}
-    override fun onStartNavi(type: Int) {}
-    override fun onLocationChange(location: com.amap.api.navi.model.AMapNaviLocation?) {}
-    override fun onNaviInfoUpdate(naviInfo: com.amap.api.navi.model.NaviInfo?) {}
-    override fun onArriveDestination() {}
+    // 以下 AMapNaviListener 回调 — 将导航事件转发到 Flutter EventChannel
+    override fun onInitNaviSuccess() {
+        Log.d(TAG, "✅ 导航引擎初始化成功")
+        sendNavEvent("naviStatus", "status" to "ready")
+    }
+    override fun onInitNaviFailure() {
+        Log.e(TAG, "❌ 导航引擎初始化失败")
+        sendNavEvent("naviStatus", "status" to "error", "error" to "导航引擎初始化失败")
+    }
+    override fun onStartNavi(type: Int) {
+        Log.d(TAG, "🚗 导航已启动 type=$type")
+        sendNavEvent("naviStatus", "status" to "navigating", "naviType" to type)
+    }
+    override fun onLocationChange(location: com.amap.api.navi.model.AMapNaviLocation?) {
+        location?.let {
+            val coord = it.coord
+            sendNavEvent("locationUpdate",
+                "lat" to coord.latitude,
+                "lng" to coord.longitude,
+                "speed" to it.speed.toDouble(),
+                "bearing" to it.bearing.toDouble(),
+                "accuracy" to it.accuracy.toDouble()
+            )
+        }
+    }
+    override fun onNaviInfoUpdate(naviInfo: com.amap.api.navi.model.NaviInfo?) {
+        naviInfo?.let {
+            val next = it.nextRoadName ?: ""
+            val cur = it.currentRoadName ?: ""
+            sendNavEvent("naviInfo",
+                "remainingDistance" to it.pathRetainDistance,
+                "remainingTime" to it.pathRetainTime,
+                "nextRoadName" to next,
+                "currentRoadName" to cur,
+                "iconType" to it.iconType
+            )
+        }
+    }
+    override fun onArriveDestination() {
+        Log.d(TAG, "🏁 已到达目的地")
+        sendNavEvent("naviStatus", "status" to "arrived")
+    }
     override fun onNaviRouteNotify(routeNotifyData: com.amap.api.navi.model.AMapNaviRouteNotifyData?) {}
-    override fun onGpsSignalWeak(isWeak: Boolean) {}
-    override fun onReCalculateRouteForYaw() {}
-    override fun onReCalculateRouteForTrafficJam() {}
+    override fun onGpsSignalWeak(isWeak: Boolean) {
+        sendNavEvent("gpsStatus", "isWeak" to isWeak)
+    }
+    override fun onReCalculateRouteForYaw() {
+        Log.d(TAG, "🚨 偏航，重新算路")
+        sendNavEvent("naviStatus", "status" to "recalculating", "reason" to "yaw")
+    }
+    override fun onReCalculateRouteForTrafficJam() {
+        Log.d(TAG, "🚦 拥堵，重新算路")
+        sendNavEvent("naviStatus", "status" to "recalculating", "reason" to "traffic")
+    }
     override fun onArrivedWayPoint(wayPointID: Int) {}
-    override fun onGetNavigationText(type: Int, text: String?) {}
+    override fun onGetNavigationText(type: Int, text: String?) {
+        sendNavEvent("naviText", "textType" to type, "text" to (text ?: ""))
+    }
     override fun onGetNavigationText(s: String?) {}
-    override fun onEndEmulatorNavi() {}
+    override fun onEndEmulatorNavi() {
+        sendNavEvent("naviStatus", "status" to "stopped")
+    }
     override fun onGpsOpenStatus(enabled: Boolean) {}
     override fun updateCameraInfo(cameras: Array<out com.amap.api.navi.model.AMapNaviCameraInfo>?) {}
     override fun updateIntervalCameraInfo(cameraInfo: com.amap.api.navi.model.AMapNaviCameraInfo?, cameraInfo1: com.amap.api.navi.model.AMapNaviCameraInfo?, interval: Int) {}
@@ -496,6 +382,78 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
     override fun onTrafficStatusUpdate() {}
     override fun OnUpdateTrafficFacility(trafficFacilityInfo: com.amap.api.navi.model.AMapNaviTrafficFacilityInfo?) {}
     override fun OnUpdateTrafficFacility(trafficFacilityInfos: Array<out com.amap.api.navi.model.AMapNaviTrafficFacilityInfo>?) {}
+
+    // ==================== 辅助方法 ====================
+
+    private fun sendNavEvent(type: String, vararg pairs: Pair<String, Any?>) {
+        val data = mutableMapOf<String, Any?>("type" to type)
+        pairs.forEach { data[it.first] = it.second }
+        @Suppress("UNCHECKED_CAST")
+        eventSink?.success(data as Map<String, Any>)
+    }
+
+    private fun handleStartHeadlessNavigation(isEmulator: Boolean, enableVoice: Boolean, result: Result) {
+        try {
+            val navi = mAMapNavi ?: run {
+                result.error("NAVI_NULL", "AMapNavi 未初始化", null)
+                return
+            }
+
+            navi.setUseInnerVoice(enableVoice)
+            val naviType = if (isEmulator) NaviType.EMULATOR else NaviType.GPS
+            if (isEmulator) {
+                navi.setEmulatorNaviSpeed(60)
+            }
+
+            val ret = navi.startNavi(naviType)
+            Log.d(TAG, "🗺️ 启动无View导航: type=$naviType, result=$ret")
+            result.success(ret)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ 启动导航失败", e)
+            result.error("START_NAVI_ERROR", e.message, null)
+        }
+    }
+
+    private fun handleStartRouteActivity(
+        originName: String?, originLat: Double?, originLng: Double?,
+        destinationName: String, destinationLat: Double, destinationLng: Double,
+        enableVoice: Boolean, result: Result
+    ) {
+        try {
+            if (destinationLat == 0.0 || destinationLng == 0.0) {
+                result.error("INVALID_PARAMS", "终点坐标不能为空", null)
+                return
+            }
+
+            val start: Poi? = if (originLat != null && originLng != null && originLat != 0.0) {
+                Poi(originName ?: "起点", LatLng(originLat, originLng), "")
+            } else {
+                null
+            }
+
+            val end = Poi(destinationName, LatLng(destinationLat, destinationLng), "")
+
+            val params = AmapNaviParams(
+                start,
+                null,
+                end,
+                AmapNaviType.DRIVER,
+                AmapPageType.ROUTE
+            )
+
+            params.setUseInnerVoice(enableVoice)
+            params.setNeedCalculateRouteWhenPresent(true)
+            params.setNeedDestroyDriveManagerInstanceWhenNaviExit(true)
+
+            Log.d(TAG, "启动高德导航组件: ${originName ?: "我的位置"} → $destinationName")
+            AmapNaviPage.getInstance().showRouteActivity(context!!, params, null)
+            result.success(true)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "启动导航失败", e)
+            result.error("START_NAVIGATION_ERROR", e.message, null)
+        }
+    }
 
     // ==================== ActivityAware ====================
 
@@ -519,14 +477,6 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
         eventChannel?.setStreamHandler(null)
-        // 注销广播接收器
-        navEventReceiver?.let {
-            context?.let { ctx ->
-                LocalBroadcastManager.getInstance(ctx).unregisterReceiver(it)
-            }
-            navEventReceiver = null
-        }
-        // 释放导航 SDK
         mAMapNavi?.removeAMapNaviListener(this)
         mAMapNavi = null
         Log.d(TAG, "导航插件已分离")

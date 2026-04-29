@@ -43,15 +43,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- 高德实时导航 Activity -->
-        <!-- 与 MainActivity 使用相同的 taskAffinity，确保在同一任务栈 -->
-        <activity
-            android:name=".NavigationActivity"
-            android:screenOrientation="portrait"
-            android:launchMode="singleTop"
-            android:taskAffinity="me.lxb.qintu"
-            android:theme="@style/NavigationTheme" />
-        
         <!-- 高德地图 API Key -->
         <meta-data
             android:name="com.amap.api.v2.apikey"

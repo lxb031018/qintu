@@ -410,4 +410,47 @@ class AmapMapController {
       return false;
     }
   }
+
+  /// 更新车辆标记位置（无 View 导航时使用）
+  Future<bool> updateCarMarker({
+    required double lat,
+    required double lng,
+    double bearing = 0,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('updateCarMarker', {
+        'lat': lat,
+        'lng': lng,
+        'bearing': bearing,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ 更新车辆标记失败: $e');
+      return false;
+    }
+  }
+
+  /// 设置跟随模式（导航时相机跟随车辆）
+  Future<bool> setFollowMode(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setFollowMode', {
+        'enabled': enabled,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ 设置跟随模式失败: $e');
+      return false;
+    }
+  }
+
+  /// 清除车辆标记
+  Future<bool> clearCarMarker() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('clearCarMarker');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ 清除车辆标记失败: $e');
+      return false;
+    }
+  }
 }
