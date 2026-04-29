@@ -3,7 +3,7 @@ import 'package:qintu/config/amap_web_config.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/core/http/third_party_api_client.dart';
-import '../service/polyline_service.dart';
+import '../utils/polyline_service.dart';
 
 /// ============================================
 /// 高德地图步行路线规划 API

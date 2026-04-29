@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../core/http/third_party_api_client.dart';
 import '../../../config/amap_web_config.dart';
 import '../models/amap_routing_models.dart';
-import '../service/polyline_service.dart';
+import '../utils/polyline_service.dart';
 
 /// ============================================
 /// 高德路线规划 API
