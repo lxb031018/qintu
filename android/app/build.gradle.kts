@@ -1,13 +1,10 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 读取 .env 文件获取环境变量
-// Flutter 项目根目录: D:\AllCodes\qintu
-val envFile = File("D:\\AllCodes\\qintu\\.env")
+val envFile = rootProject.file(".env")
 val envMap = mutableMapOf<String, String>()
 if (envFile.exists()) {
     envFile.readLines().forEach { line ->
