@@ -37,12 +37,11 @@ class MapViewFactory(
     fun configureMap(mapView: MapView) {
         val aMap = mapView.map
 
-        // ✅ 配置原生定位蓝点样式（纯箭头，无精度圆）
+        // 禁用 AMap 自带定位蓝点，统一用车载标记
         val myLocationStyle = MyLocationStyle()
-        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER)
-        myLocationStyle.interval(2000)
-        myLocationStyle.showMyLocation(true)
+        myLocationStyle.showMyLocation(false)
         aMap.myLocationStyle = myLocationStyle
+        aMap.isMyLocationEnabled = false
 
         // 🟢 关键步骤 1：先设置定位源
         aMap.setLocationSource(object : com.amap.api.maps.LocationSource {

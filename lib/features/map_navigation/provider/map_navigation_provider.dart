@@ -466,7 +466,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   Future<void> stopNavigation() async {
     await AmapNavigationBridge.stopNavigation();
     ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
-    ref.read(mapControllerNotifierProvider)?.clearCarMarker();
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
     _handleNavEnd();
   }

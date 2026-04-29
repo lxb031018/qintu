@@ -95,9 +95,18 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
         )
 
-        // 定位监听器 - 将位置传给地图，并发送首次定位事件
+        // 定位监听器 — 更新车载标记（导航前显示位置）
         locationClient.setLocationChangeListener { location ->
             lastKnownLocation = location
+            if (carOverlay == null) {
+                carOverlay = context?.let { CarOverlay(it) }
+                carOverlay?.setDirectionVisible(false)
+            }
+            carOverlay?.draw(
+                aMapHolder.aMap,
+                LatLng(location.latitude, location.longitude),
+                location.bearing
+            )
         }
 
         // 首次定位成功监听器 - 发送事件给 Flutter
