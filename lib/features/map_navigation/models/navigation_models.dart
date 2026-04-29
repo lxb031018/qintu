@@ -6,6 +6,8 @@ enum NavigationStatus {
   offRoute,
   gpsWeak,
   error,
+  recalculating,
+  stopped,
 }
 
 class NavigationState {
@@ -33,38 +35,62 @@ class NavigationState {
     this.naviTextType = 0,
   });
 
+  /// 从 EventChannel 多类型事件中解析
   factory NavigationState.fromMap(Map<dynamic, dynamic> map) {
-    return NavigationState(
-      status: _parseStatus(map['status']),
-      currentSpeed: (map['currentSpeed'] ?? 0).toDouble(),
-      remainingDistance: (map['remainingDistance'] ?? 0).toInt(),
-      remainingDuration: (map['remainingDuration'] ?? 0).toInt(),
-      nextInstruction: map['nextInstruction'] ?? '',
-      currentLat: map['currentLat']?.toDouble(),
-      currentLng: map['currentLng']?.toDouble(),
-      roadName: map['roadName'],
-      naviText: map['naviText'],
-      naviTextType: (map['naviTextType'] ?? 0).toInt(),
-    );
-  }
+    final type = map['type']?.toString() ?? '';
+    NavigationStatus status = NavigationStatus.idle;
+    double speed = 0;
+    int remainingDistance = 0;
+    int remainingDuration = 0;
+    String instruction = '';
+    double? lat;
+    double? lng;
+    String? roadName;
+    String? naviText;
 
-  static NavigationStatus _parseStatus(dynamic status) {
-    switch (status) {
-      case 'navigating':
-        return NavigationStatus.navigating;
-      case 'paused':
-        return NavigationStatus.paused;
-      case 'arrived':
-        return NavigationStatus.arrived;
-      case 'off_route':
-        return NavigationStatus.offRoute;
-      case 'gps_weak':
-        return NavigationStatus.gpsWeak;
-      case 'error':
-        return NavigationStatus.error;
-      default:
-        return NavigationStatus.idle;
+    switch (type) {
+      case 'locationUpdate':
+        lat = (map['lat'] as num?)?.toDouble();
+        lng = (map['lng'] as num?)?.toDouble();
+        speed = (map['speed'] as num?)?.toDouble() ?? 0;
+        break;
+      case 'naviInfo':
+        remainingDistance = (map['remainingDistance'] as num?)?.toInt() ?? 0;
+        remainingDuration = (map['remainingTime'] as num?)?.toInt() ?? 0;
+        instruction = map['nextRoadName']?.toString() ?? '';
+        roadName = map['currentRoadName']?.toString() ?? '';
+        break;
+      case 'naviStatus':
+        final s = map['status']?.toString() ?? '';
+        switch (s) {
+          case 'navigating': status = NavigationStatus.navigating; break;
+          case 'arrived': status = NavigationStatus.arrived; break;
+          case 'stopped': status = NavigationStatus.stopped; break;
+          case 'recalculating': status = NavigationStatus.recalculating; break;
+          case 'ready': status = NavigationStatus.idle; break;
+          case 'error': status = NavigationStatus.error; break;
+          default: status = NavigationStatus.idle;
+        }
+        break;
+      case 'naviText':
+        naviText = map['text']?.toString() ?? '';
+        break;
+      case 'gpsStatus':
+        if (map['isWeak'] == true) status = NavigationStatus.gpsWeak;
+        break;
     }
+
+    return NavigationState(
+      status: status,
+      currentSpeed: speed,
+      remainingDistance: remainingDistance,
+      remainingDuration: remainingDuration,
+      nextInstruction: instruction,
+      currentLat: lat,
+      currentLng: lng,
+      roadName: roadName,
+      naviText: naviText,
+    );
   }
 
   @override

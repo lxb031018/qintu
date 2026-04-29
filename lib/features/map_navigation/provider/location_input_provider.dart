@@ -94,6 +94,12 @@ class LocationInputState {
   /// 回调接口（Widget 通过回调与 Provider 交互）
   final LocationInputCardCallbacks? callbacks;
 
+  /// 历史选中状态集合（用于删除）
+  final Set<String> selectedHistoryIds;
+
+  /// 是否处于历史选择模式
+  final bool isHistorySelectionMode;
+
   const LocationInputState({
     this.origin = const InputFieldState(),
     this.destination = const InputFieldState(),
@@ -109,6 +115,8 @@ class LocationInputState {
     this.isLoadingBinderItems = false,
     this.selectedCategory = LocationCategory.recommended,
     this.callbacks,
+    this.selectedHistoryIds = const {},
+    this.isHistorySelectionMode = false,
   });
 
   /// 获取搜索中心坐标
@@ -140,6 +148,8 @@ class LocationInputState {
     bool? isLoadingBinderItems,
     LocationCategory? selectedCategory,
     LocationInputCardCallbacks? callbacks,
+    Set<String>? selectedHistoryIds,
+    bool? isHistorySelectionMode,
     bool clearOrigin = false,
     bool clearDestination = false,
   }) {
@@ -158,6 +168,8 @@ class LocationInputState {
       isLoadingBinderItems: isLoadingBinderItems ?? this.isLoadingBinderItems,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       callbacks: callbacks ?? this.callbacks,
+      selectedHistoryIds: selectedHistoryIds ?? this.selectedHistoryIds,
+      isHistorySelectionMode: isHistorySelectionMode ?? this.isHistorySelectionMode,
     );
   }
 }
@@ -258,6 +270,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       district: location['city'] ?? '',
       address: 'GPS 定位',
       location: '${location["longitude"]},${location["latitude"]}',
+      source: PoiSource.myLocation,
     );
 
     selectPoi(poi, mapNotifier);
@@ -290,7 +303,61 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
   /// 选择分类
   void selectCategory(LocationCategory category) {
-    state = state.copyWith(selectedCategory: category);
+    // 切换到历史分类时，重置选择模式
+    if (category != LocationCategory.history) {
+      state = state.copyWith(
+        selectedCategory: category,
+        isHistorySelectionMode: false,
+        selectedHistoryIds: {},
+      );
+    } else {
+      state = state.copyWith(selectedCategory: category);
+    }
+  }
+
+  /// 开启历史选择模式
+  void enterHistorySelectionMode() {
+    state = state.copyWith(isHistorySelectionMode: true);
+  }
+
+  /// 退出历史选择模式
+  void exitHistorySelectionMode() {
+    state = state.copyWith(
+      isHistorySelectionMode: false,
+      selectedHistoryIds: {},
+    );
+  }
+
+  /// 切换历史项选中状态
+  void toggleHistorySelection(String poiId) {
+    final newSet = Set<String>.from(state.selectedHistoryIds);
+    if (newSet.contains(poiId)) {
+      newSet.remove(poiId);
+    } else {
+      newSet.add(poiId);
+    }
+    state = state.copyWith(selectedHistoryIds: newSet);
+  }
+
+  /// 全选历史
+  void selectAllHistory() {
+    final allIds = state.historyItems.map((poi) => poi.id).toSet();
+    state = state.copyWith(selectedHistoryIds: allIds);
+  }
+
+  /// 删除选中的历史
+  Future<void> deleteSelectedHistory() async {
+    if (state.selectedHistoryIds.isEmpty) return;
+
+    await _categoryService.deleteHistoryItems(state.selectedHistoryIds);
+
+    // 重新加载历史
+    final items = await _categoryService.getHistoryLocations();
+    state = state.copyWith(
+      historyItems: items,
+      selectedHistoryIds: {},
+      isHistorySelectionMode: false,
+    );
   }
 
   /// 选择 POI
@@ -302,6 +369,16 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       state = state.copyWith(destination: InputFieldState(text: poi.name, poi: poi));
       mapNotifier.setDestination(poi);
     }
+
+    // 只添加搜索来源的 POI 到历史
+    if (poi.source == PoiSource.search && poi.latLng != null) {
+      _categoryService.addToHistory(
+        name: poi.name,
+        address: poi.address,
+        location: poi.latLng!,
+      );
+    }
+
     hideList();
   }
 

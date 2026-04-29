@@ -6,6 +6,7 @@ import '../../constants/app_durations.dart';
 import '../../constants/app_strings.dart';
 import '../../providers/settings_manager.dart';
 import '../map_navigation/map_navigation_tab.dart';
+import '../map_navigation/provider/map_navigation_provider.dart';
 import '../relationship_binding/relationship_binding_tab.dart';
 import '../settings/settings_page.dart';
 
@@ -187,11 +188,12 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
     final settingsState = ref.watch(settingsManagerProvider);
+    final isNavigating = ref.watch(mapNavigationProvider.select((s) => s.isNavigating));
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: backgroundColor,
-      appBar: PreferredSize(
+      appBar: isNavigating ? null : PreferredSize(
         preferredSize: const Size.fromHeight(62),
         child: Container(
           padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),

@@ -1,5 +1,13 @@
 import 'package:qintu/models/location/lat_lng.dart';
 
+/// POI 来源枚举
+enum PoiSource {
+  search, // 搜索结果（手动输入关键字）
+  myLocation, // 我的位置
+  binder, // 绑定者位置
+  history, // 历史记录
+}
+
 class PoiSearchResult {
   final List<PoiSuggestion> suggestions;
   final int errorCode;
@@ -22,6 +30,7 @@ class PoiSuggestion {
   final String location;
   int? distance;
   final String? entrLocation;
+  final PoiSource source; // 来源标记
 
   PoiSuggestion({
     required this.id,
@@ -31,6 +40,7 @@ class PoiSuggestion {
     required this.location,
     this.distance,
     this.entrLocation,
+    this.source = PoiSource.search, // 默认值为 search
   });
 
   LatLng? get latLng {
@@ -55,6 +65,7 @@ class PoiSuggestion {
       location: map['location']?.toString() ?? '',
       distance: int.tryParse(map['distance']?.toString() ?? ''),
       entrLocation: map['entr_location']?.toString(),
+      source: PoiSource.search,
     );
   }
 }

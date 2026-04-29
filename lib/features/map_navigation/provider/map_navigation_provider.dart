@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
 import 'map_display_service_provider.dart';
 import '../service/amap_navigation_bridge.dart';
+import '../models/navigation_models.dart';
+import 'map_controller_provider.dart';
 
 /// ============================================
 /// 地图导航状态
@@ -49,6 +52,16 @@ class MapNavigationState {
   /// 是否显示路线栏
   final bool showRoutesSheet;
 
+  /// 是否正在导航
+  final bool isNavigating;
+
+  /// 导航实时信息
+  final double navSpeed;
+  final int navRemainingDistance;
+  final int navRemainingTime;
+  final String navNextRoad;
+  final String navCurrentRoad;
+
   const MapNavigationState({
     this.searchKeyword = '',
     this.originPoi,
@@ -63,6 +76,12 @@ class MapNavigationState {
     this.errorMessage,
     this.currentRouteType,
     this.showRoutesSheet = false,
+    this.isNavigating = false,
+    this.navSpeed = 0,
+    this.navRemainingDistance = 0,
+    this.navRemainingTime = 0,
+    this.navNextRoad = '',
+    this.navCurrentRoad = '',
   });
 
   MapNavigationState copyWith({
@@ -80,6 +99,12 @@ class MapNavigationState {
     RouteType? currentRouteType,
     bool clearCurrentRouteType = false,
     bool? showRoutesSheet,
+    bool? isNavigating,
+    double? navSpeed,
+    int? navRemainingDistance,
+    int? navRemainingTime,
+    String? navNextRoad,
+    String? navCurrentRoad,
   }) {
     return MapNavigationState(
       searchKeyword: searchKeyword ?? this.searchKeyword,
@@ -95,6 +120,12 @@ class MapNavigationState {
       errorMessage: errorMessage,
       currentRouteType: clearCurrentRouteType ? null : (currentRouteType ?? this.currentRouteType),
       showRoutesSheet: showRoutesSheet ?? this.showRoutesSheet,
+      isNavigating: isNavigating ?? this.isNavigating,
+      navSpeed: navSpeed ?? this.navSpeed,
+      navRemainingDistance: navRemainingDistance ?? this.navRemainingDistance,
+      navRemainingTime: navRemainingTime ?? this.navRemainingTime,
+      navNextRoad: navNextRoad ?? this.navNextRoad,
+      navCurrentRoad: navCurrentRoad ?? this.navCurrentRoad,
     );
   }
 
@@ -139,14 +170,73 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   final PoiService _poiService = poiService;
   late final MapDisplayService _mapDisplayService;
   bool _disposed = false;
+  StreamSubscription<NavigationState>? _navStreamSub;
 
   @override
   MapNavigationState build() {
     _mapDisplayService = ref.watch(mapDisplayServiceProvider);
+    _startNavEventListener();
     ref.onDispose(() {
       _disposed = true;
+      _navStreamSub?.cancel();
+      AmapNavigationBridge.stopNavigation();
     });
     return const MapNavigationState();
+  }
+
+  void _startNavEventListener() {
+    _navStreamSub?.cancel();
+    _navStreamSub = AmapNavigationBridge.navigationStateStream.listen((navState) {
+      if (_disposed) return;
+      switch (navState.status) {
+        case NavigationStatus.navigating:
+          state = state.copyWith(isNavigating: true);
+          break;
+        case NavigationStatus.arrived:
+          _handleNavEnd();
+          break;
+        case NavigationStatus.stopped:
+        case NavigationStatus.idle:
+          _handleNavEnd();
+          break;
+        case NavigationStatus.offRoute:
+        case NavigationStatus.recalculating:
+          break;
+        default:
+          break;
+      }
+      // 更新导航实时信息
+      if (navState.remainingDistance > 0 || navState.remainingDuration > 0 ||
+          navState.currentSpeed > 0 || (navState.roadName?.isNotEmpty ?? false)) {
+        state = state.copyWith(
+          navSpeed: navState.currentSpeed,
+          navRemainingDistance: navState.remainingDistance,
+          navRemainingTime: navState.remainingDuration,
+          navNextRoad: navState.nextInstruction,
+          navCurrentRoad: navState.roadName ?? '',
+        );
+      }
+      // 更新车辆位置
+      final lat = navState.currentLat;
+      final lng = navState.currentLng;
+      if (lat != null && lng != null && lat != 0 && lng != 0) {
+        ref.read(mapControllerNotifierProvider)?.updateCarMarker(
+          lat: lat,
+          lng: lng,
+          bearing: 0,
+        );
+      }
+    });
+  }
+
+  void _handleNavEnd() {
+    state = state.copyWith(
+      isNavigating: false,
+      showRoutesSheet: true,
+      navSpeed: 0,
+      navRemainingDistance: 0,
+      navRemainingTime: 0,
+    );
   }
 
   /// 设置起点
@@ -346,11 +436,17 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       return;
     }
 
+    // 隐藏搜索UI，进入导航模式
+    state = state.copyWith(
+      isNavigating: true,
+      showRoutesSheet: false,
+    );
+
+    // 开启跟随模式
+    ref.read(mapControllerNotifierProvider)?.setFollowMode(true);
+
     // 选中路线（多路径时需要）
     await AmapNavigationBridge.selectRouteId(state.selectedRouteIndex);
-
-    // 清除旧路线，保留起终点标记
-    _mapDisplayService.clearRoutes();
 
     // 启动无 View 导航
     final success = await AmapNavigationBridge.startNavigation(
@@ -358,8 +454,18 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     );
 
     if (!success) {
-      state = state.copyWith(errorMessage: '启动导航失败');
+      state = state.copyWith(
+        isNavigating: false,
+        errorMessage: '启动导航失败',
+      );
     }
+  }
+
+  /// 停止导航
+  Future<void> stopNavigation() async {
+    await AmapNavigationBridge.stopNavigation();
+    ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
+    _handleNavEnd();
   }
 }
 

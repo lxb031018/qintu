@@ -135,6 +135,7 @@ class LocationCategoryService {
               district: '',
               address: result.location!.address ?? 'GPS定位',
               location: '${result.location!.longitude},${result.location!.latitude}',
+              source: PoiSource.binder,
             ));
           }
         } catch (e) {
@@ -159,6 +160,7 @@ class LocationCategoryService {
         district: '',
         address: item.address,
         location: '${item.location.longitude},${item.location.latitude}',
+        source: PoiSource.history,
       );
     }).toList();
   }

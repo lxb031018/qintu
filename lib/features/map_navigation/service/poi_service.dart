@@ -85,6 +85,7 @@ class PoiService {
             district: '',
             address: address,
             location: '${result.longitude},${result.latitude}',
+            source: PoiSource.search,
           )
         ]),
         timestamp: DateTime.now(),
