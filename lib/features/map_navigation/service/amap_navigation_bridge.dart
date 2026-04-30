@@ -25,7 +25,7 @@ import '../models/amap_routing_models.dart';
 /// 
 /// // 监听状态
 /// AmapNavigationBridge.navigationStateStream.listen((state) {
-///   print('导航状态: $state');
+///   print('导航状态：$state');
 /// });
 /// 
 /// // 停止导航
@@ -53,10 +53,10 @@ class AmapNavigationBridge {
       }
       return result ?? false;
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 初始化高德导航 SDK 异常: ${e.message}');
+      Logs.navigation.error('❌ 初始化高德导航 SDK 异常：${e.message}');
       return false;
     } catch (e) {
-      Logs.navigation.error('❌ 初始化高德导航 SDK 未知错误: $e');
+      Logs.navigation.error('❌ 初始化高德导航 SDK 未知错误：$e');
       return false;
     }
   }
@@ -66,7 +66,7 @@ class AmapNavigationBridge {
   /// [type] 出行方式（driving/walking/riding）
   /// [origin] 起点坐标
   /// [destination] 终点坐标
-  /// [strategy] 驾车策略: 0=高速优先, 1=避免收费, 2=距离最短
+  /// [strategy] 驾车策略：0=高速优先，1=避免收费，2=距离最短
   /// [multiRoute] 是否请求多路径（默认 true）
   static Future<List<RouteOption>> calculateRoute({
     required RouteType type,
@@ -80,7 +80,7 @@ class AmapNavigationBridge {
     }
 
     try {
-      Logs.navigation.info('🗺️ SDK 算路: $type, ($origin → $destination), strategy=$strategy');
+      Logs.navigation.info('🗺️ SDK 算路：$type, ($origin → $destination), strategy=$strategy');
 
       final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
         'calculateRoute',
@@ -101,17 +101,17 @@ class AmapNavigationBridge {
       }
 
       final routesList = result['routes'] as List<dynamic>? ?? [];
-      Logs.navigation.info('✅ SDK 算路成功: ${routesList.length} 条路线');
+      Logs.navigation.info('✅ SDK 算路成功：${routesList.length} 条路线');
 
       return routesList
           .map((r) => _parseRouteResponse(r as Map<dynamic, dynamic>, type))
           .toList();
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ SDK 算路失败: ${e.message}');
+      Logs.navigation.error('❌ SDK 算路失败：${e.message}');
       throw RoutingException(e.message ?? '算路失败');
     } catch (e) {
-      Logs.navigation.error('❌ SDK 算路异常: $e');
-      throw RoutingException('算路异常: $e');
+      Logs.navigation.error('❌ SDK 算路异常：$e');
+      throw RoutingException('算路异常：$e');
     }
   }
 
@@ -201,7 +201,7 @@ class AmapNavigationBridge {
       await _methodChannel.invokeMethod('selectRouteId', {'routeId': routeId});
       return true;
     } catch (e) {
-      Logs.navigation.error('❌ 选择路线失败: $e');
+      Logs.navigation.error('❌ 选择路线失败：$e');
       return false;
     }
   }
@@ -215,7 +215,7 @@ class AmapNavigationBridge {
     bool enableVoice = true,
   }) async {
     try {
-      Logs.navigation.info('🗺️ 开始无View导航, isEmulator=$isEmulator');
+      Logs.navigation.info('🗺️ 开始无 View 导航，isEmulator=$isEmulator');
 
       final result = await _methodChannel.invokeMethod<bool>('startNavigation', {
         'isEmulator': isEmulator,
@@ -229,10 +229,10 @@ class AmapNavigationBridge {
       }
       return result ?? false;
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 开始导航异常: ${e.message}');
+      Logs.navigation.error('❌ 开始导航异常：${e.message}');
       return false;
     } catch (e) {
-      Logs.navigation.error('❌ 开始导航未知错误: $e');
+      Logs.navigation.error('❌ 开始导航未知错误：$e');
       return false;
     }
   }
@@ -250,7 +250,7 @@ class AmapNavigationBridge {
     bool enableVoice = true,
   }) async {
     try {
-      Logs.navigation.info('🗺️ 直接开始导航: $originName → $destinationName');
+      Logs.navigation.info('🗺️ 直接开始导航：$originName → $destinationName');
 
       final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('startDirectNavigation', {
         'originName': originName,
@@ -269,51 +269,10 @@ class AmapNavigationBridge {
       
       return {'status': 'error', 'message': '返回结果为空'};
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 开始导航异常: ${e.message}');
+      Logs.navigation.error('❌ 开始导航异常：${e.message}');
       return {'status': 'error', 'message': e.message};
     } catch (e) {
-      Logs.navigation.error('❌ 开始导航未知错误: $e');
-      return {'status': 'error', 'message': e.toString()};
-    }
-  }
-
-  /// 启动路线规划页面（用户可以选择路线后开始导航）
-  /// 
-  /// 参数同上
-  static Future<Map<dynamic, dynamic>> startRoutePlanning({
-    required String originName,
-    required double originLat,
-    required double originLng,
-    required String destinationName,
-    required double destinationLat,
-    required double destinationLng,
-    bool enableVoice = true,
-  }) async {
-    try {
-      Logs.navigation.info('🗺️ 启动路线规划页面: $originName → $destinationName');
-
-      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('startNavigation', {
-        'originName': originName,
-        'originLat': originLat,
-        'originLng': originLng,
-        'destinationName': destinationName,
-        'destinationLat': destinationLat,
-        'destinationLng': destinationLng,
-        'enableVoice': enableVoice,
-        'pageType': 1, // AmapPageType.ROUTE
-      });
-
-      if (result != null) {
-        Logs.navigation.info('✅ 路线规划页面已启动');
-        return result;
-      }
-      
-      return {'status': 'error', 'message': '返回结果为空'};
-    } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 启动路线规划异常: ${e.message}');
-      return {'status': 'error', 'message': e.message};
-    } catch (e) {
-      Logs.navigation.error('❌ 启动路线规划未知错误: $e');
+      Logs.navigation.error('❌ 开始导航未知错误：$e');
       return {'status': 'error', 'message': e.toString()};
     }
   }
@@ -328,10 +287,10 @@ class AmapNavigationBridge {
       }
       return result ?? false;
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 停止导航异常: ${e.message}');
+      Logs.navigation.error('❌ 停止导航异常：${e.message}');
       return false;
     } catch (e) {
-      Logs.navigation.error('❌ 停止导航未知错误: $e');
+      Logs.navigation.error('❌ 停止导航未知错误：$e');
       return false;
     }
   }
@@ -343,10 +302,10 @@ class AmapNavigationBridge {
       final result = await _methodChannel.invokeMethod<bool>('togglePause');
       return result ?? false;
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 切换暂停状态异常: ${e.message}');
+      Logs.navigation.error('❌ 切换暂停状态异常：${e.message}');
       return false;
     } catch (e) {
-      Logs.navigation.error('❌ 切换暂停状态未知错误: $e');
+      Logs.navigation.error('❌ 切换暂停状态未知错误：$e');
       return false;
     }
   }
@@ -369,13 +328,13 @@ class AmapNavigationBridge {
     _stateStream = _eventChannel.receiveBroadcastStream().map((event) {
       if (event is Map) {
         final state = NavigationState.fromMap(event);
-        Logs.navigation.info('📡 导航状态更新: $state');
+        Logs.navigation.info('📡 导航状态更新：$state');
         _stateController?.add(state);
         return state;
       }
       return NavigationState(status: NavigationStatus.idle);
     }).handleError((error) {
-      Logs.navigation.error('❌ 导航状态流错误: $error');
+      Logs.navigation.error('❌ 导航状态流错误：$error');
       _stateController?.addError(error);
     });
 
@@ -388,7 +347,7 @@ class AmapNavigationBridge {
   static void setNavigationListener(Function(NavigationState state) onStateChange) {
     navigationStateStream.listen(
       (state) => onStateChange(state),
-      onError: (error) => Logs.navigation.error('导航状态错误: $error'),
+      onError: (error) => Logs.navigation.error('导航状态错误：$error'),
     );
   }
 

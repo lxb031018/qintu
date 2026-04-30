@@ -38,6 +38,8 @@ class MapNavigationTab extends ConsumerStatefulWidget {
 
 class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  final _mapKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -106,7 +108,12 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       body: Stack(
         children: [
           Positioned.fill(
-            child: AmapMapView(onMapCreated: _onMapCreated),
+            child: RepaintBoundary(
+              child: AmapMapView(
+                key: _mapKey,
+                onMapCreated: _onMapCreated,
+              ),
+            ),
           ),
 
           // 非导航状态：搜索UI

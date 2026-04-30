@@ -4,14 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.amap.api.maps.MapsInitializer
-import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.Poi
 import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
-import com.amap.api.navi.AmapNaviPage
-import com.amap.api.navi.AmapNaviParams
-import com.amap.api.navi.AmapNaviType
-import com.amap.api.navi.AmapPageType
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.AMapTravelInfo
@@ -34,7 +28,7 @@ import me.lxb.qintu.route.RoutePathCache
 /**
  * 高德 Android 导航 SDK 桥接插件
  *
- * 使用高德官方导航组件（AmapNaviPage）
+ * 使用无 View 导航模式（同地图，不跳转 Activity）
  * 参考官方示例：AMap_Android_API_Navi_Demo
  */
 class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AMapNaviListener {
@@ -69,7 +63,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             mAMapNavi?.addAMapNaviListener(this)
             Log.d(TAG, "✅ AMapNavi 单例已初始化并注册监听")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ AMapNavi 初始化失败: ${e.message}")
+            Log.e(TAG, "❌ AMapNavi 初始化失败：${e.message}")
         }
 
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, PlatformChannels.NAVIGATION)
@@ -129,22 +123,6 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
                 }
             }
 
-            "startRouteActivity" -> {
-                val originName = call.argument<String>("originName")
-                val originLat = call.argument<Double>("originLat")
-                val originLng = call.argument<Double>("originLng")
-                val destinationName = call.argument<String>("destinationName") ?: "终点"
-                val destinationLat = call.argument<Double>("destinationLat") ?: 0.0
-                val destinationLng = call.argument<Double>("destinationLng") ?: 0.0
-                val enableVoice = call.argument<Boolean>("enableVoice") ?: true
-
-                handleStartRouteActivity(
-                    originName, originLat, originLng,
-                    destinationName, destinationLat, destinationLng,
-                    enableVoice, result
-                )
-            }
-
             else -> {
                 result.notImplemented()
             }
@@ -185,7 +163,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             val from = NaviLatLng(fromLat, fromLng)
             val to = NaviLatLng(toLat, toLng)
 
-            Log.d(TAG, "🗺️ 开始算路: type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, multiRoute=$multiRoute")
+            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, multiRoute=$multiRoute")
 
             when (routeType) {
                 "driving" -> {
@@ -208,19 +186,19 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
                 }
                 else -> {
                     pendingRouteResult = null
-                    result.error("INVALID_TYPE", "不支持的出行方式: $routeType", null)
+                    result.error("INVALID_TYPE", "不支持的出行方式：$routeType", null)
                 }
             }
         } catch (e: Exception) {
             pendingRouteResult = null
-            Log.e(TAG, "❌ 算路异常: ${e.message}")
+            Log.e(TAG, "❌ 算路异常：${e.message}")
             result.error("CALC_ERROR", e.message, null)
         }
     }
 
     /**
      * 构建驾车策略标志
-     * strategyConvert(躲避拥堵, 避免收费, 不走高速, 高速优先, 多路径)
+     * strategyConvert(躲避拥堵，避免收费，不走高速，高速优先，多路径)
      */
     private fun buildDrivingStrategy(strategy: Int, multiRoute: Boolean): Int {
         val navi = mAMapNavi ?: return 0
@@ -287,7 +265,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             }
         }
 
-        Log.d(TAG, "✅ 算路成功: ${paths.size} 条路线, 已缓存到 RoutePathCache")
+        Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，已缓存到 RoutePathCache")
         pendingRouteResult?.success(mapOf("routes" to paths))
         pendingRouteResult = null
     }
@@ -410,52 +388,11 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             }
 
             val ret = navi.startNavi(naviType)
-            Log.d(TAG, "🗺️ 启动无View导航: type=$naviType, result=$ret")
+            Log.d(TAG, "🗺️ 启动无 View 导航：type=$naviType, result=$ret")
             result.success(ret)
         } catch (e: Exception) {
             Log.e(TAG, "❌ 启动导航失败", e)
             result.error("START_NAVI_ERROR", e.message, null)
-        }
-    }
-
-    private fun handleStartRouteActivity(
-        originName: String?, originLat: Double?, originLng: Double?,
-        destinationName: String, destinationLat: Double, destinationLng: Double,
-        enableVoice: Boolean, result: Result
-    ) {
-        try {
-            if (destinationLat == 0.0 || destinationLng == 0.0) {
-                result.error("INVALID_PARAMS", "终点坐标不能为空", null)
-                return
-            }
-
-            val start: Poi? = if (originLat != null && originLng != null && originLat != 0.0) {
-                Poi(originName ?: "起点", LatLng(originLat, originLng), "")
-            } else {
-                null
-            }
-
-            val end = Poi(destinationName, LatLng(destinationLat, destinationLng), "")
-
-            val params = AmapNaviParams(
-                start,
-                null,
-                end,
-                AmapNaviType.DRIVER,
-                AmapPageType.ROUTE
-            )
-
-            params.setUseInnerVoice(enableVoice)
-            params.setNeedCalculateRouteWhenPresent(true)
-            params.setNeedDestroyDriveManagerInstanceWhenNaviExit(true)
-
-            Log.d(TAG, "启动高德导航组件: ${originName ?: "我的位置"} → $destinationName")
-            AmapNaviPage.getInstance().showRouteActivity(context!!, params, null)
-            result.success(true)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "启动导航失败", e)
-            result.error("START_NAVIGATION_ERROR", e.message, null)
         }
     }
 
