@@ -1,22 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/location/lat_lng.dart';
-import '../core/amap_map_controller.dart';
+import '../service/map_controller_service.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 
-final mapControllerProvider = Provider<AmapMapController?>((ref) {
-  final controller = AmapMapController();
+final mapControllerProvider = Provider<MapControllerService?>((ref) {
+  final controller = MapControllerService();
   ref.onDispose(() {
     controller.dispose();
   });
   return controller;
 });
 
-class MapControllerNotifier extends Notifier<AmapMapController?> {
+class MapControllerNotifier extends Notifier<MapControllerService?> {
   @override
-  AmapMapController? build() => null;
+  MapControllerService? build() => null;
 
-  void setController(AmapMapController controller) {
+  void setController(MapControllerService controller) {
     state = controller;
   }
 
@@ -38,10 +38,6 @@ class MapControllerNotifier extends Notifier<AmapMapController?> {
 
   Future<void> moveCamera({required double lat, required double lng, double zoom = 15.0}) async {
     await state?.moveCamera(lat: lat, lng: lng, zoom: zoom);
-  }
-
-  Future<void> addPolyline(List<LatLng> points, {int color = 0xFF1890FF, double width = 8.0}) async {
-    await state?.addPolyline(points, color: color, width: width);
   }
 
   Future<int?> showRoutes(
@@ -118,6 +114,6 @@ class MapControllerNotifier extends Notifier<AmapMapController?> {
   }
 }
 
-final mapControllerNotifierProvider = NotifierProvider<MapControllerNotifier, AmapMapController?>(() {
+final mapControllerNotifierProvider = NotifierProvider<MapControllerNotifier, MapControllerService?>(() {
   return MapControllerNotifier();
 });

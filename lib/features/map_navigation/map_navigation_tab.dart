@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
-import 'core/amap_map_controller.dart';
+import 'service/map_controller_service.dart';
 import 'models/amap_routing_models.dart';
 import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
@@ -63,7 +63,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     super.dispose();
   }
 
-  void _onMapCreated(AmapMapController controller) {
+  void _onMapCreated(MapControllerService controller) {
     ref.read(mapControllerNotifierProvider.notifier).setController(controller);
     ref.read(locationSharingProvider.notifier).setMapController(controller);
   }

@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/platform_channels.dart';
 import '../../../models/location/lat_lng.dart';
-import '../core/amap_map_controller.dart';
+import '../service/map_controller_service.dart';
 import '../provider/map_controller_provider.dart';
 
 /// ============================================
@@ -21,7 +21,7 @@ import '../provider/map_controller_provider.dart';
 
 class AmapMapView extends StatefulWidget {
   final List<LatLng>? routePoints;
-  final Function(AmapMapController controller)? onMapCreated;
+  final Function(MapControllerService controller)? onMapCreated;
 
   const AmapMapView({
     super.key,

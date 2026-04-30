@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/poi_models.dart';
-import 'binding_location_service.dart';
 import '../../../models/location/lat_lng.dart';
-import '../../relationship_binding/service/binding_service.dart';
 
 /// ============================================
 /// 位置分类 POI 列表 Service
 ///
 /// 纯业务逻辑，无状态，不继承 ChangeNotifier
-/// 负责从不同数据源获取各类别的 POI 列表
+/// 仅负责数据转换和本地存储，不调用其他 service
+/// 跨 feature 数据由 provider 层传入
 /// ============================================
 
 /// 历史记录项
@@ -42,9 +41,26 @@ class HistoryLocationItem {
       );
 }
 
+/// 绑定者位置数据（由 provider 层从 relationship_binding 获取后传入）
+class BinderLocationData {
+  final String openid;
+  final String nickname;
+  final String? address;
+  final double? lat;
+  final double? lng;
+
+  const BinderLocationData({
+    required this.openid,
+    required this.nickname,
+    this.address,
+    this.lat,
+    this.lng,
+  });
+}
+
 /// 位置分类 POI 列表服务
 ///
-/// 无状态，所有数据操作都直接访问 storage 或远程 API
+/// 无状态，所有数据操作都直接访问 storage 或通过参数传入
 class LocationCategoryService {
   static const String _storageKey = 'route_planning_history';
   static const int _maxHistoryItems = 20;
@@ -82,11 +98,10 @@ class LocationCategoryService {
   Future<void> deleteHistoryItems(Set<String> poiIds) async {
     final history = await _loadHistoryFromStorage();
 
-    // 从 poiId 中提取 timestamp 来匹配
     final timestampsToRemove = <int>{};
     for (final id in poiIds) {
       if (id.startsWith('history_')) {
-        final timestampStr = id.substring(8); // 'history_' 长度为 8
+        final timestampStr = id.substring(8);
         final timestamp = int.tryParse(timestampStr);
         if (timestamp != null) {
           timestampsToRemove.add(timestamp);
@@ -126,43 +141,20 @@ class LocationCategoryService {
     }
   }
 
-  /// "绑定者" - 返回所有绑定者的实时位置
-  Future<List<PoiSuggestion>> getBinderLocations() async {
-    try {
-      // 获取所有 active 绑定关系
-      final bindingService = BindingService();
-      final bindings = await bindingService.getBindingsList();
-
-      if (bindings.isEmpty) return [];
-
-      final List<PoiSuggestion> results = [];
-
-      for (final binding in bindings) {
-        final partnerOpenid = binding.partnerOpenid;
-        if (partnerOpenid == null) continue;
-
-        try {
-          final result = await bindingLocationService.getBinderLocation(partnerOpenid);
-          if (result.isSuccess && result.location != null) {
-            results.add(PoiSuggestion(
-              id: partnerOpenid,
-              name: binding.partnerNickname ?? '绑定者',
-              district: '',
-              address: result.location!.address ?? 'GPS定位',
-              location: '${result.location!.longitude},${result.location!.latitude}',
-              source: PoiSource.binder,
-            ));
-          }
-        } catch (e) {
-          // 单个绑定者获取失败不影响其他
-          continue;
-        }
-      }
-
-      return results;
-    } catch (e) {
-      return [];
-    }
+  /// "绑定者" - 将预获取的绑定者位置数据转换为 PoiSuggestion 列表
+  ///
+  /// [binders] 由 provider 层从 relationship_binding feature 获取并传入
+  List<PoiSuggestion> getBinderLocations(List<BinderLocationData> binders) {
+    return binders.where((b) => b.lat != null && b.lng != null).map((b) {
+      return PoiSuggestion(
+        id: b.openid,
+        name: b.nickname,
+        district: '',
+        address: b.address ?? 'GPS定位',
+        location: '${b.lng},${b.lat}',
+        source: PoiSource.binder,
+      );
+    }).toList();
   }
 
   /// "历史" - 从本地加载

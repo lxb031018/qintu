@@ -4,7 +4,6 @@ import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
 import 'map_display_service_provider.dart';
-import '../service/amap_navigation_bridge.dart';
 import '../models/navigation_models.dart';
 import 'map_controller_provider.dart';
 
@@ -179,14 +178,14 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     ref.onDispose(() {
       _disposed = true;
       _navStreamSub?.cancel();
-      AmapNavigationBridge.stopNavigation();
+      _routeService.stopNavigation();
     });
     return const MapNavigationState();
   }
 
   void _startNavEventListener() {
     _navStreamSub?.cancel();
-    _navStreamSub = AmapNavigationBridge.navigationStateStream.listen((navState) {
+    _navStreamSub = _routeService.navigationStateStream.listen((navState) {
       if (_disposed) return;
       switch (navState.status) {
         case NavigationStatus.navigating:
@@ -452,7 +451,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(true);
 
     // 选中路线（多路径时需要）
-    await AmapNavigationBridge.selectRouteId(state.selectedRouteIndex);
+    await _routeService.selectRouteId(state.selectedRouteIndex);
 
     // 切换到导航渲染：清除备选路线，用 RouteOverLay 显示选中路线
     if (route.routeId >= 0) {
@@ -460,9 +459,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
 
     // 启动无 View 导航
-    final success = await AmapNavigationBridge.startNavigation(
-      enableVoice: true,
-    );
+    final success = await _routeService.startNavigation(enableVoice: true);
 
     if (!success) {
       state = state.copyWith(
@@ -474,7 +471,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   /// 停止导航
   Future<void> stopNavigation() async {
-    await AmapNavigationBridge.stopNavigation();
+    await _routeService.stopNavigation();
     ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
     ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(false);

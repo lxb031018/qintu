@@ -5,7 +5,9 @@ import '../service/gps_service_wrapper.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
+import '../service/binding_location_service.dart';
 import '../models/amap_routing_models.dart';
+import '../../relationship_binding/service/binding_service.dart';
 import 'map_navigation_provider.dart';
 
 /// ============================================
@@ -290,15 +292,57 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   }
 
   /// 加载绑定者位置列表
+  ///
+  /// 提供者层负责跨 feature 数据编排：
+  /// 1. 从 relationship_binding 获取绑定列表
+  /// 2. 逐项获取绑定者位置
+  /// 3. 将数据传入 LocationCategoryService 做 PoiSuggestion 转换
   Future<void> loadBinderLocations() async {
     state = state.copyWith(isLoadingBinderItems: true);
 
-    final items = await _categoryService.getBinderLocations();
+    try {
+      final bindingService = BindingService();
+      final bindings = await bindingService.getBindingsList();
 
-    state = state.copyWith(
-      binderItems: items,
-      isLoadingBinderItems: false,
-    );
+      if (bindings.isEmpty) {
+        state = state.copyWith(binderItems: [], isLoadingBinderItems: false);
+        return;
+      }
+
+      final binderDataList = <BinderLocationData>[];
+      for (final binding in bindings) {
+        final openid = binding.partnerOpenid;
+        if (openid == null) continue;
+
+        try {
+          final result = await bindingLocationService.getBinderLocation(openid);
+          if (result.isSuccess && result.location != null) {
+            binderDataList.add(BinderLocationData(
+              openid: openid,
+              nickname: binding.partnerNickname ?? '绑定者',
+              address: result.location!.address,
+              lat: result.location!.latitude,
+              lng: result.location!.longitude,
+            ));
+          }
+        } catch (e) {
+          // 单个绑定者获取失败不影响其他
+          continue;
+        }
+      }
+
+      final items = _categoryService.getBinderLocations(binderDataList);
+
+      state = state.copyWith(
+        binderItems: items,
+        isLoadingBinderItems: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        binderItems: [],
+        isLoadingBinderItems: false,
+      );
+    }
   }
 
   /// 选择分类

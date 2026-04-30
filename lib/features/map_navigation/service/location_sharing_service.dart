@@ -1,17 +1,14 @@
-import 'location_upload_service.dart';
 import '../utils/location_distance_service.dart';
 
 /// ============================================
 /// 位置共享服务
 ///
-/// 负责将本设备 GPS 位置自动上传到后端，供绑定者查询
+/// 负责距离阈值判断逻辑：
+/// - 判断是否应该上传位置（移动超过 5 米）
+/// - 记录上次上传位置
 ///
-/// 上传策略：
-/// - 每秒获取一次 GPS
-/// - 仅当与上次上传位置距离超过 5 米时才上传
-///
-/// 本服务不持有运行时状态（Timer、MapController 等），
-/// 运行时状态由 LocationSharingProvider 管理
+/// 本服务不调用其他 service，不持有运行时状态（Timer 等）。
+/// 运行时状态和跨 service 编排由 LocationSharingProvider 负责。
 /// ============================================
 class LocationSharingService {
   /// 上次上传的位置（用于距离判断）
@@ -38,26 +35,14 @@ class LocationSharingService {
     return distance > distanceThreshold;
   }
 
-  /// 上传位置（业务逻辑）
-  Future<void> uploadLocation({
-    required double lat,
-    required double lng,
-    int? accuracy,
-    int? speed,
-  }) async {
-    await locationUploadService.uploadLocation(
-      latitude: lat,
-      longitude: lng,
-      accuracy: accuracy,
-      speed: speed,
-    );
+  /// 标记已上传位置
+  void markUploaded(double lat, double lng) {
     _lastUploadedLat = lat;
     _lastUploadedLng = lng;
   }
 
-  /// 删除后端存储的位置信息
-  Future<void> deleteLocation() async {
-    await locationUploadService.deleteLocation();
+  /// 删除位置记录
+  void clearUploaded() {
     _lastUploadedLat = null;
     _lastUploadedLng = null;
   }

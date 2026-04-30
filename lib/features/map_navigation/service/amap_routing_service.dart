@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/features/map_navigation/models/navigation_models.dart';
 import 'package:qintu/features/map_navigation/utils/location_distance_service.dart';
 import 'package:qintu/features/map_navigation/core/amap_bus_search_bridge.dart';
+import 'package:qintu/features/map_navigation/core/amap_navigation_bridge.dart';
 import 'package:qintu/features/map_navigation/core/poi_api.dart';
 import 'package:qintu/utils/logger.dart';
-import 'amap_navigation_bridge.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
@@ -237,6 +239,21 @@ class AmapRoutingService {
       userDest: route.userDest,
     );
   }
+
+  /// 导航状态流（透传原生桥接层事件）
+  Stream<NavigationState> get navigationStateStream =>
+      AmapNavigationBridge.navigationStateStream;
+
+  /// 选中路线（多路径时选择导航路线）
+  Future<bool> selectRouteId(int routeId) =>
+      AmapNavigationBridge.selectRouteId(routeId);
+
+  /// 开始无 View 导航
+  Future<bool> startNavigation({bool isEmulator = false, bool enableVoice = true}) =>
+      AmapNavigationBridge.startNavigation(isEmulator: isEmulator, enableVoice: enableVoice);
+
+  /// 停止导航
+  Future<bool> stopNavigation() => AmapNavigationBridge.stopNavigation();
 
   /// 计算一组坐标的总距离（米）
   double _calcDistance(List<LatLng> points) {

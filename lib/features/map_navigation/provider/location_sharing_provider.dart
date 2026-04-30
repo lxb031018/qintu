@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/amap_map_controller.dart';
+import '../service/map_controller_service.dart';
 import '../service/location_sharing_service.dart';
+import '../service/location_upload_service.dart';
 
 /// ============================================
 /// 位置共享状态
@@ -39,14 +40,14 @@ class LocationSharingState {
 /// ============================================
 class LocationSharingNotifier extends Notifier<LocationSharingState> {
   Timer? _uploadTimer;
-  AmapMapController? _mapController;
+  MapControllerService? _mapController;
   final _service = locationSharingService;
 
   @override
   LocationSharingState build() => const LocationSharingState();
 
   /// 设置地图控制器
-  void setMapController(AmapMapController controller) {
+  void setMapController(MapControllerService controller) {
     _mapController = controller;
   }
 
@@ -70,8 +71,8 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
     _uploadTimer?.cancel();
     _uploadTimer = null;
     state = state.copyWith(isSharing: false);
-    _service.deleteLocation();
-    _service.reset();
+    locationUploadService.deleteLocation();
+    _service.clearUploaded();
   }
 
   /// 立即上传一次当前位置
@@ -85,16 +86,17 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
       final lat = location['latitude'] as double;
       final lng = location['longitude'] as double;
 
-      await _service.uploadLocation(
-        lat: lat,
-        lng: lng,
+      await locationUploadService.uploadLocation(
+        latitude: lat,
+        longitude: lng,
         accuracy: (location['accuracy'] as double?)?.toInt(),
         speed: (location['speed'] as double?)?.toInt(),
       );
+      _service.markUploaded(lat, lng);
 
       state = state.copyWith(lastUploadTime: DateTime.now());
     } catch (e) {
-      // 上传失败由 service 处理
+      // 上传失败由 upload service 处理（含重试）
     }
   }
 
@@ -111,12 +113,13 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
 
       if (!_service.shouldUpload(lat, lng)) return;
 
-      await _service.uploadLocation(
-        lat: lat,
-        lng: lng,
+      await locationUploadService.uploadLocation(
+        latitude: lat,
+        longitude: lng,
         accuracy: (location['accuracy'] as double?)?.toInt(),
         speed: (location['speed'] as double?)?.toInt(),
       );
+      _service.markUploaded(lat, lng);
 
       state = state.copyWith(lastUploadTime: DateTime.now());
     } catch (e) {
