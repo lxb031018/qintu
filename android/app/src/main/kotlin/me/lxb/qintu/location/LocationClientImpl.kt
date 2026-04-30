@@ -72,6 +72,7 @@ class LocationClientImpl(private val context: Context) : LocationSource {
                 stdLocation.accuracy = location.accuracy
                 stdLocation.speed = location.speed
                 stdLocation.time = location.time
+                stdLocation.bearing = location.bearing
                 listener.onLocationChanged(stdLocation)
             }
 

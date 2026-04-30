@@ -106,6 +106,10 @@ class MapControllerNotifier extends Notifier<AmapMapController?> {
   Future<void> clearPoiMarkers() async {
     await state?.clearPoiMarkers();
   }
+
+  Future<void> setCarOverlayVisible(bool visible) async {
+    await state?.setCarOverlayVisible(visible);
+  }
 }
 
 final mapControllerNotifierProvider = NotifierProvider<MapControllerNotifier, AmapMapController?>(() {

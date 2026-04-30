@@ -87,7 +87,12 @@ Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用*
 
 ### Flutter 侧
 
-1. **四层分离**：api → service → provider → widget，是否每层职责正确
+1. **四层分离**：
+   - widget 层：纯 UI 展示，禁止业务逻辑
+   - provider 层：状态管理，数据组装
+   - service 层：业务逻辑处理
+   - api 层：接口定义，网络请求
+   各层单向依赖：widget → provider → service → api，是否每层职责正确
 2. **禁止逆向调用**：provider 不能直接调 api 层，必须过 service 层
 3. **禁止在 ui 层写业务逻辑**
 4. **使用统一 HTTP 客户端**：后端用 `ApiClient`，第三方用 `ThirdPartyApiClient`
@@ -96,7 +101,7 @@ Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用*
 
 ### Android 原生侧
 
-1. **三层分离**：Plugin 层 → Activity 层 → 功能模块层，是否每层职责正确
+1. **三层分离**：Activity 层管理 Plugin 层，Plugin 层调用功能模块层，是否每层职责正确
 2. **Plugin 层禁止业务逻辑**：Plugin 只负责 Flutter 通信，不编写业务代码
 3. **Platform Channel 名称一致**：Dart 和 Kotlin 两边使用同一常量定义
 

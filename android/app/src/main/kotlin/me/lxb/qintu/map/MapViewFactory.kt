@@ -37,9 +37,9 @@ class MapViewFactory(
     fun configureMap(mapView: MapView) {
         val aMap = mapView.map
 
-        // 禁用 AMap 自带定位蓝点，统一用车载标记
+        // 启用 AMap 自带定位蓝点
         val myLocationStyle = MyLocationStyle()
-        myLocationStyle.showMyLocation(false)
+        myLocationStyle.showMyLocation(true)
         aMap.myLocationStyle = myLocationStyle
         aMap.isMyLocationEnabled = false
 

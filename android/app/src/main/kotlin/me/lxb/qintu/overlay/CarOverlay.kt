@@ -21,6 +21,7 @@ class CarOverlay(context: Context) {
     private var carMarker: Marker? = null
     private var directionMarker: Marker? = null
     private var isDirectionVisible = true
+    private var isVisible = true
 
     init {
         carDescriptor = BitmapDescriptorFactory.fromBitmap(
@@ -60,13 +61,13 @@ class CarOverlay(context: Context) {
                 position = latLng
                 rotateAngle = 360 - bearing
                 isFlat = true
-                isVisible = true
+                isVisible = isVisible
             }
 
             directionMarker?.apply {
                 position = latLng
                 rotateAngle = 360 - bearing
-                isVisible = isDirectionVisible
+                isVisible = isVisible && isDirectionVisible
             }
 
             Log.v(TAG, String.format("📍 自车位置更新: (%.6f, %.6f), 方向: %.1f°",
@@ -80,6 +81,12 @@ class CarOverlay(context: Context) {
     fun setDirectionVisible(visible: Boolean) {
         isDirectionVisible = visible
         directionMarker?.isVisible = visible
+    }
+
+    fun setVisible(visible: Boolean) {
+        isVisible = visible
+        carMarker?.isVisible = visible
+        directionMarker?.isVisible = visible && isDirectionVisible
     }
 
     fun destroy() {
