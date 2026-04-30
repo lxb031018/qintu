@@ -39,28 +39,6 @@ class AmapNavigationBridge {
   static Stream<NavigationState>? _stateStream;
   static StreamController<NavigationState>? _stateController;
 
-  /// 初始化导航 SDK
-  /// 
-  /// 在应用启动时调用一次
-  static Future<bool> initialize() async {
-    try {
-      Logs.navigation.info('🔧 初始化高德导航 SDK');
-      final result = await _methodChannel.invokeMethod<bool>('initialize');
-      if (result == true) {
-        Logs.navigation.info('✅ 高德导航 SDK 初始化成功');
-      } else {
-        Logs.navigation.warning('❌ 高德导航 SDK 初始化失败');
-      }
-      return result ?? false;
-    } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 初始化高德导航 SDK 异常：${e.message}');
-      return false;
-    } catch (e) {
-      Logs.navigation.error('❌ 初始化高德导航 SDK 未知错误：$e');
-      return false;
-    }
-  }
-
   /// 通过原生导航 SDK 计算路线（替代 Web API）
   ///
   /// [type] 出行方式（driving/walking/riding）
@@ -237,46 +215,6 @@ class AmapNavigationBridge {
     }
   }
 
-  /// 直接开始导航（跳过路线规划页面，直接进入导航）
-  /// 
-  /// 内部调用 calculateRoute + startNavigation
-  static Future<Map<dynamic, dynamic>> startDirectNavigation({
-    required String originName,
-    required double originLat,
-    required double originLng,
-    required String destinationName,
-    required double destinationLat,
-    required double destinationLng,
-    bool enableVoice = true,
-  }) async {
-    try {
-      Logs.navigation.info('🗺️ 直接开始导航：$originName → $destinationName');
-
-      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('startDirectNavigation', {
-        'originName': originName,
-        'originLat': originLat,
-        'originLng': originLng,
-        'destinationName': destinationName,
-        'destinationLat': destinationLat,
-        'destinationLng': destinationLng,
-        'enableVoice': enableVoice,
-      });
-
-      if (result != null) {
-        Logs.navigation.info('✅ 导航组件已启动');
-        return result;
-      }
-      
-      return {'status': 'error', 'message': '返回结果为空'};
-    } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 开始导航异常：${e.message}');
-      return {'status': 'error', 'message': e.message};
-    } catch (e) {
-      Logs.navigation.error('❌ 开始导航未知错误：$e');
-      return {'status': 'error', 'message': e.toString()};
-    }
-  }
-
   /// 停止导航
   static Future<bool> stopNavigation() async {
     try {
@@ -291,21 +229,6 @@ class AmapNavigationBridge {
       return false;
     } catch (e) {
       Logs.navigation.error('❌ 停止导航未知错误：$e');
-      return false;
-    }
-  }
-
-  /// 暂停/继续导航
-  static Future<bool> togglePause() async {
-    try {
-      Logs.navigation.info('⏸️ 切换导航暂停/继续状态');
-      final result = await _methodChannel.invokeMethod<bool>('togglePause');
-      return result ?? false;
-    } on PlatformException catch (e) {
-      Logs.navigation.error('❌ 切换暂停状态异常：${e.message}');
-      return false;
-    } catch (e) {
-      Logs.navigation.error('❌ 切换暂停状态未知错误：$e');
       return false;
     }
   }
@@ -341,22 +264,4 @@ class AmapNavigationBridge {
     return _stateStream!;
   }
 
-  /// 设置导航监听
-  /// 
-  /// [onStateChange] 状态变化回调
-  static void setNavigationListener(Function(NavigationState state) onStateChange) {
-    navigationStateStream.listen(
-      (state) => onStateChange(state),
-      onError: (error) => Logs.navigation.error('导航状态错误：$error'),
-    );
-  }
-
-  /// 释放资源
-  static Future<void> dispose() async {
-    await stopNavigation();
-    await _stateController?.close();
-    _stateStream = null;
-    _stateController = null;
-    Logs.navigation.info('🧹 导航桥接层资源已释放');
-  }
 }

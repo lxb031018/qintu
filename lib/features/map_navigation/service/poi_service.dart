@@ -63,37 +63,6 @@ class PoiService {
     }
   }
 
-  /// 地理编码：地址转坐标（带缓存）
-  Future<LatLng?> geocodeAddress(String address) async {
-    const cacheKey = 'geocode_';
-    if (_searchCache.containsKey(cacheKey)) {
-      final cached = _searchCache[cacheKey]!;
-      if (DateTime.now().difference(cached.timestamp).inMinutes < 30) {
-        return cached.result.suggestions.isNotEmpty
-            ? cached.result.suggestions.first.latLng
-            : null;
-      }
-    }
-
-    final result = await _api.geocodeAddress(address);
-    if (result != null) {
-      _searchCache[cacheKey] = _CachedSearch(
-        result: PoiSearchResult(suggestions: [
-          PoiSuggestion(
-            id: '',
-            name: address,
-            district: '',
-            address: address,
-            location: '${result.longitude},${result.latitude}',
-            source: PoiSource.search,
-          )
-        ]),
-        timestamp: DateTime.now(),
-      );
-    }
-    return result;
-  }
-
   /// 逆地理编码：坐标转城市
   Future<String?> getCityFromLocation(LatLng location) async {
     return await _api.getCityFromLocation(location);

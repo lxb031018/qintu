@@ -25,10 +25,6 @@ class MapControllerService {
   Future<Map<String, dynamic>?> getCurrentLocation() =>
       _controller.getCurrentLocation();
 
-  Future<void> stopLocation() => _controller.stopLocation();
-
-  // ==================== 相机 ====================
-
   Future<void> moveCamera({
     required double lat,
     required double lng,
@@ -104,8 +100,6 @@ class MapControllerService {
 
   Future<bool> setFollowMode(bool enabled) =>
       _controller.setFollowMode(enabled);
-
-  Future<bool> clearCarMarker() => _controller.clearCarMarker();
 
   Future<bool> setLocationDotEnabled(bool enabled) =>
       _controller.setLocationDotEnabled(enabled);

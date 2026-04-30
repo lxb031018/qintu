@@ -20,8 +20,6 @@ class AmapRoutingService {
   factory AmapRoutingService() => _instance;
   AmapRoutingService._internal();
 
-  static AmapRoutingService get instance => _instance;
-
   final _poiApi = PoiApi();
 
   /// 城市缓存（key: "lat,lng", value: city name or code）

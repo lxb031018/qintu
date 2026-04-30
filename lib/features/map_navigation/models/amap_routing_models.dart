@@ -434,36 +434,7 @@ class DriveStep {
   bool get isSmooth => tmcStatus == '畅通';
 }
 
-/// 驾车策略枚举
-enum DrivingStrategy {
-  fastest,   // 速度最快 (0)
-  cheapest,   // 费用优先 (1)
-  shortest,   // 距离最短 (2)
-}
-
-extension DrivingStrategyExtension on DrivingStrategy {
-  int get value {
-    switch (this) {
-      case DrivingStrategy.fastest:
-        return 0;
-      case DrivingStrategy.cheapest:
-        return 1;
-      case DrivingStrategy.shortest:
-        return 2;
-    }
-  }
-
-  String get label {
-    switch (this) {
-      case DrivingStrategy.fastest:
-        return '速度最快';
-      case DrivingStrategy.cheapest:
-        return '费用优先';
-      case DrivingStrategy.shortest:
-        return '距离最短';
-    }
-  }
-}
+/// 路线规划异常
 class RouteOption {
   final int routeId;        // 原生路线 ID（用于 RouteOverLay 渲染）
   final double distance;    // 米

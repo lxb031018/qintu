@@ -92,52 +92,7 @@ class AmapMapController {
     }
   }
 
-  /// 地理编码：地址转坐标（使用 Android 原生 API）
-  Future<Map<String, dynamic>?> geocodeAddress(String address) async {
-    try {
-      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('geocodeAddress', {
-        'address': address,
-      });
-      if (result != null) {
-        return {
-          'latitude': result['latitude'] as double,
-          'longitude': result['longitude'] as double,
-          'address': result['address'] as String,
-        };
-      }
-      return null;
-    } catch (e) {
-      debugPrint('❌ 地理编码失败: $e');
-      return null;
-    }
-  }
-
-  /// 使用高德 AMapUtils.calculateLineDistance 计算两点间距离（米）
-  /// [fromLat] 起点纬度
-  /// [fromLng] 起点经度
-  /// [toLat] 终点纬度
-  /// [toLng] 终点经度
-  Future<int?> calculateDistance({
-    required double fromLat,
-    required double fromLng,
-    required double toLat,
-    required double toLng,
-  }) async {
-    try {
-      final result = await _channel.invokeMethod<int>('calculateDistance', {
-        'fromLat': fromLat,
-        'fromLng': fromLng,
-        'toLat': toLat,
-        'toLng': toLng,
-      });
-      return result;
-    } catch (e) {
-      debugPrint('❌ 计算距离失败: $e');
-      return null;
-    }
-  }
-
-  /// 停止定位
+  /// 释放资源
   Future<void> stopLocation() async {
     await _channel.invokeMethod('stopLocation');
   }
@@ -245,23 +200,6 @@ class AmapMapController {
     }
   }
 
-  /// 设置单条路线的透明度
-  ///
-  /// [index] 路线索引
-  /// [transparency] 透明度（0.0 完全透明 ~ 1.0 完全不透明）
-  Future<bool> setRouteTransparency(int index, double transparency) async {
-    try {
-      final result = await _channel.invokeMethod<bool>('setRouteTransparency', {
-        'index': index,
-        'transparency': transparency,
-      });
-      return result ?? false;
-    } catch (e) {
-      debugPrint('❌ 设置路线透明度失败: $e');
-      return false;
-    }
-  }
-
   /// 进入导航模式：仅保留选中路线（RouteOverLay + 方向箭头）
   /// 清除所有预览阶段的 Polyline
   Future<bool> enterNavigationMode(int routeId) async {
@@ -345,49 +283,9 @@ class AmapMapController {
     });
   }
 
-  /// 添加单个 POI 标注点
-  Future<void> addPoiMarker(PoiMarkerData poi) async {
-    await addPoiMarkers([poi]);
-  }
-
   /// 清除所有 POI 标注点
   Future<void> clearPoiMarkers() async {
     await _channel.invokeMethod('clearPoiMarkers');
-  }
-
-  /// 显示 POI 标注层
-  ///
-  /// [pois] POI 数据列表
-  /// [selectedIndex] 默认选中的索引
-  /// 自动调整视野以显示所有 POI
-  Future<void> showPoiOverlay(PoiOverlay overlay, {int selectedIndex = -1}) async {
-    if (overlay.pois.isEmpty) return;
-
-    // 存储当前选中索引
-    if (selectedIndex >= 0) {
-      overlay.selectPoi(selectedIndex);
-    }
-
-    // 添加标注点到地图
-    await addPoiMarkers(overlay.pois);
-
-    // 移动视野到第一个 POI
-    final firstPos = overlay.firstPosition;
-    if (firstPos != null) {
-      await moveCamera(lat: firstPos.latitude, lng: firstPos.longitude, zoom: 15);
-    }
-  }
-
-  /// 点击 POI 标注点的回调
-  void onPoiMarkerClick(Function(String markerId) callback) {
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'onPoiMarkerClick') {
-        final markerId = call.arguments['id'] as String?;
-        if (markerId != null) {
-          callback(markerId);
-        }
-      }
-    });
   }
 
   /// 显示单条路线标记（起点绿色/终点红色，可单独显示）

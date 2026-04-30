@@ -1,7 +1,6 @@
 enum NavigationStatus {
   idle,
   navigating,
-  paused,
   arrived,
   offRoute,
   gpsWeak,

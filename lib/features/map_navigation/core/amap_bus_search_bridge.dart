@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
-import '../models/amap_bus_models.dart';
 import '../models/amap_routing_models.dart';
 
 export '../models/amap_bus_models.dart';
@@ -27,121 +26,6 @@ export '../models/amap_bus_models.dart';
 /// ```
 class AmapBusSearchBridge {
   static const _methodChannel = MethodChannel(PlatformChannels.busSearch);
-
-  /// 搜索公交站
-  ///
-  /// [keyword] 搜索关键词（如"公交"、"天安门"）
-  /// [city] 城市名称/编码（为空表示全国）
-  static Future<BusStationResult> searchBusStation(
-    String keyword, {
-    String city = '',
-  }) async {
-    if (keyword.isEmpty) {
-      return BusStationResult(stations: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    }
-
-    try {
-      Logs.ui.info('🔍 搜索公交站: $keyword (city: $city)');
-      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'searchBusStation',
-        {'keyword': keyword, 'city': city},
-      );
-
-      if (result != null) {
-        final parsed = BusStationResult.fromMap(result);
-        Logs.ui.info('✅ 搜索到 ${parsed.stations.length} 个公交站');
-        return parsed;
-      }
-      return BusStationResult(stations: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    } on PlatformException catch (e) {
-      Logs.ui.warning('❌ 公交站搜索失败: ${e.message}');
-      return BusStationResult(
-        stations: [],
-        pageCount: 0,
-        suggestionKeywords: [],
-        suggestionCities: [],
-      );
-    } catch (e) {
-      Logs.ui.warning('❌ 公交站搜索异常: $e');
-      return BusStationResult(
-        stations: [],
-        pageCount: 0,
-        suggestionKeywords: [],
-        suggestionCities: [],
-      );
-    }
-  }
-
-  /// 按名称搜索公交线路（返回详情，含站点和坐标）
-  ///
-  /// [keyword] 搜索关键词（如"100"、"特11路"）
-  /// [city] 城市名称/编码
-  static Future<BusLineResult> searchBusLineByName(
-    String keyword, {
-    String city = '',
-  }) async {
-    if (keyword.isEmpty) {
-      return BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    }
-
-    try {
-      Logs.ui.info('🔍 搜索公交线路: $keyword (city: $city)');
-      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'searchBusLineByName',
-        {'keyword': keyword, 'city': city},
-      );
-
-      if (result != null) {
-        final parsed = BusLineResult.fromMap(result);
-        Logs.ui.info('✅ 搜索到 ${parsed.lines.length} 条公交线路');
-        return parsed;
-      }
-      return BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    } on PlatformException catch (e) {
-      Logs.ui.warning('❌ 公交线路搜索失败: ${e.message}');
-      return BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    } catch (e) {
-      Logs.ui.warning('❌ 公交线路搜索异常: $e');
-      return BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
-    }
-  }
-
-  /// 按ID查询公交线路详情（含全部站点+polyline坐标）
-  ///
-  /// [lineId] 公交线路唯一ID（从 BusStationInfo.busLines 中获取）
-  /// [city] 城市名称/编码
-  static Future<BusLineDetail?> searchBusLineById(
-    String lineId, {
-    String city = '',
-  }) async {
-    if (lineId.isEmpty) {
-      return null;
-    }
-
-    try {
-      Logs.ui.info('🔍 查询公交线路详情: $lineId (city: $city)');
-      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'searchBusLineById',
-        {'lineId': lineId, 'city': city},
-      );
-
-      if (result != null) {
-        final lines = (result['lines'] as List<dynamic>?) ?? [];
-        if (lines.isNotEmpty) {
-          final detail = BusLineDetail.fromMap(lines[0] as Map<dynamic, dynamic>);
-          Logs.ui.info('✅ 获取线路详情: ${detail.name} (${detail.stations.length}站)');
-          return detail;
-        }
-      }
-      return null;
-    } on PlatformException catch (e) {
-      Logs.ui.warning('❌ 公交线路详情查询失败: ${e.message}');
-      return null;
-    } catch (e) {
-      Logs.ui.warning('❌ 公交线路详情查询异常: $e');
-      return null;
-    }
-  }
 
   /// 原生公交路径规划（使用 RouteSearchV2.calculateBusRouteAsyn）
   ///
