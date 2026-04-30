@@ -28,6 +28,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import me.lxb.qintu.constant.PlatformChannels
 
 /**
  * 高德 Android 导航 SDK 桥接插件
@@ -39,8 +40,6 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
 
     companion object {
         private const val TAG = "AmapNavigation"
-        private const val METHOD_CHANNEL = "com.qintu/amap_navigation"
-        private const val EVENT_CHANNEL = "com.qintu/amap_navigation/events"
 
         // 算路策略常量
         const val STRATEGY_FAST = 0        // 高速优先 + 躲避拥堵
@@ -72,11 +71,11 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
             Log.e(TAG, "❌ AMapNavi 初始化失败: ${e.message}")
         }
 
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, METHOD_CHANNEL)
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, PlatformChannels.NAVIGATION)
         channel.setMethodCallHandler(this)
 
         // 设置 EventChannel 用于推送导航状态到 Flutter
-        eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, EVENT_CHANNEL)
+        eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, PlatformChannels.NAVIGATION_EVENTS)
         eventChannel?.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 eventSink = events

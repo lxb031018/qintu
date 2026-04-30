@@ -1,11 +1,12 @@
 import 'package:flutter/services.dart';
 import '../../models/location/lat_lng.dart';
+import '../constants/platform_channels.dart';
 
 /// GPS 位置服务
 ///
 /// 职责：获取用户当前位置（封装 Platform Channel 调用）
 class GpsService {
-  static const _channel = MethodChannel('com.qintu/amap_map_control');
+  static const _channel = MethodChannel(PlatformChannels.mapControl);
 
   /// 缓存的上一次城市名
   String? _lastKnownCity;

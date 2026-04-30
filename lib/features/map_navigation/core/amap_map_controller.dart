@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../../../core/constants/platform_channels.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
 import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
@@ -20,8 +21,8 @@ import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 /// 注意：此类属于 core 层（平台 API 封装）
 /// ============================================
 class AmapMapController {
-  static const _channel = MethodChannel('com.qintu/amap_map_control');
-  static const _eventChannel = EventChannel('com.qintu/amap_location_event');
+  static const _channel = MethodChannel(PlatformChannels.mapControl);
+  static const _eventChannel = EventChannel(PlatformChannels.mapLocationEvent);
 
   StreamSubscription? _locationSubscription;
   bool _hasMovedToFirstLocation = false;
@@ -463,6 +464,19 @@ class AmapMapController {
       return result ?? false;
     } catch (e) {
       debugPrint('❌ 设置定位蓝点失败: $e');
+      return false;
+    }
+  }
+
+  /// 显示/隐藏车载标记
+  Future<bool> setCarOverlayVisible(bool visible) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setCarOverlayVisible', {
+        'visible': visible,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ 设置车载标记可见性失败: $e');
       return false;
     }
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/navigation_models.dart';
 import '../models/amap_routing_models.dart';
@@ -32,8 +33,8 @@ import '../models/amap_routing_models.dart';
 /// ```
 
 class AmapNavigationBridge {
-  static const _methodChannel = MethodChannel('com.qintu/amap_navigation');
-  static const _eventChannel = EventChannel('com.qintu/amap_navigation/events');
+  static const _methodChannel = MethodChannel(PlatformChannels.navigation);
+  static const _eventChannel = EventChannel(PlatformChannels.navigationEvents);
   
   static Stream<NavigationState>? _stateStream;
   static StreamController<NavigationState>? _stateController;

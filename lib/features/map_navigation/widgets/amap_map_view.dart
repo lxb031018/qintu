@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/platform_channels.dart';
 import '../../../models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
 import '../provider/map_controller_provider.dart';
@@ -42,7 +43,7 @@ class _AmapMapViewState extends State<AmapMapView> {
     return Consumer(
       builder: (context, ref, child) {
         return AndroidView(
-          viewType: 'com.qintu/amap_map_view',
+          viewType: PlatformChannels.mapView,
           onPlatformViewCreated: (id) => _onPlatformViewCreated(id, ref),
           creationParams: <String, dynamic>{},
           creationParamsCodec: const StandardMessageCodec(),

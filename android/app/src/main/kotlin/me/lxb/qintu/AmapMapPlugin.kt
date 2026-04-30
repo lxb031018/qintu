@@ -3,9 +3,7 @@ package me.lxb.qintu
 import android.content.Context
 import android.util.Log
 import android.view.View
-import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.MapsInitializer
-import com.amap.api.maps.model.LatLng
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -13,29 +11,29 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import me.lxb.qintu.constant.PlatformChannels
 import me.lxb.qintu.geocode.GeocodeImpl
 import me.lxb.qintu.location.LocationClientImpl
 import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.map.CameraController
+import me.lxb.qintu.map.MapController
 import me.lxb.qintu.map.MapViewFactory
-import me.lxb.qintu.route.RouteRenderer
 import me.lxb.qintu.overlay.CarOverlay
+import me.lxb.qintu.route.RouteRenderer
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
 
 /**
- * 高德地图 PlatformView 插件
+ * 高德地图 PlatformView 插件（Plugin 层）
  *
- * 使用高德原生定位 SDK + 原生定位蓝点（箭头样式）
+ * 仅负责 Flutter 通信，不含业务逻辑。
+ * 业务逻辑委托给 MapController（功能模块层）。
  */
 class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     companion object {
         private const val TAG = "AmapMap"
-        private const val VIEW_TYPE = "com.qintu/amap_map_view"
-        private const val CHANNEL = "com.qintu/amap_map_control"
-        private const val EVENT_CHANNEL = "com.qintu/amap_location_event"
     }
 
     private lateinit var channel: MethodChannel
@@ -51,10 +49,13 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var cameraController: CameraController? = null
     private var routeRenderer: RouteRenderer? = null
     private var carOverlay: CarOverlay? = null
-    private var isFollowMode = false
-    private lateinit var geocodeImpl: GeocodeImpl
+    private var geocodeImpl: GeocodeImpl? = null
+
+    // 业务控制器（功能模块层）
+    private var mapController: MapController? = null
 
     // 共享状态
+    private var isFollowMode = false
     private var lastKnownLocation: com.amap.api.location.AMapLocation? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -71,7 +72,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         // 注册 PlatformViewFactory
         flutterPluginBinding.platformViewRegistry.registerViewFactory(
-            VIEW_TYPE,
+            PlatformChannels.MAP_VIEW,
             object : PlatformViewFactory(StandardMessageCodec()) {
                 override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
                     return createMapView(context, viewId)
@@ -79,11 +80,11 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
         )
 
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, CHANNEL)
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, PlatformChannels.MAP_CONTROL)
         channel.setMethodCallHandler(this)
 
         // 注册位置事件通道
-        EventChannel(flutterPluginBinding.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
+        EventChannel(flutterPluginBinding.binaryMessenger, PlatformChannels.MAP_LOCATION_EVENT).setStreamHandler(
             object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                     eventSink = events
@@ -95,16 +96,17 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
         )
 
-        // 定位监听器 — 更新车载标记（导航前显示位置）
+        // 定位监听器 — 更新车载标记（仅导航时显示）
         locationClient.setLocationChangeListener { location ->
             lastKnownLocation = location
             if (carOverlay == null) {
                 carOverlay = context?.let { CarOverlay(it) }
                 carOverlay?.setDirectionVisible(false)
+                carOverlay?.setVisible(false)
             }
             carOverlay?.draw(
                 aMapHolder.aMap,
-                LatLng(location.latitude, location.longitude),
+                com.amap.api.maps.model.LatLng(location.latitude, location.longitude),
                 location.bearing
             )
         }
@@ -138,11 +140,21 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 // 使用 MapViewFactory 配置地图
                 mapViewFactory.configureMap(mapView)
 
-                // 初始化相机控制器
+                // 初始化功能模块组件
                 cameraController = CameraController(aMap)
-
-                // 初始化路线渲染器
                 routeRenderer = RouteRenderer(aMap)
+
+                // 初始化业务控制器
+                mapController = MapController(
+                    locationClient = locationClient,
+                    geocodeImpl = geocodeImpl!!,
+                    routeRenderer = routeRenderer!!,
+                    cameraController = cameraController!!,
+                    aMapHolder = aMapHolder,
+                    carOverlayRef = { carOverlay },
+                    onCarOverlayDestroyed = { carOverlay = null },
+                    isFollowMode = isFollowMode
+                )
 
                 Log.d(TAG, "🗺️ 地图视图 #$viewId 初始化完成")
             }
@@ -157,201 +169,14 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        when (call.method) {
-            "startLocation" -> {
-                Log.d(TAG, "📡 收到 startLocation 调用")
-                locationClient.startLocation()
-                result.success(true)
-            }
-
-            "moveToMyLocation" -> {
-                Log.d(TAG, "🎯 收到 moveToMyLocation 调用")
-                val lastLoc = locationClient.getLastKnownLocation()
-                if (lastLoc != null) {
-                    cameraController?.moveCamera(lastLoc.latitude, lastLoc.longitude)
-                    result.success(true)
-                } else {
-                    // 尚无已知位置，通过持续定位监听的回调移动相机
-                    result.success(false)
-                }
-            }
-
-            "getCurrentLocation" -> {
-                Log.d(TAG, "📍 收到 getCurrentLocation 调用")
-                locationClient.getCurrentLocation(result)
-            }
-
-            "getLastKnownLocation" -> {
-                Log.d(TAG, "📍 收到 getLastKnownLocation 调用")
-                val loc = locationClient.getLastKnownLocation()
-                if (loc != null) {
-                    result.success(mapOf(
-                        "latitude" to loc.latitude,
-                        "longitude" to loc.longitude,
-                        "accuracy" to loc.accuracy,
-                        "timestamp" to loc.time,
-                        "city" to (loc.city ?: "")
-                    ))
-                } else {
-                    result.success(null)
-                }
-            }
-
-            "geocodeAddress" -> {
-                val address = call.argument<String>("address")
-                if (address.isNullOrEmpty()) {
-                    result.error("INVALID_ADDRESS", "地址不能为空", null)
-                } else {
-                    Log.d(TAG, "📍 收到 geocodeAddress 调用: $address")
-                    geocodeImpl.geocodeAddress(address, result)
-                }
-            }
-
-            "calculateDistance" -> {
-                val fromLat = call.argument<Double>("fromLat")
-                val fromLng = call.argument<Double>("fromLng")
-                val toLat = call.argument<Double>("toLat")
-                val toLng = call.argument<Double>("toLng")
-                if (fromLat == null || fromLng == null || toLat == null || toLng == null) {
-                    result.error("INVALID_PARAMS", "坐标参数不能为空", null)
-                } else {
-                    val from = LatLng(fromLat, fromLng)
-                    val to = LatLng(toLat, toLng)
-                    val distance = AMapUtils.calculateLineDistance(from, to)
-                    Log.d(TAG, "📏 计算距离: $from → $to = ${distance}米")
-                    result.success(distance.toInt())
-                }
-            }
-
-            "showRoutes" -> {
-                val routesData = call.argument<List<*>>("routes")
-                val selectIndex = call.argument<Int>("selectIndex") ?: 0
-                Log.d(TAG, "📍 收到 showRoutes 调用: ${routesData?.size} 条路线, 选中: $selectIndex")
-
-                val routes = routesData?.mapNotNull { routeData ->
-                    (routeData as? List<*>)?.mapNotNull { point ->
-                        (point as? Map<*, *>)?.let {
-                            val lat = (it["lat"] as? Number)?.toDouble()
-                            val lng = (it["lng"] as? Number)?.toDouble()
-                            if (lat != null && lng != null) mapOf("lat" to lat, "lng" to lng) else null
-                        }
-                    }
-                } ?: emptyList()
-
-                val count = routeRenderer?.showRoutes(routes, selectIndex) ?: 0
-                result.success(count)
-            }
-
-            "selectRoute" -> {
-                val index = call.argument<Int>("index") ?: 0
-                Log.d(TAG, "📍 收到 selectRoute 调用: index=$index")
-                val success = routeRenderer?.selectRoute(index) ?: false
-                result.success(success)
-            }
-
-            "clearRoutes" -> {
-                Log.d(TAG, "📍 收到 clearRoutes 调用")
-                routeRenderer?.clearRoutes()
-                result.success(true)
-            }
-
-            "setRouteMarkers" -> {
-                val startLat = call.argument<Double>("startLat")
-                val startLng = call.argument<Double>("startLng")
-                val endLat = call.argument<Double>("endLat")
-                val endLng = call.argument<Double>("endLng")
-                val startLabel = call.argument<String>("startLabel") ?: "起点"
-                val endLabel = call.argument<String>("endLabel") ?: "终点"
-                Log.d(TAG, "📍 收到 setRouteMarkers 调用")
-
-                val success = routeRenderer?.setMarkers(
-                    startLat, startLng, endLat, endLng, startLabel, endLabel
-                ) ?: false
-                result.success(success)
-            }
-
-            "clearRouteMarkers" -> {
-                Log.d(TAG, "📍 收到 clearRouteMarkers 调用")
-                routeRenderer?.clearMarkers()
-                result.success(true)
-            }
-
-            "showSingleMarker" -> {
-                val lat = call.argument<Double>("lat")
-                val lng = call.argument<Double>("lng")
-                val isStart = call.argument<Boolean>("isStart") ?: true
-                val label = call.argument<String>("label") ?: (if (isStart) "起点" else "终点")
-                Log.d(TAG, "📍 收到 showSingleMarker 调用: lat=$lat, lng=$lng, isStart=$isStart")
-
-                val success = if (lat != null && lng != null) {
-                    routeRenderer?.showSingleMarker(lat, lng, isStart, label) ?: false
-                } else {
-                    false
-                }
-                result.success(success)
-            }
-
-            "clearSingleMarker" -> {
-                val isStart = call.argument<Boolean>("isStart") ?: true
-                Log.d(TAG, "📍 收到 clearSingleMarker 调用: isStart=$isStart")
-                routeRenderer?.clearSingleMarker(isStart)
-                result.success(true)
-            }
-
-            "moveCamera" -> {
-                val lat = call.argument<Double>("lat")
-                val lng = call.argument<Double>("lng")
-                val zoom = call.argument<Double>("zoom") ?: 15.0
-                if (lat != null && lng != null) {
-                    cameraController?.moveCamera(lat, lng, zoom.toFloat())
-                    result.success(true)
-                } else {
-                    result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
-                }
-            }
-
-            "updateCarMarker" -> {
-                val lat = call.argument<Double>("lat")
-                val lng = call.argument<Double>("lng")
-                val bearing = call.argument<Double>("bearing") ?: 0.0
-                if (lat != null && lng != null) {
-                    if (carOverlay == null) {
-                        carOverlay = context?.let { CarOverlay(it) }
-                    }
-                    carOverlay?.draw(
-                        aMapHolder.aMap,
-                        LatLng(lat, lng),
-                        bearing.toFloat()
-                    )
-                    if (isFollowMode) {
-                        cameraController?.animateCamera(lat, lng)
-                    }
-                    result.success(true)
-                } else {
-                    result.success(false)
-                }
-            }
-
-            "setFollowMode" -> {
-                isFollowMode = call.argument<Boolean>("enabled") ?: false
-                result.success(true)
-            }
-
-            "clearCarMarker" -> {
-                carOverlay?.destroy()
-                carOverlay = null
-                result.success(true)
-            }
-
-            "setLocationDotEnabled" -> {
-                val enabled = call.argument<Boolean>("enabled") ?: true
-                aMapHolder.aMap?.isMyLocationEnabled = enabled
-                Log.d(TAG, "📍 定位蓝点: ${if (enabled) "显示" else "隐藏"}")
-                result.success(true)
-            }
-
-            else -> result.notImplemented()
+        // 同步 isFollowMode 状态到 MapController
+        if (call.method == "setFollowMode") {
+            isFollowMode = call.argument<Boolean>("enabled") ?: false
+            mapController?.isFollowMode = isFollowMode
         }
+
+        // 委托给 MapController 处理
+        mapController?.handleMethodCall(call, result) ?: result.notImplemented()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
