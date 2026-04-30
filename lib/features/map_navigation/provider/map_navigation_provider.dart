@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';

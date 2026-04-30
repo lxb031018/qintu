@@ -16,5 +16,8 @@ class MainActivity : FlutterActivity() {
 
         // 注册定位设置跳转插件
         flutterEngine.plugins.add(me.lxb.qintu.location.LocationSettingsPlugin())
+
+        // 注册公交搜索插件
+        flutterEngine.plugins.add(me.lxb.qintu.bus.AmapBusSearchPlugin())
     }
 }

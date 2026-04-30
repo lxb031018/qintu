@@ -188,4 +188,69 @@ Logs.map.error('地图加载失败: $error');
 
 ---
 
-**最后更新**：2026-04-09
+## 🔍 Android 原生搜索 SDK 集成（公交/路线）
+
+项目使用高德 Android 原生搜索 SDK（`AMapSearch`）实现公交站搜索、线路查询、公交路径规划，通过 Platform Channel 与 Flutter 通信。
+
+### 1. 隐私合规（搜索 SDK 独立设置）
+
+搜索 SDK 需要**单独设置**隐私合规，不同于地图 SDK 的 `MapsInitializer`：
+
+```kotlin
+import com.amap.api.services.core.ServiceSettings
+
+// 在任何搜索 API 调用之前
+ServiceSettings.updatePrivacyShow(context, true, true)
+ServiceSettings.updatePrivacyAgree(context, true)
+```
+
+**遗漏后果**：`calculateBusRouteAsyn` 返回 `errorCode=1200`（参数无效）。
+
+### 2. 公交路径规划的 city 参数必须用城市区号
+
+`RouteSearchV2.BusRouteQuery` 的 `city` 参数要求**城市电话区号**（如 `"010"`、`"0771"`），不能传城市名（如 `"北京"`、`"南宁市"`）。
+
+```kotlin
+// ❌ 错误：传城市名
+RouteSearchV2.BusRouteQuery(fromAndTo, mode, "南宁市", 0)
+
+// ✅ 正确：传电话区号
+RouteSearchV2.BusRouteQuery(fromAndTo, mode, "0771", 0)
+```
+
+**获取区号**：通过高德逆地理编码 Web API（`/v3/geocode/regeo`）的 `addressComponent.citycode` 字段获取。
+
+**错误现象**：传城市名时 SDK 返回 `errorCode=1200`（`CODE_AMAP_SERVICE_INVALID_PARAMS`）。
+
+### 3. Polyline 数据必须显式设置 showFields
+
+`BusRouteQuery` 默认不返回路径坐标（polyline）。必须显式设置：
+
+```kotlin
+val query = RouteSearchV2.BusRouteQuery(fromAndTo, mode, city, 0)
+query.showFields = RouteSearchV2.ShowFields.ALL  // 必须设置！
+routeSearchV2.calculateBusRouteAsyn(query)
+```
+
+**遗漏后果**：所有路径的 `polyline` 字段为空列表，地图上无法绘制路线。
+
+### 4. 并发请求的回调竞态
+
+`BusLineSearch` 不支持同时发起多个请求（后一个请求会覆盖前一个）。当需要并发搜索多条线路时，使用自增 ID 区分回调：
+
+```kotlin
+private val lineCallbacks = mutableMapOf<Int, MethodChannel.Result>()
+private val lineRequestId = AtomicInteger(0)
+
+fun searchBusLineByName(keyword: String, city: String, callback: MethodChannel.Result) {
+    val requestId = lineRequestId.incrementAndGet()
+    lineCallbacks[requestId] = callback
+    // ...
+}
+```
+
+**错误做法**：使用固定字符串 `"line_search"` 作为回调 key，多请求并发时回调被覆盖或错配。
+
+---
+
+**最后更新**：2026-05-01

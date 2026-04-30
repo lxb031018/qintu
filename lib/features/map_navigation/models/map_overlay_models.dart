@@ -252,6 +252,15 @@ class RouteColors {
   /// 公交地铁路线颜色
   static const int transit = 0xFF722ED1; // 紫色
 
+  /// 公交步行段颜色
+  static const int transitWalk = 0xFF8C8C8C; // 灰色
+
+  /// 公交车段颜色
+  static const int transitBus = 0xFF1890FF; // 蓝色
+
+  /// 地铁段颜色
+  static const int transitSubway = 0xFFFF4D4F; // 红色
+
   /// 获取路线类型对应的颜色
   static int getColor(RouteType type) {
     switch (type) {

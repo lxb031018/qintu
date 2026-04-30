@@ -1,6 +1,10 @@
 package me.lxb.qintu.route
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.Log
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.BitmapDescriptorFactory
@@ -22,10 +26,12 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         private const val TAG = "RouteRenderer"
         private const val SELECTED_COLOR = 0xFF1890FF.toInt()
         private const val UNSELECTED_COLOR = 0x801890FF.toInt()
-        private const val SELECTED_WIDTH = 12f
-        private const val UNSELECTED_WIDTH = 8f
+        private const val SELECTED_WIDTH = 14f
+        private const val UNSELECTED_WIDTH = 9f
         private const val SELECTED_TRANSPARENCY = 1.0f
         private const val UNSELECTED_TRANSPARENCY = 0.4f
+        private const val TEXTURE_SIZE = 16
+        private const val TEXTURE_DOT_SIZE = 5f
     }
 
     private val routePolylines = mutableListOf<Polyline>()
@@ -35,6 +41,27 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     private var selectedRouteIndex = -1
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
+
+    private val routeTexture by lazy { createRouteTexture() }
+
+    private fun createRouteTexture() =
+        BitmapDescriptorFactory.fromBitmap(
+            Bitmap.createBitmap(TEXTURE_SIZE, TEXTURE_SIZE, Bitmap.Config.ARGB_8888).apply {
+                val canvas = Canvas(this)
+                canvas.drawColor(Color.TRANSPARENT)
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.WHITE
+                    alpha = 180
+                    style = Paint.Style.FILL
+                }
+                canvas.drawCircle(
+                    TEXTURE_SIZE / 2f,
+                    TEXTURE_SIZE / 2f,
+                    TEXTURE_DOT_SIZE,
+                    paint
+                )
+            }
+        )
 
     /**
      * 用坐标点列表绘制路线（纯色 Polyline，无纹理 — 仅当 RouteOverLay 不可用时回退）
@@ -74,6 +101,7 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
                         .addAll(points)
                         .color(if (isSelected) SELECTED_COLOR else UNSELECTED_COLOR)
                         .width(if (isSelected) SELECTED_WIDTH else UNSELECTED_WIDTH)
+                        .setCustomTexture(routeTexture)
                 )
 
                 routePolylines.add(polyline)

@@ -3,6 +3,7 @@ package me.lxb.qintu.geocode
 import android.content.Context
 import android.util.Log
 import com.amap.api.services.core.AMapException
+import com.amap.api.services.core.ServiceSettings
 import com.amap.api.services.geocoder.GeocodeQuery
 import com.amap.api.services.geocoder.GeocodeResult
 import com.amap.api.services.geocoder.GeocodeSearch
@@ -22,6 +23,10 @@ class GeocodeImpl(context: Context) : GeocodeSource {
     private val geocodeSearch: GeocodeSearch = GeocodeSearch(context)
 
     init {
+        // 搜索 SDK 必须单独设置隐私合规（不同于地图 SDK 的 MapsInitializer）
+        ServiceSettings.updatePrivacyShow(context, true, true)
+        ServiceSettings.updatePrivacyAgree(context, true)
+
         geocodeSearch.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onGeocodeSearched(result: GeocodeResult?, rCode: Int) {
                 if (rCode == AMapException.CODE_AMAP_SUCCESS && result != null) {

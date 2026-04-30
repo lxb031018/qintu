@@ -57,16 +57,25 @@ class TransitLine {
 class TransitSegment {
   final List<TransitLine> lines;      // 该段包含的线路（公共交通）
   final int walkingDistance;           // 该段步行距离（米）
-  final String? instruction;           // 引导提示，如 "步行500米到地铁站"
+  final List<LatLng> points;           // 该段的坐标点（用于分段渲染不同颜色）
 
   const TransitSegment({
     required this.lines,
     required this.walkingDistance,
-    this.instruction,
+    this.points = const [],
   });
 
   bool get hasTransit => lines.isNotEmpty;
   bool get hasWalking => walkingDistance > 0;
+
+  /// 路段类型：0=纯步行, 1=公交, 2=地铁
+  int get segmentType {
+    if (lines.isEmpty) return 0;
+    for (final line in lines) {
+      if (line.type == TransitLineType.subway || line.type == TransitLineType.suburban) return 2;
+    }
+    return 1;
+  }
 }
 
 /// ============================================
@@ -467,6 +476,8 @@ class RouteOption {
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
   final List<WalkStep>? rideSteps; // 骑行导航步骤详情（仅 riding 类型，结构与 WalkStep 相同）
   final List<DriveStep>? driveSteps; // 驾车导航步骤详情（仅 driving 类型）
+  final LatLng? userOrigin; // transit 类型的用户真实起点（用于步行补充）
+  final LatLng? userDest;   // transit 类型的用户真实终点（用于步行补充）
 
   const RouteOption({
     this.routeId = -1,
@@ -480,6 +491,8 @@ class RouteOption {
     this.walkSteps,
     this.rideSteps,
     this.driveSteps,
+    this.userOrigin,
+    this.userDest,
   });
 
   /// 距离显示文本

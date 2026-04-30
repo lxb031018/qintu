@@ -134,4 +134,35 @@ class PoiApi {
       return null;
     }
   }
+
+  /// 从坐标获取城市区号（电话区号，如 "010"、"0771"）
+  ///
+  /// 用于原生公交路径规划 API（BusRouteQuery 的 city 参数）
+  Future<String?> getCityCodeFromLocation(LatLng location) async {
+    final apiKey = AmapWebConfig.webApiKey;
+    if (apiKey.isEmpty) return null;
+
+    try {
+      final response = await _dio.get(
+        '/v3/geocode/regeo',
+        queryParameters: {
+          'key': apiKey,
+          'location': '${location.longitude},${location.latitude}',
+          'extensions': 'base',
+          'output': 'json',
+        },
+      );
+
+      final data = response.data;
+      if (data['status'] != '1' || data['regeocode'] == null) {
+        return null;
+      }
+
+      final citycode = data['regeocode']['addressComponent']['citycode']?.toString();
+      return (citycode != null && citycode.isNotEmpty) ? citycode : null;
+    } catch (e) {
+      Logs.map.warning('获取城市区号异常: $e');
+      return null;
+    }
+  }
 }
