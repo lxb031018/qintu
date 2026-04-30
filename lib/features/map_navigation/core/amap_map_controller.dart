@@ -262,6 +262,20 @@ class AmapMapController {
     }
   }
 
+  /// 进入导航模式：仅保留选中路线（RouteOverLay + 方向箭头）
+  /// 清除所有预览阶段的 Polyline
+  Future<bool> enterNavigationMode(int routeId) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('enterNavigationMode', {
+        'routeId': routeId,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ enterNavigationMode 失败: $e');
+      return false;
+    }
+  }
+
   /// 清除所有路线
   Future<void> clearRoutes() async {
     await _channel.invokeMethod('clearRoutes');

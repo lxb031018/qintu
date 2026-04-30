@@ -237,6 +237,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       navRemainingDistance: 0,
       navRemainingTime: 0,
     );
+    // 清除地图上的导航路线
+    ref.read(mapControllerNotifierProvider)?.clearRoutes();
   }
 
   /// 设置起点
@@ -405,6 +407,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void selectRoute(int index) {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
+      // 更新地图上路线的高亮/淡化样式
+      ref.read(mapControllerNotifierProvider)?.selectRoute(index);
     }
   }
 
@@ -449,6 +453,11 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
     // 选中路线（多路径时需要）
     await AmapNavigationBridge.selectRouteId(state.selectedRouteIndex);
+
+    // 切换到导航渲染：清除备选路线，用 RouteOverLay 显示选中路线
+    if (route.routeId >= 0) {
+      ref.read(mapControllerNotifierProvider)?.enterNavigationMode(route.routeId);
+    }
 
     // 启动无 View 导航
     final success = await AmapNavigationBridge.startNavigation(

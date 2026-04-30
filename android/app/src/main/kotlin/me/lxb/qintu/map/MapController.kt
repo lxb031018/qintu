@@ -114,11 +114,11 @@ class MapController(
                     (it as? Number)?.toInt()
                 }
 
-                // 优先使用 RouteOverLay（有缓存 path 且传了 routeIds）
+                // 优先用 RouteOverLay（与导航样式一致，带方向箭头）
                 if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
                     val paths = routeIds.mapNotNull { RoutePathCache.get(it) }
                     if (paths.isNotEmpty()) {
-                        Log.d(TAG, "📍 showRoutes: 使用 RouteOverLay 渲染 ${paths.size} 条路线")
+                        Log.d(TAG, "📍 showRoutes: RouteOverLay ${paths.size} 条路线, 选中: $selectIndex")
                         val count = routeRenderer.showRouteOverlays(paths, selectIndex)
                         result.success(count)
                         return
@@ -126,7 +126,7 @@ class MapController(
                 }
 
                 // 回退到 Polyline 渲染
-                Log.d(TAG, "📍 showRoutes: ${routesData?.size} 条路线, 选中: $selectIndex")
+                Log.d(TAG, "📍 showRoutes: Polyline ${routesData?.size} 条路线, 选中: $selectIndex")
                 val routes = routesData?.mapNotNull { routeData ->
                     (routeData as? List<*>)?.mapNotNull { point ->
                         (point as? Map<*, *>)?.let {
@@ -145,6 +145,13 @@ class MapController(
                 val index = call.argument<Int>("index") ?: 0
                 Log.d(TAG, "📍 selectRoute: index=$index")
                 val success = routeRenderer.selectRoute(index)
+                result.success(success)
+            }
+
+            "enterNavigationMode" -> {
+                val routeId = call.argument<Int>("routeId") ?: 0
+                Log.d(TAG, "🚗 enterNavigationMode: routeId=$routeId")
+                val success = routeRenderer.showNavigateRoute(routeId)
                 result.success(success)
             }
 

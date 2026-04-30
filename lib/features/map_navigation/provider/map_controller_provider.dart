@@ -62,6 +62,10 @@ class MapControllerNotifier extends Notifier<AmapMapController?> {
     return await state?.selectRoute(index, selectedColor: selectedColor, unselectedColor: unselectedColor) ?? false;
   }
 
+  Future<bool> enterNavigationMode(int routeId) async {
+    return await state?.enterNavigationMode(routeId) ?? false;
+  }
+
   Future<void> clearRoutes() async {
     await state?.clearRoutes();
   }

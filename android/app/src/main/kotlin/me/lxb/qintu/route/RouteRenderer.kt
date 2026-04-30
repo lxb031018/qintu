@@ -21,22 +21,26 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     companion object {
         private const val TAG = "RouteRenderer"
         private const val SELECTED_COLOR = 0xFF1890FF.toInt()
-        private const val UNSELECTED_COLOR = 0xFF999999.toInt()
+        private const val UNSELECTED_COLOR = 0x801890FF.toInt()
         private const val SELECTED_WIDTH = 12f
         private const val UNSELECTED_WIDTH = 8f
+        private const val SELECTED_TRANSPARENCY = 1.0f
+        private const val UNSELECTED_TRANSPARENCY = 0.4f
     }
 
     private val routePolylines = mutableListOf<Polyline>()
     private val routeOverlays = mutableListOf<RouteOverLay>()
+    private val routeOverlayPaths = mutableListOf<AMapNaviPath>()
+    private val navRouteOverlay = mutableListOf<RouteOverLay>()
     private var selectedRouteIndex = -1
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
 
     /**
-     * 用坐标点列表绘制路线（Polyline 方式，无方向箭头）
+     * 用坐标点列表绘制路线（纯色 Polyline，无纹理 — 仅当 RouteOverLay 不可用时回退）
      */
     fun showRoutes(routes: List<List<Map<String, Double>>>, selectIndex: Int): Int {
-        Log.d(TAG, "🗺️ [Native] showRoutes 开始执行")
+        Log.d(TAG, "🗺️ [Native] showRoutes (Polyline fallback) 开始执行")
 
         if (aMap == null) {
             Log.e(TAG, "❌ [Native] 地图未初始化!")
@@ -50,17 +54,13 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             return 0
         }
 
-        Log.d(TAG, "🗺️ [Native] 开始遍历 ${routes.size} 条路线")
-
         var successCount = 0
         for ((index, routeData) in routes.withIndex()) {
             try {
-                val points = mutableListOf<LatLng>()
-
-                for (point in routeData) {
-                    val lat = point["lat"] ?: continue
-                    val lng = point["lng"] ?: continue
-                    points.add(LatLng(lat, lng))
+                val points = routeData.mapNotNull { point ->
+                    val lat = point["lat"] ?: return@mapNotNull null
+                    val lng = point["lng"] ?: return@mapNotNull null
+                    LatLng(lat, lng)
                 }
 
                 if (points.size < 2) {
@@ -107,7 +107,7 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     }
 
     /**
-     * 用 AMapNaviPath 绘制带方向箭头的路线（RouteOverLay 方式）
+     * 用 AMapNaviPath 绘制路线（RouteOverLay + 方向箭头 + 透明度）
      */
     fun showRouteOverlays(paths: List<AMapNaviPath>, selectIndex: Int): Int {
         Log.d(TAG, "🗺️ [Native] showRouteOverlays 开始执行, ${paths.size} 条路线")
@@ -132,16 +132,19 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
                     continue
                 }
 
+                val isSelected = index == selectIndex
                 val overlay = RouteOverLay(aMap, path, context).apply {
-                    setArrowOnRoute(true)
+                    setArrowOnRoute(isSelected)
+                    setTransparency(if (isSelected) SELECTED_TRANSPARENCY else UNSELECTED_TRANSPARENCY)
                     addToMap()
                 }
 
                 routeOverlays.add(overlay)
+                routeOverlayPaths.add(path)
                 successCount++
-                Log.d(TAG, "✅ [Native] 成功添加 RouteOverLay $index: ${path.coordList.size} 个点")
+                Log.d(TAG, "✅ [Native] RouteOverLay $index: 箭头=${if (isSelected) "ON" else "OFF"}, alpha=${if (isSelected) "1.0" else "0.4"}, ${path.coordList.size}pts")
 
-                if (index == selectIndex) {
+                if (isSelected) {
                     overlay.zoomToSpan()
                 }
             } catch (e: Exception) {
@@ -154,37 +157,78 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         return successCount
     }
 
+    /**
+     * 进入导航模式：清除所有预览路线，用 RouteOverLay 画单条导航路线
+     */
+    fun showNavigateRoute(routeId: Int): Boolean {
+        Log.d(TAG, "🚗 [Native] showNavigateRoute: routeId=$routeId")
+
+        if (aMap == null) {
+            Log.e(TAG, "❌ [Native] 地图未初始化!")
+            return false
+        }
+
+        clearRoutes()
+
+        val path = RoutePathCache.get(routeId)
+        if (path == null) {
+            Log.e(TAG, "❌ [Native] 未找到缓存的路径: routeId=$routeId")
+            return false
+        }
+
+        try {
+            val overlay = RouteOverLay(aMap, path, context).apply {
+                setArrowOnRoute(true)
+                setTransparency(SELECTED_TRANSPARENCY)
+                addToMap()
+            }
+            navRouteOverlay.add(overlay)
+            Log.d(TAG, "✅ [Native] 导航路线已显示: $routeId")
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [Native] 显示导航路线失败: ${e.message}")
+            return false
+        }
+    }
+
     fun selectRoute(index: Int): Boolean {
-        Log.d(TAG, "🗺️ [Native] selectRoute 开始执行: index=$index")
+        Log.d(TAG, "🗺️ [Native] selectRoute: index=$index")
 
         if (aMap == null) {
             Log.e(TAG, "❌ [Native] aMap 为 null")
             return false
         }
 
-        val hasPolylines = routePolylines.isNotEmpty()
-        val hasOverlays = routeOverlays.isNotEmpty()
+        // RouteOverLay 模式：清除后按新选中状态重建（同时更新透明度+箭头）
+        if (routeOverlays.isNotEmpty()) {
+            val paths = routeOverlayPaths.toList()
+            if (index < 0 || index >= paths.size) {
+                Log.e(TAG, "❌ [Native] 路线索引无效: index=$index, size=${paths.size}")
+                return false
+            }
+            clearRoutes()
+            return showRouteOverlays(paths, index) > 0
+        }
 
-        if (!hasPolylines && !hasOverlays) {
+        // Polyline 模式（回退）：更新颜色和宽度
+        if (routePolylines.isEmpty()) {
             Log.e(TAG, "❌ [Native] 无路线可选中")
             return false
         }
 
-        // 更新 Polyline 样式
-        if (hasPolylines && index < routePolylines.size) {
-            for ((i, polyline) in routePolylines.withIndex()) {
-                try {
-                    val newColor = if (i == index) SELECTED_COLOR else UNSELECTED_COLOR
-                    val newWidth = if (i == index) SELECTED_WIDTH else UNSELECTED_WIDTH
-                    polyline.color = newColor
-                    polyline.width = newWidth
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ [Native] 更新路线 $i 样式失败: ${e.message}")
-                }
-            }
+        if (index < 0 || index >= routePolylines.size) {
+            Log.e(TAG, "❌ [Native] 路线索引无效: index=$index, size=${routePolylines.size}")
+            return false
         }
 
-        // RouteOverLay 本身不支持选中样式切换，通过重建实现
+        for ((i, polyline) in routePolylines.withIndex()) {
+            try {
+                polyline.color = if (i == index) SELECTED_COLOR else UNSELECTED_COLOR
+                polyline.width = if (i == index) SELECTED_WIDTH else UNSELECTED_WIDTH
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [Native] 更新路线 $i 样式失败: ${e.message}")
+            }
+        }
 
         selectedRouteIndex = index
         Log.d(TAG, "✅ [Native] 选中路线 $index 完成")
@@ -192,36 +236,37 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     }
 
     fun clearRoutes() {
-        Log.d(TAG, "🗺️ [Native] clearRoutes: 清除 ${routePolylines.size} 条 Polyline + ${routeOverlays.size} 条 RouteOverLay")
+        Log.d(TAG, "🗺️ [Native] clearRoutes: ${routePolylines.size} Polyline + ${routeOverlays.size} RouteOverLay + ${navRouteOverlay.size} nav")
 
         for (polyline in routePolylines) {
-            try {
-                polyline.remove()
-            } catch (e: Exception) {
+            try { polyline.remove() } catch (e: Exception) {
                 Log.e(TAG, "❌ [Native] 移除 Polyline 失败: ${e.message}")
             }
         }
         routePolylines.clear()
 
         for (overlay in routeOverlays) {
-            try {
-                overlay.removeFromMap()
-            } catch (e: Exception) {
+            try { overlay.removeFromMap() } catch (e: Exception) {
                 Log.e(TAG, "❌ [Native] 移除 RouteOverLay 失败: ${e.message}")
             }
         }
         routeOverlays.clear()
+        routeOverlayPaths.clear()
+
+        for (overlay in navRouteOverlay) {
+            try { overlay.removeFromMap() } catch (e: Exception) {
+                Log.e(TAG, "❌ [Native] 移除导航 RouteOverLay 失败: ${e.message}")
+            }
+        }
+        navRouteOverlay.clear()
 
         selectedRouteIndex = -1
     }
 
     fun setMarkers(
-        startLat: Double?,
-        startLng: Double?,
-        endLat: Double?,
-        endLng: Double?,
-        startLabel: String,
-        endLabel: String
+        startLat: Double?, startLng: Double?,
+        endLat: Double?, endLng: Double?,
+        startLabel: String, endLabel: String
     ): Boolean {
         if (aMap == null) {
             Log.e(TAG, "❌ [Native] 地图未初始化!")
@@ -236,12 +281,9 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         try {
             clearMarkers()
 
-            val startPoint = LatLng(startLat, startLng)
-            val endPoint = LatLng(endLat, endLng)
-
             startMarker = aMap!!.addMarker(
                 MarkerOptions()
-                    .position(startPoint)
+                    .position(LatLng(startLat, startLng))
                     .title(startLabel)
                     .snippet("")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
@@ -249,14 +291,13 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
 
             endMarker = aMap!!.addMarker(
                 MarkerOptions()
-                    .position(endPoint)
+                    .position(LatLng(endLat, endLng))
                     .title(endLabel)
                     .snippet("")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
             )
 
-            Log.d(TAG, "✅ [Native] 已添加起点标记: $startLabel ($startLat, $startLng)")
-            Log.d(TAG, "✅ [Native] 已添加终点标记: $endLabel ($endLat, $endLng)")
+            Log.d(TAG, "✅ [Native] 已添加起点: $startLabel, 终点: $endLabel")
             return true
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 设置路线标记失败: ${e.message}")
@@ -266,34 +307,24 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
 
     fun clearMarkers() {
         try {
-            startMarker?.let {
-                it.remove()
-                startMarker = null
-            }
-            endMarker?.let {
-                it.remove()
-                endMarker = null
-            }
+            startMarker?.remove()
+            startMarker = null
+            endMarker?.remove()
+            endMarker = null
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 清除路线标记失败: ${e.message}")
         }
     }
 
-    fun showSingleMarker(
-        lat: Double,
-        lng: Double,
-        isStart: Boolean,
-        label: String
-    ): Boolean {
+    fun showSingleMarker(lat: Double, lng: Double, isStart: Boolean, label: String): Boolean {
         if (aMap == null) {
             Log.e(TAG, "❌ [Native] 地图未初始化!")
             return false
         }
 
         try {
-            val position = LatLng(lat, lng)
             val markerOptions = MarkerOptions()
-                .position(position)
+                .position(LatLng(lat, lng))
                 .title(label)
                 .snippet("")
                 .icon(BitmapDescriptorFactory.defaultMarker(
@@ -303,11 +334,9 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             if (isStart) {
                 startMarker?.remove()
                 startMarker = aMap!!.addMarker(markerOptions)
-                Log.d(TAG, "✅ [Native] 已添加起点标记: $label ($lat, $lng)")
             } else {
                 endMarker?.remove()
                 endMarker = aMap!!.addMarker(markerOptions)
-                Log.d(TAG, "✅ [Native] 已添加终点标记: $label ($lat, $lng)")
             }
             return true
         } catch (e: Exception) {
@@ -319,17 +348,11 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     fun clearSingleMarker(isStart: Boolean) {
         try {
             if (isStart) {
-                startMarker?.let {
-                    it.remove()
-                    startMarker = null
-                }
-                Log.d(TAG, "🗑️ [Native] 已清除起点标记")
+                startMarker?.remove()
+                startMarker = null
             } else {
-                endMarker?.let {
-                    it.remove()
-                    endMarker = null
-                }
-                Log.d(TAG, "🗑️ [Native] 已清除终点标记")
+                endMarker?.remove()
+                endMarker = null
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 清除单条路线标记失败: ${e.message}")
