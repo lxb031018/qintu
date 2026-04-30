@@ -55,7 +55,6 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var mapController: MapController? = null
 
     // 共享状态
-    private var isFollowMode = false
     private var lastKnownLocation: com.amap.api.location.AMapLocation? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -99,15 +98,16 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         // 定位监听器 — 更新车载标记（仅导航时显示）
         locationClient.setLocationChangeListener { location ->
             lastKnownLocation = location
-            if (carOverlay == null) {
-                carOverlay = context?.let { CarOverlay(it) }
-                carOverlay?.setDirectionVisible(false)
-                carOverlay?.setVisible(false)
+            // 懒初始化 CarOverlay（资源初始化，非业务逻辑）
+            if (carOverlay == null && context != null) {
+                carOverlay = CarOverlay(context!!).apply {
+                    setDirectionVisible(false)
+                    setVisible(false)
+                }
             }
-            carOverlay?.draw(
-                aMapHolder.aMap,
-                com.amap.api.maps.model.LatLng(location.latitude, location.longitude),
-                location.bearing
+            // 委托给 MapController 处理位置更新业务
+            mapController?.onLocationChanged(
+                location.latitude, location.longitude, location.bearing
             )
         }
 
@@ -152,8 +152,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     cameraController = cameraController!!,
                     aMapHolder = aMapHolder,
                     carOverlayRef = { carOverlay },
-                    onCarOverlayDestroyed = { carOverlay = null },
-                    isFollowMode = isFollowMode
+                    onCarOverlayDestroyed = { carOverlay = null }
                 )
 
                 Log.d(TAG, "🗺️ 地图视图 #$viewId 初始化完成")
@@ -169,13 +168,6 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        // 同步 isFollowMode 状态到 MapController
-        if (call.method == "setFollowMode") {
-            isFollowMode = call.argument<Boolean>("enabled") ?: false
-            mapController?.isFollowMode = isFollowMode
-        }
-
-        // 委托给 MapController 处理
         mapController?.handleMethodCall(call, result) ?: result.notImplemented()
     }
 

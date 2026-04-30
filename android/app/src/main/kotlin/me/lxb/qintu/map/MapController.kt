@@ -39,6 +39,13 @@ class MapController(
     }
 
     /**
+     * 处理来自定位监听器的位置更新，驱动 CarOverlay 自车标记绘制
+     */
+    fun onLocationChanged(lat: Double, lng: Double, bearing: Float) {
+        carOverlayRef()?.draw(aMapHolder.aMap, LatLng(lat, lng), bearing)
+    }
+
+    /**
      * 处理来自 Plugin 层的 MethodCall
      */
     fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
