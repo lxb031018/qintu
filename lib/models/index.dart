@@ -16,3 +16,12 @@ export 'auth/user_state.dart';
 
 // 绑定关系
 export 'binding/binding.dart';
+
+// 坐标模型
+export 'location/lat_lng.dart';
+
+// 位置数据
+export 'location.dart';
+
+// 认证
+export 'auth/login_info.dart';

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/features/map_navigation/models/navigation_models.dart';
-import 'package:qintu/features/map_navigation/utils/location_distance_service.dart';
 import 'package:qintu/features/map_navigation/core/amap_bus_search_bridge.dart';
 import 'package:qintu/features/map_navigation/core/amap_navigation_bridge.dart';
 import 'package:qintu/features/map_navigation/core/poi_api.dart';
 import 'package:qintu/utils/logger.dart';
+import 'package:qintu/utils/retry_utils.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
@@ -50,7 +50,7 @@ class AmapRoutingService {
       case RouteType.driving:
       case RouteType.walking:
       case RouteType.riding:
-        return _withRetry(() => AmapNavigationBridge.calculateRoute(
+        return withRetry(() => AmapNavigationBridge.calculateRoute(
           type: type,
           origin: origin,
           destination: destination,
@@ -64,7 +64,7 @@ class AmapRoutingService {
         if (routeCity.isEmpty) {
           throw const RoutingException('公共交通路线需要城市区号，请开启定位权限或手动输入城市区号（如 010）');
         }
-        return _withRetry(() async {
+        return withRetry(() async {
           final result = await AmapBusSearchBridge.planTransitRoute(
             origin: origin,
             destination: destination,
@@ -81,26 +81,6 @@ class AmapRoutingService {
           return result;
         });
     }
-  }
-
-  /// 带重试的路由规划
-  Future<List<RouteOption>> _withRetry(
-    Future<List<RouteOption>> Function() request,
-  ) async {
-    const maxRetries = 2;
-    Exception? lastError;
-
-    for (int attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await request();
-      } catch (e) {
-        lastError = e is Exception ? e : Exception(e.toString());
-        if (attempt < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 200 * (attempt + 1)));
-        }
-      }
-    }
-    throw lastError ?? Exception('路由规划失败');
   }
 
   /// 从坐标逆地理编码获取城市区号（电话区号，如 "010"、"0771"，带缓存）
@@ -260,12 +240,7 @@ class AmapRoutingService {
     if (points.length < 2) return 0;
     double dist = 0;
     for (int i = 0; i < points.length - 1; i++) {
-      dist += calculateHaversineDistance(
-        lat1: points[i].latitude,
-        lng1: points[i].longitude,
-        lat2: points[i + 1].latitude,
-        lng2: points[i + 1].longitude,
-      );
+      dist += points[i].distanceTo(points[i + 1]);
     }
     return dist;
   }

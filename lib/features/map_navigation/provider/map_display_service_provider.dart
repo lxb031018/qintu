@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qintu/utils/ui/color_utils.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import 'location_input_provider.dart';
@@ -110,7 +111,7 @@ class MapDisplayService {
         if (seg.points.isEmpty) continue;
         final baseColor = _segmentColor(seg);
         allSegmentPoints.add(seg.points);
-        allSegmentColors.add(_dimColor(baseColor, dimmed));
+        allSegmentColors.add(dimColor(baseColor, dimmed));
       }
     }
 
@@ -136,14 +137,6 @@ class MapDisplayService {
       default:
         return RouteColors.transitWalk;
     }
-  }
-
-  static int _dimColor(int color, double factor) {
-    final a = ((color >> 24) & 0xFF) * factor;
-    final r = (color >> 16) & 0xFF;
-    final g = (color >> 8) & 0xFF;
-    final b = color & 0xFF;
-    return (a.toInt() << 24) | (r << 16) | (g << 8) | b;
   }
 
   Future<void> clearRoutes() async {

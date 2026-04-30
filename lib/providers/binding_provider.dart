@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide AsyncLoading, AsyncError;
 import 'package:qintu/models/binding/binding.dart';
-import 'package:qintu/models/common/async_state.dart';
+import 'package:qintu/models/async_state.dart';
 import 'package:qintu/features/relationship_binding/service/binding_service.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/constants/binding_limits.dart';

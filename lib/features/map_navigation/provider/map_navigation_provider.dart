@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qintu/models/async_state.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
@@ -69,8 +70,8 @@ class MapNavigationState {
     this.destinationLocation,
     this.routes = const [],
     this.selectedRouteIndex = 0,
-    this.routesState = const AsyncState(isLoading: true),
-    this.searchState = const AsyncState(isLoading: true),
+    this.routesState = const AsyncState.loading(),
+    this.searchState = const AsyncState.loading(),
     this.isOriginFocused = true,
     this.errorMessage,
     this.currentRouteType,
@@ -138,27 +139,6 @@ class MapNavigationState {
           : null;
 }
 
-/// 异步状态
-class AsyncState<T> {
-  final T? data;
-  final bool isLoading;
-  final String? errorMessage;
-
-  const AsyncState({
-    this.data,
-    this.isLoading = false,
-    this.errorMessage,
-  });
-
-  /// 创建加载中状态
-  static AsyncState<T> loading<T>() => AsyncState<T>(isLoading: true);
-
-  /// 创建带数据的状态
-  static AsyncState<T> success<T>(T data) => AsyncState<T>(data: data);
-
-  /// 创建错误状态
-  static AsyncState<T> failure<T>(String message) => AsyncState<T>(errorMessage: message);
-}
 
 /// ============================================
 /// 地图导航 Provider
@@ -280,7 +260,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void _resetSearchAndRoutes({bool clearRouteType = false}) {
     state = state.copyWith(
       searchKeyword: '',
-      searchState: const AsyncState(data: []),
+      searchState: const AsyncState.success([]),
       routes: const [],
       showRoutesSheet: false,
       clearCurrentRouteType: clearRouteType,
@@ -311,14 +291,14 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   Future<void> searchPoi(String keywords) async {
     if (keywords.length < 2) {
       state = state.copyWith(
-        searchState: const AsyncState(data: []),
+        searchState: const AsyncState.success([]),
         searchKeyword: keywords,
       );
       return;
     }
 
     state = state.copyWith(
-      searchState: const AsyncState(isLoading: true),
+      searchState: const AsyncState.loading(),
       searchKeyword: keywords,
     );
 
@@ -336,13 +316,13 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
       } else {
         state = state.copyWith(
-          searchState: AsyncState.failure(result.errorMessage ?? '搜索失败'),
+          searchState: AsyncState.error(result.errorMessage ?? '搜索失败'),
         );
       }
     } catch (e) {
       if (_disposed) return;
       state = state.copyWith(
-        searchState: AsyncState.failure(e.toString()),
+        searchState: AsyncState.error(e.toString()),
       );
     }
   }
@@ -360,7 +340,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
 
     state = state.copyWith(
-      routesState: const AsyncState(isLoading: true),
+      routesState: const AsyncState.loading(),
       errorMessage: null,
     );
 
@@ -375,7 +355,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
       if (routes.isEmpty) {
         state = state.copyWith(
-          routesState: const AsyncState(data: []),
+          routesState: const AsyncState.success([]),
           errorMessage: '未找到路线',
         );
       } else {
@@ -390,7 +370,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     } catch (e) {
       if (_disposed) return;
       state = state.copyWith(
-        routesState: AsyncState.failure(e.toString()),
+        routesState: AsyncState.error(e.toString()),
       );
     }
   }

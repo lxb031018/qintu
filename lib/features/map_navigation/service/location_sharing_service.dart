@@ -26,11 +26,11 @@ class LocationSharingService {
     if (_lastUploadedLat == null || _lastUploadedLng == null) {
       return true;
     }
-    final distance = _calculateHaversineDistance(
-      _lastUploadedLat!,
-      _lastUploadedLng!,
-      lat,
-      lng,
+    final distance = calculateHaversineDistance(
+      lat1: _lastUploadedLat!,
+      lng1: _lastUploadedLng!,
+      lat2: lat,
+      lng2: lng,
     );
     return distance > distanceThreshold;
   }
@@ -51,16 +51,6 @@ class LocationSharingService {
   void reset() {
     _lastUploadedLat = null;
     _lastUploadedLng = null;
-  }
-
-  /// 计算两点间的 Haversine 距离（米）
-  double _calculateHaversineDistance(
-    double lat1,
-    double lng1,
-    double lat2,
-    double lng2,
-  ) {
-    return calculateHaversineDistance(lat1: lat1, lng1: lng1, lat2: lat2, lng2: lng2);
   }
 }
 

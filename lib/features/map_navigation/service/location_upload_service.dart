@@ -1,5 +1,6 @@
 import '../core/location_upload_api.dart';
 import '../utils/location_distance_service.dart';
+import 'package:qintu/utils/retry_utils.dart';
 
 /// ============================================
 /// 位置上传服务
@@ -35,11 +36,11 @@ class LocationUploadService {
   }) async {
     // 去抖：2秒内同一位置不重复上传
     if (_lastUploadLat != null && _lastUploadLng != null) {
-      final distance = _calculateHaversineDistance(
-        _lastUploadLat!,
-        _lastUploadLng!,
-        latitude,
-        longitude,
+      final distance = calculateHaversineDistance(
+        lat1: _lastUploadLat!,
+        lng1: _lastUploadLng!,
+        lat2: latitude,
+        lng2: longitude,
       );
       if (distance < 10 && _lastUploadTime != null) {
         final elapsed = DateTime.now().difference(_lastUploadTime!);
@@ -50,32 +51,22 @@ class LocationUploadService {
     }
 
     // 带重试上传
-    const maxRetries = 2;
-    Exception? lastError;
-
-    for (int attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        await _api.uploadLocation(
-          latitude: latitude,
-          longitude: longitude,
-          accuracy: accuracy,
-          speed: speed,
-          bearing: bearing,
-          altitude: altitude,
-          isNavigating: isNavigating,
-        );
-        _lastUploadLat = latitude;
-        _lastUploadLng = longitude;
-        _lastUploadTime = DateTime.now();
-        return;
-      } catch (e) {
-        lastError = e is Exception ? e : Exception(e.toString());
-        if (attempt < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 300 * (attempt + 1)));
-        }
-      }
-    }
-    throw lastError ?? Exception('位置上传失败');
+    await withRetry(
+      () => _api.uploadLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+        speed: speed,
+        bearing: bearing,
+        altitude: altitude,
+        isNavigating: isNavigating,
+      ),
+      baseDelay: const Duration(milliseconds: 300),
+      errorMessage: '位置上传失败',
+    );
+    _lastUploadLat = latitude;
+    _lastUploadLng = longitude;
+    _lastUploadTime = DateTime.now();
   }
 
   /// 删除后端存储的位置信息
@@ -84,16 +75,6 @@ class LocationUploadService {
     _lastUploadLat = null;
     _lastUploadLng = null;
     _lastUploadTime = null;
-  }
-
-  /// 计算两点间的 Haversine 距离（米）
-  double _calculateHaversineDistance(
-    double lat1,
-    double lng1,
-    double lat2,
-    double lng2,
-  ) {
-    return calculateHaversineDistance(lat1: lat1, lng1: lng1, lat2: lat2, lng2: lng2);
   }
 }
 
