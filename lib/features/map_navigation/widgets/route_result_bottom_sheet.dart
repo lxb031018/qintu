@@ -41,9 +41,6 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 是否可见（用于控制显示/隐藏动画）
   final bool isVisible;
 
-  /// 分享按钮点击回调
-  final VoidCallback? onShare;
-
   /// 开始导航按钮点击回调
   final VoidCallback? onStartNavigation;
 
@@ -56,7 +53,6 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.currentRouteType = RouteType.driving,
     this.onRouteTypeChanged,
     this.isVisible = true,
-    this.onShare,
     this.onStartNavigation,
   });
 
@@ -214,39 +210,6 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // 分享按钮
-          GestureDetector(
-            onTap: widget.onShare,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacings.md,
-                vertical: AppSpacings.xs,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBackgroundColor : AppColors.grey100,
-                borderRadius: BorderRadius.all(AppRadii.small),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.share,
-                    size: 16,
-                    color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '分享',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacings.sm),
           // 开始导航按钮
           GestureDetector(
             onTap: widget.onStartNavigation,

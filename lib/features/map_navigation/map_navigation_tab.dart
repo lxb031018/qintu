@@ -174,8 +174,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 onStartNavigation: () {
                   ref.read(mapNavigationProvider.notifier).startNavigation();
                 },
-                onShare: () {
-                },
               ),
             ),
         ],

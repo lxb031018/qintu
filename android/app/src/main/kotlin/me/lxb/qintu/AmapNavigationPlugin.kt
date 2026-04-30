@@ -29,6 +29,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import me.lxb.qintu.constant.PlatformChannels
+import me.lxb.qintu.route.RoutePathCache
 
 /**
  * 高德 Android 导航 SDK 桥接插件
@@ -234,16 +235,15 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
      * 将 AMapNaviPath 序列化为 Map 返回 Flutter
      * 只序列化 SDK 已证实可用的字段
      */
-    private fun serializeNaviPath(path: AMapNaviPath): Map<String, Any?> {
+    private fun serializeNaviPath(routeId: Int, path: AMapNaviPath): Map<String, Any?> {
         val points = path.coordList.map {
             mapOf("lat" to it.latitude, "lng" to it.longitude)
         }
 
-        // AMapNaviStep 的字段名在不同 SDK 版本中不稳定，暂时只返回坐标
-        // 导航步骤详情由后续调用 getNaviPath().getSteps() 时再适配
         val steps = emptyList<Map<String, Any?>>()
 
         return mapOf(
+            "routeId" to routeId,
             "distance" to path.allLength.toDouble(),
             "duration" to path.allTime.toDouble(),
             "tolls" to 0.0,
@@ -274,15 +274,20 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, AM
         }
 
         val allPaths = navi.naviPaths  // HashMap<Int, AMapNaviPath>
+
+        // 缓存 AMapNaviPath 供 RouteOverLay 渲染使用
+        RoutePathCache.clear()
+        RoutePathCache.putAll(allPaths)
+
         val paths = mutableListOf<Map<String, Any?>>()
         for (routeId in routeIds) {
             val path = allPaths[routeId]
             if (path != null) {
-                paths.add(serializeNaviPath(path))
+                paths.add(serializeNaviPath(routeId, path))
             }
         }
 
-        Log.d(TAG, "✅ 算路成功: ${paths.size} 条路线")
+        Log.d(TAG, "✅ 算路成功: ${paths.size} 条路线, 已缓存到 RoutePathCache")
         pendingRouteResult?.success(mapOf("routes" to paths))
         pendingRouteResult = null
     }

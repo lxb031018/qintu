@@ -68,11 +68,13 @@ class MapDisplayService {
 
     final routePoints = routes.map((r) => r.points).toList();
     final colors = routes.map((r) => RouteColors.getColor(r.routeType)).toList();
+    final routeIds = routes.map((r) => r.routeId).where((id) => id >= 0).toList();
 
     await _notifier.showRoutes(
       routePoints,
       selectIndex: selectedIndex,
       colors: colors,
+      routeIds: routeIds.isNotEmpty ? routeIds : null,
     );
   }
 

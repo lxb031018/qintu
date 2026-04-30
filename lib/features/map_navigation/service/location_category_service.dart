@@ -78,12 +78,6 @@ class LocationCategoryService {
     await _saveToStorage(history);
   }
 
-  /// 清除历史记录
-  Future<void> clearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
-  }
-
   /// 删除指定的历史记录项
   Future<void> deleteHistoryItems(Set<String> poiIds) async {
     final history = await _loadHistoryFromStorage();

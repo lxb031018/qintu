@@ -56,7 +56,9 @@ class _AmapMapViewState extends State<AmapMapView> {
   }
 
   Future<void> _onPlatformViewCreated(int id, WidgetRef ref) async {
-    final controller = AmapMapController();
+    final controller = ref.read(mapControllerProvider);
+    if (controller == null) return;
+
     ref.read(mapControllerNotifierProvider.notifier).setController(controller);
 
     controller.startLocation();

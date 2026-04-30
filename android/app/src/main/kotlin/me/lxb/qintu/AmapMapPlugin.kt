@@ -142,7 +142,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                 // 初始化功能模块组件
                 cameraController = CameraController(aMap)
-                routeRenderer = RouteRenderer(aMap)
+                routeRenderer = RouteRenderer(aMap, context)
 
                 // 初始化业务控制器
                 mapController = MapController(

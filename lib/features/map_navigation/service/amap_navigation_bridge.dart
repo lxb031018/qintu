@@ -141,6 +141,7 @@ class AmapNavigationBridge {
     final stepsList = map['steps'] as List<dynamic>? ?? [];
 
     return RouteOption(
+      routeId: (map['routeId'] as num?)?.toInt() ?? -1,
       distance: (map['distance'] as num?)?.toDouble() ?? 0,
       duration: (map['duration'] as num?)?.toDouble() ?? 0,
       strategy: map['strategy']?.toString() ?? '',

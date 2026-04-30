@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/gps/gps_service.dart';
 import '../../../utils/logger.dart';
+import '../service/gps_service_wrapper.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
@@ -206,7 +206,7 @@ class LocationInputCardCallbacks {
 class LocationInputNotifier extends Notifier<LocationInputState> {
   Timer? _debounceTimer;
   final PoiService _poiService = poiService;
-  final GpsService _gpsService = GpsService();
+  final GpsServiceWrapper _gpsService = gpsServiceWrapper;
   final LocationCategoryService _categoryService = LocationCategoryService();
   bool _hasShownList = false;
 

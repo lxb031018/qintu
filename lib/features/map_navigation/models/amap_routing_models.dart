@@ -456,6 +456,7 @@ extension DrivingStrategyExtension on DrivingStrategy {
   }
 }
 class RouteOption {
+  final int routeId;        // 原生路线 ID（用于 RouteOverLay 渲染）
   final double distance;    // 米
   final double duration;    // 秒
   final String strategy;
@@ -468,6 +469,7 @@ class RouteOption {
   final List<DriveStep>? driveSteps; // 驾车导航步骤详情（仅 driving 类型）
 
   const RouteOption({
+    this.routeId = -1,
     required this.distance,
     required this.duration,
     required this.strategy,

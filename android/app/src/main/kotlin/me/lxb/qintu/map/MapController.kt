@@ -9,6 +9,7 @@ import me.lxb.qintu.geocode.GeocodeImpl
 import me.lxb.qintu.location.LocationClientImpl
 import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.overlay.CarOverlay
+import me.lxb.qintu.route.RoutePathCache
 import me.lxb.qintu.route.RouteRenderer
 
 /**
@@ -109,8 +110,23 @@ class MapController(
             "showRoutes" -> {
                 val routesData = call.argument<List<*>>("routes")
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
-                Log.d(TAG, "📍 showRoutes: ${routesData?.size} 条路线, 选中: $selectIndex")
+                val routeIds = call.argument<List<*>>("routeIds")?.mapNotNull {
+                    (it as? Number)?.toInt()
+                }
 
+                // 优先使用 RouteOverLay（有缓存 path 且传了 routeIds）
+                if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
+                    val paths = routeIds.mapNotNull { RoutePathCache.get(it) }
+                    if (paths.isNotEmpty()) {
+                        Log.d(TAG, "📍 showRoutes: 使用 RouteOverLay 渲染 ${paths.size} 条路线")
+                        val count = routeRenderer.showRouteOverlays(paths, selectIndex)
+                        result.success(count)
+                        return
+                    }
+                }
+
+                // 回退到 Polyline 渲染
+                Log.d(TAG, "📍 showRoutes: ${routesData?.size} 条路线, 选中: $selectIndex")
                 val routes = routesData?.mapNotNull { routeData ->
                     (routeData as? List<*>)?.mapNotNull { point ->
                         (point as? Map<*, *>)?.let {

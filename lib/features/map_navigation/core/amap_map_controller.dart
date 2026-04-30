@@ -175,6 +175,7 @@ class AmapMapController {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
+    List<int>? routeIds,
   }) async {
     try {
       final routesData = routes.map((route) => route.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList()).toList();
@@ -202,6 +203,10 @@ class AmapMapController {
       if (widths != null) {
         params['widths'] = widths;
         debugPrint('   - 自定义宽度: $widths');
+      }
+      if (routeIds != null && routeIds.isNotEmpty) {
+        params['routeIds'] = routeIds;
+        debugPrint('   - RouteOverLay IDs: $routeIds');
       }
 
       final result = await _channel.invokeMethod<int>('showRoutes', params);

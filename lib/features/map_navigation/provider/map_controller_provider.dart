@@ -5,10 +5,11 @@ import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 
 final mapControllerProvider = Provider<AmapMapController?>((ref) {
+  final controller = AmapMapController();
   ref.onDispose(() {
-    // Provider 销毁时清理 controller
+    controller.dispose();
   });
-  return null;
+  return controller;
 });
 
 class MapControllerNotifier extends Notifier<AmapMapController?> {
@@ -48,8 +49,9 @@ class MapControllerNotifier extends Notifier<AmapMapController?> {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
+    List<int>? routeIds,
   }) async {
-    return await state?.showRoutes(routes, selectIndex: selectIndex, colors: colors, widths: widths);
+    return await state?.showRoutes(routes, selectIndex: selectIndex, colors: colors, widths: widths, routeIds: routeIds);
   }
 
   Future<bool> selectRoute(

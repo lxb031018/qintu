@@ -1,5 +1,6 @@
 package me.lxb.qintu.route
 
+import android.content.Context
 import android.util.Log
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.BitmapDescriptorFactory
@@ -9,11 +10,13 @@ import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
+import com.amap.api.navi.model.AMapNaviPath
+import com.amap.api.navi.view.RouteOverLay
 
 /**
  * 路线渲染器
  */
-class RouteRenderer(private val aMap: AMap?) {
+class RouteRenderer(private val aMap: AMap?, private val context: Context) {
 
     companion object {
         private const val TAG = "RouteRenderer"
@@ -23,11 +26,15 @@ class RouteRenderer(private val aMap: AMap?) {
         private const val UNSELECTED_WIDTH = 8f
     }
 
-    private val routeOverlays = mutableListOf<Polyline>()
+    private val routePolylines = mutableListOf<Polyline>()
+    private val routeOverlays = mutableListOf<RouteOverLay>()
     private var selectedRouteIndex = -1
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
 
+    /**
+     * 用坐标点列表绘制路线（Polyline 方式，无方向箭头）
+     */
     fun showRoutes(routes: List<List<Map<String, Double>>>, selectIndex: Int): Int {
         Log.d(TAG, "🗺️ [Native] showRoutes 开始执行")
 
@@ -36,7 +43,6 @@ class RouteRenderer(private val aMap: AMap?) {
             return 0
         }
 
-        // 清除旧路线
         clearRoutes()
 
         if (routes.isEmpty()) {
@@ -70,7 +76,7 @@ class RouteRenderer(private val aMap: AMap?) {
                         .width(if (isSelected) SELECTED_WIDTH else UNSELECTED_WIDTH)
                 )
 
-                routeOverlays.add(polyline)
+                routePolylines.add(polyline)
                 successCount++
                 Log.d(TAG, "✅ [Native] 成功添加路线 $index: ${points.size} 个点")
             } catch (e: Exception) {
@@ -80,9 +86,8 @@ class RouteRenderer(private val aMap: AMap?) {
 
         selectedRouteIndex = selectIndex
 
-        // 移动相机到路线起点
-        if (routeOverlays.isNotEmpty() && selectIndex < routeOverlays.size) {
-            val polyline = routeOverlays[selectIndex]
+        if (routePolylines.isNotEmpty() && selectIndex < routePolylines.size) {
+            val polyline = routePolylines[selectIndex]
             val points = polyline.points
             if (points.isNotEmpty()) {
                 aMap!!.moveCamera(
@@ -101,6 +106,54 @@ class RouteRenderer(private val aMap: AMap?) {
         return successCount
     }
 
+    /**
+     * 用 AMapNaviPath 绘制带方向箭头的路线（RouteOverLay 方式）
+     */
+    fun showRouteOverlays(paths: List<AMapNaviPath>, selectIndex: Int): Int {
+        Log.d(TAG, "🗺️ [Native] showRouteOverlays 开始执行, ${paths.size} 条路线")
+
+        if (aMap == null) {
+            Log.e(TAG, "❌ [Native] 地图未初始化!")
+            return 0
+        }
+
+        clearRoutes()
+
+        if (paths.isEmpty()) {
+            Log.w(TAG, "⚠️ [Native] paths 为空")
+            return 0
+        }
+
+        var successCount = 0
+        for ((index, path) in paths.withIndex()) {
+            try {
+                if (path.coordList.size < 2) {
+                    Log.w(TAG, "⚠️ [Native] 路线 $index 点数不足 (<2), 跳过")
+                    continue
+                }
+
+                val overlay = RouteOverLay(aMap, path, context).apply {
+                    setArrowOnRoute(true)
+                    addToMap()
+                }
+
+                routeOverlays.add(overlay)
+                successCount++
+                Log.d(TAG, "✅ [Native] 成功添加 RouteOverLay $index: ${path.coordList.size} 个点")
+
+                if (index == selectIndex) {
+                    overlay.zoomToSpan()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [Native] 添加 RouteOverLay $index 失败: ${e.message}")
+            }
+        }
+
+        selectedRouteIndex = selectIndex
+        Log.d(TAG, "🗺️ [Native] showRouteOverlays 执行完成, 返回 $successCount 条路线")
+        return successCount
+    }
+
     fun selectRoute(index: Int): Boolean {
         Log.d(TAG, "🗺️ [Native] selectRoute 开始执行: index=$index")
 
@@ -109,27 +162,29 @@ class RouteRenderer(private val aMap: AMap?) {
             return false
         }
 
-        if (routeOverlays.isEmpty()) {
-            Log.e(TAG, "❌ [Native] routeOverlays 为空")
+        val hasPolylines = routePolylines.isNotEmpty()
+        val hasOverlays = routeOverlays.isNotEmpty()
+
+        if (!hasPolylines && !hasOverlays) {
+            Log.e(TAG, "❌ [Native] 无路线可选中")
             return false
         }
 
-        if (index < 0 || index >= routeOverlays.size) {
-            Log.e(TAG, "❌ [Native] 路线索引无效: index=$index, size=${routeOverlays.size}")
-            return false
-        }
-
-        // 更新所有路线样式
-        for ((i, polyline) in routeOverlays.withIndex()) {
-            try {
-                val newColor = if (i == index) SELECTED_COLOR else UNSELECTED_COLOR
-                val newWidth = if (i == index) SELECTED_WIDTH else UNSELECTED_WIDTH
-                polyline.color = newColor
-                polyline.width = newWidth
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ [Native] 更新路线 $i 样式失败: ${e.message}")
+        // 更新 Polyline 样式
+        if (hasPolylines && index < routePolylines.size) {
+            for ((i, polyline) in routePolylines.withIndex()) {
+                try {
+                    val newColor = if (i == index) SELECTED_COLOR else UNSELECTED_COLOR
+                    val newWidth = if (i == index) SELECTED_WIDTH else UNSELECTED_WIDTH
+                    polyline.color = newColor
+                    polyline.width = newWidth
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [Native] 更新路线 $i 样式失败: ${e.message}")
+                }
             }
         }
+
+        // RouteOverLay 本身不支持选中样式切换，通过重建实现
 
         selectedRouteIndex = index
         Log.d(TAG, "✅ [Native] 选中路线 $index 完成")
@@ -137,17 +192,27 @@ class RouteRenderer(private val aMap: AMap?) {
     }
 
     fun clearRoutes() {
-        Log.d(TAG, "🗺️ [Native] clearRoutes: 开始清除 ${routeOverlays.size} 条路线")
-        for (polyline in routeOverlays) {
+        Log.d(TAG, "🗺️ [Native] clearRoutes: 清除 ${routePolylines.size} 条 Polyline + ${routeOverlays.size} 条 RouteOverLay")
+
+        for (polyline in routePolylines) {
             try {
                 polyline.remove()
             } catch (e: Exception) {
-                Log.e(TAG, "❌ [Native] 移除路线失败: ${e.message}")
+                Log.e(TAG, "❌ [Native] 移除 Polyline 失败: ${e.message}")
+            }
+        }
+        routePolylines.clear()
+
+        for (overlay in routeOverlays) {
+            try {
+                overlay.removeFromMap()
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [Native] 移除 RouteOverLay 失败: ${e.message}")
             }
         }
         routeOverlays.clear()
+
         selectedRouteIndex = -1
-        // 注意：不调用 clearMarkers()，标记独立于路线管理
     }
 
     fun setMarkers(
@@ -174,7 +239,6 @@ class RouteRenderer(private val aMap: AMap?) {
             val startPoint = LatLng(startLat, startLng)
             val endPoint = LatLng(endLat, endLng)
 
-            // 添加起点标记（绿色）
             startMarker = aMap!!.addMarker(
                 MarkerOptions()
                     .position(startPoint)
@@ -183,7 +247,6 @@ class RouteRenderer(private val aMap: AMap?) {
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
             )
 
-            // 添加终点标记（红色）
             endMarker = aMap!!.addMarker(
                 MarkerOptions()
                     .position(endPoint)
@@ -216,9 +279,6 @@ class RouteRenderer(private val aMap: AMap?) {
         }
     }
 
-    /**
-     * 显示单条路线标记（起点绿色/终点红色，可单独显示）
-     */
     fun showSingleMarker(
         lat: Double,
         lng: Double,
@@ -256,9 +316,6 @@ class RouteRenderer(private val aMap: AMap?) {
         }
     }
 
-    /**
-     * 清除单条路线标记
-     */
     fun clearSingleMarker(isStart: Boolean) {
         try {
             if (isStart) {
