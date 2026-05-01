@@ -4,6 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_strings.dart';
 import '../../theme/app_text_styles.dart';
 import '../../router/app_router.dart';
+import '../map_navigation/map_navigation_tab.dart';
 import 'widgets/theme_selector_card.dart';
 import 'widgets/logout_card.dart';
 import 'widgets/font_size_selector_card.dart';
@@ -26,7 +27,12 @@ class SettingsPage extends ConsumerWidget {
 
     return Scaffold(
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          top: ref.watch(tabBarHeightProvider) + 16,
+          left: 16,
+          right: 16,
+          bottom: 16,
+        ),
         children: [
           const FontSizeSelectorCard(),
           const SizedBox(height: 16),

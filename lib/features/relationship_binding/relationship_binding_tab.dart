@@ -4,6 +4,7 @@ import 'package:qintu/constants/app_strings.dart';
 import 'package:qintu/providers/binding_provider.dart';
 import 'package:qintu/widgets/common/app_confirm_dialog.dart';
 import 'package:qintu/utils/ui/app_snackbar.dart';
+import 'package:qintu/features/map_navigation/map_navigation_tab.dart';
 import 'widgets/binding_stats_card.dart';
 import 'widgets/binding_list_view.dart';
 import 'widgets/add_binding_button.dart';
@@ -44,20 +45,20 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => _loadData(),
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-          backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: _buildTopActionBar()),
-              SliverToBoxAdapter(child: _buildContent()),
-              SliverToBoxAdapter(child: _buildBottomButton()),
-            ],
-          ),
+      body: RefreshIndicator(
+        onRefresh: () => _loadData(),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+        backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(height: ref.watch(tabBarHeightProvider)),
+            ),
+            SliverToBoxAdapter(child: _buildTopActionBar()),
+            SliverToBoxAdapter(child: _buildContent()),
+            SliverToBoxAdapter(child: _buildBottomButton()),
+          ],
         ),
       ),
     );
