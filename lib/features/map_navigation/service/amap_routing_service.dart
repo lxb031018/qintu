@@ -32,7 +32,7 @@ class AmapRoutingService {
   /// [type] 出行方式（驾车/步行/骑行/公交）
   /// [origin] 起点坐标
   /// [destination] 终点坐标
-  /// [strategy] 策略（驾车:0-速度最快,1-费用优先,2-距离最短; 公交:0-较快捷,1-较少换乘,2-较少步行,3-最短时间,4-不乘地铁）
+  /// [strategy] 策略（驾车:0-速度最快,1-避免收费,2-距离最短,3-避免拥堵,4-避免拥堵+高速优先,5-避免收费+高速优先,6-避开高速; 公交:0-较快捷,1-较少换乘,2-较少步行,3-最短时间,4-不乘地铁）
   /// [city] 城市区号（电话区号如 "010"、"0771"），用于公共交通路线规划（自动从 origin 坐标逆地理编码获取）
   Future<List<RouteOption>> planRoute({
     required RouteType type,
@@ -40,6 +40,10 @@ class AmapRoutingService {
     required LatLng destination,
     int strategy = 0,
     String? city,
+    int maxTrans = 3,
+    int alternativeRoute = 1,
+    String? time,
+    String? timeType,
   }) async {
     // 公共交通路线需要城市区号（如 "010"、"0771"），不能是城市名
     String routeCity = city ?? '';
@@ -68,6 +72,10 @@ class AmapRoutingService {
             destination: destination,
             city: routeCity,
             mode: strategy,
+            maxTrans: maxTrans,
+            alternativeRoute: alternativeRoute,
+            time: time,
+            timeType: timeType,
           );
           if (result.isNotEmpty) {
             final supplemented = <RouteOption>[];
@@ -215,6 +223,13 @@ class AmapRoutingService {
       transitSegments: newSegments,
       userOrigin: route.userOrigin,
       userDest: route.userDest,
+      walkDistance: route.walkDistance,
+      busDistance: route.busDistance,
+      isNightBus: route.isNightBus,
+      taxiCost: route.taxiCost,
+      strategyMode: route.strategyMode,
+      strategyId: route.strategyId,
+      trafficLights: route.trafficLights,
     );
   }
 
@@ -229,6 +244,12 @@ class AmapRoutingService {
   /// 开始无 View 导航
   Future<bool> startNavigation({bool isEmulator = false, bool enableVoice = true}) =>
       AmapNavigationBridge.startNavigation(isEmulator: isEmulator, enableVoice: enableVoice);
+
+  /// 暂停导航
+  Future<bool> pauseNavigation() => AmapNavigationBridge.pauseNavigation();
+
+  /// 恢复导航
+  Future<bool> resumeNavigation() => AmapNavigationBridge.resumeNavigation();
 
   /// 停止导航
   Future<bool> stopNavigation() => AmapNavigationBridge.stopNavigation();

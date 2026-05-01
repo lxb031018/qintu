@@ -177,11 +177,15 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         case NavigationStatus.stopped:
           _handleNavEnd();
           break;
+        case NavigationStatus.recalculated:
+          _handleRouteRecalculated(navState.rawData);
+          break;
         case NavigationStatus.idle:
         case NavigationStatus.offRoute:
         case NavigationStatus.recalculating:
-          break;
-        default:
+        case NavigationStatus.gpsWeak:
+        case NavigationStatus.parallelRoad:
+        case NavigationStatus.error:
           break;
       }
       // 更新导航实时信息
@@ -206,6 +210,20 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
       }
     });
+  }
+
+  /// 处理偏航/拥堵重算完成：更新地图上的路线
+  void _handleRouteRecalculated(Map<dynamic, dynamic>? rawData) {
+    if (rawData == null) return;
+    final routesList = rawData['routes'] as List<dynamic>?;
+    if (routesList == null || routesList.isEmpty) return;
+
+    // 取第一个新路线 ID 重新渲染 RouteOverLay
+    final firstRoute = routesList.first as Map<dynamic, dynamic>;
+    final routeId = firstRoute['routeId'] as int?;
+    if (routeId != null) {
+      ref.read(mapControllerNotifierProvider)?.enterNavigationMode(routeId);
+    }
   }
 
   void _handleNavEnd() {
@@ -447,6 +465,16 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         errorMessage: '启动导航失败',
       );
     }
+  }
+
+  /// 暂停导航
+  Future<void> pauseNavigation() async {
+    await _routeService.pauseNavigation();
+  }
+
+  /// 恢复导航
+  Future<void> resumeNavigation() async {
+    await _routeService.resumeNavigation();
   }
 
   /// 停止导航

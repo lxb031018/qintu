@@ -79,10 +79,11 @@ class AmapNavigationBridge {
       }
 
       final routesList = result['routes'] as List<dynamic>? ?? [];
+      final strategyId = (result['strategyId'] as num?)?.toInt() ?? strategy;
       Logs.navigation.info('✅ SDK 算路成功：${routesList.length} 条路线');
 
       return routesList
-          .map((r) => _parseRouteResponse(r as Map<dynamic, dynamic>, type))
+          .map((r) => _parseRouteResponse(r as Map<dynamic, dynamic>, type, strategyId))
           .toList();
     } on PlatformException catch (e) {
       Logs.navigation.error('❌ SDK 算路失败：${e.message}');
@@ -106,7 +107,7 @@ class AmapNavigationBridge {
     }
   }
 
-  static RouteOption _parseRouteResponse(Map<dynamic, dynamic> map, RouteType type) {
+  static RouteOption _parseRouteResponse(Map<dynamic, dynamic> map, RouteType type, [int strategyId = 0]) {
     final pointsList = map['points'] as List<dynamic>? ?? [];
     final points = pointsList.map((p) {
       final pm = p as Map<dynamic, dynamic>;
@@ -126,6 +127,8 @@ class AmapNavigationBridge {
       tolls: (map['tolls'] as num?)?.toDouble() ?? 0,
       points: points,
       routeType: type,
+      trafficLights: (map['trafficLights'] as num?)?.toInt() ?? 0,
+      strategyId: strategyId,
       driveSteps: type == RouteType.driving
           ? stepsList
               .map((s) => _parseDriveStep(s as Map<dynamic, dynamic>))
@@ -233,8 +236,38 @@ class AmapNavigationBridge {
     }
   }
 
+  /// 暂停导航
+  static Future<bool> pauseNavigation() async {
+    try {
+      Logs.navigation.info('⏸️ 暂停导航');
+      final result = await _methodChannel.invokeMethod<bool>('pauseNavigation');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      Logs.navigation.error('❌ 暂停导航异常：${e.message}');
+      return false;
+    } catch (e) {
+      Logs.navigation.error('❌ 暂停导航未知错误：$e');
+      return false;
+    }
+  }
+
+  /// 恢复导航
+  static Future<bool> resumeNavigation() async {
+    try {
+      Logs.navigation.info('▶️ 恢复导航');
+      final result = await _methodChannel.invokeMethod<bool>('resumeNavigation');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      Logs.navigation.error('❌ 恢复导航异常：${e.message}');
+      return false;
+    } catch (e) {
+      Logs.navigation.error('❌ 恢复导航未知错误：$e');
+      return false;
+    }
+  }
+
   /// 监听导航状态
-  /// 
+  ///
   /// 返回一个 Stream，持续接收导航状态更新
   static Stream<NavigationState> get navigationStateStream {
     if (_stateStream != null) {

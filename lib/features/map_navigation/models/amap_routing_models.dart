@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qintu/models/location/lat_lng.dart';
+import 'amap_bus_models.dart';
 
 export 'package:qintu/models/location/lat_lng.dart';
 
@@ -20,14 +21,50 @@ enum TransitLineType {
 
 /// 公共交通线路信息
 class TransitLine {
-  final String name;        // 线路名称，如 "1号线"、"特11路"
-  final TransitLineType type; // 类型：公共交通/郊区
-  final int stationCount;   // 站数
+  final String name;               // 线路名称，如 "1号线"、"特11路"
+  final TransitLineType type;      // 类型：公共交通/郊区
+  final int stationCount;          // 站数
+  final String? departureStation;  // 上车站名
+  final String? arrivalStation;    // 下车站名
+  final double? duration;          // 行驶时长（秒）
+  // 公交线路详情
+  final String? busLineId;         // 线路唯一ID
+  final double? basicPrice;        // 起步价
+  final double? totalPrice;        // 全程票价
+  final String? firstBusTime;      // 首班车时间
+  final String? lastBusTime;       // 末班车时间
+  final String? originatingStation; // 始发站
+  final String? terminalStation;   // 终点站
+  final String? busCompany;        // 运营公司
+  final List<BusLineStation>? passStations;  // 途经站点
+  // 铁路详情
+  final String? trip;              // 车次号 (如 "G1234")
+  final String? railwayType;       // 铁路类型
+  final double? railwayDistance;   // 铁路距离
+  final List<RailwayStationDetail>? railwayStations;  // 详细站点
+  final List<RailwaySpace>? spaces;  // 舱位/票价
 
   const TransitLine({
     required this.name,
     required this.type,
     required this.stationCount,
+    this.departureStation,
+    this.arrivalStation,
+    this.duration,
+    this.busLineId,
+    this.basicPrice,
+    this.totalPrice,
+    this.firstBusTime,
+    this.lastBusTime,
+    this.originatingStation,
+    this.terminalStation,
+    this.busCompany,
+    this.passStations,
+    this.trip,
+    this.railwayType,
+    this.railwayDistance,
+    this.railwayStations,
+    this.spaces,
   });
 
   String get typeText {
@@ -53,16 +90,39 @@ class TransitLine {
   }
 }
 
+/// 地铁出入口
+class StationEntrance {
+  final String name;
+  final double lat;
+  final double lng;
+
+  const StationEntrance({
+    required this.name,
+    required this.lat,
+    required this.lng,
+  });
+
+  LatLng get latLng => LatLng(lat, lng);
+}
+
 /// 路线段（用于公共交通路线）
 class TransitSegment {
-  final List<TransitLine> lines;      // 该段包含的线路（公共交通）
-  final int walkingDistance;           // 该段步行距离（米）
-  final List<LatLng> points;           // 该段的坐标点（用于分段渲染不同颜色）
+  final List<TransitLine> lines;          // 该段包含的线路（公共交通）
+  final int walkingDistance;               // 该段步行距离（米）
+  final List<LatLng> points;               // 该段的坐标点（用于分段渲染不同颜色）
+  final StationEntrance? entrance;         // 进站入口（地铁）
+  final StationEntrance? exit;             // 出站出口（地铁）
+  final List<WalkStep>? walkSteps;         // 步行导航步骤详情（transit 内步行段）
+  final TaxiSegment? taxi;                 // 打车段详情
 
   const TransitSegment({
     required this.lines,
     required this.walkingDistance,
     this.points = const [],
+    this.entrance,
+    this.exit,
+    this.walkSteps,
+    this.taxi,
   });
 
   bool get hasTransit => lines.isNotEmpty;
@@ -76,6 +136,61 @@ class TransitSegment {
     }
     return 1;
   }
+}
+
+/// 铁路站点详情
+class RailwayStationDetail {
+  final String id;
+  final String name;
+  final double lat;
+  final double lng;
+  final String time;       // 到达/发车时间
+  final double wait;       // 停留时间（分钟）
+  final bool isStart;      // 是否为始发站
+  final bool isEnd;        // 是否为终点站
+
+  const RailwayStationDetail({
+    required this.id,
+    required this.name,
+    required this.lat,
+    required this.lng,
+    this.time = '',
+    this.wait = 0,
+    this.isStart = false,
+    this.isEnd = false,
+  });
+
+  LatLng get latLng => LatLng(lat, lng);
+}
+
+/// 铁路舱位/票价
+class RailwaySpace {
+  final String code;   // 舱位代码，如 "M"、"O"、"F"（一等座/二等座/商务座）
+  final double cost;   // 票价
+
+  const RailwaySpace({
+    required this.code,
+    required this.cost,
+  });
+}
+
+/// 出租车段
+class TaxiSegment {
+  final LatLng? origin;
+  final LatLng? destination;
+  final double? distance;
+  final double? duration;
+  final double? price;
+  final List<LatLng> points;
+
+  const TaxiSegment({
+    this.origin,
+    this.destination,
+    this.distance,
+    this.duration,
+    this.price,
+    this.points = const [],
+  });
 }
 
 /// ============================================
@@ -120,12 +235,12 @@ class WalkStep {
 
   const WalkStep({
     required this.instruction,
-    required this.action,
-    required this.road,
+    this.action = '',
+    this.road = '',
     required this.distance,
     required this.duration,
     required this.points,
-    required this.walkAction,
+    this.walkAction = WalkAction.unknown,
     this.lat = 0,
     this.lng = 0,
   });
@@ -443,12 +558,19 @@ class RouteOption {
   final double tolls;       // 过路费（元）或公交费用
   final List<LatLng> points; // 路线坐标点
   final RouteType routeType; // 出行方式
+  final int strategyId;      // 算路策略编号 (0-6)
   final List<TransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
   final List<WalkStep>? rideSteps; // 骑行导航步骤详情（仅 riding 类型，结构与 WalkStep 相同）
   final List<DriveStep>? driveSteps; // 驾车导航步骤详情（仅 driving 类型）
   final LatLng? userOrigin; // transit 类型的用户真实起点（用于步行补充）
   final LatLng? userDest;   // transit 类型的用户真实终点（用于步行补充）
+  final double? walkDistance;   // 总步行距离（米）
+  final double? busDistance;    // 总公交距离（米）
+  final bool? isNightBus;       // 是否包含夜班车
+  final double? taxiCost;       // 打车费用估算（元）
+  final int? strategyMode;      // 公交算路策略原始值 (0-5)
+  final int trafficLights;      // 途经交通灯数量
 
   const RouteOption({
     this.routeId = -1,
@@ -464,6 +586,13 @@ class RouteOption {
     this.driveSteps,
     this.userOrigin,
     this.userDest,
+    this.walkDistance,
+    this.busDistance,
+    this.isNightBus,
+    this.taxiCost,
+    this.strategyMode,
+    this.trafficLights = 0,
+    this.strategyId = 0,
   });
 
   /// 距离显示文本
@@ -503,15 +632,33 @@ class RouteOption {
   String get strategyText {
     switch (routeType) {
       case RouteType.driving:
-        if (strategy.contains('速度') || strategy == '0') return '速度最快';
-        if (strategy.contains('距离') || strategy == '2') return '距离最短';
-        if (strategy.contains('费用') || strategy == '1') return '费用优先';
-        return strategy;
+        switch (strategyId) {
+          case 0: return '速度最快';
+          case 1: return '避免收费';
+          case 2: return '距离最短';
+          case 3: return '避免拥堵';
+          case 4: return '避免拥堵+高速优先';
+          case 5: return '避免收费+高速优先';
+          case 6: return '避开高速';
+          default:
+            if (strategy.isNotEmpty) return strategy;
+            return '速度最快';
+        }
       case RouteType.walking:
         return '步行路线';
       case RouteType.riding:
         return '骑行路线';
       case RouteType.transit:
+        if (strategyMode != null) {
+          switch (strategyMode!) {
+            case 0: return '较快捷';
+            case 1: return '少换乘';
+            case 2: return '少步行';
+            case 3: return '不乘地铁';
+            case 4: return '较舒适';
+            case 5: return '较经济';
+          }
+        }
         return '公共交通';
     }
   }

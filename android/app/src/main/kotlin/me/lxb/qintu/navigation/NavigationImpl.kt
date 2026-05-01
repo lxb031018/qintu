@@ -9,7 +9,9 @@ import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.TransportType
 import com.amap.api.navi.enums.TravelStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
+import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
+import com.amap.api.navi.model.AMapNaviStep
 import com.amap.api.navi.model.AMapTravelInfo
 import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.navi.model.NaviPoi
@@ -34,10 +36,15 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
         const val STRATEGY_CHEAP = 1
         const val STRATEGY_SHORT = 2
+        const val STRATEGY_AVOID_CONGESTION = 3
+        const val STRATEGY_CONGESTION_HIGHWAY = 4
+        const val STRATEGY_CHEAP_HIGHWAY = 5
+        const val STRATEGY_AVOID_HIGHWAY = 6
     }
 
     private var mAMapNavi: AMapNavi? = null
     private var pendingRouteResult: MethodChannel.Result? = null
+    private var isNavigating = false
 
     /** 导航事件回调（由 Plugin 层注入，用于转发到 EventChannel） */
     var eventListener: ((Map<String, Any?>) -> Unit)? = null
@@ -64,6 +71,8 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         mAMapNavi?.selectRouteId(routeId)
     }
 
+    private var lastRouteStrategy = 0
+
     fun calculateRoute(
         routeType: String,
         fromLat: Double, fromLng: Double,
@@ -84,6 +93,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                 it.error("CALC_OVERRIDDEN", "被新的算路请求覆盖", null)
             }
             pendingRouteResult = result
+            lastRouteStrategy = strategy
 
             val from = NaviLatLng(fromLat, fromLng)
             val to = NaviLatLng(toLat, toLng)
@@ -146,6 +156,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     fun stopNavi(result: MethodChannel.Result) {
         try {
             mAMapNavi?.stopNavi()
+            isNavigating = false
             sendEvent("naviStatus", "status" to "stopped")
             result.success(true)
         } catch (e: Exception) {
@@ -162,6 +173,15 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         }
     }
 
+    fun resumeNavi(result: MethodChannel.Result) {
+        try {
+            mAMapNavi?.resumeNavi()
+            result.success(true)
+        } catch (e: Exception) {
+            result.error("RESUME_ERROR", e.message, null)
+        }
+    }
+
     fun destroy() {
         mAMapNavi?.removeAMapNaviListener(this)
         mAMapNavi = null
@@ -173,24 +193,48 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     private fun buildDrivingStrategy(strategy: Int, multiRoute: Boolean): Int {
         val navi = mAMapNavi ?: return 0
+        // strategyConvert(avoidCongestion, avoidCost, prioritiseHighway, prioritiseFastSpeed, multiRoute)
         return when (strategy) {
-            STRATEGY_CHEAP  -> navi.strategyConvert(true, true, false, false, multiRoute)
-            STRATEGY_SHORT  -> navi.strategyConvert(true, false, false, false, multiRoute)
-            else            -> navi.strategyConvert(true, false, false, true, multiRoute)
+            STRATEGY_CHEAP               -> navi.strategyConvert(true, true, false, false, multiRoute)
+            STRATEGY_SHORT               -> navi.strategyConvert(false, false, false, false, multiRoute)
+            STRATEGY_AVOID_CONGESTION    -> navi.strategyConvert(true, false, false, false, multiRoute)
+            STRATEGY_CONGESTION_HIGHWAY  -> navi.strategyConvert(true, false, true, false, multiRoute)
+            STRATEGY_CHEAP_HIGHWAY       -> navi.strategyConvert(true, true, true, false, multiRoute)
+            STRATEGY_AVOID_HIGHWAY       -> navi.strategyConvert(false, false, false, false, multiRoute)
+            else                         -> navi.strategyConvert(true, false, false, true, multiRoute)
         }
     }
 
     private fun serializeNaviPath(routeId: Int, path: AMapNaviPath): Map<String, Any?> {
         val points = path.coordList.map { it.toCoordinateMap() }
+        val steps = path.steps?.map { serializePathStep(it) } ?: emptyList()
         return mapOf(
             "routeId" to routeId,
             "distance" to path.allLength.toDouble(),
             "duration" to path.allTime.toDouble(),
-            "tolls" to 0.0,
+            "tolls" to path.tollCost.toDouble(),
             "strategy" to (path.labels ?: ""),
-            "trafficLights" to 0,
+            "trafficLights" to (path.lightList?.size ?: 0),
             "points" to points,
-            "steps" to emptyList<Map<String, Any?>>()
+            "steps" to steps
+        )
+    }
+
+    private fun serializePathStep(step: AMapNaviStep): Map<String, Any?> {
+        val coords = step.coords?.map { it.toCoordinateMap() } ?: emptyList()
+        val firstCoord = coords.firstOrNull()
+        return mapOf(
+            "instruction" to "",
+            "action" to step.iconType.toString(),
+            "road" to "",
+            "distance" to step.length.toDouble(),
+            "duration" to step.time.toDouble(),
+            "tmcStatus" to "",
+            "lat" to (firstCoord?.get("lat") ?: 0.0),
+            "lng" to (firstCoord?.get("lng") ?: 0.0),
+            "points" to coords,
+            "startIndex" to step.startIndex,
+            "endIndex" to step.endIndex
         )
     }
 
@@ -234,7 +278,17 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         }
 
         Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，已缓存到 RoutePathCache")
-        pendingRouteResult?.success(mapOf("routes" to paths))
+
+        // 如果正在导航中算路成功（偏航/拥堵重算），通知 Flutter 更新路线
+        if (isNavigating) {
+            sendEvent("naviStatus", "status" to "recalculated", "routes" to paths)
+            Log.d(TAG, "📡 重算完成，已通知 Flutter 更新路线")
+        }
+
+        pendingRouteResult?.success(mapOf(
+            "routes" to paths,
+            "strategyId" to lastRouteStrategy
+        ))
         pendingRouteResult = null
     }
 
@@ -264,6 +318,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     override fun onStartNavi(type: Int) {
         Log.d(TAG, "🚗 导航已启动 type=$type")
+        isNavigating = true
         sendEvent("naviStatus", "status" to "navigating", "naviType" to type)
     }
 
@@ -296,6 +351,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     override fun onArriveDestination() {
         Log.d(TAG, "🏁 已到达目的地")
+        isNavigating = false
         sendEvent("naviStatus", "status" to "arrived")
     }
 
@@ -324,14 +380,48 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     override fun onGetNavigationText(s: String?) {}
 
     override fun onEndEmulatorNavi() {
+        isNavigating = false
         sendEvent("naviStatus", "status" to "stopped")
     }
 
     override fun onGpsOpenStatus(enabled: Boolean) {}
 
-    override fun updateCameraInfo(cameras: Array<out com.amap.api.navi.model.AMapNaviCameraInfo>?) {}
+    override fun updateCameraInfo(cameras: Array<out AMapNaviCameraInfo>?) {
+        if (cameras == null || cameras.isEmpty()) return
+        val cameraList = cameras.map { camera ->
+            mapOf(
+                "type" to camera.cameraType,
+                "speed" to camera.cameraSpeed,
+                "distance" to camera.cameraDistance,
+                "lat" to camera.y,
+                "lng" to camera.x
+            )
+        }
+        sendEvent("cameraInfo", "cameras" to cameraList)
+    }
 
-    override fun updateIntervalCameraInfo(cameraInfo: com.amap.api.navi.model.AMapNaviCameraInfo?, cameraInfo1: com.amap.api.navi.model.AMapNaviCameraInfo?, interval: Int) {}
+    override fun updateIntervalCameraInfo(
+        cameraInfo: AMapNaviCameraInfo?,
+        cameraInfo1: AMapNaviCameraInfo?,
+        interval: Int
+    ) {
+        // 区间测速：cameraInfo=进入点, cameraInfo1=离开点
+        val cameras = mutableListOf<Map<String, Any?>>()
+        cameraInfo?.let {
+            cameras.add(mapOf(
+                "type" to it.cameraType,
+                "speed" to it.cameraSpeed,
+                "distance" to it.cameraDistance,
+                "lat" to it.y,
+                "lng" to it.x,
+                "intervalRemainDistance" to it.intervalRemainDistance,
+                "averageSpeed" to it.averageSpeed
+            ))
+        }
+        if (cameras.isNotEmpty()) {
+            sendEvent("cameraInterval", "cameras" to cameras)
+        }
+    }
 
     override fun onServiceAreaUpdate(serviceAreaInfos: Array<out com.amap.api.navi.model.AMapServiceAreaInfo>?) {}
 
@@ -345,7 +435,9 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     override fun showLaneInfo(laneInfo: com.amap.api.navi.model.AMapLaneInfo?) {}
     override fun hideLaneInfo() {}
 
-    override fun notifyParallelRoad(parallelRoadType: Int) {}
+    override fun notifyParallelRoad(parallelRoadType: Int) {
+        sendEvent("naviStatus", "status" to "parallelRoad", "parallelRoadType" to parallelRoadType)
+    }
 
     override fun updateAimlessModeStatistics(cruiseInfo: com.amap.api.navi.model.AimLessModeStat?) {}
 
@@ -354,7 +446,17 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     override fun onPlayRing(ringType: Int) {}
     override fun onTrafficStatusUpdate() {}
 
-    override fun OnUpdateTrafficFacility(trafficFacilityInfo: com.amap.api.navi.model.AMapNaviTrafficFacilityInfo?) {}
+    override fun OnUpdateTrafficFacility(trafficFacilityInfo: com.amap.api.navi.model.AMapNaviTrafficFacilityInfo?) {
+        trafficFacilityInfo?.let {
+            sendEvent("trafficFacility",
+                "lat" to it.latitude,
+                "lng" to it.longitude,
+                "type" to it.type,
+                "distance" to it.distance,
+                "limitSpeed" to it.limitSpeed
+            )
+        }
+    }
 
     override fun OnUpdateTrafficFacility(trafficFacilityInfos: Array<out com.amap.api.navi.model.AMapNaviTrafficFacilityInfo>?) {}
 }

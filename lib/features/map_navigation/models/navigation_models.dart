@@ -6,7 +6,9 @@ enum NavigationStatus {
   gpsWeak,
   error,
   recalculating,
+  recalculated,
   stopped,
+  parallelRoad,
 }
 
 class NavigationState {
@@ -20,6 +22,7 @@ class NavigationState {
   final String? roadName;
   final String? naviText;
   final int naviTextType;
+  final Map<dynamic, dynamic>? rawData;
 
   NavigationState({
     required this.status,
@@ -32,6 +35,7 @@ class NavigationState {
     this.roadName,
     this.naviText,
     this.naviTextType = 0,
+    this.rawData,
   });
 
   /// 从 EventChannel 多类型事件中解析
@@ -66,8 +70,10 @@ class NavigationState {
           case 'arrived': status = NavigationStatus.arrived; break;
           case 'stopped': status = NavigationStatus.stopped; break;
           case 'recalculating': status = NavigationStatus.recalculating; break;
+          case 'recalculated': status = NavigationStatus.recalculated; break;
           case 'ready': status = NavigationStatus.idle; break;
           case 'error': status = NavigationStatus.error; break;
+          case 'parallelRoad': status = NavigationStatus.parallelRoad; break;
           default: status = NavigationStatus.idle;
         }
         break;
@@ -89,6 +95,7 @@ class NavigationState {
       currentLng: lng,
       roadName: roadName,
       naviText: naviText,
+      rawData: map,
     );
   }
 
