@@ -57,67 +57,143 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
     final rejectedCount = sentRequests.where((r) => r.isRejected).length;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(110),
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              // "下拉刷新"提示
-              Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 4),
-                child: Text(
-                  AppStrings.pullToRefresh,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).hintColor,
+      body: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // "下拉刷新"提示
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 4),
+                  child: Text(
+                    AppStrings.pullToRefresh,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).hintColor,
+                    ),
                   ),
                 ),
-              ),
-              // Tab Bar
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  _buildTab(Icons.logout_rounded, AppStrings.sentRequests, pendingCount),
-                  _buildTab(Icons.login_rounded, AppStrings.receivedRequests, receivedCount),
-                  _buildTab(Icons.cancel_outlined, AppStrings.rejectedRequests, rejectedCount),
-                ],
-              ),
-            ],
+                // Tab Bar
+                _buildCustomTabBar(
+                  context,
+                  pendingCount: pendingCount,
+                  receivedCount: receivedCount,
+                  rejectedCount: rejectedCount,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          SentRequestsTab(
-            onRefresh: _loadNotifications,
-            onCancel: _cancelRequest,
-          ),
-          ReceivedRequestsTab(
-            onRefresh: _loadNotifications,
-            onConfirm: _confirmRequest,
-            onReject: _rejectRequest,
-          ),
-          RejectedRequestsTab(
-            onRefresh: _loadNotifications,
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                SentRequestsTab(
+                  onRefresh: _loadNotifications,
+                  onCancel: _cancelRequest,
+                ),
+                ReceivedRequestsTab(
+                  onRefresh: _loadNotifications,
+                  onConfirm: _confirmRequest,
+                  onReject: _rejectRequest,
+                ),
+                RejectedRequestsTab(
+                  onRefresh: _loadNotifications,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// 构建带角标的 Tab
-  Widget _buildTab(IconData icon, String label, int count) {
-    return Tab(
-      icon: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon),
-          TabBadge(count: count),
-        ],
-      ),
-      text: label,
+  /// 构建自定义 Tab Bar（避免 Flutter 内置 Tab 的 1px 溢出问题）
+  Widget _buildCustomTabBar(
+    BuildContext context, {
+    required int pendingCount,
+    required int receivedCount,
+    required int rejectedCount,
+  }) {
+    final tabs = [
+      (Icons.logout_rounded, AppStrings.sentRequests, pendingCount),
+      (Icons.login_rounded, AppStrings.receivedRequests, receivedCount),
+      (Icons.cancel_outlined, AppStrings.rejectedRequests, rejectedCount),
+    ];
+
+    return AnimatedBuilder(
+      animation: _tabController,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Row(
+            children: List.generate(tabs.length, (i) {
+              final (icon, label, count) = tabs[i];
+              final isSelected = _tabController.index == i;
+              final tabColor = isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).hintColor;
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => _tabController.animateTo(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.only(top: 8, bottom: 6),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 20, color: tabColor),
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight:
+                                      isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: tabColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (count > 0) ...[
+                              const SizedBox(width: 3),
+                              TabBadge(count: count),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
     );
   }
 
