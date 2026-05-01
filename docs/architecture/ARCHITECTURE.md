@@ -16,8 +16,7 @@ Feature 模块遵循 **api → service → provider → widget** 四层分离：
 ```
 lib/
 ├── core/http/                 # HTTP 客户端
-│   ├── api_client.dart       # 后端 API（单例）
-│   └── third_party_api_client.dart  # 第三方 API（单例）
+│   └── api_client.dart       # 后端 API（单例）
 ├── features/                  # 功能模块（自包含）
 │   └── {module}/
 │       ├── core/            # api 层
@@ -34,7 +33,7 @@ lib/
 | 类型 | 客户端 | 用途 |
 |------|--------|------|
 | 后端 API | `ApiClient` | 带 Token 认证 |
-| 第三方 API | `ThirdPartyApiClient` | API Key 认证（高德地图等） |
+| 第三方 SDK | Platform Channel 桥接 | 通过原生 SDK 调用（高德地图等） |
 
 ## Provider 管理
 

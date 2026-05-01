@@ -20,4 +20,8 @@ object PlatformChannels {
     const val MAP_VIEW = "com.qintu/amap_map_view"
     // 公交搜索
     const val BUS_SEARCH = "com.qintu/amap_bus_search"
+    // 地理编码（正向 + 逆向）
+    const val GEOCODE = "com.qintu/amap_geocode"
+    // POI 搜索
+    const val POI_SEARCH = "com.qintu/amap_poi_search"
 }

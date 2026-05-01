@@ -19,5 +19,11 @@ class MainActivity : FlutterActivity() {
 
         // 注册公交搜索插件
         flutterEngine.plugins.add(me.lxb.qintu.bus.AmapBusSearchPlugin())
+
+        // 注册地理编码插件
+        flutterEngine.plugins.add(me.lxb.qintu.geocode.GeocodePlugin())
+
+        // 注册 POI 搜索插件
+        flutterEngine.plugins.add(me.lxb.qintu.poi.PoiSearchPlugin())
     }
 }

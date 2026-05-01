@@ -41,7 +41,7 @@ Feature 模块：api → service → provider → widget
 ## HTTP 客户端
 
 - 后端 API：`ApiClient`（`lib/core/http/api_client.dart`）
-- 第三方 API：`ThirdPartyApiClient`（`lib/core/http/third_party_api_client.dart`）
+- 第三方 SDK：通过 Platform Channel 调用 Android 原生 SDK，桥接层在 `lib/features/*/core/*_bridge.dart`
 - 禁止：硬编码 URL、创建独立 Dio 实例
 
 ## Provider 管理
@@ -95,7 +95,7 @@ Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用*
    各层单向依赖：widget → provider → service → api，是否每层职责正确
 2. **禁止逆向调用**：provider 不能直接调 api 层，必须过 service 层
 3. **禁止在 ui 层写业务逻辑**
-4. **使用统一 HTTP 客户端**：后端用 `ApiClient`，第三方用 `ThirdPartyApiClient`
+4. **使用统一 HTTP 客户端**：后端用 `ApiClient`；第三方 SDK 通过原生 Platform Channel 调用
 5. **清理死代码**：删除不再使用的文件、函数、import
 6. **更新目录/函数名**：使用清晰、合适的命名
 

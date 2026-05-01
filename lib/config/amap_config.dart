@@ -49,16 +49,6 @@ class AmapConfig {
   /// 定位精度
   static const LocationAccuracy defaultLocationAccuracy = LocationAccuracy.high;
 
-  /// 路线规划 API 基础地址
-  static String get routingApiBaseUrl => 'https://restapi.amap.com/v3/direction';
-
-  /// 地理编码 API 基础地址
-  static String get geocodeApiBaseUrl => 'https://restapi.amap.com/v3/geocode';
-
-  /// 默认路线规划策略
-  /// 0-速度优先，1-费用优先，2-距离优先，3-不计算费用
-  static const int defaultRoutingStrategy = 0;
-
   /// 是否启用调试日志
   static const bool enableDebugLog = kDebugMode;
 }

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/platform_channels.dart';
 import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
-import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 
 /// ============================================
 /// 地图控制器
@@ -13,10 +12,9 @@ import 'package:qintu/features/map_navigation/models/map_overlay_models.dart';
 /// 封装与原生 Android 高德地图的交互（Platform Channel）
 ///
 /// 方法分类：
-/// - 定位：startLocation, moveToMyLocation, getCurrentLocation, stopLocation
+/// - 定位：startLocation, moveToMyLocation, getCurrentLocation
 /// - 地图操作：moveCamera, setRouteMarkers, clearRouteMarkers
-/// - 路线绘制：addPolyline, showRoutes, selectRoute, clearRoutes
-/// - POI 标注：addPoiMarkers, showPoiOverlay, clearPoiMarkers
+/// - 路线绘制：showRoutes, selectRoute, clearRoutes
 ///
 /// 注意：此类属于 core 层（平台 API 封装）
 /// ============================================
@@ -92,11 +90,6 @@ class AmapMapController {
     }
   }
 
-  /// 释放资源
-  Future<void> stopLocation() async {
-    await _channel.invokeMethod('stopLocation');
-  }
-
   /// 移动相机
   Future<void> moveCamera({
     required double lat,
@@ -107,15 +100,6 @@ class AmapMapController {
       'lat': lat,
       'lng': lng,
       'zoom': zoom,
-    });
-  }
-
-  /// 绘制路线
-  Future<void> addPolyline(List<LatLng> points, {int color = 0xFF1890FF, double width = 8.0}) async {
-    await _channel.invokeMethod('addPolyline', {
-      'points': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
-      'color': color,
-      'width': width,
     });
   }
 
@@ -263,29 +247,6 @@ class AmapMapController {
       debugPrint('❌ [Flutter] 清除路线标记失败: $e');
       return false;
     }
-  }
-
-  /// 添加 POI 标注点
-  Future<void> addPoiMarkers(List<PoiMarkerData> pois) async {
-    if (pois.isEmpty) return;
-
-    final markerData = pois.map((poi) => {
-      'id': poi.id,
-      'name': poi.name,
-      'address': poi.address ?? '',
-      'lat': poi.position.latitude,
-      'lng': poi.position.longitude,
-      'snippet': poi.snippet ?? '',
-    }).toList();
-
-    await _channel.invokeMethod('addPoiMarkers', {
-      'markers': markerData,
-    });
-  }
-
-  /// 清除所有 POI 标注点
-  Future<void> clearPoiMarkers() async {
-    await _channel.invokeMethod('clearPoiMarkers');
   }
 
   /// 显示单条路线标记（起点绿色/终点红色，可单独显示）

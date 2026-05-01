@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
+import '../models/amap_bus_models.dart';
 import '../models/amap_routing_models.dart';
 
 export '../models/amap_bus_models.dart';
@@ -229,6 +230,74 @@ class AmapBusSearchBridge {
       return count;
     }
     return (walk['polyline'] as List<dynamic>?)?.length ?? 0;
+  }
+
+  /// 搜索公交站台
+  static Future<BusStationResult> searchBusStation(String keyword, {String city = ''}) async {
+    try {
+      Logs.ui.info('🔍 原生公交站搜索: $keyword, city=$city');
+      final result = await _methodChannel.invokeMapMethod('searchBusStation', {
+        'keyword': keyword,
+        'city': city,
+      });
+      if (result == null) {
+        Logs.ui.warning('⚠️ 原生公交站搜索返回为空');
+        return const BusStationResult(stations: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+      }
+      return BusStationResult.fromMap(result);
+    } on PlatformException catch (e) {
+      Logs.ui.warning('❌ 原生公交站搜索失败: ${e.message}');
+      return const BusStationResult(stations: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+    } catch (e) {
+      Logs.ui.warning('❌ 原生公交站搜索异常: $e');
+      return const BusStationResult(stations: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+    }
+  }
+
+  /// 按名称搜索公交线路
+  static Future<BusLineResult> searchBusLineByName(String keyword, {String city = ''}) async {
+    try {
+      Logs.ui.info('🔍 原生公交线路搜索: $keyword, city=$city');
+      final result = await _methodChannel.invokeMapMethod('searchBusLineByName', {
+        'keyword': keyword,
+        'city': city,
+      });
+      if (result == null) {
+        Logs.ui.warning('⚠️ 原生公交线路搜索返回为空');
+        return const BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+      }
+      return BusLineResult.fromMap(result);
+    } on PlatformException catch (e) {
+      Logs.ui.warning('❌ 原生公交线路搜索失败: ${e.message}');
+      return const BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+    } catch (e) {
+      Logs.ui.warning('❌ 原生公交线路搜索异常: $e');
+      return const BusLineResult(lines: [], pageCount: 0, suggestionKeywords: [], suggestionCities: []);
+    }
+  }
+
+  /// 按ID查询公交线路详情
+  static Future<BusLineDetail?> searchBusLineById(String lineId, {String city = ''}) async {
+    try {
+      Logs.ui.info('🔍 原生公交线路详情查询: $lineId, city=$city');
+      final result = await _methodChannel.invokeMapMethod('searchBusLineById', {
+        'lineId': lineId,
+        'city': city,
+      });
+      if (result == null) {
+        Logs.ui.warning('⚠️ 原生公交线路详情返回为空');
+        return null;
+      }
+      final lines = (result['lines'] as List<dynamic>?) ?? [];
+      if (lines.isEmpty) return null;
+      return BusLineDetail.fromMap(lines[0] as Map<dynamic, dynamic>);
+    } on PlatformException catch (e) {
+      Logs.ui.warning('❌ 原生公交线路详情失败: ${e.message}');
+      return null;
+    } catch (e) {
+      Logs.ui.warning('❌ 原生公交线路详情异常: $e');
+      return null;
+    }
   }
 
   static TransitLineType _mapBusType(String type) {

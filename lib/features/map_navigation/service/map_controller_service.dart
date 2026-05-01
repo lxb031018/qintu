@@ -1,6 +1,5 @@
 import 'package:qintu/models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
-import '../models/map_overlay_models.dart';
 
 /// ============================================
 /// 地图控制器服务（service 层）
@@ -32,10 +31,6 @@ class MapControllerService {
   }) => _controller.moveCamera(lat: lat, lng: lng, zoom: zoom);
 
   // ==================== 路线 ====================
-
-  Future<void> addPolyline(List<LatLng> points,
-          {int color = 0xFF1890FF, double width = 8.0}) =>
-      _controller.addPolyline(points, color: color, width: width);
 
   Future<int?> showRoutes(
     List<List<LatLng>> routes, {
@@ -84,11 +79,6 @@ class MapControllerService {
 
   Future<bool> clearSingleMarker(bool isStart) =>
       _controller.clearSingleMarker(isStart);
-
-  Future<void> addPoiMarkers(List<PoiMarkerData> pois) =>
-      _controller.addPoiMarkers(pois);
-
-  Future<void> clearPoiMarkers() => _controller.clearPoiMarkers();
 
   // ==================== 导航/车载 ====================
 

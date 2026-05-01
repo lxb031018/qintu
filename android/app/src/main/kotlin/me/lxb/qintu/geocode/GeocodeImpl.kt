@@ -3,9 +3,12 @@ package me.lxb.qintu.geocode
 import android.content.Context
 import android.util.Log
 import com.amap.api.services.core.AMapException
+import com.amap.api.services.core.LatLonPoint
 import com.amap.api.services.geocoder.GeocodeQuery
 import com.amap.api.services.geocoder.GeocodeResult
 import com.amap.api.services.geocoder.GeocodeSearch
+import com.amap.api.services.geocoder.RegeocodeAddress
+import com.amap.api.services.geocoder.RegeocodeQuery
 import com.amap.api.services.geocoder.RegeocodeResult
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.util.AMapPrivacy
@@ -20,6 +23,7 @@ class GeocodeImpl(context: Context) : GeocodeSource {
     }
 
     private val geocodeCallbacks = mutableMapOf<String, MethodChannel.Result>()
+    private val regeocodeCallbacks = mutableMapOf<String, MethodChannel.Result>()
     private val geocodeSearch: GeocodeSearch = GeocodeSearch(context)
 
     init {
@@ -57,7 +61,33 @@ class GeocodeImpl(context: Context) : GeocodeSource {
             }
 
             override fun onRegeocodeSearched(result: RegeocodeResult?, rCode: Int) {
-                // 逆地理编码（坐标转地址），暂不使用
+                if (rCode == AMapException.CODE_AMAP_SUCCESS && result != null) {
+                    val address = result.regeocodeAddress
+                    if (address != null) {
+                        Log.d(TAG, "✅ 逆地理编码成功: ${address.city}, cityCode=${address.cityCode}")
+                        val callback = regeocodeCallbacks.values.firstOrNull()
+                        if (callback != null) {
+                            callback.success(mapOf(
+                                "city" to (address.city ?: ""),
+                                "cityCode" to (address.cityCode ?: ""),
+                                "adCode" to (address.adCode ?: ""),
+                                "district" to (address.district ?: ""),
+                                "province" to (address.province ?: ""),
+                            ))
+                            regeocodeCallbacks.clear()
+                        }
+                    } else {
+                        Log.w(TAG, "⚠️ 逆地理编码无结果")
+                        val callback = regeocodeCallbacks.values.firstOrNull()
+                        callback?.error("REGEOCODE_NO_RESULT", "未匹配到地址信息", null)
+                        regeocodeCallbacks.clear()
+                    }
+                } else {
+                    Log.e(TAG, "❌ 逆地理编码失败: $rCode")
+                    val callback = regeocodeCallbacks.values.firstOrNull()
+                    callback?.error("REGEOCODE_ERROR", "逆地理编码失败: $rCode", null)
+                    regeocodeCallbacks.clear()
+                }
             }
         })
     }
@@ -68,5 +98,14 @@ class GeocodeImpl(context: Context) : GeocodeSource {
 
         val query = GeocodeQuery(address, "010") // 010 是全国城市代码
         geocodeSearch.getFromLocationNameAsyn(query)
+    }
+
+    override fun regeocode(lat: Double, lng: Double, callback: MethodChannel.Result) {
+        Log.d(TAG, "🔄 开始逆地理编码: $lat, $lng")
+        regeocodeCallbacks["current"] = callback
+
+        val point = LatLonPoint(lat, lng)
+        val query = RegeocodeQuery(point, 200f, GeocodeSearch.AMAP)
+        geocodeSearch.getFromLocationAsyn(query)
     }
 }
