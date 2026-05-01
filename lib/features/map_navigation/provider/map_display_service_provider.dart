@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qintu/utils/logger.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import 'location_input_provider.dart';
@@ -86,7 +87,16 @@ class MapDisplayService {
     final segmentDashed = <bool>[];
 
     for (final seg in segments) {
-      if (seg.points.isEmpty) continue;
+      final typeLabel = seg.segmentType == 0 ? '步行' : (seg.segmentType == 1 ? '公交' : '地铁');
+      if (seg.points.isEmpty) {
+        Logs.map.warning('⚠️ 渲染侧 segment [$typeLabel] points 为空，跳过渲染');
+        continue;
+      }
+      if (seg.points.length <= 2) {
+        Logs.map.warning('⚠️ 渲染侧 segment [$typeLabel] points 仅 ${seg.points.length} 个，可能渲染为直线');
+      } else {
+        Logs.map.debug('✅ 渲染侧 segment [$typeLabel] points 共 ${seg.points.length} 个');
+      }
       segmentPoints.add(seg.points);
       segmentColors.add(_segmentColor(seg));
       segmentWidths.add(_segmentWidth(seg));

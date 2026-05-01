@@ -355,6 +355,11 @@ class BusSearchImpl(context: Context) {
 
     private fun serializeRouteBusLine(item: RouteBusLineItem): Map<String, Any?> {
         val polyline = item.polyline?.map { it.toCoordinateMap() } ?: emptyList()
+        if (polyline.isEmpty()) {
+            Log.w(TAG, "⚠️ 公交线路 [${item.busLineName}] polyline 为空！起点=${item.departureBusStation?.busStationName} 终点=${item.arrivalBusStation?.busStationName}")
+        } else {
+            Log.d(TAG, "✅ 公交线路 [${item.busLineName}] polyline 共 ${polyline.size} 个坐标点")
+        }
         val passStations = item.passStations?.map { station ->
             mapOf(
                 "id" to (station.busStationId ?: ""),

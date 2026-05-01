@@ -179,6 +179,13 @@ class AmapBusSearchBridge {
           ));
 
           final polyline = bl['polyline'] as List<dynamic>? ?? [];
+          if (polyline.isEmpty) {
+            Logs.map.warning('⚠️ Dart 侧公交线路 [${bl['name']}] polyline 为空');
+          } else if (polyline.length <= 2) {
+            Logs.map.warning('⚠️ Dart 侧公交线路 [${bl['name']}] polyline 仅 ${polyline.length} 个点，可能渲染为直线');
+          } else {
+            Logs.map.debug('✅ Dart 侧公交线路 [${bl['name']}] polyline 共 ${polyline.length} 个点');
+          }
           for (final p in polyline) {
             segmentPoints.add(LatLng(
               (p['lat'] as num).toDouble(),
