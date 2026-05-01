@@ -13,7 +13,7 @@ import 'transit_itinerary_card.dart';
 /// 供用户选择不同的路线方案
 ///
 /// 功能特性：
-/// - 横向显示多条路线选项（距离、耗时）
+/// - 纵向全宽显示多条路线选项（距离、耗时、策略、线路名称）
 /// - 支持路线选择交互
 /// - 空状态提示
 /// - 暗黑模式适配
@@ -76,6 +76,18 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   /// 最大拖动距离
   static const double _maxDragOffset = 120;
 
+  /// 当前查看详情的路线（仅公交模式，null = 列表页）
+  RouteResultItem? _detailRoute;
+
+  @override
+  void didUpdateWidget(RouteResultBottomSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 切换出行方式时退出详情
+    if (oldWidget.currentRouteType != widget.currentRouteType) {
+      _detailRoute = null;
+    }
+  }
+
   void _onVerticalDragStart(DragStartDetails details) {
     setState(() {
       _isDragging = true;
@@ -108,6 +120,9 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     // 计算拖动时的偏移量
     final double translateY = _isDragging ? _dragOffset : 0;
 
+    final isTransit = widget.currentRouteType == RouteType.transit;
+    final showDetail = isTransit && _detailRoute != null;
+
     return GestureDetector(
       onVerticalDragStart: _onVerticalDragStart,
       onVerticalDragUpdate: _onVerticalDragUpdate,
@@ -128,23 +143,19 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 拖动条（视觉提示）
-              _buildDragHandle(isDark),
-              // 路线列表（横向）
-              if (widget.routes.isEmpty)
-                _buildEmptyState(isDark)
-              else
-                _buildRouteList(isDark),
-              // 公交行程详情
-              if (widget.routes.isNotEmpty && widget.currentRouteType == RouteType.transit)
-                _buildTransitItinerary(isDark),
-              // 分享和开始导航按钮
-              if (widget.routes.isNotEmpty) _buildActionButtons(isDark),
-            ],
-          ),
+          child: showDetail
+              ? _buildDetailPage(isDark)
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildDragHandle(isDark),
+                    if (widget.routes.isEmpty)
+                      _buildEmptyState(isDark)
+                    else
+                      _buildRouteList(isDark),
+                    if (widget.routes.isNotEmpty) _buildActionButtons(isDark),
+                  ],
+                ),
         ),
       ),
     );
@@ -189,47 +200,126 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   }
 
   Widget _buildRouteList(bool isDark) {
-    return SizedBox(
-      height: 100,
+    final isTransit = widget.currentRouteType == RouteType.transit;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 240),
       child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacings.md,
-          vertical: AppSpacings.sm,
-        ),
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(AppSpacings.sm),
         itemCount: widget.routes.length,
-        separatorBuilder: (context, index) => const SizedBox(width: AppSpacings.sm),
+        separatorBuilder: (context, index) => const SizedBox(height: AppSpacings.sm),
         itemBuilder: (context, index) => _RouteCard(
           route: widget.routes[index],
           isSelected: index == widget.selectedIndex,
-          onTap: () => widget.onRouteSelected?.call(index),
+          onTap: () {
+            if (isTransit) {
+              setState(() => _detailRoute = widget.routes[index]);
+            }
+            widget.onRouteSelected?.call(index);
+          },
           isDark: isDark,
+          currentRouteType: widget.currentRouteType,
         ),
       ),
     );
   }
 
-  Widget _buildTransitItinerary(bool isDark) {
-    final selectedRoute = widget.selectedIndex < widget.routes.length
-        ? widget.routes[widget.selectedIndex]
-        : null;
+  Widget _buildDetailPage(bool isDark) {
+    final route = _detailRoute;
+    if (route == null) return const SizedBox.shrink();
 
-    if (selectedRoute == null || selectedRoute.transitSegments == null || selectedRoute.transitSegments!.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final segments = route.transitSegments;
+    if (segments == null || segments.isEmpty) return const SizedBox.shrink();
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 260),
-      child: SingleChildScrollView(
-        child: TransitItineraryCard(
-          segments: selectedRoute.transitSegments!,
-          totalDistance: double.tryParse(selectedRoute.distance) ?? 0,
-          totalDuration: double.tryParse(selectedRoute.duration) ?? 0,
-          tolls: selectedRoute.tolls ?? 0,
-          walkDistance: selectedRoute.walkDistance,
-          transferCount: selectedRoute.transferCount,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 顶部：返回按钮 + 标题
+        Padding(
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => setState(() => _detailRoute = null),
+                child: const Icon(Icons.arrow_back, size: 20, color: AppColors.grey600),
+              ),
+              const SizedBox(width: AppSpacings.sm),
+              Text(
+                '行程详情',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkTextColor : AppColors.textColor,
+                ),
+              ),
+              const Spacer(),
+              // 路线摘要：距离 + 耗时
+              Text(
+                '${route.formattedDistance} · ${route.formattedDuration}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        // 分隔线
+        Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
+        // 中部：行程时间线
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: AppSpacings.sm),
+            child: TransitItineraryCard(
+              segments: segments,
+              totalDistance: route.distance,
+              totalDuration: route.duration,
+              tolls: route.tolls ?? 0,
+              walkDistance: route.walkDistance,
+              transferCount: route.transferCount,
+            ),
+          ),
+        ),
+        // 底部：操作按钮
+        Padding(
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: widget.onStartNavigation,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacings.md,
+                    vertical: AppSpacings.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.grey600,
+                    borderRadius: BorderRadius.all(AppRadii.small),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.map, size: 16, color: isDark ? AppColors.darkTextColor : Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        '查看路线图',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextColor : Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -237,12 +327,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     final isTransit = widget.currentRouteType == RouteType.transit;
 
     return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSpacings.md,
-        right: AppSpacings.md,
-        bottom: AppSpacings.md,
-        top: AppSpacings.sm,
-      ),
+      padding: const EdgeInsets.all(AppSpacings.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -288,7 +373,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
 /// ============================================
 /// 路线选项卡片
 ///
-/// 显示单条路线：距离、耗时
+/// 全宽横向布局：左侧距离+耗时，中部策略+线路名，右侧费用信息
 /// ============================================
 
 class _RouteCard extends StatelessWidget {
@@ -296,91 +381,169 @@ class _RouteCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback? onTap;
   final bool isDark;
+  final RouteType currentRouteType;
 
   const _RouteCard({
     required this.route,
     required this.isSelected,
     this.onTap,
     required this.isDark,
+    required this.currentRouteType,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isTransit = currentRouteType == RouteType.transit;
+    final transitLines = route.transitLineNames;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 130,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacings.sm,
-          vertical: AppSpacings.xs,
+          vertical: AppSpacings.sm,
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryColor.withValues(alpha: 0.1)
+              ? AppColors.primaryColor.withValues(alpha: 0.08)
               : (isDark ? AppColors.darkBackgroundColor : AppColors.grey50),
           borderRadius: BorderRadius.all(AppRadii.medium),
           border: Border.all(
             color: isSelected ? AppColors.primaryColor : Colors.transparent,
-            width: isSelected ? 2 : 1,
+            width: 1.5,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           children: [
-            // 距离
-            Row(
-              children: [
-                Icon(
-                  Icons.straighten,
-                  size: 14,
+            // 选中指示条
+            if (isSelected)
+              Container(
+                width: 3,
+                height: 44,
+                decoration: BoxDecoration(
                   color: AppColors.primaryColor,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(width: 4),
+              ),
+            if (isSelected) const SizedBox(width: AppSpacings.sm),
+            // 左侧：距离 + 耗时
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
                   route.formattedDistance,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: isDark ? AppColors.darkTextColor : AppColors.textColor,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time, size: 12, color: AppColors.grey500),
+                    const SizedBox(width: 2),
+                    Text(
+                      route.formattedDuration,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 2),
-            // 耗时
-            Row(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 12,
-                  color: AppColors.grey500,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  route.formattedDuration,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+            const SizedBox(width: AppSpacings.md),
+            // 中部：策略 + 线路名称
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    route.strategy,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextColor : AppColors.textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                  if (isTransit && transitLines != null && transitLines.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: transitLines.map((name) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: _transitLineColor(name, isDark),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          name,
+                          style: const TextStyle(fontSize: 10, color: Colors.white),
+                        ),
+                      )).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacings.sm),
+            // 右侧：费用 / 换乘信息
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isTransit && route.tolls != null && route.tolls! > 0)
+                  Text(
+                    '¥${route.tolls!.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
+                    ),
+                  )
+                else if (!isTransit && route.tolls != null && route.tolls! > 0)
+                  Text(
+                    '¥${route.tolls!.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+                    ),
+                  ),
+                if (isTransit && route.transferCount > 0) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '换乘${route.transferCount}次',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 2),
-            // 策略
-            Text(
-              route.strategy,
-              style: TextStyle(
-                fontSize: 10,
-                color: isDark ? AppColors.darkLightTextColor : AppColors.grey400,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            // 选中图标
+            if (isSelected) ...[
+              const SizedBox(width: AppSpacings.xs),
+              const Icon(Icons.check_circle, size: 18, color: AppColors.primaryColor),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Color _transitLineColor(String name, bool isDark) {
+    if (name.contains('号线') || name.contains('地铁') || name.contains('轨')) {
+      return const Color(0xFFFF4D4F);
+    }
+    return const Color(0xFF1890FF);
   }
 }

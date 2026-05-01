@@ -178,9 +178,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               bottom: 0,
               child: RouteResultBottomSheet(
                 routes: navState.routes.map((route) => RouteResultItem(
-                  distance: route.distance.toString(),
+                  distance: route.distance,
                   formattedDistance: route.distanceText,
-                  duration: route.duration.toString(),
+                  duration: route.duration,
                   formattedDuration: route.durationText,
                   strategy: route.strategyText,
                   tolls: route.tolls,

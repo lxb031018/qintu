@@ -94,9 +94,9 @@ class RouteColors {
 
 /// 路线结果数据模型（供 UI 使用）
 class RouteResultItem {
-  final String distance;
+  final double distance;
   final String formattedDistance;
-  final String duration;
+  final double duration;
   final String formattedDuration;
   final String strategy;
   final double? tolls;
