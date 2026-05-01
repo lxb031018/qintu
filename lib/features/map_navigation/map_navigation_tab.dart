@@ -18,6 +18,19 @@ import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
 import 'provider/map_display_service_provider.dart';
 
+/// 由 UnifiedHomePage 在首次布局后写入 Tab Bar 实际高度
+final tabBarHeightProvider =
+    NotifierProvider<TabBarHeightNotifier, double>(TabBarHeightNotifier.new);
+
+class TabBarHeightNotifier extends Notifier<double> {
+  @override
+  double build() => 62;
+
+  void setHeight(double height) {
+    state = height;
+  }
+}
+
 /// ============================================
 /// 地图导航 Tab
 ///
@@ -124,7 +137,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               curve: Curves.easeInOut,
               left: AppSpacings.smd,
               right: AppSpacings.smd,
-              top: AppSpacings.smd + (navState.showRoutesSheet ? MediaQuery.of(context).padding.top : 0),
+              top: navState.showRoutesSheet
+                  ? MediaQuery.of(context).padding.top + AppSpacings.smd
+                  : ref.watch(tabBarHeightProvider) + AppSpacings.smd,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

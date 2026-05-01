@@ -57,6 +57,9 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
   /// 是否显示双击提示文本
   bool _showHint = false;
 
+  /// 测量 Tab Bar 实际渲染高度
+  final _tabBarKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -192,50 +195,21 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
     final showRoutesSheet = ref.watch(mapNavigationProvider.select((s) => s.showRoutesSheet));
     final hideTabBar = isNavigating || showRoutesSheet;
 
+    // 测量 Tab Bar 实际渲染高度，同步给 MapNavigationTab 定位输入卡片
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final renderBox = _tabBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null && renderBox.hasSize && renderBox.size.height > 0) {
+        ref.read(tabBarHeightProvider.notifier).setHeight(renderBox.size.height);
+      }
+    });
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: backgroundColor,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(hideTabBar ? 0 : 62),
-        child: ClipRect(
-          child: AnimatedSlide(
-            offset: hideTabBar ? const Offset(0, -1) : Offset.zero,
-            duration: AppDurations.fastAnimation,
-            curve: Curves.easeInOut,
-            child: AnimatedOpacity(
-              opacity: hideTabBar ? 0.0 : 1.0,
-              duration: AppDurations.fastAnimation,
-              curve: Curves.easeInOut,
-              child: IgnorePointer(
-                ignoring: hideTabBar,
-                child: Container(
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-                  child: _buildTabBar(context, isDark, settingsState.doubleTapToSwitchTab),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          // 防误触提示文本
-          if (settingsState.doubleTapToSwitchTab)
-            AnimatedOpacity(
-              opacity: _showHint ? 1.0 : 0.0,
-              duration: AppDurations.fastAnimation,
-              child: AnimatedSize(
-                duration: AppDurations.fastAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 8),
-                  child: Text(
-                    AppStrings.doubleTapSettingsHint,
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ),
-              ),
-            ),
-          Expanded(
+          // 地图/tab 内容填满全屏，不受任何 UI 布局影响
+          Positioned.fill(
             child: TabBarView(
               controller: _tabController,
               physics: const NeverScrollableScrollPhysics(),
@@ -246,6 +220,54 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
               ],
             ),
           ),
+
+          // Tab Bar 浮层 — 滑出/淡出，不影响地图
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              offset: hideTabBar ? const Offset(0, -1) : Offset.zero,
+              duration: AppDurations.fastAnimation,
+              curve: Curves.easeInOut,
+              child: AnimatedOpacity(
+                opacity: hideTabBar ? 0.0 : 1.0,
+                duration: AppDurations.fastAnimation,
+                curve: Curves.easeInOut,
+                child: IgnorePointer(
+                  ignoring: hideTabBar,
+                  child: Container(
+                    key: _tabBarKey,
+                    color: backgroundColor,
+                    padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+                    child: _buildTabBar(context, isDark, settingsState.doubleTapToSwitchTab),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 防误触提示文本浮层
+          if (settingsState.doubleTapToSwitchTab)
+            Positioned(
+              top: ref.watch(tabBarHeightProvider) + 4, // Tab Bar 底部 + 间距
+              left: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                opacity: _showHint ? 1.0 : 0.0,
+                duration: AppDurations.fastAnimation,
+                child: AnimatedSize(
+                  duration: AppDurations.fastAnimation,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 8),
+                    child: Text(
+                      AppStrings.doubleTapSettingsHint,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
