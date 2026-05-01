@@ -45,7 +45,8 @@ class CarOverlay(context: Context) {
                     .anchor(0.5f, 0.5f)
                     .setFlat(true)
                     .icon(carDescriptor)
-                    .position(latLng))
+                    .position(latLng)
+                    .visible(isVisible))
             }
 
             if (directionMarker == null) {
@@ -53,21 +54,21 @@ class CarOverlay(context: Context) {
                     .anchor(0.5f, 0.5f)
                     .setFlat(true)
                     .icon(directionDescriptor)
-                    .position(latLng))
-                directionMarker?.isVisible = isDirectionVisible
+                    .position(latLng)
+                    .visible(isVisible && isDirectionVisible))
             }
 
             carMarker?.apply {
                 position = latLng
                 rotateAngle = 360 - bearing
                 isFlat = true
-                isVisible = isVisible
+                isVisible = this@CarOverlay.isVisible
             }
 
             directionMarker?.apply {
                 position = latLng
                 rotateAngle = 360 - bearing
-                isVisible = isVisible && isDirectionVisible
+                isVisible = this@CarOverlay.isVisible && this@CarOverlay.isDirectionVisible
             }
 
             Log.v(TAG, String.format("📍 自车位置更新: (%.6f, %.6f), 方向: %.1f°",
