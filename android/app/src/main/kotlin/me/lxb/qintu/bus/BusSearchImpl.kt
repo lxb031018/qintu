@@ -44,6 +44,7 @@ class BusSearchImpl(context: Context) {
     private var transitCallback: MethodChannel.Result? = null
     private var transitOrigin: LatLonPoint? = null
     private var transitDestination: LatLonPoint? = null
+    private var transitInFlight = false
 
     private val lineRequestId = AtomicInteger(0)
 
@@ -111,6 +112,7 @@ class BusSearchImpl(context: Context) {
                 transitCallback = null
                 transitOrigin = null
                 transitDestination = null
+                transitInFlight = false
                 if (cb == null) {
                     Log.w(TAG, "⚠️ 未找到公交算路回调")
                     return
@@ -161,18 +163,38 @@ class BusSearchImpl(context: Context) {
     fun calculateTransitRoute(
         fromLat: Double, fromLng: Double,
         toLat: Double, toLng: Double,
-        city: String, mode: Int, callback: MethodChannel.Result
+        city: String, mode: Int, callback: MethodChannel.Result,
+        maxTrans: Int = 3,
+        alternativeRoute: Int = 1,
+        time: String? = null,
+        timeType: String? = null
     ) {
-        Log.d(TAG, "🚌 公交算路: ($fromLat,$fromLng) → ($toLat,$toLng), city=$city, mode=$mode")
+        Log.d(TAG, "🚌 公交算路: ($fromLat,$fromLng) → ($toLat,$toLng), city=$city, mode=$mode, maxTrans=$maxTrans")
+        if (transitInFlight) {
+            Log.w(TAG, "⚠️ 上一公交算路请求仍在进行中，将替换回调")
+        }
         transitCallback = callback
         transitOrigin = LatLonPoint(fromLat, fromLng)
         transitDestination = LatLonPoint(toLat, toLng)
+        transitInFlight = true
         val fromAndTo = RouteSearchV2.FromAndTo(
             LatLonPoint(fromLat, fromLng),
             LatLonPoint(toLat, toLng)
         )
         val query = RouteSearchV2.BusRouteQuery(fromAndTo, mode, city, 0)
         query.showFields = RouteSearchV2.ShowFields.ALL  // 必须设置，否则 polyline 数据为空
+        if (maxTrans in 0..4) {
+            query.setMaxTrans(maxTrans)
+        }
+        if (alternativeRoute in 1..10) {
+            query.setAlternativeRoute(alternativeRoute)
+        }
+        if (!time.isNullOrEmpty()) {
+            query.setTime(time)
+            if (timeType == "1") {
+                query.setDate(time)
+            }
+        }
         routeSearchV2.calculateBusRouteAsyn(query)
     }
 
@@ -180,6 +202,7 @@ class BusSearchImpl(context: Context) {
         stationCallbacks.clear()
         lineCallbacks.clear()
         transitCallback = null
+        transitInFlight = false
     }
 
     // ==================== BusRouteResultV2 序列化 ====================
@@ -222,7 +245,11 @@ class BusSearchImpl(context: Context) {
                     "road" to (ws.road ?: ""),
                     "distance" to ws.distance.toDouble(),
                     "duration" to ws.duration.toDouble(),
-                    "polyline" to stepPolyline
+                    "polyline" to stepPolyline,
+                    "action" to (ws.action ?: ""),
+                    "assistantAction" to (ws.assistantAction ?: ""),
+                    "orientation" to (ws.orientation ?: ""),
+                    "roadType" to ws.roadType
                 )
             } ?: emptyList()
             stepMap["walk"] = mapOf(
@@ -240,23 +267,70 @@ class BusSearchImpl(context: Context) {
 
 // 地铁/铁路段
         if (railway != null) {
-            // 序列化站点坐标列表，用于拼凑地铁段 polyline
             val stationPoints = mutableListOf<Map<String, Any>>()
-            railway.departurestop?.location?.let {
-                stationPoints.add(it.toCoordinateMap())
+            railway.departurestop?.let { stop ->
+                stationPoints.add(mapOf(
+                    "id" to (stop.id ?: ""),
+                    "name" to (stop.name ?: ""),
+                    "lat" to (stop.location?.latitude ?: 0.0),
+                    "lng" to (stop.location?.longitude ?: 0.0),
+                    "time" to (stop.time ?: ""),
+                    "wait" to stop.wait.toDouble(),
+                    "isStart" to true,
+                    "isEnd" to false
+                ))
             }
             railway.viastops?.forEach { stop ->
-                stop.location?.let {
-                    stationPoints.add(it.toCoordinateMap())
-                }
+                stationPoints.add(mapOf(
+                    "id" to (stop.id ?: ""),
+                    "name" to (stop.name ?: ""),
+                    "lat" to (stop.location?.latitude ?: 0.0),
+                    "lng" to (stop.location?.longitude ?: 0.0),
+                    "time" to (stop.time ?: ""),
+                    "wait" to stop.wait.toDouble(),
+                    "isStart" to false,
+                    "isEnd" to false
+                ))
             }
-            railway.arrivalstop?.location?.let {
-                stationPoints.add(it.toCoordinateMap())
+            railway.arrivalstop?.let { stop ->
+                stationPoints.add(mapOf(
+                    "id" to (stop.id ?: ""),
+                    "name" to (stop.name ?: ""),
+                    "lat" to (stop.location?.latitude ?: 0.0),
+                    "lng" to (stop.location?.longitude ?: 0.0),
+                    "time" to (stop.time ?: ""),
+                    "wait" to stop.wait.toDouble(),
+                    "isStart" to false,
+                    "isEnd" to true
+                ))
             }
+            // 舱位/票价
+            val spaces = railway.spaces?.map { space ->
+                mapOf(
+                    "code" to (space.code ?: ""),
+                    "cost" to space.cost.toDouble()
+                )
+            } ?: emptyList()
             stepMap["railway"] = mapOf(
                 "name" to (railway.name ?: ""),
                 "time" to railway.time.toDouble(),
-                "stations" to stationPoints
+                "trip" to (railway.trip ?: ""),
+                "type" to (railway.type ?: ""),
+                "distance" to railway.distance.toDouble(),
+                "stations" to stationPoints,
+                "spaces" to spaces
+            )
+        }
+
+        // 打车段
+        step.taxi?.let { taxi ->
+            stepMap["taxi"] = mapOf(
+                "origin" to (taxi.origin?.toCoordinateMap()),
+                "destination" to (taxi.destination?.toCoordinateMap()),
+                "distance" to taxi.distance.toDouble(),
+                "duration" to taxi.duration.toDouble(),
+                "price" to taxi.price.toDouble(),
+                "polyline" to (taxi.polyline?.map { it.toCoordinateMap() } ?: emptyList())
             )
         }
 
@@ -281,6 +355,16 @@ class BusSearchImpl(context: Context) {
 
     private fun serializeRouteBusLine(item: RouteBusLineItem): Map<String, Any?> {
         val polyline = item.polyline?.map { it.toCoordinateMap() } ?: emptyList()
+        val passStations = item.passStations?.map { station ->
+            mapOf(
+                "id" to (station.busStationId ?: ""),
+                "name" to (station.busStationName ?: ""),
+                "lat" to (station.latLonPoint?.latitude ?: 0.0),
+                "lng" to (station.latLonPoint?.longitude ?: 0.0)
+            )
+        } ?: emptyList()
+        val firstTime = item.firstBusTime?.let { formatBusTime(it) } ?: ""
+        val lastTime = item.lastBusTime?.let { formatBusTime(it) } ?: ""
         return mapOf(
             "name" to (item.busLineName ?: ""),
             "type" to (item.busLineType ?: ""),
@@ -288,7 +372,16 @@ class BusSearchImpl(context: Context) {
             "arrivalStation" to (item.arrivalBusStation?.busStationName ?: ""),
             "passStationNum" to item.passStationNum,
             "duration" to item.duration.toDouble(),
-            "polyline" to polyline
+            "polyline" to polyline,
+            "busLineId" to (item.busLineId ?: ""),
+            "basicPrice" to item.basicPrice.toDouble(),
+            "totalPrice" to item.totalPrice.toDouble(),
+            "firstBusTime" to firstTime,
+            "lastBusTime" to lastTime,
+            "originatingStation" to (item.originatingStation ?: ""),
+            "terminalStation" to (item.terminalStation ?: ""),
+            "busCompany" to (item.busCompany ?: ""),
+            "passStations" to passStations
         )
     }
 

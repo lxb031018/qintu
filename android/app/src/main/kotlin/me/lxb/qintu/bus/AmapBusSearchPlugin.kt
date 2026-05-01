@@ -81,7 +81,12 @@ class AmapBusSearchPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val toLng = call.argument<Double>("toLng") ?: return result.error("INVALID_PARAMS", "toLng 缺失", null)
                 val city = call.argument<String>("city") ?: ""
                 val mode = call.argument<Int>("mode") ?: BusSearchImpl.TRANSIT_DEFAULT
-                impl.calculateTransitRoute(fromLat, fromLng, toLat, toLng, city, mode, result)
+                val maxTrans = call.argument<Int>("maxTrans") ?: 3
+                val alternativeRoute = call.argument<Int>("alternativeRoute") ?: 1
+                val time = call.argument<String>("time")
+                val timeType = call.argument<String>("timeType")
+                impl.calculateTransitRoute(fromLat, fromLng, toLat, toLng, city, mode, result,
+                    maxTrans, alternativeRoute, time, timeType)
             }
 
             else -> result.notImplemented()

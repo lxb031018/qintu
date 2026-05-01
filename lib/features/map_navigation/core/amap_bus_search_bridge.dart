@@ -39,6 +39,10 @@ class AmapBusSearchBridge {
     required LatLng destination,
     required String city,
     int mode = 0,
+    int maxTrans = 3,
+    int alternativeRoute = 1,
+    String? time,
+    String? timeType,
   }) async {
     try {
       Logs.ui.info('🚌 原生公交算路: ($origin → $destination), city=$city, mode=$mode');
@@ -51,6 +55,10 @@ class AmapBusSearchBridge {
           'toLng': destination.longitude,
           'city': city,
           'mode': mode,
+          'maxTrans': maxTrans,
+          'alternativeRoute': alternativeRoute,
+          if (time != null) 'time': time,
+          if (timeType != null) 'timeType': timeType,
         },
       );
 
@@ -60,8 +68,9 @@ class AmapBusSearchBridge {
       }
 
       final paths = result['paths'] as List<dynamic>? ?? [];
+      final taxiCost = (result['taxiCost'] as num?)?.toDouble();
       Logs.ui.info('✅ 原生公交算路: ${paths.length} 条方案');
-      return paths.map((p) => _parseTransitPath(p as Map<dynamic, dynamic>)).toList();
+      return paths.map((p) => _parseTransitPath(p as Map<dynamic, dynamic>, mode: mode, taxiCost: taxiCost)).toList();
     } on PlatformException catch (e) {
       Logs.ui.warning('❌ 原生公交算路失败: ${e.message}');
       return [];
@@ -71,7 +80,7 @@ class AmapBusSearchBridge {
     }
   }
 
-  static RouteOption _parseTransitPath(Map<dynamic, dynamic> path) {
+  static RouteOption _parseTransitPath(Map<dynamic, dynamic> path, {int mode = 0, double? taxiCost}) {
     final steps = (path['steps'] as List<dynamic>?) ?? [];
 
     final transitSegments = <TransitSegment>[];
@@ -105,6 +114,7 @@ class AmapBusSearchBridge {
       final lines = <TransitLine>[];
 
       // 步行部分 — 优先用步级 polyline（比路径级更详细）
+      final parsedWalkSteps = <WalkStep>[];
       if (walk != null) {
         walkingDistance = ((walk['distance'] as num?)?.toDouble() ?? 0).round();
         final walkSteps = walk['steps'] as List<dynamic>?;
@@ -112,12 +122,23 @@ class AmapBusSearchBridge {
           for (final ws in walkSteps) {
             if (ws is! Map) continue;
             final stepPolyline = ws['polyline'] as List<dynamic>? ?? [];
+            final wsPoints = stepPolyline.map((p) => LatLng(
+                  (p['lat'] as num).toDouble(),
+                  (p['lng'] as num).toDouble(),
+                )).toList();
             for (final p in stepPolyline) {
               segmentPoints.add(LatLng(
                 (p['lat'] as num).toDouble(),
                 (p['lng'] as num).toDouble(),
               ));
             }
+            parsedWalkSteps.add(WalkStep(
+              instruction: ws['instruction']?.toString() ?? '',
+              road: ws['road']?.toString() ?? '',
+              distance: (ws['distance'] as num?)?.toDouble() ?? 0,
+              duration: (ws['duration'] as num?)?.toDouble() ?? 0,
+              points: wsPoints,
+            ));
           }
         } else {
           final walkPolyline = walk['polyline'] as List<dynamic>? ?? [];
@@ -138,6 +159,20 @@ class AmapBusSearchBridge {
             name: name,
             type: _mapBusType(typeStr),
             stationCount: (bl['passStationNum'] as num?)?.toInt() ?? 0,
+            departureStation: bl['departureStation']?.toString(),
+            arrivalStation: bl['arrivalStation']?.toString(),
+            duration: (bl['duration'] as num?)?.toDouble(),
+            busLineId: bl['busLineId']?.toString(),
+            basicPrice: (bl['basicPrice'] as num?)?.toDouble(),
+            totalPrice: (bl['totalPrice'] as num?)?.toDouble(),
+            firstBusTime: bl['firstBusTime']?.toString(),
+            lastBusTime: bl['lastBusTime']?.toString(),
+            originatingStation: bl['originatingStation']?.toString(),
+            terminalStation: bl['terminalStation']?.toString(),
+            busCompany: bl['busCompany']?.toString(),
+            passStations: (bl['passStations'] as List<dynamic>?)
+                ?.map((s) => BusLineStation.fromMap(s as Map<dynamic, dynamic>))
+                .toList(),
           ));
 
           final polyline = bl['polyline'] as List<dynamic>? ?? [];
@@ -153,19 +188,95 @@ class AmapBusSearchBridge {
       // 地铁/铁路部分
       if (railway != null) {
         final name = railway['name']?.toString() ?? '';
+        final stations = railway['stations'] as List<dynamic>? ?? [];
+        // 解析详细站点
+        final railwayStations = stations.map((s) {
+          final sm = s as Map<dynamic, dynamic>;
+          return RailwayStationDetail(
+            id: sm['id']?.toString() ?? '',
+            name: sm['name']?.toString() ?? '',
+            lat: (sm['lat'] as num?)?.toDouble() ?? 0,
+            lng: (sm['lng'] as num?)?.toDouble() ?? 0,
+            time: sm['time']?.toString() ?? '',
+            wait: (sm['wait'] as num?)?.toDouble() ?? 0,
+            isStart: sm['isStart'] as bool? ?? false,
+            isEnd: sm['isEnd'] as bool? ?? false,
+          );
+        }).toList();
+        // 解析舱位/票价
+        final spacesList = railway['spaces'] as List<dynamic>? ?? [];
+        final spaces = spacesList.map((s) {
+          final sm = s as Map<dynamic, dynamic>;
+          return RailwaySpace(
+            code: sm['code']?.toString() ?? '',
+            cost: (sm['cost'] as num?)?.toDouble() ?? 0,
+          );
+        }).toList();
         if (name.isNotEmpty) {
           lines.add(TransitLine(
             name: name,
             type: TransitLineType.subway,
-            stationCount: 0,
+            stationCount: railwayStations.length,
+            duration: (railway['time'] as num?)?.toDouble(),
+            trip: railway['trip']?.toString(),
+            railwayType: railway['type']?.toString(),
+            railwayDistance: (railway['distance'] as num?)?.toDouble(),
+            railwayStations: railwayStations.isNotEmpty ? railwayStations : null,
+            spaces: spaces.isNotEmpty ? spaces : null,
           ));
         }
         // 用站点坐标拼地铁段 polyline
-        final stations = railway['stations'] as List<dynamic>? ?? [];
-        segmentPoints.addAll(stations.map((p) => LatLng(
-              (p['lat'] as num).toDouble(),
-              (p['lng'] as num).toDouble(),
-            )));
+        segmentPoints.addAll(railwayStations.map((rs) => rs.latLng));
+      }
+
+      // 解析出入口
+      StationEntrance? entrance;
+      StationEntrance? exit;
+      final entranceMap = stepMap['entrance'] as Map<dynamic, dynamic>?;
+      if (entranceMap != null) {
+        entrance = StationEntrance(
+          name: entranceMap['name']?.toString() ?? '',
+          lat: (entranceMap['lat'] as num?)?.toDouble() ?? 0,
+          lng: (entranceMap['lng'] as num?)?.toDouble() ?? 0,
+        );
+      }
+      final exitMap = stepMap['exit'] as Map<dynamic, dynamic>?;
+      if (exitMap != null) {
+        exit = StationEntrance(
+          name: exitMap['name']?.toString() ?? '',
+          lat: (exitMap['lat'] as num?)?.toDouble() ?? 0,
+          lng: (exitMap['lng'] as num?)?.toDouble() ?? 0,
+        );
+      }
+
+      // 解析打车段
+      final taxiMap = stepMap['taxi'] as Map<dynamic, dynamic>?;
+      TaxiSegment? taxi;
+      if (taxiMap != null) {
+        taxi = TaxiSegment(
+          origin: taxiMap['origin'] != null
+              ? LatLng(
+                  (taxiMap['origin']['lat'] as num).toDouble(),
+                  (taxiMap['origin']['lng'] as num).toDouble(),
+                )
+              : null,
+          destination: taxiMap['destination'] != null
+              ? LatLng(
+                  (taxiMap['destination']['lat'] as num).toDouble(),
+                  (taxiMap['destination']['lng'] as num).toDouble(),
+                )
+              : null,
+          distance: (taxiMap['distance'] as num?)?.toDouble(),
+          duration: (taxiMap['duration'] as num?)?.toDouble(),
+          price: (taxiMap['price'] as num?)?.toDouble(),
+          points: (taxiMap['polyline'] as List<dynamic>?)
+                  ?.map((p) => LatLng(
+                        (p['lat'] as num).toDouble(),
+                        (p['lng'] as num).toDouble(),
+                      ))
+                  .toList() ??
+              [],
+        );
       }
 
       // 如果既有步行又有乘车，拆成两个 segment 以便分段渲染
@@ -176,11 +287,15 @@ class AmapBusSearchBridge {
             lines: const [],
             walkingDistance: walkingDistance,
             points: segmentPoints.sublist(0, walkPtCount),
+            walkSteps: parsedWalkSteps.isNotEmpty ? parsedWalkSteps : null,
           ));
           transitSegments.add(TransitSegment(
             lines: lines,
             walkingDistance: 0,
             points: segmentPoints.sublist(walkPtCount),
+            entrance: entrance,
+            exit: exit,
+            taxi: taxi,
           ));
         } else {
           // 无法准确拆分时，整体作为一个 segment
@@ -188,6 +303,10 @@ class AmapBusSearchBridge {
             lines: lines,
             walkingDistance: walkingDistance,
             points: segmentPoints,
+            entrance: entrance,
+            exit: exit,
+            walkSteps: parsedWalkSteps.isNotEmpty ? parsedWalkSteps : null,
+            taxi: taxi,
           ));
         }
       } else if (lines.isNotEmpty || walkingDistance > 0) {
@@ -195,6 +314,10 @@ class AmapBusSearchBridge {
           lines: lines,
           walkingDistance: walkingDistance,
           points: segmentPoints,
+          entrance: entrance,
+          exit: exit,
+          walkSteps: parsedWalkSteps.isNotEmpty ? parsedWalkSteps : null,
+          taxi: taxi,
         ));
       }
     }
@@ -215,6 +338,11 @@ class AmapBusSearchBridge {
       transitSegments: transitSegments,
       userOrigin: userOrigin,
       userDest: userDest,
+      walkDistance: (path['walkDistance'] as num?)?.toDouble(),
+      busDistance: (path['busDistance'] as num?)?.toDouble(),
+      isNightBus: path['isNightBus'] as bool?,
+      taxiCost: taxiCost,
+      strategyMode: mode,
     );
   }
 
@@ -307,9 +435,13 @@ class AmapBusSearchBridge {
       case '普通公交':
         return TransitLineType.bus;
       default:
-        // "轻轨"、"有轨电车" 等都同样视为地铁类
+        // 地铁类：地铁、轻轨、有轨电车、磁悬浮
         if (type.contains('地铁') || type.contains('轨') || type.contains('磁')) {
           return TransitLineType.subway;
+        }
+        // 郊区/市域/城际铁路
+        if (type.contains('郊区') || type.contains('市域') || type.contains('城际')) {
+          return TransitLineType.suburban;
         }
         return TransitLineType.bus;
     }
