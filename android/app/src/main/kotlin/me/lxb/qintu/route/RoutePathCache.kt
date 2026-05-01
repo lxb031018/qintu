@@ -22,8 +22,6 @@ object RoutePathCache {
 
     fun get(routeId: Int): AMapNaviPath? = cache[routeId]
 
-    fun getAll(): Map<Int, AMapNaviPath> = cache.toMap()
-
     fun clear() {
         cache.clear()
     }

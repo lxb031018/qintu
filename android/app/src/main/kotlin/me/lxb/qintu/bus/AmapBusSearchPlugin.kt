@@ -1,6 +1,5 @@
 package me.lxb.qintu.bus
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -26,7 +25,6 @@ class AmapBusSearchPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
     private var context: Context? = null
-    private var activity: Activity? = null
     private var busSearchImpl: BusSearchImpl? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -93,24 +91,20 @@ class AmapBusSearchPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     // ==================== ActivityAware ====================
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
-        busSearchImpl = BusSearchImpl(activity!!)
+        busSearchImpl = BusSearchImpl(binding.activity)
         Log.d(TAG, "已绑定 Activity，公交搜索模块初始化完成")
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        activity = null
         busSearchImpl?.destroy()
         busSearchImpl = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
-        busSearchImpl = BusSearchImpl(activity!!)
+        busSearchImpl = BusSearchImpl(binding.activity)
     }
 
     override fun onDetachedFromActivity() {
-        activity = null
         busSearchImpl?.destroy()
         busSearchImpl = null
     }

@@ -3,7 +3,6 @@ package me.lxb.qintu
 import android.content.Context
 import android.util.Log
 import android.view.View
-import com.amap.api.maps.MapsInitializer
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -20,6 +19,7 @@ import me.lxb.qintu.map.MapController
 import me.lxb.qintu.map.MapViewFactory
 import me.lxb.qintu.overlay.CarOverlay
 import me.lxb.qintu.route.RouteRenderer
+import me.lxb.qintu.util.AMapPrivacy
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
@@ -54,15 +54,11 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     // 业务控制器（功能模块层）
     private var mapController: MapController? = null
 
-    // 共享状态
-    private var lastKnownLocation: com.amap.api.location.AMapLocation? = null
-
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
 
-        // ✅ 必须：设置高德地图隐私合规
-        MapsInitializer.updatePrivacyShow(context!!, true, true)
-        MapsInitializer.updatePrivacyAgree(context!!, true)
+        // 设置高德地图隐私合规
+        AMapPrivacy.initMap(context!!)
 
         // 初始化组件
         locationClient = LocationClientImpl(context!!)
@@ -97,7 +93,6 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         // 定位监听器 — 更新车载标记（仅导航时显示）
         locationClient.setLocationChangeListener { location ->
-            lastKnownLocation = location
             // 懒初始化 CarOverlay（资源初始化，非业务逻辑）
             if (carOverlay == null && context != null) {
                 carOverlay = CarOverlay(context!!).apply {

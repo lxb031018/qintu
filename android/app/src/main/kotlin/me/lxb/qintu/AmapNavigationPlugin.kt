@@ -1,6 +1,5 @@
 package me.lxb.qintu
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -30,7 +29,6 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var eventChannel: EventChannel? = null
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
-    private var activity: Activity? = null
     private var navigationImpl: NavigationImpl? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -101,20 +99,16 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     // ==================== ActivityAware ====================
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
         Log.d(TAG, "已绑定 Activity")
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        activity = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
     }
 
     override fun onDetachedFromActivity() {
-        activity = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

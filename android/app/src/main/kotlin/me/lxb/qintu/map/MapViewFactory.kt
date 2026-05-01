@@ -2,7 +2,6 @@ package me.lxb.qintu.map
 
 import android.content.Context
 import android.util.Log
-import android.view.View
 import com.amap.api.maps.MapView
 import com.amap.api.maps.model.MyLocationStyle
 import me.lxb.qintu.location.LocationClientImpl

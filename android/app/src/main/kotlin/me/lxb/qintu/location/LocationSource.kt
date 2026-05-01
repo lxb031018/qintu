@@ -19,11 +19,6 @@ interface LocationSource {
     fun stopLocation()
 
     /**
-     * 设置是否为单次定位
-     */
-    fun setOnceLocation(once: Boolean)
-
-    /**
      * 获取最后已知位置
      */
     fun getLastKnownLocation(): AMapLocation?

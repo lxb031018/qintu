@@ -98,20 +98,6 @@ class LocationClientImpl(private val context: Context) : LocationSource {
         locationClient?.stopLocation()
     }
 
-    override fun setOnceLocation(once: Boolean) {
-        val option = AMapLocationClientOption().apply {
-            locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
-            isOnceLocation = once
-            isSensorEnable = true
-            isLocationCacheEnable = false
-            isNeedAddress = true
-            if (!once) {
-                interval = 1000
-            }
-        }
-        locationClient?.setLocationOption(option)
-    }
-
     override fun getLastKnownLocation(): AMapLocation? = lastKnownLocation
 
     override fun setLocationChangeListener(listener: (AMapLocation) -> Unit) {

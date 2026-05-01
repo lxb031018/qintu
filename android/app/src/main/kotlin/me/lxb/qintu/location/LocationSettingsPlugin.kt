@@ -14,10 +14,6 @@ import me.lxb.qintu.constant.PlatformChannels
  */
 class LocationSettingsPlugin : FlutterPlugin {
 
-    companion object {
-        private const val TAG = "LocationSettings"
-    }
-
     private var channel: MethodChannel? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {

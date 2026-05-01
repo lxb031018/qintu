@@ -12,14 +12,14 @@ import com.amap.api.services.busline.BusStationResult
 import com.amap.api.services.busline.BusStationSearch
 import com.amap.api.services.core.AMapException
 import com.amap.api.services.core.LatLonPoint
-import com.amap.api.services.core.ServiceSettings
 import com.amap.api.services.route.BusPathV2
 import com.amap.api.services.route.BusRouteResultV2
 import com.amap.api.services.route.BusStepV2
 import com.amap.api.services.route.RouteBusLineItem
-import com.amap.api.services.route.RouteBusWalkItem
 import com.amap.api.services.route.RouteSearchV2
 import io.flutter.plugin.common.MethodChannel
+import me.lxb.qintu.util.AMapPrivacy
+import me.lxb.qintu.util.toCoordinateMap
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -52,9 +52,7 @@ class BusSearchImpl(context: Context) {
     private val routeSearchV2: RouteSearchV2 = RouteSearchV2(context)
 
     init {
-        // 搜索 SDK 必须单独设置隐私合规（不同于地图 SDK 的 MapsInitializer）
-        ServiceSettings.updatePrivacyShow(context, true, true)
-        ServiceSettings.updatePrivacyAgree(context, true)
+        AMapPrivacy.initSearch(context)
 
         busStationSearch.setOnBusStationSearchListener(object : BusStationSearch.OnBusStationSearchListener {
             override fun onBusStationSearched(result: BusStationResult?, rCode: Int) {
@@ -190,9 +188,9 @@ class BusSearchImpl(context: Context) {
         val steps = path.steps.map { serializeBusStep(it) }
         // AMap SDK 不返回首端/末端步行段，起终点坐标作为独立字段传递，
         // 由 Flutter 端步行补充逻辑负责拼接真实路线
-        val startPoint = transitOrigin?.let { mapOf("lat" to it.latitude, "lng" to it.longitude) }
-        val endPoint = transitDestination?.let { mapOf("lat" to it.latitude, "lng" to it.longitude) }
-        val pathPolyline = path.polyline?.map { mapOf("lat" to it.latitude, "lng" to it.longitude) } ?: emptyList()
+        val startPoint = transitOrigin?.let { it.toCoordinateMap() }
+        val endPoint = transitDestination?.let { it.toCoordinateMap() }
+        val pathPolyline = path.polyline?.map { it.toCoordinateMap() } ?: emptyList()
         return mapOf(
             "cost" to path.cost.toDouble(),
             "walkDistance" to path.walkDistance.toDouble(),
@@ -215,10 +213,10 @@ class BusSearchImpl(context: Context) {
         val busLines = step.busLines
         val railway = step.railway
         if (walk != null) {
-            val walkPolyline = walk.polyline?.map { mapOf("lat" to it.latitude, "lng" to it.longitude) } ?: emptyList()
+            val walkPolyline = walk.polyline?.map { it.toCoordinateMap() } ?: emptyList()
             // 获取步级详细 polyline（比路径级更细）
             val walkSteps = walk.steps?.map { ws ->
-                val stepPolyline = ws.polyline?.map { mapOf("lat" to it.latitude, "lng" to it.longitude) } ?: emptyList()
+                val stepPolyline = ws.polyline?.map { it.toCoordinateMap() } ?: emptyList()
                 mapOf(
                     "instruction" to (ws.instruction ?: ""),
                     "road" to (ws.road ?: ""),
@@ -245,15 +243,15 @@ class BusSearchImpl(context: Context) {
             // 序列化站点坐标列表，用于拼凑地铁段 polyline
             val stationPoints = mutableListOf<Map<String, Any>>()
             railway.departurestop?.location?.let {
-                stationPoints.add(mapOf("lat" to it.latitude, "lng" to it.longitude))
+                stationPoints.add(it.toCoordinateMap())
             }
             railway.viastops?.forEach { stop ->
                 stop.location?.let {
-                    stationPoints.add(mapOf("lat" to it.latitude, "lng" to it.longitude))
+                    stationPoints.add(it.toCoordinateMap())
                 }
             }
             railway.arrivalstop?.location?.let {
-                stationPoints.add(mapOf("lat" to it.latitude, "lng" to it.longitude))
+                stationPoints.add(it.toCoordinateMap())
             }
             stepMap["railway"] = mapOf(
                 "name" to (railway.name ?: ""),
@@ -282,7 +280,7 @@ class BusSearchImpl(context: Context) {
     }
 
     private fun serializeRouteBusLine(item: RouteBusLineItem): Map<String, Any?> {
-        val polyline = item.polyline?.map { mapOf("lat" to it.latitude, "lng" to it.longitude) } ?: emptyList()
+        val polyline = item.polyline?.map { it.toCoordinateMap() } ?: emptyList()
         return mapOf(
             "name" to (item.busLineName ?: ""),
             "type" to (item.busLineType ?: ""),
@@ -329,12 +327,7 @@ class BusSearchImpl(context: Context) {
             )
         } ?: emptyList()
 
-        val coords = item.directionsCoordinates?.map { point ->
-            mapOf(
-                "lat" to point.latitude,
-                "lng" to point.longitude
-            )
-        } ?: emptyList()
+        val coords = item.directionsCoordinates?.map { it.toCoordinateMap() } ?: emptyList()
 
         val firstTime = formatBusTime(item.firstBusTime)
         val lastTime = formatBusTime(item.lastBusTime)

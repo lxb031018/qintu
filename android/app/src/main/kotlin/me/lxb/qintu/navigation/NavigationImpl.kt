@@ -2,7 +2,6 @@ package me.lxb.qintu.navigation
 
 import android.content.Context
 import android.util.Log
-import com.amap.api.maps.MapsInitializer
 import com.amap.api.maps.model.LatLng
 import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
@@ -16,6 +15,8 @@ import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.navi.model.NaviPoi
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.route.RoutePathCache
+import me.lxb.qintu.util.AMapPrivacy
+import me.lxb.qintu.util.toCoordinateMap
 
 /**
  * 导航功能模块
@@ -31,7 +32,6 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     companion object {
         private const val TAG = "NavigationImpl"
 
-        const val STRATEGY_FAST = 0
         const val STRATEGY_CHEAP = 1
         const val STRATEGY_SHORT = 2
     }
@@ -43,8 +43,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     var eventListener: ((Map<String, Any?>) -> Unit)? = null
 
     init {
-        MapsInitializer.updatePrivacyShow(context, true, true)
-        MapsInitializer.updatePrivacyAgree(context, true)
+        AMapPrivacy.initMap(context)
 
         try {
             mAMapNavi = AMapNavi.getInstance(context)
@@ -182,9 +181,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     }
 
     private fun serializeNaviPath(routeId: Int, path: AMapNaviPath): Map<String, Any?> {
-        val points = path.coordList.map {
-            mapOf("lat" to it.latitude, "lng" to it.longitude)
-        }
+        val points = path.coordList.map { it.toCoordinateMap() }
         return mapOf(
             "routeId" to routeId,
             "distance" to path.allLength.toDouble(),
