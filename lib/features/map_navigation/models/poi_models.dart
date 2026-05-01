@@ -19,7 +19,8 @@ class PoiSearchResult {
     this.errorMessage,
   });
 
-  bool get isSuccess => errorCode == 0 && suggestions.isNotEmpty;
+  bool get isSuccess => errorCode == 0;
+  bool get isEmpty => errorCode == 0 && suggestions.isEmpty;
 }
 
 class PoiSuggestion {
@@ -65,6 +66,20 @@ class PoiSuggestion {
       location: map['location']?.toString() ?? '',
       distance: int.tryParse(map['distance']?.toString() ?? ''),
       entrLocation: map['entr_location']?.toString(),
+      source: PoiSource.search,
+    );
+  }
+
+  /// 从 Inputtips Tip 构造
+  factory PoiSuggestion.fromTip(Map<String, dynamic> tip) {
+    final lat = (tip['latitude'] as num?)?.toDouble() ?? 0.0;
+    final lng = (tip['longitude'] as num?)?.toDouble() ?? 0.0;
+    return PoiSuggestion(
+      id: tip['poiId']?.toString() ?? '',
+      name: tip['name']?.toString() ?? '',
+      district: tip['district']?.toString() ?? '',
+      address: tip['address']?.toString() ?? '',
+      location: '$lng,$lat',
       source: PoiSource.search,
     );
   }

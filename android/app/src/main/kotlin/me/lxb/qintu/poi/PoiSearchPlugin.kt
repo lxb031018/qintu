@@ -22,12 +22,14 @@ class PoiSearchPlugin : FlutterPlugin, MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private var poiSearchImpl: PoiSearchImpl? = null
+    private var inputtipsImpl: InputtipsImpl? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, PlatformChannels.POI_SEARCH)
         channel.setMethodCallHandler(this)
 
         poiSearchImpl = PoiSearchImpl(binding.applicationContext)
+        inputtipsImpl = InputtipsImpl(binding.applicationContext)
 
         Log.d(TAG, "POI搜索插件已注册")
     }
@@ -53,6 +55,22 @@ class PoiSearchPlugin : FlutterPlugin, MethodCallHandler {
                 impl.searchPoi(keyword, city, lat, lng, radius, cityLimit, result)
             }
 
+            "inputTips" -> {
+                val keyword = call.argument<String>("keyword") ?: run {
+                    result.error("INVALID_PARAMS", "keyword 缺失", null)
+                    return
+                }
+                val city = call.argument<String>("city")
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+
+                val tips = inputtipsImpl ?: run {
+                    result.error("NOT_READY", "输入提示模块未初始化", null)
+                    return
+                }
+                tips.searchInputtips(keyword, city, lat, lng, result)
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -61,6 +79,8 @@ class PoiSearchPlugin : FlutterPlugin, MethodCallHandler {
         channel.setMethodCallHandler(null)
         poiSearchImpl?.destroy()
         poiSearchImpl = null
+        inputtipsImpl?.destroy()
+        inputtipsImpl = null
         Log.d(TAG, "POI搜索插件已分离")
     }
 }

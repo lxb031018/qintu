@@ -7,6 +7,21 @@ import 'poi_search_bridge.dart';
 export '../models/poi_models.dart';
 
 class PoiApi {
+  /// 输入提示：模糊匹配 POI 关键词
+  Future<List<PoiSuggestion>> inputTips({
+    required String keywords,
+    String? city,
+    LatLng? location,
+  }) async {
+    if (keywords.length < 2) return [];
+    return await PoiSearchBridge.inputTips(
+      keyword: keywords,
+      city: city,
+      lat: location?.latitude,
+      lng: location?.longitude,
+    );
+  }
+
   Future<PoiSearchResult> searchPoi({
     required String keywords,
     String? city,

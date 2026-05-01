@@ -593,27 +593,44 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
       Logs.ui.info('🔍 搜索 POI: $keyword, 城市: $searchCity, 中心: ${center?.latitude},${center?.longitude}');
 
-      final result = await _poiService.searchPoi(
+      // 获取城市区号（电话区号如 "0771"），原生搜索要求 cityCode 而非城市名
+      String? cityCode;
+      if (center != null) {
+        cityCode = await _poiService.getCityCodeFromLocation(center);
+        Logs.ui.debug('获取到城市区号: $cityCode');
+      }
+
+      final suggestions = await _poiService.inputTips(
         keywords: keyword,
-        city: searchCity,
+        city: cityCode ?? searchCity,
         location: center,
-        radius: 10000,
       );
 
       if (keyword != state.searchKeyword) return;
 
-      if (result.isSuccess) {
-        Logs.ui.info('✅ 搜索到 ${result.suggestions.length} 条结果');
+      // 计算距离并排序
+      if (center != null && suggestions.isNotEmpty) {
+        for (final poi in suggestions) {
+          final poiLatLng = poi.distanceLatLng;
+          if (poiLatLng != null) {
+            poi.distance = center.distanceTo(poiLatLng).toInt();
+          }
+        }
+        suggestions.sort((a, b) => (a.distance ?? 999999999).compareTo(b.distance ?? 999999999));
+      }
+
+      if (suggestions.isNotEmpty) {
+        Logs.ui.info('✅ 搜索到 ${suggestions.length} 条结果');
         state = state.copyWith(
-          searchResults: result.suggestions,
+          searchResults: suggestions,
           isSearching: false,
         );
       } else {
-        Logs.ui.warning('❌ 搜索失败: ${result.errorMessage}');
+        Logs.ui.info('🔍 未找到匹配的 POI 结果');
         state = state.copyWith(
           searchResults: [],
           isSearching: false,
-          searchError: result.errorMessage ?? '搜索失败',
+          searchError: '未找到匹配的结果',
         );
       }
     } catch (e) {

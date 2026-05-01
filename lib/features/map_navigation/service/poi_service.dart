@@ -20,6 +20,20 @@ class PoiService {
   /// in-flight 请求去重
   final Map<String, Future<PoiSearchResult>> _pendingRequests = {};
 
+  /// 输入提示：模糊匹配 POI 关键词
+  Future<List<PoiSuggestion>> inputTips({
+    required String keywords,
+    String? city,
+    LatLng? location,
+  }) async {
+    if (keywords.length < 2) return [];
+    return await _api.inputTips(
+      keywords: keywords,
+      city: city,
+      location: location,
+    );
+  }
+
   /// POI 关键字搜索（带缓存和去重）
   Future<PoiSearchResult> searchPoi({
     required String keywords,
@@ -66,6 +80,11 @@ class PoiService {
   /// 逆地理编码：坐标转城市
   Future<String?> getCityFromLocation(LatLng location) async {
     return await _api.getCityFromLocation(location);
+  }
+
+  /// 从坐标获取城市区号（电话区号，如 "0771"）
+  Future<String?> getCityCodeFromLocation(LatLng location) async {
+    return await _api.getCityCodeFromLocation(location);
   }
 }
 
