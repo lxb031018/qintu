@@ -14,6 +14,7 @@ import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet.dart';
 import 'widgets/navigation_overlay.dart';
 import 'models/map_overlay_models.dart';
+import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
 import 'provider/map_display_service_provider.dart';
 
@@ -118,10 +119,12 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 
           // 非导航状态：搜索UI
           if (!navState.isNavigating) ...[
-            Positioned(
+            AnimatedPositioned(
+              duration: AppDurations.fastAnimation,
+              curve: Curves.easeInOut,
               left: AppSpacings.smd,
               right: AppSpacings.smd,
-              top: AppSpacings.smd,
+              top: AppSpacings.smd + (navState.showRoutesSheet ? MediaQuery.of(context).padding.top : 0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

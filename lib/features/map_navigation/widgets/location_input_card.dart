@@ -135,7 +135,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         // 步行
         _RouteTypeButton(
           label: '步行',
-          icon: Icons.directions_walk,
           isSelected: navState.currentRouteType == RouteType.walking,
           onTap: () {
             callbacks?.onRouteTypeSelected?.call(RouteType.walking);
@@ -145,7 +144,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         // 骑行
         _RouteTypeButton(
           label: '骑行',
-          icon: Icons.directions_bike,
           isSelected: navState.currentRouteType == RouteType.riding,
           onTap: () {
             callbacks?.onRouteTypeSelected?.call(RouteType.riding);
@@ -155,7 +153,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         // 公共交通
         _RouteTypeButton(
           label: '公共交通',
-          icon: Icons.directions_bus,
           isSelected: navState.currentRouteType == RouteType.transit,
           onTap: () {
             callbacks?.onRouteTypeSelected?.call(RouteType.transit);
@@ -165,7 +162,6 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
         // 驾车
         _RouteTypeButton(
           label: '驾车',
-          icon: Icons.directions_car,
           isSelected: navState.currentRouteType == RouteType.driving,
           onTap: () {
             callbacks?.onRouteTypeSelected?.call(RouteType.driving);
@@ -310,14 +306,12 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
 /// 出行方式按钮
 class _RouteTypeButton extends StatelessWidget {
   final String label;
-  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
   final bool isDark;
 
   const _RouteTypeButton({
     required this.label,
-    required this.icon,
     required this.isSelected,
     required this.onTap,
     required this.isDark,
@@ -340,28 +334,17 @@ class _RouteTypeButton extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected
                     ? AppColors.primaryColor
                     : (isDark ? AppColors.darkLightTextColor : AppColors.grey500),
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected
-                      ? AppColors.primaryColor
-                      : (isDark ? AppColors.darkLightTextColor : AppColors.grey500),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

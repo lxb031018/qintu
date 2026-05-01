@@ -189,15 +189,32 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
     final backgroundColor = isDark ? AppColors.darkBackgroundColor : AppColors.backgroundColor;
     final settingsState = ref.watch(settingsManagerProvider);
     final isNavigating = ref.watch(mapNavigationProvider.select((s) => s.isNavigating));
+    final showRoutesSheet = ref.watch(mapNavigationProvider.select((s) => s.showRoutesSheet));
+    final hideTabBar = isNavigating || showRoutesSheet;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: backgroundColor,
-      appBar: isNavigating ? null : PreferredSize(
-        preferredSize: const Size.fromHeight(62),
-        child: Container(
-          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-          child: _buildTabBar(context, isDark, settingsState.doubleTapToSwitchTab),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(hideTabBar ? 0 : 62),
+        child: ClipRect(
+          child: AnimatedSlide(
+            offset: hideTabBar ? const Offset(0, -1) : Offset.zero,
+            duration: AppDurations.fastAnimation,
+            curve: Curves.easeInOut,
+            child: AnimatedOpacity(
+              opacity: hideTabBar ? 0.0 : 1.0,
+              duration: AppDurations.fastAnimation,
+              curve: Curves.easeInOut,
+              child: IgnorePointer(
+                ignoring: hideTabBar,
+                child: Container(
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+                  child: _buildTabBar(context, isDark, settingsState.doubleTapToSwitchTab),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
       body: Column(

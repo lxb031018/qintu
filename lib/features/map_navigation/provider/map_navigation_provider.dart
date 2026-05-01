@@ -429,7 +429,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   /// 隐藏路线栏
   void hideRoutesSheet() {
-    state = state.copyWith(showRoutesSheet: false);
+    state = state.copyWith(showRoutesSheet: false, clearCurrentRouteType: true);
   }
 
   /// 开始导航
