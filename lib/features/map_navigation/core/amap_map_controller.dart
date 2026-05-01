@@ -114,6 +114,7 @@ class AmapMapController {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
+    List<bool>? dashedFlags,
     List<int>? routeIds,
   }) async {
     try {
@@ -142,6 +143,10 @@ class AmapMapController {
       if (widths != null) {
         params['widths'] = widths;
         debugPrint('   - 自定义宽度: $widths');
+      }
+      if (dashedFlags != null) {
+        params['dashedFlags'] = dashedFlags;
+        debugPrint('   - 虚线标记: $dashedFlags');
       }
       if (routeIds != null && routeIds.isNotEmpty) {
         params['routeIds'] = routeIds;

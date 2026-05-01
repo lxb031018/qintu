@@ -109,7 +109,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       if (isNavigating) return; // 导航中不清除路线
       if (showRoutesSheet && routes.isNotEmpty && routeType != null
           && originLocation != null && destinationLocation != null) {
-        ref.read(mapDisplayServiceProvider).showRoutes(routes, 0, routeType);
+        if (routeType != RouteType.transit) {
+          ref.read(mapDisplayServiceProvider).showRoutes(routes, 0, routeType);
+        }
       } else {
         ref.read(mapDisplayServiceProvider).clearRoutes();
       }
@@ -195,6 +197,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 currentRouteType: navState.currentRouteType ?? RouteType.driving,
                 onRouteSelected: (index) {
                   ref.read(mapNavigationProvider.notifier).selectRoute(index);
+                  if (navState.currentRouteType == RouteType.transit) {
+                    final route = navState.routes[index];
+                    ref.read(mapDisplayServiceProvider).showTransitRouteDetail(route);
+                  }
                 },
                 onRouteTypeChanged: (type) {
                   ref.read(mapNavigationProvider.notifier).switchRouteType(type);
@@ -204,6 +210,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 },
                 onStartNavigation: () {
                   ref.read(mapNavigationProvider.notifier).startNavigation();
+                },
+                onDetailExited: () {
+                  ref.read(mapDisplayServiceProvider).clearRoutes();
                 },
               ),
             ),

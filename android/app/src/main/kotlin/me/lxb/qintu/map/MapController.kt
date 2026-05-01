@@ -126,6 +126,9 @@ class MapController(
                 val widths = call.argument<List<*>>("widths")?.mapNotNull {
                     (it as? Number)?.toDouble()
                 }
+                val dashedFlags = call.argument<List<*>>("dashedFlags")?.mapNotNull {
+                    it as? Boolean
+                }
 
                 // 优先用 RouteOverLay（与导航样式一致，带方向箭头）
                 if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
@@ -150,7 +153,7 @@ class MapController(
                     }
                 } ?: emptyList()
 
-                val count = routeRenderer.showRoutes(routes, selectIndex, colors, widths)
+                val count = routeRenderer.showRoutes(routes, selectIndex, colors, widths, dashedFlags)
                 result.success(count)
             }
 

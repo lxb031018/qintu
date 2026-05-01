@@ -76,7 +76,8 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         routes: List<List<Map<String, Double>>>,
         selectIndex: Int,
         colors: List<Int>? = null,
-        widths: List<Double>? = null
+        widths: List<Double>? = null,
+        dashedFlags: List<Boolean>? = null
     ): Int {
         Log.d(TAG, "🗺️ [Native] showRoutes (Polyline fallback) 开始执行, colors=${colors?.size}, widths=${widths?.size}")
 
@@ -130,13 +131,26 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
                     if (index == selectIndex) SELECTED_WIDTH else UNSELECTED_WIDTH
                 }
 
-                val polyline = aMap!!.addPolyline(
-                    PolylineOptions()
-                        .addAll(points)
-                        .color(polyColor)
-                        .width(polyWidth)
-                        .setCustomTexture(routeTexture)
-                )
+                val polyline = if (usePerSegmentColors) {
+                    aMap!!.addPolyline(
+                        PolylineOptions()
+                            .addAll(points)
+                            .color(polyColor)
+                            .width(polyWidth)
+                    )
+                } else {
+                    aMap!!.addPolyline(
+                        PolylineOptions()
+                            .addAll(points)
+                            .color(polyColor)
+                            .width(polyWidth)
+                            .setCustomTexture(routeTexture)
+                    )
+                }
+
+                if (dashedFlags != null && index < dashedFlags.size && dashedFlags[index]) {
+                    polyline.setDottedLine(true)
+                }
 
                 routePolylines.add(polyline)
                 routePolylineColors.add(polyColor)

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qintu/utils/ui/color_utils.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import 'location_input_provider.dart';
@@ -67,13 +66,42 @@ class MapDisplayService {
   ) async {
     if (routes.isEmpty) return;
 
-    // 公交路线：按 segment 拆分渲染（步行=灰, 公交=蓝, 地铁=红）
-    if (routeType == RouteType.transit && routes.first.transitSegments != null) {
-      await _showTransitSegments(routes, selectedIndex);
+    // 公交路线：列表页使用扁平渲染（统一紫色），详情页另行调用 showTransitRouteDetail
+    if (routeType == RouteType.transit) {
+      _drawFlatRoutes(routes, selectedIndex, routeType);
       return;
     }
 
     _drawFlatRoutes(routes, selectedIndex, routeType);
+  }
+
+  /// 公交路线详情页：仅渲染所选路线的分段样式（步行虚线、公交蓝、地铁红）
+  Future<void> showTransitRouteDetail(RouteOption route) async {
+    final segments = route.transitSegments;
+    if (segments == null || segments.isEmpty) return;
+
+    final segmentPoints = <List<LatLng>>[];
+    final segmentColors = <int>[];
+    final segmentWidths = <double>[];
+    final segmentDashed = <bool>[];
+
+    for (final seg in segments) {
+      if (seg.points.isEmpty) continue;
+      segmentPoints.add(seg.points);
+      segmentColors.add(_segmentColor(seg));
+      segmentWidths.add(_segmentWidth(seg));
+      segmentDashed.add(seg.segmentType == 0);
+    }
+
+    if (segmentPoints.isEmpty) return;
+
+    await _notifier.showRoutes(
+      segmentPoints,
+      selectIndex: 0,
+      colors: segmentColors,
+      widths: segmentWidths,
+      dashedFlags: segmentDashed,
+    );
   }
 
   Future<void> _drawFlatRoutes(
@@ -93,40 +121,9 @@ class MapDisplayService {
     );
   }
 
-  Future<void> _showTransitSegments(
-    List<RouteOption> routes,
-    int selectedIndex,
-  ) async {
-    final allSegmentPoints = <List<LatLng>>[];
-    final allSegmentColors = <int>[];
-
-    for (int ri = 0; ri < routes.length; ri++) {
-      final segments = routes[ri].transitSegments;
-      if (segments == null) continue;
-
-      final isSelected = ri == selectedIndex;
-      final dimmed = isSelected ? 1.0 : 0.3;
-
-      for (final seg in segments) {
-        if (seg.points.isEmpty) continue;
-        final baseColor = _segmentColor(seg);
-        allSegmentPoints.add(seg.points);
-        allSegmentColors.add(dimColor(baseColor, dimmed));
-      }
-    }
-
-    // 无任何分段数据时回退扁平渲染
-    if (allSegmentPoints.isEmpty) {
-      _drawFlatRoutes(routes, selectedIndex, RouteType.transit);
-      return;
-    }
-
-    await _notifier.showRoutes(
-      allSegmentPoints,
-      selectIndex: 0,
-      colors: allSegmentColors,
-    );
-  }
+  static const double _walkWidth = 8.0;
+  static const double _busWidth = 12.0;
+  static const double _subwayWidth = 14.0;
 
   static int _segmentColor(TransitSegment seg) {
     switch (seg.segmentType) {
@@ -136,6 +133,17 @@ class MapDisplayService {
         return RouteColors.transitSubway;
       default:
         return RouteColors.transitWalk;
+    }
+  }
+
+  static double _segmentWidth(TransitSegment seg) {
+    switch (seg.segmentType) {
+      case 1:
+        return _busWidth;
+      case 2:
+        return _subwayWidth;
+      default:
+        return _walkWidth;
     }
   }
 

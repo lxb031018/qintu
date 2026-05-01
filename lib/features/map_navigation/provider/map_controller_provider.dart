@@ -27,9 +27,11 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
+    List<bool>? dashedFlags,
     List<int>? routeIds,
   }) async {
-    return await state?.showRoutes(routes, selectIndex: selectIndex, colors: colors, widths: widths, routeIds: routeIds);
+    return await state?.showRoutes(routes, selectIndex: selectIndex,
+        colors: colors, widths: widths, dashedFlags: dashedFlags, routeIds: routeIds);
   }
 
   Future<bool> selectRoute(

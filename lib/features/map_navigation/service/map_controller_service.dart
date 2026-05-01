@@ -37,9 +37,10 @@ class MapControllerService {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
+    List<bool>? dashedFlags,
     List<int>? routeIds,
-  }) => _controller.showRoutes(routes,
-          selectIndex: selectIndex, colors: colors, widths: widths, routeIds: routeIds);
+  }) => _controller.showRoutes(routes, selectIndex: selectIndex,
+          colors: colors, widths: widths, dashedFlags: dashedFlags, routeIds: routeIds);
 
   Future<bool> selectRoute(int index,
           {int selectedColor = 0xFFFF4D4F, int unselectedColor = 0x401890FF}) =>

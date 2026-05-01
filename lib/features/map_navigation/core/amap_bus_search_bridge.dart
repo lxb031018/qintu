@@ -70,7 +70,10 @@ class AmapBusSearchBridge {
       final paths = result['paths'] as List<dynamic>? ?? [];
       final taxiCost = (result['taxiCost'] as num?)?.toDouble();
       Logs.ui.info('✅ 原生公交算路: ${paths.length} 条方案');
-      return paths.map((p) => _parseTransitPath(p as Map<dynamic, dynamic>, mode: mode, taxiCost: taxiCost)).toList();
+      final routes = paths
+          .map((p) => _parseTransitPath(p as Map<dynamic, dynamic>, mode: mode, taxiCost: taxiCost))
+          .toList();
+      return routes.expand((r) => _explodeAlternatives(r)).toList();
     } on PlatformException catch (e) {
       Logs.ui.warning('❌ 原生公交算路失败: ${e.message}');
       return [];
@@ -344,6 +347,60 @@ class AmapBusSearchBridge {
       taxiCost: taxiCost,
       strategyMode: mode,
     );
+  }
+
+  /// 将含多条线路的 step 拆分为独立的 RouteOption（每条线路一个）
+  ///
+  /// AMap API 返回的一个 step 中可能包含多条可选线路（如 0路/1路/2路都能直达），
+  /// 该方法将每条线路拆分为独立的 RouteOption，使列表页每线路一个卡片。
+  static List<RouteOption> _explodeAlternatives(RouteOption route) {
+    final segments = route.transitSegments;
+    if (segments == null || segments.isEmpty) return [route];
+
+    // 找到第一个含多条线路的乘车段
+    var multiLineIdx = -1;
+    for (int i = 0; i < segments.length; i++) {
+      if (segments[i].lines.length > 1) {
+        multiLineIdx = i;
+        break;
+      }
+    }
+
+    if (multiLineIdx == -1) return [route];
+
+    // 为每条线路创建独立的 RouteOption
+    final seg = segments[multiLineIdx];
+    return seg.lines.map((line) {
+      final newSegments = segments.map((s) {
+        if (identical(s, seg)) {
+          return TransitSegment(
+            lines: [line],
+            walkingDistance: s.walkingDistance,
+            points: s.points,
+            entrance: s.entrance,
+            exit: s.exit,
+            walkSteps: s.walkSteps,
+            taxi: s.taxi,
+          );
+        }
+        return s;
+      }).toList();
+
+      return RouteOption(
+        distance: route.distance,
+        duration: route.duration,
+        strategy: '${line.typeText}${line.name}',
+        tolls: line.totalPrice ?? route.tolls,
+        points: route.points,
+        routeType: RouteType.transit,
+        transitSegments: newSegments,
+        walkDistance: route.walkDistance,
+        busDistance: route.busDistance,
+        isNightBus: route.isNightBus,
+        taxiCost: route.taxiCost,
+        strategyMode: route.strategyMode,
+      );
+    }).toList();
   }
 
   static int _walkPointCount(Map<dynamic, dynamic>? walk) {

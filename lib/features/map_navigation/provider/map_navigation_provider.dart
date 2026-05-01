@@ -385,8 +385,10 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           selectedRouteIndex: 0,
           routesState: AsyncState.success(routes),
         );
-        // 在地图上显示路线预览
-        _mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
+        // 在地图上显示路线预览（公交仅详情页渲染，此处跳过）
+        if (state.currentRouteType != RouteType.transit) {
+          _mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
+        }
       }
     } catch (e) {
       if (_disposed) return;
@@ -407,11 +409,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void selectRoute(int index) {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
-      // Transit uses per-segment colors computed on the Flutter side;
-      // re-call showRoutes to update dimming on the new selection.
-      if (state.currentRouteType == RouteType.transit) {
-        _mapDisplayService.showRoutes(state.routes, index, state.currentRouteType!);
-      } else {
+      // 公交详情页渲染由 map_navigation_tab 的 onRouteSelected 回调触发
+      if (state.currentRouteType != RouteType.transit) {
         ref.read(mapControllerNotifierProvider)?.selectRoute(index);
       }
     }

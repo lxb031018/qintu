@@ -49,6 +49,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 查看行程详情回调（公交模式）
   final VoidCallback? onViewItinerary;
 
+  /// 退出详情页回调（公交模式），用于恢复地图扁平渲染
+  final VoidCallback? onDetailExited;
+
   const RouteResultBottomSheet({
     super.key,
     this.routes = const [],
@@ -60,6 +63,7 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.isVisible = true,
     this.onStartNavigation,
     this.onViewItinerary,
+    this.onDetailExited,
   });
 
   @override
@@ -242,7 +246,10 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => setState(() => _detailRoute = null),
+                onTap: () {
+                  setState(() => _detailRoute = null);
+                  widget.onDetailExited?.call();
+                },
                 child: const Icon(Icons.arrow_back, size: 20, color: AppColors.grey600),
               ),
               const SizedBox(width: AppSpacings.sm),
