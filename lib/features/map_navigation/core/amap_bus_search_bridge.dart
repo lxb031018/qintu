@@ -152,7 +152,9 @@ class AmapBusSearchBridge {
         }
       }
 
-      // 公交部分
+      // 公交部分 — 所有线路加入 metadata，但只取第一条线路的 polyline 用于渲染
+      // （多条线路是备选方案，由 _explodeAlternatives 拆分为独立 RouteOption，
+      //   若全部 concat 会造成线路终点→下条起点之间的贯穿直线）
       if (busLines != null && busLines.isNotEmpty) {
         for (final bl in busLines) {
           if (bl is! Map) continue;
@@ -177,21 +179,23 @@ class AmapBusSearchBridge {
                 ?.map((s) => BusLineStation.fromMap(s as Map<dynamic, dynamic>))
                 .toList(),
           ));
+        }
 
-          final polyline = bl['polyline'] as List<dynamic>? ?? [];
-          if (polyline.isEmpty) {
-            Logs.map.warning('⚠️ Dart 侧公交线路 [${bl['name']}] polyline 为空');
-          } else if (polyline.length <= 2) {
-            Logs.map.warning('⚠️ Dart 侧公交线路 [${bl['name']}] polyline 仅 ${polyline.length} 个点，可能渲染为直线');
-          } else {
-            Logs.map.debug('✅ Dart 侧公交线路 [${bl['name']}] polyline 共 ${polyline.length} 个点');
-          }
-          for (final p in polyline) {
-            segmentPoints.add(LatLng(
-              (p['lat'] as num).toDouble(),
-              (p['lng'] as num).toDouble(),
-            ));
-          }
+        // 仅取第一条线路的 polyline 渲染（备选线路的 polyline 在 _explodeAlternatives 中各自处理）
+        final firstLine = busLines.first as Map<dynamic, dynamic>;
+        final polyline = firstLine['polyline'] as List<dynamic>? ?? [];
+        if (polyline.isEmpty) {
+          Logs.map.warning('⚠️ Dart 侧公交线路 [${firstLine['name']}] polyline 为空');
+        } else if (polyline.length <= 2) {
+          Logs.map.warning('⚠️ Dart 侧公交线路 [${firstLine['name']}] polyline 仅 ${polyline.length} 个点，可能渲染为直线');
+        } else {
+          Logs.map.debug('✅ Dart 侧公交线路 [${firstLine['name']}] polyline 共 ${polyline.length} 个点');
+        }
+        for (final p in polyline) {
+          segmentPoints.add(LatLng(
+            (p['lat'] as num).toDouble(),
+            (p['lng'] as num).toDouble(),
+          ));
         }
       }
 
@@ -293,16 +297,25 @@ class AmapBusSearchBridge {
       if (walkingDistance > 0 && lines.isNotEmpty) {
         final walkPtCount = _walkPointCount(walk);
         if (walkPtCount > 0 && walkPtCount < segmentPoints.length) {
+          final walkPoints = List<LatLng>.of(segmentPoints.sublist(0, walkPtCount));
+          final ridePoints = List<LatLng>.of(segmentPoints.sublist(walkPtCount));
+
+          // 填充步行终点→乘车起点的间隙（防贯穿直线）
+          if (walkPoints.isNotEmpty && ridePoints.isNotEmpty &&
+              !_isNear(walkPoints.last, ridePoints.first)) {
+            ridePoints.insert(0, walkPoints.last);
+          }
+
           transitSegments.add(TransitSegment(
             lines: const [],
             walkingDistance: walkingDistance,
-            points: segmentPoints.sublist(0, walkPtCount),
+            points: walkPoints,
             walkSteps: parsedWalkSteps.isNotEmpty ? parsedWalkSteps : null,
           ));
           transitSegments.add(TransitSegment(
             lines: lines,
             walkingDistance: 0,
-            points: segmentPoints.sublist(walkPtCount),
+            points: ridePoints,
             entrance: entrance,
             exit: exit,
             taxi: taxi,
@@ -332,10 +345,20 @@ class AmapBusSearchBridge {
       }
     }
 
-    // 用所有 segment 的 points 拼接成完整路线
+    // 填充 step 间的间隙（如 bus 终点→下一段 walk 起点），再拼接完整路线
+    _fillSegmentGaps(transitSegments);
+
     final allPoints = <LatLng>[];
     for (final seg in transitSegments) {
-      allPoints.addAll(seg.points);
+      if (seg.points.isEmpty) continue;
+      if (allPoints.isNotEmpty && !_isNear(allPoints.last, seg.points.first)) {
+        allPoints.add(seg.points.first);
+      }
+      // 跳过与上一条重合的首点
+      final start = (allPoints.isEmpty || !_isNear(allPoints.last, seg.points.first)) ? 0 : 1;
+      if (start < seg.points.length) {
+        allPoints.addAll(start == 0 ? seg.points : seg.points.sublist(start));
+      }
     }
 
     return RouteOption(
@@ -383,7 +406,7 @@ class AmapBusSearchBridge {
           return TransitSegment(
             lines: [line],
             walkingDistance: s.walkingDistance,
-            points: s.points,
+            points: s.points, // 复用首个线路的 polyline（备选线路 polyline 未单独存储）
             entrance: s.entrance,
             exit: s.exit,
             walkSteps: s.walkSteps,
@@ -393,12 +416,25 @@ class AmapBusSearchBridge {
         return s;
       }).toList();
 
+      // 从 newSegments 重建 allPoints（含间隙填充），避免复用 route.points 里旧的首线 polyline
+      final newAllPoints = <LatLng>[];
+      for (final s in newSegments) {
+        if (s.points.isEmpty) continue;
+        if (newAllPoints.isNotEmpty && !_isNear(newAllPoints.last, s.points.first)) {
+          newAllPoints.add(s.points.first);
+        }
+        final start = (newAllPoints.isEmpty || !_isNear(newAllPoints.last, s.points.first)) ? 0 : 1;
+        if (start < s.points.length) {
+          newAllPoints.addAll(start == 0 ? s.points : s.points.sublist(start));
+        }
+      }
+
       return RouteOption(
         distance: route.distance,
         duration: route.duration,
         strategy: '${line.typeText}${line.name}',
         tolls: line.totalPrice ?? route.tolls,
-        points: route.points,
+        points: newAllPoints,
         routeType: RouteType.transit,
         transitSegments: newSegments,
         walkDistance: route.walkDistance,
@@ -408,6 +444,35 @@ class AmapBusSearchBridge {
         strategyMode: route.strategyMode,
       );
     }).toList();
+  }
+
+  /// 判断两个坐标是否足够接近（~1 米），用于检测路段间是否需要填充连接点
+  static bool _isNear(LatLng a, LatLng b) {
+    const double epsilon = 1e-5;
+    return (a.latitude - b.latitude).abs() < epsilon &&
+        (a.longitude - b.longitude).abs() < epsilon;
+  }
+
+  /// 填充相邻 segment 间的间隙：若前一段终点 ≠ 后一段起点，插入连接点
+  static void _fillSegmentGaps(List<TransitSegment> segments) {
+    for (int i = 0; i < segments.length - 1; i++) {
+      final cur = segments[i];
+      final next = segments[i + 1];
+      if (cur.points.isEmpty || next.points.isEmpty) continue;
+      if (!_isNear(cur.points.last, next.points.first)) {
+        final mutableNext = List<LatLng>.of(next.points);
+        mutableNext.insert(0, cur.points.last);
+        segments[i + 1] = TransitSegment(
+          lines: next.lines,
+          walkingDistance: next.walkingDistance,
+          points: mutableNext,
+          entrance: next.entrance,
+          exit: next.exit,
+          walkSteps: next.walkSteps,
+          taxi: next.taxi,
+        );
+      }
+    }
   }
 
   static int _walkPointCount(Map<dynamic, dynamic>? walk) {

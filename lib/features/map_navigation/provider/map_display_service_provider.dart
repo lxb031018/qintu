@@ -86,7 +86,8 @@ class MapDisplayService {
     final segmentWidths = <double>[];
     final segmentDashed = <bool>[];
 
-    for (final seg in segments) {
+    for (int i = 0; i < segments.length; i++) {
+      final seg = segments[i];
       final typeLabel = seg.segmentType == 0 ? '步行' : (seg.segmentType == 1 ? '公交' : '地铁');
       if (seg.points.isEmpty) {
         Logs.map.warning('⚠️ 渲染侧 segment [$typeLabel] points 为空，跳过渲染');
@@ -101,6 +102,18 @@ class MapDisplayService {
       segmentColors.add(_segmentColor(seg));
       segmentWidths.add(_segmentWidth(seg));
       segmentDashed.add(seg.segmentType == 0);
+
+      // 填充当前段终点 → 下一段起点的间隙（虚线步行样式连接线，防止视觉断裂）
+      if (i < segments.length - 1) {
+        final nextSeg = segments[i + 1];
+        if (nextSeg.points.isNotEmpty &&
+            !_pointsNear(seg.points.last, nextSeg.points.first)) {
+          segmentPoints.add([seg.points.last, nextSeg.points.first]);
+          segmentColors.add(RouteColors.transitWalk);
+          segmentWidths.add(_walkWidth);
+          segmentDashed.add(true);
+        }
+      }
     }
 
     if (segmentPoints.isEmpty) return;
@@ -112,6 +125,12 @@ class MapDisplayService {
       widths: segmentWidths,
       dashedFlags: segmentDashed,
     );
+  }
+
+  static bool _pointsNear(LatLng a, LatLng b) {
+    const double epsilon = 1e-5;
+    return (a.latitude - b.latitude).abs() < epsilon &&
+        (a.longitude - b.longitude).abs() < epsilon;
   }
 
   Future<void> _drawFlatRoutes(

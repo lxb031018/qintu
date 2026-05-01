@@ -132,14 +132,24 @@ class AmapRoutingService {
       return route;
     }
 
-    final firstSeg = segments.first;
-    final lastSeg = segments.last;
+    // 查找第一个/最后一个乘车段（公交/地铁/铁路，非纯步行段）的首末站坐标
+    LatLng? firstTransitStop;
+    for (final seg in segments) {
+      if (seg.hasTransit && seg.points.isNotEmpty) {
+        firstTransitStop = seg.points.first;
+        break;
+      }
+    }
 
-    // 获取首站和末站坐标（来自 segment.points）
-    final firstTransitStop = firstSeg.points.isNotEmpty ? firstSeg.points.first : null;
-    final lastTransitStop = lastSeg.points.isNotEmpty ? lastSeg.points.last : null;
+    LatLng? lastTransitStop;
+    for (final seg in segments.reversed) {
+      if (seg.hasTransit && seg.points.isNotEmpty) {
+        lastTransitStop = seg.points.last;
+        break;
+      }
+    }
 
-    // 如果首站/末站坐标无效，跳过补充
+    // 如果找不到乘车段坐标，跳过补充
     if (firstTransitStop == null || lastTransitStop == null) {
       return route;
     }
@@ -206,10 +216,17 @@ class AmapRoutingService {
       ));
     }
 
-    // 重建 allPoints
+    // 重建 allPoints（含间隙填充）
     final newAllPoints = <LatLng>[];
     for (final seg in newSegments) {
-      newAllPoints.addAll(seg.points);
+      if (seg.points.isEmpty) continue;
+      if (newAllPoints.isNotEmpty && !_pointsNear(newAllPoints.last, seg.points.first)) {
+        newAllPoints.add(seg.points.first);
+      }
+      final start = (newAllPoints.isEmpty || !_pointsNear(newAllPoints.last, seg.points.first)) ? 0 : 1;
+      if (start < seg.points.length) {
+        newAllPoints.addAll(start == 0 ? seg.points : seg.points.sublist(start));
+      }
     }
 
     return RouteOption(
@@ -231,6 +248,12 @@ class AmapRoutingService {
       strategyId: route.strategyId,
       trafficLights: route.trafficLights,
     );
+  }
+
+  static bool _pointsNear(LatLng a, LatLng b) {
+    const double epsilon = 1e-5;
+    return (a.latitude - b.latitude).abs() < epsilon &&
+        (a.longitude - b.longitude).abs() < epsilon;
   }
 
   /// 导航状态流（透传原生桥接层事件）
