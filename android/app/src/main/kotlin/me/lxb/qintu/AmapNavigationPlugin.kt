@@ -90,6 +90,10 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "stopNavigation" -> impl.stopNavi(result)
 
+            "pauseNavigation" -> impl.pauseNavi(result)
+
+            "resumeNavigation" -> impl.resumeNavi(result)
+
             "togglePause" -> impl.pauseNavi(result)
 
             else -> result.notImplemented()

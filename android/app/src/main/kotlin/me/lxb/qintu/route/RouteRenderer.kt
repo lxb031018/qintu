@@ -24,21 +24,27 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
 
     companion object {
         private const val TAG = "RouteRenderer"
-        private const val SELECTED_COLOR = 0xFF1890FF.toInt()
-        private const val UNSELECTED_COLOR = 0x801890FF.toInt()
-        private const val SELECTED_WIDTH = 14f
-        private const val UNSELECTED_WIDTH = 9f
+        private var SELECTED_COLOR = 0xFF1890FF.toInt()
+        private var UNSELECTED_COLOR = 0x801890FF.toInt()
+        private var SELECTED_WIDTH = 14f
+        private var UNSELECTED_WIDTH = 9f
         private const val SELECTED_TRANSPARENCY = 1.0f
         private const val UNSELECTED_TRANSPARENCY = 0.4f
         private const val TEXTURE_SIZE = 16
         private const val TEXTURE_DOT_SIZE = 5f
     }
 
+    private var showTmcStatus = false
+    private var showTrafficIcon = false
+
     private val routePolylines = mutableListOf<Polyline>()
     private val routeOverlays = mutableListOf<RouteOverLay>()
     private val routeOverlayPaths = mutableListOf<AMapNaviPath>()
     private val navRouteOverlay = mutableListOf<RouteOverLay>()
     private var selectedRouteIndex = -1
+    private var hasPerPolylineColors = false
+    private val routePolylineColors = mutableListOf<Int>()
+    private val routePolylineWidths = mutableListOf<Float>()
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
 
@@ -66,8 +72,13 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     /**
      * 用坐标点列表绘制路线（纯色 Polyline，无纹理 — 仅当 RouteOverLay 不可用时回退）
      */
-    fun showRoutes(routes: List<List<Map<String, Double>>>, selectIndex: Int): Int {
-        Log.d(TAG, "🗺️ [Native] showRoutes (Polyline fallback) 开始执行")
+    fun showRoutes(
+        routes: List<List<Map<String, Double>>>,
+        selectIndex: Int,
+        colors: List<Int>? = null,
+        widths: List<Double>? = null
+    ): Int {
+        Log.d(TAG, "🗺️ [Native] showRoutes (Polyline fallback) 开始执行, colors=${colors?.size}, widths=${widths?.size}")
 
         if (aMap == null) {
             Log.e(TAG, "❌ [Native] 地图未初始化!")
@@ -80,6 +91,13 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             Log.w(TAG, "⚠️ [Native] routesData 为空")
             return 0
         }
+
+        // Use per-polyline colors only when they differ (e.g. transit segments).
+        // When all colors are the same (e.g. driving routes), fall back to
+        // selectIndex-based styling so selected/unselected is visually distinct.
+        val usePerSegmentColors = colors != null && colors.size == routes.size && colors.distinct().size > 1
+        val usePerSegmentWidths = widths != null && widths.size == routes.size && widths.distinct().size > 1
+        hasPerPolylineColors = usePerSegmentColors
 
         var successCount = 0
         for ((index, routeData) in routes.withIndex()) {
@@ -95,18 +113,36 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
                     continue
                 }
 
-                val isSelected = index == selectIndex
+                // Per-segment color → use directly (ignore selectIndex)
+                // No per-segment color → fall back to selectIndex-based colors
+                val polyColor = if (usePerSegmentColors) {
+                    colors!![index]
+                } else {
+                    if (index == selectIndex) SELECTED_COLOR else UNSELECTED_COLOR
+                }
+
+                val polyWidth = if (usePerSegmentWidths) {
+                    widths!![index].toFloat()
+                } else if (usePerSegmentColors) {
+                    // Per-segment colors active but no widths → uniform width
+                    SELECTED_WIDTH
+                } else {
+                    if (index == selectIndex) SELECTED_WIDTH else UNSELECTED_WIDTH
+                }
+
                 val polyline = aMap!!.addPolyline(
                     PolylineOptions()
                         .addAll(points)
-                        .color(if (isSelected) SELECTED_COLOR else UNSELECTED_COLOR)
-                        .width(if (isSelected) SELECTED_WIDTH else UNSELECTED_WIDTH)
+                        .color(polyColor)
+                        .width(polyWidth)
                         .setCustomTexture(routeTexture)
                 )
 
                 routePolylines.add(polyline)
+                routePolylineColors.add(polyColor)
+                routePolylineWidths.add(polyWidth)
                 successCount++
-                Log.d(TAG, "✅ [Native] 成功添加路线 $index: ${points.size} 个点")
+                Log.d(TAG, "✅ [Native] 成功添加路线 $index: ${points.size} 个点, color=#${Integer.toHexString(polyColor)}, width=$polyWidth")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ [Native] 添加路线 $index 失败: ${e.message}")
             }
@@ -249,6 +285,13 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             return false
         }
 
+        // 有自定义每段颜色时，不修改它们（Flutter 会重新调用 showRoutes 更新选中状态）
+        if (hasPerPolylineColors) {
+            Log.d(TAG, "✅ [Native] 每段颜色已预设，跳过 selectRoute 颜色更新")
+            selectedRouteIndex = index
+            return true
+        }
+
         for ((i, polyline) in routePolylines.withIndex()) {
             try {
                 polyline.color = if (i == index) SELECTED_COLOR else UNSELECTED_COLOR
@@ -272,6 +315,9 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             }
         }
         routePolylines.clear()
+        hasPerPolylineColors = false
+        routePolylineColors.clear()
+        routePolylineWidths.clear()
 
         for (overlay in routeOverlays) {
             try { overlay.removeFromMap() } catch (e: Exception) {
@@ -385,5 +431,32 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 清除单条路线标记失败: ${e.message}")
         }
+    }
+
+    // ======== 路线样式控制 ========
+
+    fun setTmcEnabled(enabled: Boolean) {
+        showTmcStatus = enabled
+        // RouteOverLay 不直接支持 setShowTmcStatus — TMC 由 AMapNavi 层控制
+        Log.d(TAG, "🚦 TMC 路况颜色: ${if (enabled) "显示" else "隐藏"}")
+    }
+
+    fun setTrafficIconEnabled(enabled: Boolean) {
+        showTrafficIcon = enabled
+        // RouteOverLay 不直接支持 setShowTrafficIcon — 交通事件图标由 AMapNavi 层控制
+        Log.d(TAG, "🚧 交通事件图标: ${if (enabled) "显示" else "隐藏"}")
+    }
+
+    fun updateRouteStyle(
+        selectedColor: Int? = null,
+        unselectedColor: Int? = null,
+        selectedWidth: Float? = null,
+        unselectedWidth: Float? = null
+    ) {
+        selectedColor?.let { SELECTED_COLOR = it }
+        unselectedColor?.let { UNSELECTED_COLOR = it }
+        selectedWidth?.let { SELECTED_WIDTH = it }
+        unselectedWidth?.let { UNSELECTED_WIDTH = it }
+        Log.d(TAG, "🎨 路线样式已更新: sel=${Integer.toHexString(SELECTED_COLOR)}/${SELECTED_WIDTH}, unsel=${Integer.toHexString(UNSELECTED_COLOR)}/${UNSELECTED_WIDTH}")
     }
 }

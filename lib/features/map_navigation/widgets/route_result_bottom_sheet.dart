@@ -4,6 +4,7 @@ import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
+import 'transit_itinerary_card.dart';
 
 /// ============================================
 /// 路线规划结果底部弹窗
@@ -17,6 +18,7 @@ import '../models/map_overlay_models.dart';
 /// - 空状态提示
 /// - 暗黑模式适配
 /// - 支持下拉拖动隐藏
+/// - 公交路线显示行程详情
 /// ============================================
 
 class RouteResultBottomSheet extends StatefulWidget {
@@ -44,6 +46,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 开始导航按钮点击回调
   final VoidCallback? onStartNavigation;
 
+  /// 查看行程详情回调（公交模式）
+  final VoidCallback? onViewItinerary;
+
   const RouteResultBottomSheet({
     super.key,
     this.routes = const [],
@@ -54,6 +59,7 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.onRouteTypeChanged,
     this.isVisible = true,
     this.onStartNavigation,
+    this.onViewItinerary,
   });
 
   @override
@@ -132,6 +138,9 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
                 _buildEmptyState(isDark)
               else
                 _buildRouteList(isDark),
+              // 公交行程详情
+              if (widget.routes.isNotEmpty && widget.currentRouteType == RouteType.transit)
+                _buildTransitItinerary(isDark),
               // 分享和开始导航按钮
               if (widget.routes.isNotEmpty) _buildActionButtons(isDark),
             ],
@@ -200,17 +209,44 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     );
   }
 
+  Widget _buildTransitItinerary(bool isDark) {
+    final selectedRoute = widget.selectedIndex < widget.routes.length
+        ? widget.routes[widget.selectedIndex]
+        : null;
+
+    if (selectedRoute == null || selectedRoute.transitSegments == null || selectedRoute.transitSegments!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 260),
+      child: SingleChildScrollView(
+        child: TransitItineraryCard(
+          segments: selectedRoute.transitSegments!,
+          totalDistance: double.tryParse(selectedRoute.distance) ?? 0,
+          totalDuration: double.tryParse(selectedRoute.duration) ?? 0,
+          tolls: selectedRoute.tolls ?? 0,
+          walkDistance: selectedRoute.walkDistance,
+          transferCount: selectedRoute.transferCount,
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButtons(bool isDark) {
+    final isTransit = widget.currentRouteType == RouteType.transit;
+
     return Padding(
       padding: const EdgeInsets.only(
         left: AppSpacings.md,
         right: AppSpacings.md,
         bottom: AppSpacings.md,
+        top: AppSpacings.sm,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // 开始导航按钮
+          // 开始导航 / 查看行程按钮
           GestureDetector(
             onTap: widget.onStartNavigation,
             child: Container(
@@ -219,20 +255,20 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
                 vertical: AppSpacings.xs,
               ),
               decoration: BoxDecoration(
-                color: AppColors.primaryColor,
+                color: isTransit ? AppColors.grey600 : AppColors.primaryColor,
                 borderRadius: BorderRadius.all(AppRadii.small),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.navigation,
+                    isTransit ? Icons.map : Icons.navigation,
                     size: 16,
                     color: isDark ? AppColors.darkTextColor : Colors.white,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '开始导航',
+                    isTransit ? '查看路线图' : '开始导航',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

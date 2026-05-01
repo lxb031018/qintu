@@ -96,4 +96,58 @@ class MapControllerService {
 
   Future<bool> setCarOverlayVisible(bool visible) =>
       _controller.setCarOverlayVisible(visible);
+
+  // ==================== 相机增强 ====================
+
+  Future<bool> animateCamera({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    double bearing = -1,
+    double tilt = -1,
+    int duration = 0,
+  }) => _controller.animateCamera(lat: lat, lng: lng, zoom: zoom,
+          bearing: bearing, tilt: tilt, duration: duration);
+
+  Future<void> zoomIn() => _controller.zoomIn();
+  Future<void> zoomOut() => _controller.zoomOut();
+  Future<void> zoomTo(double level, {int duration = 0}) =>
+      _controller.zoomTo(level, duration: duration);
+
+  // ==================== 地图图层 ====================
+
+  Future<bool> setMapType(int type) => _controller.setMapType(type);
+  Future<bool> setTrafficEnabled(bool enabled) =>
+      _controller.setTrafficEnabled(enabled);
+  Future<bool> setBuildingsEnabled(bool enabled) =>
+      _controller.setBuildingsEnabled(enabled);
+  Future<bool> showIndoorMap(bool enabled) => _controller.showIndoorMap(enabled);
+
+  // ==================== 手势控制 ====================
+
+  Future<bool> setScrollGesturesEnabled(bool enabled) =>
+      _controller.setScrollGesturesEnabled(enabled);
+  Future<bool> setZoomGesturesEnabled(bool enabled) =>
+      _controller.setZoomGesturesEnabled(enabled);
+  Future<bool> setRotateGesturesEnabled(bool enabled) =>
+      _controller.setRotateGesturesEnabled(enabled);
+  Future<bool> setTiltGesturesEnabled(bool enabled) =>
+      _controller.setTiltGesturesEnabled(enabled);
+
+  // ==================== 路线渲染样式 ====================
+
+  Future<bool> setRouteTmcEnabled(bool enabled) =>
+      _controller.setRouteTmcEnabled(enabled);
+  Future<bool> setRouteTrafficIconEnabled(bool enabled) =>
+      _controller.setRouteTrafficIconEnabled(enabled);
+  Future<bool> updateSelectedRouteStyle({
+    int? selectedColor,
+    int? unselectedColor,
+    double? selectedWidth,
+    double? unselectedWidth,
+  }) => _controller.updateSelectedRouteStyle(
+          selectedColor: selectedColor,
+          unselectedColor: unselectedColor,
+          selectedWidth: selectedWidth,
+          unselectedWidth: unselectedWidth);
 }

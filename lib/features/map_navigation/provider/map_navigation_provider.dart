@@ -234,6 +234,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       navRemainingDistance: 0,
       navRemainingTime: 0,
     );
+    // 禁用导航路线拥堵颜色
+    ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(false);
+    ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(false);
     // 清除地图上的导航路线
     ref.read(mapControllerNotifierProvider)?.clearRoutes();
   }
@@ -404,8 +407,13 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void selectRoute(int index) {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
-      // 更新地图上路线的高亮/淡化样式
-      ref.read(mapControllerNotifierProvider)?.selectRoute(index);
+      // Transit uses per-segment colors computed on the Flutter side;
+      // re-call showRoutes to update dimming on the new selection.
+      if (state.currentRouteType == RouteType.transit) {
+        _mapDisplayService.showRoutes(state.routes, index, state.currentRouteType!);
+      } else {
+        ref.read(mapControllerNotifierProvider)?.selectRoute(index);
+      }
     }
   }
 
@@ -424,7 +432,10 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(showRoutesSheet: false);
   }
 
-  /// 开始导航（无 View，同地图导航）
+  /// 开始导航
+  ///
+  /// 驾车/步行/骑行：启动 GPS 导航
+  /// 公共交通：无 GPS 导航，地图路线图已在上方展开，此方法放大显示路线详情
   Future<void> startNavigation() async {
     final route = state.selectedRoute;
     if (route == null) {
@@ -434,6 +445,13 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
     if (route.points.isEmpty) {
       state = state.copyWith(errorMessage: '路线数据异常');
+      return;
+    }
+
+    // 公共交通无需 GPS 导航：行程详情已在 route_result_bottom_sheet 展开；
+    // 点击按钮仅刷新地图视野以完整显示路线
+    if (state.currentRouteType == RouteType.transit) {
+      _mapDisplayService.showRoutes(state.routes, state.selectedRouteIndex, state.currentRouteType!);
       return;
     }
 
@@ -447,6 +465,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     ref.read(mapControllerNotifierProvider)?.setFollowMode(true);
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(false);
     ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(true);
+    // 启用导航路线拥堵颜色和交通事件图标
+    ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(true);
+    ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(true);
 
     // 选中路线（多路径时需要）
     await _routeService.selectRouteId(state.selectedRouteIndex);

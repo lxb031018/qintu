@@ -120,6 +120,12 @@ class MapController(
                 val routeIds = call.argument<List<*>>("routeIds")?.mapNotNull {
                     (it as? Number)?.toInt()
                 }
+                val colors = call.argument<List<*>>("colors")?.mapNotNull {
+                    (it as? Number)?.toInt()
+                }
+                val widths = call.argument<List<*>>("widths")?.mapNotNull {
+                    (it as? Number)?.toDouble()
+                }
 
                 // 优先用 RouteOverLay（与导航样式一致，带方向箭头）
                 if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
@@ -133,7 +139,7 @@ class MapController(
                 }
 
                 // 回退到 Polyline 渲染
-                Log.d(TAG, "📍 showRoutes: Polyline ${routesData?.size} 条路线, 选中: $selectIndex")
+                Log.d(TAG, "📍 showRoutes: Polyline ${routesData?.size} 条路线, 选中: $selectIndex, colors=${colors?.size}, widths=${widths?.size}")
                 val routes = routesData?.mapNotNull { routeData ->
                     (routeData as? List<*>)?.mapNotNull { point ->
                         (point as? Map<*, *>)?.let {
@@ -144,7 +150,7 @@ class MapController(
                     }
                 } ?: emptyList()
 
-                val count = routeRenderer.showRoutes(routes, selectIndex)
+                val count = routeRenderer.showRoutes(routes, selectIndex, colors, widths)
                 result.success(count)
             }
 
@@ -215,12 +221,125 @@ class MapController(
                 val lat = call.argument<Double>("lat")
                 val lng = call.argument<Double>("lng")
                 val zoom = call.argument<Double>("zoom") ?: 15.0
+                val bearing = call.argument<Double>("bearing")?.toFloat() ?: -1f
+                val tilt = call.argument<Double>("tilt")?.toFloat() ?: -1f
                 if (lat != null && lng != null) {
-                    cameraController.moveCamera(lat, lng, zoom.toFloat())
+                    cameraController.moveCamera(lat, lng, zoom.toFloat(), bearing, tilt)
                     result.success(true)
                 } else {
                     result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
                 }
+            }
+
+            "animateCamera" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                val zoom = call.argument<Double>("zoom") ?: 15.0
+                val bearing = call.argument<Double>("bearing")?.toFloat() ?: -1f
+                val tilt = call.argument<Double>("tilt")?.toFloat() ?: -1f
+                val duration = call.argument<Int>("duration") ?: 0
+                if (lat != null && lng != null) {
+                    cameraController.animateCamera(lat, lng, zoom.toFloat(), bearing, tilt, duration)
+                    result.success(true)
+                } else {
+                    result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
+                }
+            }
+
+            "zoomIn" -> { cameraController.zoomIn(); result.success(true) }
+            "zoomOut" -> { cameraController.zoomOut(); result.success(true) }
+
+            "zoomTo" -> {
+                val level = call.argument<Double>("level")?.toFloat() ?: 15f
+                val duration = call.argument<Int>("duration") ?: 0
+                cameraController.zoomTo(level, duration)
+                result.success(true)
+            }
+
+            // ======== 地图图层控制 ========
+
+            "setMapType" -> {
+                val type = call.argument<Int>("type") ?: 1
+                aMapHolder.aMap?.mapType = type
+                Log.d(TAG, "🗺️ setMapType: $type")
+                result.success(true)
+            }
+
+            "setTrafficEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.isTrafficEnabled = enabled
+                Log.d(TAG, "🚦 路况图层: ${if (enabled) "显示" else "隐藏"}")
+                result.success(true)
+            }
+
+            "setBuildingsEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.showBuildings(enabled)
+                Log.d(TAG, "🏗️ 3D 建筑: ${if (enabled) "显示" else "隐藏"}")
+                result.success(true)
+            }
+
+            "showIndoorMap" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.showIndoorMap(enabled)
+                Log.d(TAG, "🏢 室内地图: ${if (enabled) "显示" else "隐藏"}")
+                result.success(true)
+            }
+
+            // ======== 手势控制 ========
+
+            "setScrollGesturesEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.uiSettings?.isScrollGesturesEnabled = enabled
+                result.success(true)
+            }
+
+            "setZoomGesturesEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.uiSettings?.isZoomGesturesEnabled = enabled
+                result.success(true)
+            }
+
+            "setRotateGesturesEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.uiSettings?.isRotateGesturesEnabled = enabled
+                result.success(true)
+            }
+
+            "setTiltGesturesEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                aMapHolder.aMap?.uiSettings?.isTiltGesturesEnabled = enabled
+                result.success(true)
+            }
+
+            // ======== 路线渲染样式 ========
+
+            "setRouteTmcEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                routeRenderer.setTmcEnabled(enabled)
+                result.success(true)
+            }
+
+            "setRouteTrafficIconEnabled" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: true
+                routeRenderer.setTrafficIconEnabled(enabled)
+                result.success(true)
+            }
+
+            // ======== 路线选中样式（支持自定义颜色/宽度） ========
+
+            "updateSelectedRouteStyle" -> {
+                val selectedColor = call.argument<Long>("selectedColor")?.toInt()
+                val unselectedColor = call.argument<Long>("unselectedColor")?.toInt()
+                val selectedWidth = call.argument<Double>("selectedWidth")?.toFloat()
+                val unselectedWidth = call.argument<Double>("unselectedWidth")?.toFloat()
+                routeRenderer.updateRouteStyle(
+                    selectedColor = selectedColor,
+                    unselectedColor = unselectedColor,
+                    selectedWidth = selectedWidth,
+                    unselectedWidth = unselectedWidth
+                )
+                result.success(true)
             }
 
             "updateCarMarker" -> {

@@ -358,4 +358,176 @@ class AmapMapController {
       return false;
     }
   }
+
+  // ==================== 相机增强 ====================
+
+  /// 动画移动相机（支持 bearing/tilt/时长）
+  Future<bool> animateCamera({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    double bearing = -1,
+    double tilt = -1,
+    int duration = 0,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('animateCamera', {
+        'lat': lat,
+        'lng': lng,
+        'zoom': zoom,
+        if (bearing >= 0) 'bearing': bearing,
+        if (tilt >= 0) 'tilt': tilt,
+        if (duration > 0) 'duration': duration,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ animateCamera 失败: $e');
+      return false;
+    }
+  }
+
+  /// 放大
+  Future<void> zoomIn() => _channel.invokeMethod('zoomIn');
+
+  /// 缩小
+  Future<void> zoomOut() => _channel.invokeMethod('zoomOut');
+
+  /// 缩放到指定级别
+  Future<void> zoomTo(double level, {int duration = 0}) =>
+      _channel.invokeMethod('zoomTo', {'level': level, 'duration': duration});
+
+  // ==================== 地图图层 ====================
+
+  /// 设置地图类型
+  /// 1=普通, 2=卫星, 3=夜景, 4=导航, 5=导航夜景, 6=公交
+  Future<bool> setMapType(int type) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setMapType', {'type': type});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setMapType 失败: $e');
+      return false;
+    }
+  }
+
+  /// 显示/隐藏实时路况
+  Future<bool> setTrafficEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setTrafficEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setTrafficEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  /// 显示/隐藏 3D 建筑
+  Future<bool> setBuildingsEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setBuildingsEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setBuildingsEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  /// 显示/隐藏室内地图
+  Future<bool> showIndoorMap(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('showIndoorMap', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ showIndoorMap 失败: $e');
+      return false;
+    }
+  }
+
+  // ==================== 手势控制 ====================
+
+  Future<bool> setScrollGesturesEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setScrollGesturesEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setScrollGesturesEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setZoomGesturesEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setZoomGesturesEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setZoomGesturesEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setRotateGesturesEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setRotateGesturesEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setRotateGesturesEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setTiltGesturesEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setTiltGesturesEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setTiltGesturesEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  // ==================== 路线渲染样式 ====================
+
+  /// 启用/禁用路线拥堵颜色（TMC）
+  Future<bool> setRouteTmcEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setRouteTmcEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setRouteTmcEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  /// 启用/禁用路线交通事件图标
+  Future<bool> setRouteTrafficIconEnabled(bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setRouteTrafficIconEnabled', {'enabled': enabled});
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setRouteTrafficIconEnabled 失败: $e');
+      return false;
+    }
+  }
+
+  /// 更新路线选中/非选中样式
+  Future<bool> updateSelectedRouteStyle({
+    int? selectedColor,
+    int? unselectedColor,
+    double? selectedWidth,
+    double? unselectedWidth,
+  }) async {
+    try {
+      final params = <String, dynamic>{};
+      if (selectedColor != null) params['selectedColor'] = selectedColor;
+      if (unselectedColor != null) params['unselectedColor'] = unselectedColor;
+      if (selectedWidth != null) params['selectedWidth'] = selectedWidth;
+      if (unselectedWidth != null) params['unselectedWidth'] = unselectedWidth;
+      if (params.isEmpty) return false;
+      final result = await _channel.invokeMethod<bool>('updateSelectedRouteStyle', params);
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ updateSelectedRouteStyle 失败: $e');
+      return false;
+    }
+  }
 }

@@ -100,6 +100,13 @@ class RouteResultItem {
   final String formattedDuration;
   final String strategy;
   final double? tolls;
+  // Transit-specific fields
+  final RouteType? routeType;
+  final List<TransitSegment>? transitSegments;
+  final String? transitSummary;
+  final List<String>? transitLineNames;
+  final int transferCount;
+  final double? walkDistance;
 
   const RouteResultItem({
     required this.distance,
@@ -108,5 +115,11 @@ class RouteResultItem {
     required this.formattedDuration,
     required this.strategy,
     this.tolls,
+    this.routeType,
+    this.transitSegments,
+    this.transitSummary,
+    this.transitLineNames,
+    this.transferCount = 0,
+    this.walkDistance,
   });
 }
