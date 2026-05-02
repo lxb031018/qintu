@@ -24,4 +24,7 @@ object PlatformChannels {
     const val GEOCODE = "com.qintu/amap_geocode"
     // POI 搜索
     const val POI_SEARCH = "com.qintu/amap_poi_search"
+    // 后台定位
+    const val BACKGROUND_LOCATION = "com.qintu/background_location"
+    const val BACKGROUND_LOCATION_EVENTS = "com.qintu/background_location/events"
 }

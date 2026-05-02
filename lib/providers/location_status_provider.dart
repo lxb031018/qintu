@@ -64,15 +64,16 @@ class LocationNotifier extends Notifier<LocationStatus> {
       // 检查定位服务是否启用（系统 GPS 开关）
       final serviceEnabled = await Permission.locationWhenInUse.serviceStatus.isEnabled;
       // 检查定位权限状态（用户授权状态）
-      final permissionStatus = await Permission.locationWhenInUse.status;
+      final whenInUse = await Permission.locationWhenInUse.status;
+      final always = await Permission.locationAlways.status;
 
-      Logs.map.info('📍 定位状态检查: serviceEnabled=$serviceEnabled, permission=$permissionStatus');
+      Logs.map.info('📍 定位状态检查: serviceEnabled=$serviceEnabled, whenInUse=$whenInUse, always=$always');
 
       if (!serviceEnabled) {
         state = LocationStatus.disabled;
-      } else if (permissionStatus.isDenied) {
+      } else if (whenInUse.isDenied && always.isDenied) {
         state = LocationStatus.denied;
-      } else if (permissionStatus.isGranted) {
+      } else if (whenInUse.isGranted || always.isGranted) {
         state = LocationStatus.enabled;
       } else {
         state = LocationStatus.unknown;
@@ -102,8 +103,12 @@ class LocationNotifier extends Notifier<LocationStatus> {
         await _openSystemSettings();
       } else {
         // 定位服务已开启但权限未授予，请求权限
-        final result = await Permission.locationWhenInUse.request();
-        Logs.map.info('📍 定位权限请求结果: $result');
+        // 先请求使用期间权限，再请求后台权限（Android 10+ 需两次授权）
+        final whenInUse = await Permission.locationWhenInUse.request();
+        Logs.map.info('📍 定位权限请求结果: $whenInUse');
+        if (whenInUse.isGranted) {
+          await Permission.locationAlways.request();
+        }
       }
 
       // 等待用户返回后重新检查状态
@@ -111,6 +116,17 @@ class LocationNotifier extends Notifier<LocationStatus> {
       await checkStatus();
     } catch (e) {
       Logs.map.warning('❌ 请求定位权限失败: $e');
+    }
+  }
+
+  /// 请求后台定位权限（Android 10+ "始终允许"）
+  Future<void> requestBackgroundPermission() async {
+    try {
+      final status = await Permission.locationAlways.request();
+      Logs.map.info('📍 后台定位权限请求结果: $status');
+      await checkStatus();
+    } catch (e) {
+      Logs.map.warning('❌ 请求后台定位权限失败: $e');
     }
   }
 

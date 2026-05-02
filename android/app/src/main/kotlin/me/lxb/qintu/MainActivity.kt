@@ -25,5 +25,8 @@ class MainActivity : FlutterActivity() {
 
         // 注册 POI 搜索插件
         flutterEngine.plugins.add(me.lxb.qintu.poi.PoiSearchPlugin())
+
+        // 注册后台定位插件
+        flutterEngine.plugins.add(me.lxb.qintu.background.BackgroundLocationPlugin())
     }
 }

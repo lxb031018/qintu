@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../service/map_controller_service.dart';
 import '../service/location_sharing_service.dart';
 import '../service/location_upload_service.dart';
+import '../service/background_location_service.dart';
 
 /// ============================================
 /// 位置共享状态
@@ -42,6 +43,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
   Timer? _uploadTimer;
   MapControllerService? _mapController;
   final _service = locationSharingService;
+  final _bgService = backgroundLocationService;
 
   @override
   LocationSharingState build() => const LocationSharingState();
@@ -60,16 +62,24 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
     // 首次上传
     await _uploadOnce();
 
-    // 启动定时检查
-    _uploadTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _tryUpload();
-    });
+    // 优先尝试后台定位服务
+    final bgStarted = await _bgService.start(
+      onUpdate: _onBackgroundLocationUpdate,
+    );
+
+    if (!bgStarted) {
+      // 后台服务启动失败，回退到前台轮询
+      _uploadTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        _tryUpload();
+      });
+    }
   }
 
   /// 停止位置共享
   void stopSharing() {
     _uploadTimer?.cancel();
     _uploadTimer = null;
+    _bgService.stop();
     state = state.copyWith(isSharing: false);
     locationUploadService.deleteLocation();
     _service.clearUploaded();
@@ -125,6 +135,26 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
     } catch (e) {
       // 上传失败由 service 处理
     }
+  }
+
+  /// 处理后台定位服务推送的位置
+  void _onBackgroundLocationUpdate(Map<String, dynamic> location) {
+    if (!state.isSharing) return;
+
+    final lat = location['latitude'] as double;
+    final lng = location['longitude'] as double;
+
+    if (!_service.shouldUpload(lat, lng)) return;
+
+    locationUploadService.uploadLocation(
+      latitude: lat,
+      longitude: lng,
+      accuracy: (location['accuracy'] as double?)?.toInt(),
+      speed: (location['speed'] as double?)?.toInt(),
+      bearing: (location['bearing'] as double?)?.toInt(),
+    );
+    _service.markUploaded(lat, lng);
+    state = state.copyWith(lastUploadTime: DateTime.now());
   }
 }
 
