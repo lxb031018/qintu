@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.util.Log
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.BitmapDescriptorFactory
+import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.LatLngBounds
 import com.amap.api.maps.model.Marker
@@ -16,6 +17,7 @@ import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.view.RouteOverLay
+import me.lxb.qintu.navigation.NavigationStateHolder
 
 /**
  * 路线渲染器
@@ -32,6 +34,11 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         private const val UNSELECTED_TRANSPARENCY = 0.4f
         private const val TEXTURE_SIZE = 16
         private const val TEXTURE_DOT_SIZE = 5f
+        private const val GRAY_POLYLINE_Z_INDEX = 200f
+        private const val GRAY_POLYLINE_COLOR = 0x88888888.toInt()
+        private const val GRAY_POLYLINE_WIDTH = 18f
+        private const val NAV_ROUTE_OVERLAY_Z_INDEX = 5
+
     }
 
     private var showTmcStatus = false
@@ -47,6 +54,11 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     private val routePolylineWidths = mutableListOf<Float>()
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
+
+    // 导航路线灰度覆盖：在 RouteOverLay 之上手工绘制灰色 Polyline
+    private var passedRoutePolyline: Polyline? = null
+    private var navRouteFullPoints: List<LatLng> = emptyList()
+    private var naviPath: AMapNaviPath? = null
 
     private val routeTexture by lazy { createRouteTexture() }
 
@@ -236,7 +248,9 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
     }
 
     /**
-     * 进入导航模式：清除所有预览路线，用 RouteOverLay 画单条导航路线
+     * 进入导航模式：RouteOverLay（方向箭头）+ 手动灰色 Polyline 覆盖已过路段。
+     * RouteOverLay 的灰线功能需要 AMapNaviView.setAfterRouteAutoGray(true)，
+     * 在无 View 导航模式下不可用，因此用高 z-index 灰色 Polyline 覆盖替代。
      */
     fun showNavigateRoute(routeId: Int): Boolean {
         Log.d(TAG, "🚗 [Native] showNavigateRoute: routeId=$routeId")
@@ -246,7 +260,15 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             return false
         }
 
-        clearRoutes()
+        // 清理旧导航数据
+        for (overlay in navRouteOverlay) {
+            try { overlay.removeFromMap() } catch (e: Exception) {}
+        }
+        navRouteOverlay.clear()
+        passedRoutePolyline?.remove()
+        passedRoutePolyline = null
+        navRouteFullPoints = emptyList()
+        naviPath = null
 
         val path = RoutePathCache.get(routeId)
         if (path == null) {
@@ -255,17 +277,82 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
         }
 
         try {
+            naviPath = path
+            navRouteFullPoints = path.coordList.map { LatLng(it.latitude, it.longitude) }
+
             val overlay = RouteOverLay(aMap, path, context).apply {
-                setArrowOnRoute(true)
-                setTransparency(SELECTED_TRANSPARENCY)
+                setPassRouteVisible(true)
+                setZindex(NAV_ROUTE_OVERLAY_Z_INDEX)
                 addToMap()
             }
             navRouteOverlay.add(overlay)
-            Log.d(TAG, "✅ [Native] 导航路线已显示: $routeId")
+            overlay.zoomToSpan()
+            Log.d(TAG, "✅ [Native] 导航路线已显示: $routeId (RouteOverLay + 手动灰线覆盖)")
             return true
         } catch (e: Exception) {
             Log.e(TAG, "❌ [Native] 显示导航路线失败: ${e.message}")
             return false
+        }
+    }
+
+    /**
+     * 置灰已行驶路段：在 RouteOverLay 上方绘制灰色 Polyline 覆盖已过路段。
+     *
+     * 使用 pathRetainDistance 计算已行驶距离，沿路径坐标点逐段累计找到分割点。
+     * 灰色 Polyline z-index=200 > RouteOverLay z-index=5，确保灰色覆盖可见。
+     */
+    fun updatePassedRouteGray(lat: Double, lng: Double) {
+        val path = naviPath ?: return
+
+        // 同时尝试 SDK 内置灰线（可能需要 setAfterRouteAutoGray 才生效）
+        NavigationStateHolder.naviLocation?.let { location ->
+            for (overlay in navRouteOverlay) {
+                overlay.updatePolyline(location)
+            }
+        }
+
+        val retainDist = NavigationStateHolder.pathRetainDistance
+        val totalLen = path.allLength
+        val isMatched = NavigationStateHolder.isMatched
+
+        if (!isMatched || retainDist <= 0 || retainDist > totalLen) return
+
+        val passedDistance = totalLen - retainDist
+        if (passedDistance <= 0) return
+
+        var accumulated = 0f
+        var splitIdx = 0
+        for (i in 1 until navRouteFullPoints.size) {
+            val segDist = AMapUtils.calculateLineDistance(
+                navRouteFullPoints[i - 1], navRouteFullPoints[i]
+            )
+            accumulated += segDist
+            if (accumulated >= passedDistance) {
+                splitIdx = i
+                break
+            }
+        }
+
+        // 已走完整条路线：灰色覆盖所有点
+        if (splitIdx == 0 && accumulated < passedDistance) {
+            splitIdx = navRouteFullPoints.size - 1
+        }
+
+        if (splitIdx < 1) return
+
+        val passedPoints = navRouteFullPoints.subList(0, splitIdx + 1)
+        if (passedPoints.size < 2) return
+
+        if (passedRoutePolyline == null) {
+            passedRoutePolyline = aMap?.addPolyline(
+                PolylineOptions()
+                    .addAll(passedPoints)
+                    .color(GRAY_POLYLINE_COLOR)
+                    .width(GRAY_POLYLINE_WIDTH)
+                    .zIndex(GRAY_POLYLINE_Z_INDEX)
+            )
+        } else {
+            passedRoutePolyline?.points = passedPoints
         }
     }
 
@@ -347,6 +434,11 @@ class RouteRenderer(private val aMap: AMap?, private val context: Context) {
             }
         }
         navRouteOverlay.clear()
+
+        passedRoutePolyline?.remove()
+        passedRoutePolyline = null
+        navRouteFullPoints = emptyList()
+        naviPath = null
 
         selectedRouteIndex = -1
     }
