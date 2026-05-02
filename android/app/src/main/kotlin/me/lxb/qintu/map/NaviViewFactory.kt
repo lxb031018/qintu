@@ -29,31 +29,25 @@ class NaviViewFactory(
      */
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
-            // ======== 路线渲染 ========
-            setAfterRouteAutoGray(true)           // 已过路段自动灰线
-            setAutoDrawRoute(true)                // SDK 自动画路
-            setDrawBackUpOverlay(true)            // SDK 绘制备选路线
-            setNaviArrowVisible(true)             // SDK 显示导航箭头
-
-            // ======== 导航 UI 元素 ========
-            setLayoutVisible(false)              // 隐藏内置导航 UI（由 Flutter 控制）
-            setEagleMapVisible(false)            // 隐藏鹰眼小地图
-            setLaneInfoShow(false)               // 隐藏车道信息
-            setLeaderLineEnabled(0)              // 禁用终点引导线
-            setSecondActionVisible(false)        // 隐藏第二步转向提示
-            setRouteListButtonShow(false)        // 隐藏全览按钮
-            setTrafficBarEnabled(false)          // 隐藏路况光柱条
-            setBroadcastModeEnabled(false)       // 隐藏播报模式控件
-
-            // ======== 面板与提示 ========
-            setShowSettingsPanel(false)          // 隐藏默认设置面板
-            setShowRouteStrategyPreferencePanel(false)  // 隐藏路线策略偏好面板
-            setShowCameraDistance(false)         // 隐藏电子眼距离
-            setShowNaviPopTips(false)            // 隐藏底部提示条
-
-            // ======== 锁车与缩放 ========
-            setAutoLockCar(false)                // 禁止 SDK 自动锁车（由 MapController 自定义 Handler 控制）
-            setAutoDisplayOverview(false)        // 禁止算路后自动全览
+            setLayoutVisible(true)
+            setAutoDrawRoute(true)
+            setAfterRouteAutoGray(true)
+            setTrafficLine(true)
+            setEagleMapVisible(true)
+            setAutoLockCar(true)
+            setAutoDisplayOverview(true)
+            setShowCameraDistance(true)
+            setNaviArrowVisible(true)
+            setLaneInfoShow(true)
+            setRouteListButtonShow(true)
+            setTrafficBarEnabled(true)
+            setBroadcastModeEnabled(true)
+            setShowSettingsPanel(true)
+            setShowRouteStrategyPreferencePanel(true)
+            setShowNaviPopTips(true)
+            setDrawBackUpOverlay(true)
+            setLeaderLineEnabled(0)
+            setSecondActionVisible(true)
         }
         return AMapNaviView(context, options)
     }

@@ -12,7 +12,6 @@ import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet.dart';
-import 'widgets/navigation_overlay.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
@@ -161,16 +160,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               child: const LocationStatusButton(),
             ),
           ],
-
-          // 导航状态：导航覆盖层
-          if (navState.isNavigating)
-            NavigationOverlay(
-              speed: navState.navSpeed,
-              remainingDistance: navState.navRemainingDistance,
-              remainingTime: navState.navRemainingTime,
-              currentRoad: navState.navCurrentRoad,
-              onExit: () => ref.read(mapNavigationProvider.notifier).stopNavigation(),
-            ),
 
           // 路线栏（非导航时）
           if (!navState.isNavigating && navState.showRoutesSheet && navState.routes.isNotEmpty)

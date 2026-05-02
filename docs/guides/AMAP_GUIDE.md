@@ -251,16 +251,30 @@ fun searchBusLineByName(keyword: String, city: String, callback: MethodChannel.R
 
 **错误做法**：使用固定字符串 `"line_search"` 作为回调 key，多请求并发时回调被覆盖或错配。
 
-### 5. 无 View 导航模式下 RouteOverLay 灰线功能不可用
+### 5. 导航 UI 已全面使用官方 SDK
 
-`RouteOverLay.updatePolyline()` 和 `setPassRouteVisible(true)` 依赖 `AMapNaviViewOptions.setAfterRouteAutoGray(true)` 才能生效。该开关只在 `AMapNaviView` 上可用。
+项目已全面使用 `AMapNaviView` 内置导航 UI，不再使用 Flutter 自定义覆盖层。
 
-**架构限制**：项目使用「无 View 导航」模式（`AMapNavi` 单独使用，不创建 `AMapNaviView`），无法启用这个全局开关，所以 **SDK 内置灰线功能在当前架构下不可用**。
+**已启用功能：**
+- `setLayoutVisible(true)` — 显示完整导航 UI（转向箭头、路口放大图、限速提示等）
+- `setAfterRouteAutoGray(true)` — 已过路段自动变灰
+- `setTrafficLine(true)` — 彩虹交通线
+- `setEagleMapVisible(true)` — 鹰眼小地图
+- `setAutoLockCar(true)` — 导航中自动锁车
+- `setAutoDisplayOverview(true)` — 开始导航后自动显示全览
+- `setShowCameraDistance(true)` — 电子眼距离提示
+- `setLaneInfoShow(true)` — 车道信息
+- `setRouteListButtonShow(true)` — 路线概览按钮
 
-**已弃用方案**：曾尝试使用高 z-index 的灰色 Polyline 手动覆盖已过路段，但实际测试中无论怎么修改参数都无法生效，**已彻底弃用 Polyline 方案**。
+**Flutter 侧变更：**
+- 已删除 `NavigationOverlay` 自定义widget（`lib/features/map_navigation/widgets/navigation_overlay.dart`）
+- `map_navigation_provider.dart` 简化导航状态管理（不再解析 speed/distance/time，SDK UI 直接展示）
+- `map_navigation_tab.dart` 移除 `NavigationOverlay` 叠加
 
-**当前方案**：仅使用 RouteOverLay 显示导航路线（带方向箭头），不显示已过路段的灰色覆盖。导航路线通过 `setPassRouteVisible(true)` 显示，SDK 会在内部处理路线状态。
+**遗留代码清理：**
+- `CarOverlay`（自定义车辆绘制）暂时保留作为备份；如 SDK 车辆图标够用可删除
+- 生命周期同步已通过 `AmapMapPlugin` 的 `pauseNaviView`/`resumeNaviView` 方法支持
 
 ---
 
-**最后更新**：2026-05-02
+**最后更新**：2026-05-03

@@ -149,7 +149,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             }
 
             val ret = navi.startNavi(naviType)
-            Log.d(TAG, "🗺️ 启动无 View 导航：type=$naviType, result=$ret")
+            Log.d(TAG, "🗺️ 启动导航：type=$naviType, result=$ret")
             result.success(ret)
         } catch (e: Exception) {
             Log.e(TAG, "❌ 启动导航失败", e)

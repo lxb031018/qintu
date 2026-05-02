@@ -185,34 +185,12 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         case NavigationStatus.idle:
         case NavigationStatus.offRoute:
         case NavigationStatus.recalculating:
-          final calcType = navState.calcRouteType;
-          debugPrint('🔄 重算中… calcType=$calcType');
+          debugPrint('🔄 重算中… calcType=${navState.calcRouteType}');
           break;
         case NavigationStatus.gpsWeak:
         case NavigationStatus.parallelRoad:
         case NavigationStatus.error:
           break;
-      }
-      // 更新导航实时信息
-      if (navState.remainingDistance > 0 || navState.remainingDuration > 0 ||
-          navState.currentSpeed > 0 || (navState.roadName?.isNotEmpty ?? false)) {
-        state = state.copyWith(
-          navSpeed: navState.currentSpeed,
-          navRemainingDistance: navState.remainingDistance,
-          navRemainingTime: navState.remainingDuration,
-          navNextRoad: navState.nextInstruction,
-          navCurrentRoad: navState.roadName ?? '',
-        );
-      }
-      // 更新车辆位置
-      final lat = navState.currentLat;
-      final lng = navState.currentLng;
-      if (lat != null && lng != null && lat != 0 && lng != 0) {
-        ref.read(mapControllerNotifierProvider)?.updateCarMarker(
-          lat: lat,
-          lng: lng,
-          bearing: navState.bearing ?? 0,
-        );
       }
     });
   }
@@ -247,13 +225,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(
       isNavigating: false,
       showRoutesSheet: true,
-      navSpeed: 0,
-      navRemainingDistance: 0,
-      navRemainingTime: 0,
     );
     ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(false);
     ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(false);
-    // 不调用 clearRoutes()，保留置灰路线在地图上展示已行驶路径
   }
 
   /// 设置起点
