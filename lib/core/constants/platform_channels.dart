@@ -22,4 +22,7 @@ class PlatformChannels {
   static const String geocode = 'com.qintu/amap_geocode';
   // POI 搜索
   static const String poiSearch = 'com.qintu/amap_poi_search';
+  // 后台定位
+  static const String backgroundLocation = 'com.qintu/background_location';
+  static const String backgroundLocationEvents = 'com.qintu/background_location/events';
 }
