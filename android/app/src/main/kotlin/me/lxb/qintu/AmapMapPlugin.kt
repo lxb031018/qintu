@@ -23,6 +23,7 @@ import me.lxb.qintu.map.NaviViewFactory
 import me.lxb.qintu.overlay.CarOverlay
 import me.lxb.qintu.route.RouteRenderer
 import me.lxb.qintu.util.AMapPrivacy
+import me.lxb.qintu.util.ScreenBrightnessManager
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
@@ -133,6 +134,13 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             onResume()
         }
         currentNaviView = naviView
+
+        // AMapNaviView 的 onResume 会自动设置屏幕常亮，在此清除
+        val activity = context as? android.app.Activity
+        activity?.let {
+            ScreenBrightnessManager.deactivate(it)
+            Log.d(TAG, "📍 AMapNaviView onResume 后清除屏幕常亮, flags=${it.window.attributes.flags}")
+        }
 
         return object : PlatformView {
             init {

@@ -45,6 +45,11 @@ module.exports = {
     TOKEN_EXPIRES_S: 30 * 24 * 60 * 60, // 30天
   },
 
+  // 会话管理配置
+  SESSION: {
+    EXPIRES_S: 30 * 24 * 60 * 60, // 30天（与 TOKEN_EXPIRES_S 保持一致）
+  },
+
   // 数据格式前缀 (方便统一管理)
   PREFIX: {
     OPENID: 'oid_',

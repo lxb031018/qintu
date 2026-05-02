@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const AuthController = require('../../auth/controllers/auth.controller');
+const { requireAuth } = require('../middleware/auth.middleware');
 
 /**
  * 创建认证路由
@@ -27,6 +28,9 @@ function createAuthRoutes(authService) {
 
   // 刷新 Token
   router.post('/api/auth/refresh-token', (req, res) => authController.refreshToken(req, res));
+
+  // 登出（需要认证）
+  router.post('/api/auth/sign-out', requireAuth, (req, res) => authController.signout(req, res));
 
   return router;
 }

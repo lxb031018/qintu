@@ -14,6 +14,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import me.lxb.qintu.constant.PlatformChannels
 import me.lxb.qintu.navigation.NavigationImpl
+import me.lxb.qintu.util.ScreenBrightnessManager
 
 /**
  * 高德 Android 导航 SDK 桥接插件（Plugin 层）
@@ -59,6 +60,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
+        Log.d(TAG, "📩 onMethodCall: ${call.method}")
         val impl = navigationImpl
         if (impl == null) {
             result.error("NOT_READY", "导航模块未初始化", null)
@@ -88,22 +90,39 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "startNavigation" -> {
                 val isEmulator = call.argument<Boolean>("isEmulator") ?: false
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true
+                Log.w(TAG, "⚠️ startNavigation called, activity=${activity != null}, impl=${impl != null}")
+                activity?.let {
+                    ScreenBrightnessManager.activate(it)
+                    Log.d(TAG, "✅ ScreenBrightnessManager.activate called")
+                } ?: Log.e(TAG, "❌ activity is null, cannot activate screen brightness")
+                Log.d(TAG, "📍 调用 impl.startNavigation...")
                 impl.startNavigation(isEmulator, enableVoice, result)
+                Log.d(TAG, "📍 impl.startNavigation 返回")
             }
 
             "stopNavigation" -> {
+                Log.d(TAG, "📍 stopNavigation called, 即将调用 ScreenBrightnessManager.deactivate")
+                activity?.let {
+                    ScreenBrightnessManager.deactivate(it)
+                    Log.d(TAG, "✅ stopNavigation 中 ScreenBrightnessManager.deactivate 已调用")
+                }
                 impl.stopNavi(result)
             }
 
             "pauseNavigation" -> {
+                activity?.let { ScreenBrightnessManager.deactivate(it) }
                 impl.pauseNavi(result)
             }
 
             "resumeNavigation" -> {
+                activity?.let { ScreenBrightnessManager.activate(it) }
                 impl.resumeNavi(result)
             }
 
-            "togglePause" -> impl.pauseNavi(result)
+            "togglePause" -> {
+                activity?.let { ScreenBrightnessManager.deactivate(it) }
+                impl.pauseNavi(result)
+            }
 
             else -> result.notImplemented()
         }

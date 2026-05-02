@@ -132,6 +132,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     }
 
     fun startNavigation(isEmulator: Boolean, enableVoice: Boolean, result: MethodChannel.Result) {
+        Log.d(TAG, "📍 NavigationImpl.startNavigation called, isEmulator=$isEmulator, enableVoice=$enableVoice")
         try {
             val navi = mAMapNavi ?: run {
                 result.error("NAVI_NULL", "AMapNavi 未初始化", null)

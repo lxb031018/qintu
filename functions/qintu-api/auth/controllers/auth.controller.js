@@ -72,9 +72,9 @@ class AuthController {
    */
   async signin(req, res) {
     try {
-      const { verification_token } = req.body;
+      const { verification_token, device_id } = req.body;
 
-      const result = await this.authService.signin(verification_token);
+      const result = await this.authService.signin(verification_token, device_id);
 
       return res.json({
         code: 0,
@@ -95,9 +95,9 @@ class AuthController {
    */
   async signup(req, res) {
     try {
-      const { verification_token, phone_number } = req.body;
+      const { verification_token, phone_number, device_id } = req.body;
 
-      const result = await this.authService.signup(verification_token, phone_number);
+      const result = await this.authService.signup(verification_token, phone_number, device_id);
 
       return res.json({
         code: 0,
@@ -108,6 +108,28 @@ class AuthController {
       });
     } catch (err) {
       console.error('[Mock Auth] 注册失败:', err);
+      return res.status(500).json({ code: 500, message: 'Server Error' });
+    }
+  }
+
+  /**
+   * 登出
+   * POST /api/auth/sign-out
+   */
+  async signout(req, res) {
+    try {
+      const { device_id } = req.body;
+      const openid = req.user && req.user.openid;
+
+      if (!openid) {
+        return res.status(401).json({ code: 401, message: 'Unauthorized' });
+      }
+
+      await this.authService.signout(openid, device_id);
+
+      return res.json({ code: 0, message: 'OK' });
+    } catch (err) {
+      console.error('[Mock Auth] 登出失败:', err);
       return res.status(500).json({ code: 500, message: 'Server Error' });
     }
   }

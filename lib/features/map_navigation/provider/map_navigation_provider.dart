@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/async_state.dart';
+import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
@@ -491,7 +492,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
 
     // 启动无 View 导航
+    Logs.navigation.info('📍 调用 _routeService.startNavigation...');
     final success = await _routeService.startNavigation(enableVoice: true);
+    Logs.navigation.info('📍 _routeService.startNavigation 返回: $success');
 
     if (!success) {
       state = state.copyWith(

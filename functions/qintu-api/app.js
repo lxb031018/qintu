@@ -29,6 +29,10 @@ const UserService = require('./user/services/user.service');
 
 // 创建 Service 实例
 const authService = new AuthService(userRepo);
+
+// 挂载到全局供中间件访问（避免循环依赖）
+global._authService = authService;
+
 const bindingService = new BindingService(bindingRepo, userRepo);
 const taskService = new TaskService(bindingRepo, taskRepo);
 const locationService = new LocationService(bindingRepo, locationRepo, userRepo);

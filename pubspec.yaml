@@ -14,6 +14,7 @@ dependencies:
   flutter_secure_storage: ^10.0.0  # 安全存储，用于保存敏感 token
   path_provider: ^2.1.5  # 获取文件路径，用于日志文件存储
   permission_handler: ^12.0.1  # 权限管理，用于位置权限请求
+  device_info_plus: 11.5.0  # 设备信息获取，用于多设备互斥登录
 
   # 状态管理
   flutter_riverpod: ^3.3.1  # Riverpod 状态管理

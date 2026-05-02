@@ -203,6 +203,8 @@ class AmapNavigationBridge {
         'enableVoice': enableVoice,
       });
 
+      Logs.navigation.info('📡 invokeMethod startNavigation 返回: $result');
+
       if (result == true) {
         Logs.navigation.info('✅ 导航已开始');
       } else {

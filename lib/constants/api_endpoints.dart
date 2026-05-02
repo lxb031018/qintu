@@ -133,5 +133,6 @@ class ApiEndpoints {
 
   /// 登出
   /// CloudBase 官方 Auth API: POST /auth/v1/signout
-  static const String signOut = '/auth/v1/signout';
+  /// 注意：实际路由为 /auth/api/auth/sign-out (通过 requireAuth 中间件保护)
+  static const String signOut = '/auth/api/auth/sign-out';
 }

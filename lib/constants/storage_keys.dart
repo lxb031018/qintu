@@ -28,6 +28,9 @@ class SecureStorageKeys {
   /// 刷新令牌过期时间
   static const String refreshTokenExpiresAt = 'refresh_token_expires_at';
 
+  /// 设备唯一标识
+  static const String deviceId = 'device_id';
+
   // 以下为 auth_config.dart 迁移过来的键
   /// Access Token 保存时间
   static const String accessTokenSaveTime = 'access_token_save_time';

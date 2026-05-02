@@ -142,7 +142,7 @@ class AuthApi {
   /// ==========================================
   /// 第 3 步：登录（老用户）
   /// ==========================================
-  static Future<AuthResult> signIn(String verificationToken) async {
+  static Future<AuthResult> signIn(String verificationToken, String deviceId) async {
     final url = Uri.parse('$_baseUrl${ApiEndpoints.signIn}');
 
     Logs.auth.info('API请求: POST $url');
@@ -153,6 +153,7 @@ class AuthApi {
         options: Options(headers: _headers),
         data: jsonEncode({
           'verification_token': verificationToken,
+          'device_id': deviceId,
         }),
       );
 
@@ -189,6 +190,7 @@ class AuthApi {
   static Future<AuthResult> signUp({
     required String verificationToken,
     required String phoneNumber,
+    required String deviceId,
   }) async {
     final url = Uri.parse('$_baseUrl${ApiEndpoints.signUp}');
 
@@ -201,6 +203,7 @@ class AuthApi {
         data: jsonEncode({
           'phone_number': phoneNumber,
           'verification_token': verificationToken,
+          'device_id': deviceId,
         }),
       );
 
@@ -228,6 +231,40 @@ class AuthApi {
       Logs.auth.warning('异常: $e');
       if (e is NetworkException) rethrow;
       throw const NetworkException(message: '网络连接异常，请检查网络设置');
+    }
+  }
+
+  /// ==========================================
+  /// 登出
+  /// ==========================================
+  static Future<void> signOut(String accessToken, String deviceId) async {
+    final url = Uri.parse('$_baseUrl${ApiEndpoints.signOut}');
+
+    Logs.auth.info('API请求: POST $url');
+
+    try {
+      final response = await _dio.post(
+        url.toString(),
+        options: Options(
+          headers: {
+            ..._headers,
+            'Authorization': 'Bearer $accessToken',
+          },
+        ),
+        data: jsonEncode({'device_id': deviceId}),
+      );
+
+      Logs.api.info('API响应: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        Logs.auth.info('登出成功');
+      } else {
+        Logs.auth.warning('登出失败: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      Logs.auth.warning('HTTP 客户端异常: $e');
+    } catch (e) {
+      Logs.auth.warning('登出异常: $e');
     }
   }
 }

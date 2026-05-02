@@ -3,6 +3,7 @@ import 'package:qintu/models/auth/user_state.dart';
 import 'package:qintu/features/auth/core/secure_storage.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/config/auth_config.dart';
+import 'package:qintu/core/http/api_client.dart';
 
 /// ============================================
 /// 认证状态管理器
@@ -23,6 +24,8 @@ class AuthStateNotifier extends Notifier<UserState> {
   Future<void> initialize() async {
     Logs.auth.info('[AuthStateNotifier] initialize 开始, 当前状态: ${state.authStatus}');
     Logs.auth.info('开始初始化认证状态');
+
+    ApiClient.registerSessionRevokedCallback(_handleSessionRevoked);
 
     try {
       final isLoggedIn = await SecureStorage.isLoggedIn();
@@ -56,6 +59,15 @@ class AuthStateNotifier extends Notifier<UserState> {
         isLoading: false,
       );
     }
+  }
+
+  void _handleSessionRevoked() {
+    Logs.auth.warning('🔐 会话已被废弃，强制登出');
+    state = const UserState(
+      authStatus: AuthStatus.unauthenticated,
+      isLoading: false,
+      errorMessage: '您的账号已在另一设备登录',
+    );
   }
 
   /// 登录成功，保存认证状态

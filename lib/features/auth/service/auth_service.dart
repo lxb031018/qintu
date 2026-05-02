@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:qintu/models/auth/auth_result.dart';
 import 'package:qintu/models/auth/login_info.dart';
 import 'package:qintu/utils/logger.dart';
+import '../../../core/device/device_manager.dart';
 import '../core/auth_api.dart';
 import '../core/secure_storage.dart';
 
@@ -22,16 +23,17 @@ class AuthService {
     required String verificationToken,
     required String phone,
   }) async {
+    final deviceId = await DeviceManager.getDeviceId();
+
     try {
-      // 先尝试登录（老用户）
-      return await AuthApi.signIn(verificationToken);
+      return await AuthApi.signIn(verificationToken, deviceId);
     } on DioException catch (e) {
-      // 如果是 404，说明用户不存在，走注册流程
       if (e.response?.statusCode == 404) {
         Logs.auth.info('用户不存在，尝试注册...');
         return await AuthApi.signUp(
           verificationToken: verificationToken,
           phoneNumber: phone,
+          deviceId: deviceId,
         );
       }
       rethrow;
@@ -62,6 +64,15 @@ class AuthService {
 
   /// 清除登录状态
   static Future<void> logout() async {
+    final accessToken = await SecureStorage.getAccessToken();
+    final deviceId = await DeviceManager.getDeviceId();
+
+    if (accessToken != null) {
+      try {
+        await AuthApi.signOut(accessToken, deviceId);
+      } catch (_) {}
+    }
+
     await SecureStorage.clearTokens();
   }
 }

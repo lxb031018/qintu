@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../config/environments/environment_manager.dart';
 import '../../constants/app_durations.dart';
 import 'package:qintu/features/auth/core/secure_storage.dart';
+import 'package:qintu/core/device/device_manager.dart';
 import 'api_response.dart';
 import 'token_refresh_interceptor.dart';
 import '../../utils/logger.dart';
@@ -17,6 +18,7 @@ import '../../utils/errors/http_error_handler.dart';
 class ApiClient {
   late final Dio _dio;
   static final ApiClient _instance = ApiClient._internal();
+  static void Function()? _onSessionRevoked;
 
   factory ApiClient() => _instance;
 
@@ -34,7 +36,6 @@ class ApiClient {
 
     _setupInterceptors();
 
-    // 注册环境变化监听器
     _registerEnvironmentListener();
   }
 
@@ -44,6 +45,16 @@ class ApiClient {
   /// 获取 Dio 实例(用于特殊场景)
   Dio get dio => _dio;
 
+  /// 注册会话废弃回调（由 auth_state_manager 在初始化时调用）
+  static void registerSessionRevokedCallback(void Function() callback) {
+    _onSessionRevoked = callback;
+  }
+
+  /// 触发会话废弃
+  static void notifySessionRevoked() {
+    _onSessionRevoked?.call();
+  }
+
   /// 设置拦截器
   void _setupInterceptors() {
     // 请求拦截器
@@ -51,19 +62,21 @@ class ApiClient {
       onRequest: (options, handler) async {
         Logs.network.info('🌐 发起请求: ${options.method} ${options.uri}');
 
-        // 自动注入 Token
         final accessToken = await SecureStorage.getAccessToken();
         if (accessToken != null && accessToken.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $accessToken';
           Logs.network.info('🔑 已注入 Access Token');
         }
 
-        // 注入 OpenID（后端认证中间件需要）
         final userId = await SecureStorage.getUserId();
         if (userId != null && userId.isNotEmpty) {
           options.headers['X-User-OpenID'] = userId;
           Logs.network.info('👤 已注入 X-User-OpenID: $userId');
         }
+
+        final deviceId = await DeviceManager.getDeviceId();
+        options.headers['X-Device-ID'] = deviceId;
+        Logs.network.info('📱 已注入 X-Device-ID: $deviceId');
 
         return handler.next(options);
       },
@@ -73,6 +86,12 @@ class ApiClient {
       },
       onError: (error, handler) {
         Logs.network.info('❌ 请求失败: ${error.requestOptions.uri}');
+
+        final errorData = error.response?.data;
+        if (errorData is Map && errorData['code'] == 'SESSION_REVOKED') {
+          notifySessionRevoked();
+        }
+
         return handler.next(error);
       },
     ));
