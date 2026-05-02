@@ -251,6 +251,30 @@ fun searchBusLineByName(keyword: String, city: String, callback: MethodChannel.R
 
 **错误做法**：使用固定字符串 `"line_search"` 作为回调 key，多请求并发时回调被覆盖或错配。
 
+### 5. 无 View 导航模式下 RouteOverLay 灰线功能不可用
+
+`RouteOverLay.updatePolyline()` 和 `setPassRouteVisible(true)` 依赖 `AMapNaviViewOptions.setAfterRouteAutoGray(true)` 才能生效。该开关只在 `AMapNaviView` 上可用。
+
+**架构限制**：项目使用「无 View 导航」模式（`AMapNavi` 单独使用，不创建 `AMapNaviView`），无法启用这个全局开关，所以 **SDK 内置灰线功能在当前架构下不可用**。
+
+**替代方案**：使用高 z-index 的灰色 Polyline 手动覆盖已过路段：
+```kotlin
+// RouteRenderer.kt 中的实现
+private const val GRAY_POLYLINE_Z_INDEX = 200f  // 高于 RouteOverLay 的 z-index=5
+private const val GRAY_POLYLINE_COLOR = 0x88888888.toInt()
+private const val GRAY_POLYLINE_WIDTH = 18f
+
+passedRoutePolyline = aMap?.addPolyline(
+    PolylineOptions()
+        .addAll(passedPoints)
+        .color(GRAY_POLYLINE_COLOR)
+        .width(GRAY_POLYLINE_WIDTH)
+        .zIndex(GRAY_POLYLINE_Z_INDEX)
+)
+```
+
+**工作原理**：通过 `pathRetainDistance` 计算已行驶距离，沿路径坐标点逐段累计找到分割点，在 RouteOverLay 上方绘制灰色 Polyline 覆盖已过路段。
+
 ---
 
-**最后更新**：2026-05-01
+**最后更新**：2026-05-02
