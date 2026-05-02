@@ -25,7 +25,7 @@ class MapDisplayService {
             isStart: true,
             label: next.origin.poi!.name,
           );
-          _notifier.moveCamera(
+          _notifier.moveCameraToCenter(
             lat: latlng.latitude,
             lng: latlng.longitude,
             zoom: 17,
@@ -47,7 +47,7 @@ class MapDisplayService {
             isStart: false,
             label: next.destination.poi!.name,
           );
-          _notifier.moveCamera(
+          _notifier.moveCameraToCenter(
             lat: latlng.latitude,
             lng: latlng.longitude,
             zoom: 17,

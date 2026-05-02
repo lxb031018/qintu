@@ -63,6 +63,25 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     return await state?.clearSingleMarker(isStart) ?? false;
   }
 
+  Future<void> setNaviShowMode(int mode) async {
+    await state?.setNaviShowMode(mode);
+  }
+
+  Future<void> setPointToCenter({required int x, required int y}) async {
+    await state?.setPointToCenter(x: x, y: y);
+  }
+
+  Future<void> changeLatLng({required double lat, required double lng}) async {
+    await state?.changeLatLng(lat: lat, lng: lng);
+  }
+
+  Future<void> moveCameraToCenter({required double lat, required double lng, double zoom = 15.0}) async {
+    await state?.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
+  }
+
+  Future<void> animateCameraToCenter({required double lat, required double lng, double zoom = 15.0, int duration = 500}) async {
+    await state?.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
+  }
 }
 
 final mapControllerNotifierProvider = NotifierProvider<MapControllerNotifier, MapControllerService?>(() {

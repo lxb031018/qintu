@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
+import com.amap.api.navi.AMapNaviView
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -17,7 +19,7 @@ import me.lxb.qintu.location.LocationClientImpl
 import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.map.CameraController
 import me.lxb.qintu.map.MapController
-import me.lxb.qintu.map.MapViewFactory
+import me.lxb.qintu.map.NaviViewFactory
 import me.lxb.qintu.overlay.CarOverlay
 import me.lxb.qintu.route.RouteRenderer
 import me.lxb.qintu.util.AMapPrivacy
@@ -46,7 +48,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     // 组件
     private lateinit var locationClient: LocationClientImpl
-    private lateinit var mapViewFactory: MapViewFactory
+    private lateinit var naviViewFactory: NaviViewFactory
     private var cameraController: CameraController? = null
     private var routeRenderer: RouteRenderer? = null
     private var carOverlay: CarOverlay? = null
@@ -54,6 +56,9 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     // 业务控制器（功能模块层）
     private var mapController: MapController? = null
+
+    // 当前激活的 AMapNaviView 实例（用于生命周期管理）
+    private var currentNaviView: AMapNaviView? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -64,14 +69,14 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         // 初始化组件
         locationClient = LocationClientImpl(context!!)
         geocodeImpl = GeocodeImpl(context!!)
-        mapViewFactory = MapViewFactory(context!!, locationClient, aMapHolder)
+        naviViewFactory = NaviViewFactory(context!!, locationClient, aMapHolder)
 
         // 注册 PlatformViewFactory
         flutterPluginBinding.platformViewRegistry.registerViewFactory(
-            PlatformChannels.MAP_VIEW,
+            PlatformChannels.NAVI_VIEW,
             object : PlatformViewFactory(StandardMessageCodec()) {
                 override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-                    return createMapView(context, viewId)
+                    return createNaviView(context, viewId)
                 }
             }
         )
@@ -122,19 +127,20 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         Log.d(TAG, "✅ AmapMapPlugin 初始化完成")
     }
 
-    private fun createMapView(context: Context, viewId: Int): PlatformView {
-        val mapView = mapViewFactory.createNativeView().apply {
+    private fun createNaviView(context: Context, viewId: Int): PlatformView {
+        val naviView = naviViewFactory.createNativeView().apply {
             onCreate(null)
             onResume()
         }
+        currentNaviView = naviView
 
         return object : PlatformView {
             init {
-                val aMap = mapView.map
+                val aMap = naviView.map
                 aMapHolder.setMap(aMap)
 
-                // 使用 MapViewFactory 配置地图
-                mapViewFactory.configureMap(mapView)
+                // 使用 NaviViewFactory 配置地图
+                naviViewFactory.configureMap(naviView)
 
                 // 初始化功能模块组件
                 cameraController = CameraController(aMap)
@@ -158,20 +164,54 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     }
                 }
 
-                Log.d(TAG, "🗺️ 地图视图 #$viewId 初始化完成")
+                // 保存视图尺寸，供 CameraController 在 moveCameraToCenter 时使用
+                // 同时修复 AMapNaviView 内部预留空间导致的地图中心偏移问题
+                naviView.viewTreeObserver.addOnGlobalLayoutListener(
+                    object : ViewTreeObserver.OnGlobalLayoutListener {
+                        override fun onGlobalLayout() {
+                            if (naviView.width > 0 && naviView.height > 0) {
+                                naviView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                                cameraController?.setViewSize(naviView.width, naviView.height)
+                                val centerX = naviView.width / 2
+                                val centerY = naviView.height / 2
+                                naviView.map.setPointToCenter(centerX, centerY)
+                                Log.d(TAG, "🎯 地图中心已修正: (${centerX}, ${centerY}), size=(${naviView.width}x${naviView.height})")
+                            }
+                        }
+                    }
+                )
+
+                Log.d(TAG, "🗺️ AMapNaviView #$viewId 初始化完成")
             }
 
-            override fun getView(): View = mapView
+            override fun getView(): View = naviView
 
             override fun dispose() {
-                mapView.onDestroy()
+                naviView.onPause()
+                naviView.onDestroy()
+                currentNaviView = null
                 locationClient.stopLocation()
             }
         }
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        mapController?.handleMethodCall(call, result) ?: result.notImplemented()
+        when (call.method) {
+            "pauseNaviView" -> {
+                currentNaviView?.onPause()
+                result.success(true)
+            }
+            "resumeNaviView" -> {
+                currentNaviView?.onResume()
+                result.success(true)
+            }
+            "setNaviShowMode" -> {
+                val mode = call.argument<Int>("mode") ?: 3
+                currentNaviView?.setShowMode(mode)
+                result.success(true)
+            }
+            else -> mapController?.handleMethodCall(call, result) ?: result.notImplemented()
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

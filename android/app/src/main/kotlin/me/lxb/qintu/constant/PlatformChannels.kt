@@ -16,8 +16,8 @@ object PlatformChannels {
     const val NAVIGATION_EVENTS = "com.qintu/amap_navigation/events"
     // 定位设置
     const val LOCATION_SETTINGS = "qintu/location_settings"
-    // 地图视图
-    const val MAP_VIEW = "com.qintu/amap_map_view"
+    // 导航视图
+    const val NAVI_VIEW = "com.qintu/amap_map_view"
     // 公交搜索
     const val BUS_SEARCH = "com.qintu/amap_bus_search"
     // 地理编码（正向 + 逆向）

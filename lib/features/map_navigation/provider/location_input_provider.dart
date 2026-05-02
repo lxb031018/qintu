@@ -9,6 +9,7 @@ import '../service/binding_location_service.dart';
 import '../models/amap_routing_models.dart';
 import '../../relationship_binding/service/binding_service.dart';
 import 'map_navigation_provider.dart';
+import 'map_controller_provider.dart';
 
 /// ============================================
 /// 位置分类枚举
@@ -276,6 +277,12 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     );
 
     selectPoi(poi, mapNotifier);
+
+    // 先退出锁车态，切到普通态，再移动相机到用户位置
+    final lat = location['latitude'] as double;
+    final lng = location['longitude'] as double;
+    ref.read(mapControllerNotifierProvider.notifier).setNaviShowMode(3);
+    ref.read(mapControllerNotifierProvider.notifier).moveCamera(lat: lat, lng: lng, zoom: 17);
     Logs.location.info('fillMyLocation: 已填充位置 ${poi.name}');
   }
 
@@ -412,6 +419,15 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     } else {
       state = state.copyWith(destination: InputFieldState(text: poi.name, poi: poi));
       mapNotifier.setDestination(poi);
+    }
+
+    // 移动相机到 POI 位置，使其位于屏幕正中央
+    if (poi.latLng != null) {
+      ref.read(mapControllerNotifierProvider.notifier).moveCameraToCenter(
+        lat: poi.latLng!.latitude,
+        lng: poi.latLng!.longitude,
+        zoom: 17,
+      );
     }
 
     // 只添加搜索来源的 POI 到历史

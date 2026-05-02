@@ -14,8 +14,8 @@ class PlatformChannels {
   static const String navigationEvents = 'com.qintu/amap_navigation/events';
   // 定位设置
   static const String locationSettings = 'qintu/location_settings';
-  // 地图视图
-  static const String mapView = 'com.qintu/amap_map_view';
+  // 导航视图
+  static const String naviView = 'com.qintu/amap_map_view';
   // 公交搜索
   static const String busSearch = 'com.qintu/amap_bus_search';
   // 地理编码（正向 + 逆向）

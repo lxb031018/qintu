@@ -2,39 +2,67 @@ package me.lxb.qintu.map
 
 import android.content.Context
 import android.util.Log
-import com.amap.api.maps.MapView
 import com.amap.api.maps.model.MyLocationStyle
+import com.amap.api.navi.AMapNaviView
+import com.amap.api.navi.AMapNaviViewOptions
 import me.lxb.qintu.location.LocationClientImpl
 
 /**
- * 地图视图工厂
+ * 导航视图工厂
  *
- * 负责创建原生 MapView 并配置地图基础属性
+ * 负责创建原生 AMapNaviView 并配置地图基础属性
  */
-class MapViewFactory(
+class NaviViewFactory(
     private val context: Context,
     private val locationClient: LocationClientImpl,
     private val aMapHolder: AMapHolder
 ) {
 
     companion object {
-        private const val TAG = "MapViewFactory"
+        private const val TAG = "NaviViewFactory"
     }
 
     private var locationListener: com.amap.api.maps.LocationSource.OnLocationChangedListener? = null
 
     /**
-     * 创建原生 MapView
+     * 创建原生 AMapNaviView
      */
-    fun createNativeView(): MapView {
-        return MapView(context)
+    fun createNativeView(): AMapNaviView {
+        val options = AMapNaviViewOptions().apply {
+            // ======== 路线渲染 ========
+            setAfterRouteAutoGray(true)           // 已过路段自动灰线（RouteOverLay 模式下可用）
+            setAutoDrawRoute(false)              // 禁止自动画路（由 RouteRenderer 手动管理）
+            setDrawBackUpOverlay(false)          // 禁止绘制备选路线（由 Flutter 层控制）
+            setNaviArrowVisible(false)           // 隐藏内置导航箭头（使用 RouteOverLay 箭头）
+
+            // ======== 导航 UI 元素 ========
+            setLayoutVisible(false)              // 隐藏内置导航 UI（由 Flutter 控制）
+            setEagleMapVisible(false)            // 隐藏鹰眼小地图
+            setLaneInfoShow(false)               // 隐藏车道信息
+            setLeaderLineEnabled(0)              // 禁用终点引导线
+            setSecondActionVisible(false)        // 隐藏第二步转向提示
+            setRouteListButtonShow(false)        // 隐藏全览按钮
+            setTrafficBarEnabled(false)          // 隐藏路况光柱条
+            setBroadcastModeEnabled(false)       // 隐藏播报模式控件
+
+            // ======== 面板与提示 ========
+            setShowSettingsPanel(false)          // 隐藏默认设置面板
+            setShowRouteStrategyPreferencePanel(false)  // 隐藏路线策略偏好面板
+            setShowCameraDistance(false)         // 隐藏电子眼距离
+            setShowNaviPopTips(false)            // 隐藏底部提示条
+
+            // ======== 锁车与缩放 ========
+            setAutoLockCar(false)                // 禁止 SDK 自动锁车（由 MapController 自定义 Handler 控制）
+            setAutoDisplayOverview(false)        // 禁止算路后自动全览
+        }
+        return AMapNaviView(context, options)
     }
 
     /**
-     * 配置地图
+     * 配置地图（适配 AMapNaviView）
      */
-    fun configureMap(mapView: MapView) {
-        val aMap = mapView.map
+    fun configureMap(naviView: AMapNaviView) {
+        val aMap = naviView.map
 
         // ======== 定位蓝点样式 ========
         val myLocationStyle = MyLocationStyle()

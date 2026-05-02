@@ -394,6 +394,52 @@ class AmapMapController {
   Future<void> zoomTo(double level, {int duration = 0}) =>
       _channel.invokeMethod('zoomTo', {'level': level, 'duration': duration});
 
+  /// 设置屏幕上的某个像素点为地图中心点。
+  ///
+  /// 对应原生 AMap.setPointToCenter(int x, int y)。
+  /// 调用后所有 moveCamera/animateCamera 将以该坐标为中心。
+  Future<void> setPointToCenter({required int x, required int y}) async {
+    await _channel.invokeMethod('setPointToCenter', {'x': x, 'y': y});
+  }
+
+  /// 仅改变相机目标位置（不影响缩放、角度、倾斜）。
+  ///
+  /// 已弃用，请使用 [moveCameraToCenter]。
+  Future<void> changeLatLng({required double lat, required double lng}) async {
+    await _channel.invokeMethod('changeLatLng', {'lat': lat, 'lng': lng});
+  }
+
+  /// 移动相机到指定位置，并以屏幕正中央为目标点。
+  ///
+  /// 先通过原生 setPointToCenter 重置中心点为视图像素中心，
+  /// 再执行 moveCamera，解决 AMapNaviView 内部锚点偏移问题。
+  Future<void> moveCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+  }) async {
+    await _channel.invokeMethod('moveCameraToCenter', {
+      'lat': lat,
+      'lng': lng,
+      'zoom': zoom,
+    });
+  }
+
+  /// 平滑动画移动相机到指定位置，并以屏幕正中央为目标点。
+  Future<void> animateCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    int duration = 500,
+  }) async {
+    await _channel.invokeMethod('animateCameraToCenter', {
+      'lat': lat,
+      'lng': lng,
+      'zoom': zoom,
+      'duration': duration,
+    });
+  }
+
   // ==================== 地图图层 ====================
 
   /// 设置地图类型
@@ -527,5 +573,23 @@ class AmapMapController {
       debugPrint('❌ updateSelectedRouteStyle 失败: $e');
       return false;
     }
+  }
+
+  // ==================== AMapNaviView 生命周期 ====================
+
+  /// 暂停 AMapNaviView（对应 Activity.onPause）
+  Future<void> pauseNaviView() async {
+    await _channel.invokeMethod('pauseNaviView');
+  }
+
+  /// 恢复 AMapNaviView（对应 Activity.onResume）
+  Future<void> resumeNaviView() async {
+    await _channel.invokeMethod('resumeNaviView');
+  }
+
+  /// 设置导航视图显示模式
+  /// 1=锁车态 2=全览态 3=普通态
+  Future<void> setNaviShowMode(int mode) async {
+    await _channel.invokeMethod('setNaviShowMode', {'mode': mode});
   }
 }

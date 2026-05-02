@@ -12,6 +12,9 @@ class MapControllerService {
 
   MapControllerService() : _controller = AmapMapController();
 
+  /// 暴露底层 AmapMapController（用于直接调用 Platform Channel 方法）
+  AmapMapController get map => _controller;
+
   void dispose() => _controller.dispose();
 
   // ==================== 定位 ====================
@@ -118,6 +121,25 @@ class MapControllerService {
   Future<void> zoomTo(double level, {int duration = 0}) =>
       _controller.zoomTo(level, duration: duration);
 
+  Future<void> setPointToCenter({required int x, required int y}) =>
+      _controller.setPointToCenter(x: x, y: y);
+
+  Future<void> changeLatLng({required double lat, required double lng}) =>
+      _controller.changeLatLng(lat: lat, lng: lng);
+
+  Future<void> moveCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+  }) => _controller.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
+
+  Future<void> animateCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    int duration = 500,
+  }) => _controller.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
+
   // ==================== 地图图层 ====================
 
   Future<bool> setMapType(int type) => _controller.setMapType(type);
@@ -154,4 +176,16 @@ class MapControllerService {
           unselectedColor: unselectedColor,
           selectedWidth: selectedWidth,
           unselectedWidth: unselectedWidth);
+
+  // ==================== AMapNaviView 生命周期 ====================
+
+  /// 暂停 AMapNaviView（对应 Activity.onPause）
+  Future<void> pauseNaviView() => _controller.pauseNaviView();
+
+  /// 恢复 AMapNaviView（对应 Activity.onResume）
+  Future<void> resumeNaviView() => _controller.resumeNaviView();
+
+  /// 设置导航视图显示模式
+  /// 1=锁车态 2=全览态 3=普通态
+  Future<void> setNaviShowMode(int mode) => _controller.setNaviShowMode(mode);
 }

@@ -30,7 +30,37 @@ class AmapMapView extends StatefulWidget {
   State<AmapMapView> createState() => _AmapMapViewState();
 }
 
-class _AmapMapViewState extends State<AmapMapView> {
+class _AmapMapViewState extends State<AmapMapView> with WidgetsBindingObserver {
+  MapControllerService? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_controller == null) return;
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        _controller!.map.pauseNaviView();
+        break;
+      case AppLifecycleState.resumed:
+        _controller!.map.resumeNaviView();
+        break;
+      default:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
@@ -40,7 +70,7 @@ class _AmapMapViewState extends State<AmapMapView> {
     return Consumer(
       builder: (context, ref, child) {
         return AndroidView(
-          viewType: PlatformChannels.mapView,
+          viewType: PlatformChannels.naviView,
           onPlatformViewCreated: (id) => _onPlatformViewCreated(id, ref),
           creationParams: <String, dynamic>{},
           creationParamsCodec: const StandardMessageCodec(),
@@ -56,6 +86,7 @@ class _AmapMapViewState extends State<AmapMapView> {
     final controller = ref.read(mapControllerProvider);
     if (controller == null) return;
 
+    _controller = controller;
     ref.read(mapControllerNotifierProvider.notifier).setController(controller);
 
     controller.startLocation();

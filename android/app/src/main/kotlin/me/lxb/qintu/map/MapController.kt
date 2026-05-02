@@ -249,6 +249,51 @@ class MapController(
                 }
             }
 
+            "setPointToCenter" -> {
+                val x = call.argument<Int>("x") ?: 0
+                val y = call.argument<Int>("y") ?: 0
+                Log.d(TAG, "🎯 setPointToCenter: x=$x, y=$y")
+                cameraController.setPointToCenter(x, y)
+                result.success(true)
+            }
+
+            "changeLatLng" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                if (lat != null && lng != null) {
+                    Log.d(TAG, "🎥 changeLatLng (deprecated, use moveCameraToCenter): lat=$lat, lng=$lng")
+                    cameraController.moveCameraToCenter(lat, lng)
+                    result.success(true)
+                } else {
+                    result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
+                }
+            }
+
+            "moveCameraToCenter" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                val zoom = call.argument<Double>("zoom") ?: 15.0
+                if (lat != null && lng != null) {
+                    cameraController.moveCameraToCenter(lat, lng, zoom.toFloat())
+                    result.success(true)
+                } else {
+                    result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
+                }
+            }
+
+            "animateCameraToCenter" -> {
+                val lat = call.argument<Double>("lat")
+                val lng = call.argument<Double>("lng")
+                val zoom = call.argument<Double>("zoom") ?: 15.0
+                val duration = call.argument<Int>("duration") ?: 500
+                if (lat != null && lng != null) {
+                    cameraController.animateCameraToCenter(lat, lng, zoom.toFloat(), duration)
+                    result.success(true)
+                } else {
+                    result.error("INVALID_PARAMS", "lat/lng 不能为空", null)
+                }
+            }
+
             "zoomIn" -> { cameraController.zoomIn(); result.success(true) }
             "zoomOut" -> { cameraController.zoomOut(); result.success(true) }
 
