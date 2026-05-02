@@ -3,7 +3,7 @@ package me.lxb.qintu
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import android.view.WindowManager
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -86,24 +86,20 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "startNavigation" -> {
-                activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 val isEmulator = call.argument<Boolean>("isEmulator") ?: false
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true
                 impl.startNavigation(isEmulator, enableVoice, result)
             }
 
             "stopNavigation" -> {
-                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 impl.stopNavi(result)
             }
 
             "pauseNavigation" -> {
-                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 impl.pauseNavi(result)
             }
 
             "resumeNavigation" -> {
-                activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 impl.resumeNavi(result)
             }
 
