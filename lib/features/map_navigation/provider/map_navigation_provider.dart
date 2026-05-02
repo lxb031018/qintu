@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/async_state.dart';
 import '../models/poi_models.dart';
@@ -178,11 +179,14 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           _handleNavEnd();
           break;
         case NavigationStatus.recalculated:
-          _handleRouteRecalculated(navState.rawData);
+          _handleRouteRecalculated(navState);
           break;
         case NavigationStatus.idle:
         case NavigationStatus.offRoute:
         case NavigationStatus.recalculating:
+          final calcType = navState.calcRouteType;
+          debugPrint('🔄 重算中… calcType=$calcType');
+          break;
         case NavigationStatus.gpsWeak:
         case NavigationStatus.parallelRoad:
         case NavigationStatus.error:
@@ -206,22 +210,34 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         ref.read(mapControllerNotifierProvider)?.updateCarMarker(
           lat: lat,
           lng: lng,
-          bearing: 0,
+          bearing: navState.bearing ?? 0,
         );
       }
     });
   }
 
-  /// 处理偏航/拥堵重算完成：更新地图上的路线
-  void _handleRouteRecalculated(Map<dynamic, dynamic>? rawData) {
+  /// 处理偏航/拥堵重算完成：更新地图上的路线和导航 SDK 的选中路线
+  void _handleRouteRecalculated(NavigationState navState) {
+    final rawData = navState.rawData;
     if (rawData == null) return;
-    final routesList = rawData['routes'] as List<dynamic>?;
-    if (routesList == null || routesList.isEmpty) return;
 
-    // 取第一个新路线 ID 重新渲染 RouteOverLay
+    final reason = rawData['reason']?.toString() ?? 'unknown';
+    final calcType = rawData['calcRouteType'] as int? ?? -1;
+    final routesList = rawData['routes'] as List<dynamic>?;
+    if (routesList == null || routesList.isEmpty) {
+      debugPrint('🔄 重算完成但无路线数据: reason=$reason, calcType=$calcType');
+      return;
+    }
+
+    debugPrint('🔄 重算完成: reason=$reason, calcType=$calcType, ${routesList.length} 条新路线');
+
+    // 取第一条新路线 ID 告知 AMapNavi 当前选中（SDK 自动选中最优路线）
     final firstRoute = routesList.first as Map<dynamic, dynamic>;
     final routeId = firstRoute['routeId'] as int?;
-    if (routeId != null) {
+    if (routeId != null && routeId >= 0) {
+      // 通知原生导航 SDK 选中此路线
+      _routeService.selectRouteId(routeId);
+      // 更新地图渲染：切换到新的导航路线
       ref.read(mapControllerNotifierProvider)?.enterNavigationMode(routeId);
     }
   }
@@ -234,11 +250,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       navRemainingDistance: 0,
       navRemainingTime: 0,
     );
-    // 禁用导航路线拥堵颜色
     ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(false);
     ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(false);
-    // 清除地图上的导航路线
-    ref.read(mapControllerNotifierProvider)?.clearRoutes();
+    // 不调用 clearRoutes()，保留置灰路线在地图上展示已行驶路径
   }
 
   /// 设置起点

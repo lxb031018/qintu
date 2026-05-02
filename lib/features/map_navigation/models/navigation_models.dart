@@ -19,10 +19,12 @@ class NavigationState {
   final String nextInstruction;
   final double? currentLat;
   final double? currentLng;
+  final double? bearing;
   final String? roadName;
   final String? naviText;
   final int naviTextType;
   final Map<dynamic, dynamic>? rawData;
+  final int? calcRouteType;
 
   NavigationState({
     required this.status,
@@ -32,10 +34,12 @@ class NavigationState {
     this.nextInstruction = '',
     this.currentLat,
     this.currentLng,
+    this.bearing,
     this.roadName,
     this.naviText,
     this.naviTextType = 0,
     this.rawData,
+    this.calcRouteType,
   });
 
   /// 从 EventChannel 多类型事件中解析
@@ -48,14 +52,17 @@ class NavigationState {
     String instruction = '';
     double? lat;
     double? lng;
+    double? bearing;
     String? roadName;
     String? naviText;
+    int? calcRouteType;
 
     switch (type) {
       case 'locationUpdate':
         lat = (map['lat'] as num?)?.toDouble();
         lng = (map['lng'] as num?)?.toDouble();
         speed = (map['speed'] as num?)?.toDouble() ?? 0;
+        bearing = (map['bearing'] as num?)?.toDouble();
         break;
       case 'naviInfo':
         remainingDistance = (map['remainingDistance'] as num?)?.toInt() ?? 0;
@@ -65,6 +72,7 @@ class NavigationState {
         break;
       case 'naviStatus':
         final s = map['status']?.toString() ?? '';
+        calcRouteType = (map['calcRouteType'] as num?)?.toInt();
         switch (s) {
           case 'navigating': status = NavigationStatus.navigating; break;
           case 'arrived': status = NavigationStatus.arrived; break;
@@ -93,8 +101,10 @@ class NavigationState {
       nextInstruction: instruction,
       currentLat: lat,
       currentLng: lng,
+      bearing: bearing,
       roadName: roadName,
       naviText: naviText,
+      calcRouteType: calcRouteType,
       rawData: map,
     );
   }
@@ -106,6 +116,7 @@ class NavigationState {
         'speed: $currentSpeed km/h, '
         'distance: $remainingDistance m, '
         'duration: $remainingDuration s, '
+        'bearing: $bearing°, '
         'instruction: $nextInstruction, '
         'naviText: $naviText)';
   }
