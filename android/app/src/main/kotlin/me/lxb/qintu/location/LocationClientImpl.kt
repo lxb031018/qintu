@@ -41,6 +41,7 @@ class LocationClientImpl(private val context: Context) : LocationSource {
                 isOnceLocation = false
                 // 🔥 关键优化：开启传感器（陀螺仪 + 地磁）辅助
                 isSensorEnable = true
+                isLocationCacheEnable = false
                 // ✅ 启用地址信息
                 isNeedAddress = true
             }
@@ -125,25 +126,6 @@ class LocationClientImpl(private val context: Context) : LocationSource {
      * 获取单次定位结果
      */
     fun getCurrentLocation(result: MethodChannel.Result) {
-        val cacheExpireTime = 5 * 60 * 1000L // 5 分钟
-
-        if (lastKnownLocation != null) {
-            val cacheAge = System.currentTimeMillis() - lastKnownLocation!!.time
-            if (cacheAge < cacheExpireTime) {
-                Log.d(TAG, "✅ 使用缓存位置 (${cacheAge / 1000}秒前)")
-                result.success(mapOf(
-                    "latitude" to lastKnownLocation!!.latitude,
-                    "longitude" to lastKnownLocation!!.longitude,
-                    "accuracy" to lastKnownLocation!!.accuracy,
-                    "timestamp" to lastKnownLocation!!.time,
-                    "city" to (lastKnownLocation!!.city ?: "")
-                ))
-                return
-            } else {
-                Log.d(TAG, "⚠️ 缓存过期，重新定位...")
-            }
-        }
-
         Log.d(TAG, "📡 请求单次定位...")
         var isResultHandled = false
         val onceLocationListener = object : AMapLocationListener {
@@ -169,6 +151,17 @@ class LocationClientImpl(private val context: Context) : LocationSource {
                 locationClient?.setLocationListener { loc ->
                     onLocationChanged(loc)
                 }
+                // 恢复持续定位选项
+                val continuousOption = AMapLocationClientOption().apply {
+                    locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
+                    interval = 1000
+                    isOnceLocation = false
+                    isSensorEnable = true
+                    isLocationCacheEnable = false
+                    isNeedAddress = true
+                }
+                locationClient?.setLocationOption(continuousOption)
+                Log.d(TAG, "✅ 已恢复持续定位模式")
             }
         }
         locationClient?.setLocationListener(onceLocationListener)
