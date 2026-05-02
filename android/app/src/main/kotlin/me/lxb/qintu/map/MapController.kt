@@ -1,5 +1,7 @@
 package me.lxb.qintu.map
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
@@ -36,13 +38,34 @@ class MapController(
 ) {
     companion object {
         private const val TAG = "MapController"
+        private const val AUTO_RELOCK_DELAY_MS = 6000L
     }
+
+    // Lock/unlock state for navigation
+    private var isLocked: Boolean = false
+    private var autoRelockHandler: Handler? = null
 
     /**
      * 处理来自定位监听器的位置更新，驱动 CarOverlay 自车标记绘制
      */
     fun onLocationChanged(lat: Double, lng: Double, bearing: Float) {
         carOverlayRef()?.draw(aMapHolder.aMap, LatLng(lat, lng), bearing)
+    }
+
+    /**
+     * 用户触摸地图时调用：解锁相机并安排 6 秒后自动重新锁定
+     */
+    fun onMapTouched() {
+        if (isFollowMode && isLocked) {
+            isLocked = false
+            autoRelockHandler?.removeCallbacksAndMessages(null)
+            autoRelockHandler = Handler(Looper.getMainLooper())
+            autoRelockHandler?.postDelayed({
+                isLocked = true
+                Log.d(TAG, "🔒 触摸超时后自动重新锁定")
+            }, AUTO_RELOCK_DELAY_MS)
+            Log.d(TAG, "👆 地图被触摸，解锁相机 — ${AUTO_RELOCK_DELAY_MS}ms 后自动重新锁定")
+        }
     }
 
     /**
@@ -355,8 +378,13 @@ class MapController(
                         LatLng(lat, lng),
                         bearing.toFloat()
                     )
+                    // Camera follow: only when both follow mode AND locked
+                    if (isFollowMode && isLocked) {
+                        cameraController.animateCamera(lat, lng, bearing = bearing.toFloat())
+                    }
+                    // 手动置灰：灰色 Polyline 覆盖已行驶路段
                     if (isFollowMode) {
-                        cameraController.animateCamera(lat, lng)
+                        routeRenderer.updatePassedRouteGray(lat, lng)
                     }
                     result.success(true)
                 } else {
@@ -366,6 +394,23 @@ class MapController(
 
             "setFollowMode" -> {
                 isFollowMode = call.argument<Boolean>("enabled") ?: false
+                if (isFollowMode) {
+                    isLocked = true
+                } else {
+                    isLocked = false
+                    autoRelockHandler?.removeCallbacksAndMessages(null)
+                    autoRelockHandler = null
+                }
+                result.success(true)
+            }
+
+            "setLockCar" -> {
+                val lock = call.argument<Boolean>("locked") ?: true
+                isLocked = lock
+                if (!lock) {
+                    autoRelockHandler?.removeCallbacksAndMessages(null)
+                }
+                Log.d(TAG, "🔒 锁车状态: ${if (lock) "锁定" else "解锁"}")
                 result.success(true)
             }
 

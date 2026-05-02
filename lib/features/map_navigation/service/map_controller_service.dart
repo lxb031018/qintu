@@ -92,6 +92,9 @@ class MapControllerService {
   Future<bool> setFollowMode(bool enabled) =>
       _controller.setFollowMode(enabled);
 
+  Future<bool> setLockCar(bool locked) =>
+      _controller.setLockCar(locked);
+
   Future<bool> setLocationDotEnabled(bool enabled) =>
       _controller.setLocationDotEnabled(enabled);
 

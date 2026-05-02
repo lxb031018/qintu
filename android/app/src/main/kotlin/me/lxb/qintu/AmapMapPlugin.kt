@@ -2,6 +2,7 @@ package me.lxb.qintu
 
 import android.content.Context
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
@@ -149,6 +150,13 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     carOverlayRef = { carOverlay },
                     onCarOverlayDestroyed = { carOverlay = null }
                 )
+
+                // 触摸监听：检测地图手势 → 解锁车辆 → 安排自动重新锁定
+                aMap.setOnMapTouchListener { motionEvent ->
+                    if (motionEvent.action == MotionEvent.ACTION_UP) {
+                        mapController?.onMapTouched()
+                    }
+                }
 
                 Log.d(TAG, "🗺️ 地图视图 #$viewId 初始化完成")
             }

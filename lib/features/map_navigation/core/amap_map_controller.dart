@@ -351,6 +351,20 @@ class AmapMapController {
     }
   }
 
+  /// 锁定/解锁车辆跟随（导航时使用）
+  /// [locked] true=锁定（相机跟随车辆方向旋转），false=解锁（允许用户自由操作地图）
+  Future<bool> setLockCar(bool locked) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('setLockCar', {
+        'locked': locked,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ setLockCar 失败: $e');
+      return false;
+    }
+  }
+
   /// 显示/隐藏车载标记
   Future<bool> setCarOverlayVisible(bool visible) async {
     try {
