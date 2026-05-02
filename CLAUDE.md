@@ -115,6 +115,7 @@ Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用*
 | 架构规范 | docs/architecture/ARCHITECTURE.md |
 | 接口规范 | docs/guides/API_CONTRACT.md |
 | 工具使用 | docs/guides/UTILS_USAGE.md |
+| 高德官方文档 | docs/amap/ |
 
 ### 中频（特定场景需要）
 

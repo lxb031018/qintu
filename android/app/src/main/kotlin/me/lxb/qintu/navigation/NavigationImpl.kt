@@ -55,7 +55,10 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         try {
             mAMapNavi = AMapNavi.getInstance(context)
             mAMapNavi?.addAMapNaviListener(this)
-            Log.d(TAG, "✅ AMapNavi 单例已初始化并注册监听")
+            // 关闭高德导航 SDK 默认的屏幕常亮（文档：默认开启）
+            // 导航开始后由 AmapNavigationPlugin 通过 ScreenBrightnessManager 按需激活
+            mAMapNavi?.getNaviSetting()?.setScreenAlwaysBright(false)
+            Log.d(TAG, "✅ AMapNavi 单例已初始化, setScreenAlwaysBright=false")
         } catch (e: Exception) {
             Log.e(TAG, "❌ AMapNavi 初始化失败：${e.message}")
         }

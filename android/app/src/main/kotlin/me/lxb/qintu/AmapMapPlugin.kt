@@ -1,5 +1,6 @@
 package me.lxb.qintu
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.view.MotionEvent
@@ -7,6 +8,8 @@ import android.view.View
 import android.view.ViewTreeObserver
 import com.amap.api.navi.AMapNaviView
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -23,7 +26,6 @@ import me.lxb.qintu.map.NaviViewFactory
 import me.lxb.qintu.overlay.CarOverlay
 import me.lxb.qintu.route.RouteRenderer
 import me.lxb.qintu.util.AMapPrivacy
-import me.lxb.qintu.util.ScreenBrightnessManager
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
@@ -34,7 +36,7 @@ typealias Result = MethodChannel.Result
  * 仅负责 Flutter 通信，不含业务逻辑。
  * 业务逻辑委托给 MapController（功能模块层）。
  */
-class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
     companion object {
         private const val TAG = "AmapMap"
@@ -43,6 +45,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
+    private var activity: Activity? = null
 
     // AMap 共享实例
     private val aMapHolder = AMapHolder()
@@ -135,12 +138,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
         currentNaviView = naviView
 
-        // AMapNaviView 的 onResume 会自动设置屏幕常亮，在此清除
-        val activity = context as? android.app.Activity
-        activity?.let {
-            ScreenBrightnessManager.deactivate(it)
-            Log.d(TAG, "📍 AMapNaviView onResume 后清除屏幕常亮, flags=${it.window.attributes.flags}")
-        }
+        Log.d(TAG, "📍 createNaviView 完成")
 
         return object : PlatformView {
             init {
@@ -174,14 +172,14 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                 // 保存视图尺寸，供 CameraController 在 moveCameraToCenter 时使用
                 // 同时修复 AMapNaviView 内部预留空间导致的地图中心偏移问题
+                // 注意：不移除监听器，因为 setNaviShowMode 可能重置中心点，每次布局变化都需要重设
                 naviView.viewTreeObserver.addOnGlobalLayoutListener(
                     object : ViewTreeObserver.OnGlobalLayoutListener {
                         override fun onGlobalLayout() {
                             if (naviView.width > 0 && naviView.height > 0) {
-                                naviView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                                cameraController?.setViewSize(naviView.width, naviView.height)
                                 val centerX = naviView.width / 2
                                 val centerY = naviView.height / 2
+                                cameraController?.setViewSize(naviView.width, naviView.height)
                                 naviView.map.setPointToCenter(centerX, centerY)
                                 Log.d(TAG, "🎯 地图中心已修正: (${centerX}, ${centerY}), size=(${naviView.width}x${naviView.height})")
                             }
@@ -220,6 +218,25 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
             else -> mapController?.handleMethodCall(call, result) ?: result.notImplemented()
         }
+    }
+
+    // ==================== ActivityAware ====================
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        Log.d(TAG, "已绑定 Activity")
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

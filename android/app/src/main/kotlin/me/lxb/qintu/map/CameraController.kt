@@ -26,6 +26,9 @@ class CameraController(private val aMap: AMap) {
     private fun resetCenterPoint() {
         if (viewWidth > 0 && viewHeight > 0) {
             aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
+        } else {
+            Log.w(TAG, "⚠️ resetCenterPoint: 视图尺寸未就绪 (${viewWidth}x${viewHeight}), 使用默认值")
+            aMap.setPointToCenter(200, 200)
         }
     }
 
@@ -49,14 +52,19 @@ class CameraController(private val aMap: AMap) {
         aMap.moveCamera(update)
     }
 
-    /**
+/**
      * 移动相机到指定位置，并以屏幕正中央为目标点。
      *
-     * 先调用 setPointToCenter 重置中心点，再执行 moveCamera，
-     * 解决 AMapNaviView 内部锚点偏移导致目标偏离屏幕中心的问题。
+     * 先调用 setPointToCenter 重置中心点为视图像素中心，
+     * 再执行 moveCamera，解决 AMapNaviView 内部锚点偏移问题。
      */
     fun moveCameraToCenter(lat: Double, lng: Double, zoom: Float = DEFAULT_ZOOM) {
-        resetCenterPoint()
+        if (viewWidth > 0 && viewHeight > 0) {
+            aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
+        } else {
+            aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
+            Log.w(TAG, "⚠️ moveCameraToCenter: viewSize 未就绪 (${viewWidth}x${viewHeight}), centerPoint 可能偏移")
+        }
         Log.d(TAG, "🎯 moveCameraToCenter: lat=$lat, lng=$lng, zoom=$zoom (center=${viewWidth/2},${viewHeight/2})")
         val latLng = LatLng(lat, lng)
         aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, zoom))
