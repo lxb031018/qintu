@@ -6,7 +6,7 @@ import com.amap.api.navi.model.AMapNaviPath
  * AMapNaviPath 共享缓存
  *
  * 桥接 AmapNavigationPlugin（算路）与 AmapMapPlugin（渲染），
- * 使 RouteRenderer 可以通过 routeId 获取 AMapNaviPath 并使用 RouteOverLay 渲染带方向箭头的路线。
+ * 使导航 SDK 可以通过 routeId 获取 AMapNaviPath 并渲染路线。
  */
 object RoutePathCache {
 

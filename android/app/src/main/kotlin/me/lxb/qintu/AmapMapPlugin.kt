@@ -24,7 +24,7 @@ import me.lxb.qintu.map.CameraController
 import me.lxb.qintu.map.MapController
 import me.lxb.qintu.map.NaviViewFactory
 import me.lxb.qintu.overlay.CarOverlay
-import me.lxb.qintu.route.RouteRenderer
+
 import me.lxb.qintu.util.AMapPrivacy
 
 // 类型别名，避免与 kotlin.Result 冲突
@@ -54,7 +54,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
     private lateinit var locationClient: LocationClientImpl
     private lateinit var naviViewFactory: NaviViewFactory
     private var cameraController: CameraController? = null
-    private var routeRenderer: RouteRenderer? = null
+    
     private var carOverlay: CarOverlay? = null
     private var geocodeImpl: GeocodeImpl? = null
 
@@ -150,18 +150,17 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
 
                 // 初始化功能模块组件
                 cameraController = CameraController(aMap)
-                routeRenderer = RouteRenderer(aMap, context)
 
                 // 初始化业务控制器
                 mapController = MapController(
                     locationClient = locationClient,
                     geocodeImpl = geocodeImpl!!,
-                    routeRenderer = routeRenderer!!,
                     cameraController = cameraController!!,
                     aMapHolder = aMapHolder,
                     carOverlayRef = { carOverlay },
                     onCarOverlayDestroyed = { carOverlay = null }
                 )
+                mapController?.setNaviView(naviView)
 
                 // 触摸监听：检测地图手势 → 解锁车辆 → 安排自动重新锁定
                 aMap.setOnMapTouchListener { motionEvent ->

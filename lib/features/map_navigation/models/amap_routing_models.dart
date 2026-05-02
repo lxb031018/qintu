@@ -551,7 +551,7 @@ class DriveStep {
 
 /// 路线规划异常
 class RouteOption {
-  final int routeId;        // 原生路线 ID（用于 RouteOverLay 渲染）
+  final int routeId;        // 原生路线 ID（用于 SDK 渲染）
   final double distance;    // 米
   final double duration;    // 秒
   final String strategy;

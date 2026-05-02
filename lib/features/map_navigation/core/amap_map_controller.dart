@@ -14,7 +14,7 @@ import '../../../utils/logger.dart';
 /// 方法分类：
 /// - 定位：startLocation, moveToMyLocation, getCurrentLocation
 /// - 地图操作：moveCamera, setRouteMarkers, clearRouteMarkers
-/// - 路线绘制：showRoutes, selectRoute, clearRoutes
+/// - 路线绘制：showRoutes, selectRoute, clearRoutes（由 SDK 自动处理）
 ///
 /// 注意：此类属于 core 层（平台 API 封装）
 /// ============================================
@@ -103,11 +103,11 @@ class AmapMapController {
     });
   }
 
-  /// 显示多条路线（RouteOverLay + 方向箭头）
+  /// 显示多条路线（SDK 自动渲染）
   ///
-  /// [routes] 路线列表（仅用于日志，实际使用 routeIds 从缓存获取路径）
+  /// [routes] 路线列表（仅用于日志）
   /// [selectIndex] 默认选中的路线索引
-  /// [routeIds] 路线 ID 列表，用于从 RoutePathCache 获取 AMapNaviPath
+  /// [routeIds] 路线 ID 列表，用于 SDK 获取路径
   Future<int?> showRoutes(
     List<List<LatLng>> routes, {
     int selectIndex = 0,
@@ -125,7 +125,7 @@ class AmapMapController {
       debugPrint('🗺️ [Flutter] showRoutes 调用:');
       debugPrint('   - 路线数量: ${routes.length}');
       debugPrint('   - 选中索引: $selectIndex');
-      debugPrint('   - RouteOverLay IDs: $routeIds');
+      debugPrint('   - Route IDs: $routeIds');
 
       final params = <String, dynamic>{
         'routeIds': routeIds,
@@ -141,11 +141,9 @@ class AmapMapController {
     }
   }
 
-  /// 选择高亮某条路线
+  /// 选择高亮某条路线（SDK 自动处理）
   ///
   /// [index] 路线索引
-  /// [selectedColor] 选中路线颜色
-  /// [unselectedColor] 未选中路线颜色
   Future<bool> selectRoute(
     int index, {
     int selectedColor = 0xFFFF4D4F,
@@ -168,8 +166,7 @@ class AmapMapController {
     }
   }
 
-  /// 进入导航模式：仅保留选中路线（RouteOverLay + 方向箭头）
-  /// 清除所有预览阶段的 Polyline
+  /// 进入导航模式（SDK 自动处理）
   Future<bool> enterNavigationMode(int routeId) async {
     try {
       final result = await _channel.invokeMethod<bool>('enterNavigationMode', {
@@ -553,7 +550,7 @@ class AmapMapController {
     }
   }
 
-  /// 更新路线选中/非选中样式
+  /// 更新路线选中/非选中样式（SDK 控制，不再支持自定义）
   Future<bool> updateSelectedRouteStyle({
     int? selectedColor,
     int? unselectedColor,

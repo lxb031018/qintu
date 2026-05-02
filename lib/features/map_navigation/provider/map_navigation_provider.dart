@@ -486,7 +486,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     // 选中路线（多路径时需要）
     await _routeService.selectRouteId(state.selectedRouteIndex);
 
-    // 切换到导航渲染：清除备选路线，用 RouteOverLay 显示选中路线
+    // 切换到导航渲染：SDK 自动处理路线显示
     if (route.routeId >= 0) {
       ref.read(mapControllerNotifierProvider)?.enterNavigationMode(route.routeId);
     }

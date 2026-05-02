@@ -5,7 +5,7 @@ import com.amap.api.navi.model.AMapNaviLocation
 /**
  * 导航状态持有者（单例）
  *
- * 在 NavigationImpl 回调中更新，供 RouteRenderer 读取。
+ * 在 NavigationImpl 回调中更新，供导航功能使用。
  * 避免将 SDK 语义索引通过 EventChannel → Flutter → MethodChannel 往返传递。
  */
 object NavigationStateHolder {

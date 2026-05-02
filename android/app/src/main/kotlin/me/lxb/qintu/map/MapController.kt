@@ -5,14 +5,16 @@ import android.os.Looper
 import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.Marker
+import com.amap.api.maps.model.MarkerOptions
+import com.amap.api.maps.model.BitmapDescriptorFactory
+import com.amap.api.navi.AMapNaviView
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.geocode.GeocodeImpl
 import me.lxb.qintu.location.LocationClientImpl
 import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.overlay.CarOverlay
-import me.lxb.qintu.route.RoutePathCache
-import me.lxb.qintu.route.RouteRenderer
 
 /**
  * 地图业务控制器（功能模块层）
@@ -29,7 +31,6 @@ import me.lxb.qintu.route.RouteRenderer
 class MapController(
     private val locationClient: LocationClientImpl,
     private val geocodeImpl: GeocodeImpl,
-    private val routeRenderer: RouteRenderer,
     private val cameraController: CameraController,
     private val aMapHolder: AMapHolder,
     private val carOverlayRef: () -> CarOverlay?,
@@ -44,6 +45,28 @@ class MapController(
     // Lock/unlock state for navigation
     private var isLocked: Boolean = false
     private var autoRelockHandler: Handler? = null
+
+    // Marker references for route start/end
+    private var startMarker: Marker? = null
+    private var endMarker: Marker? = null
+
+    // Current AMapNaviView for SDK route operations
+    private var naviView: AMapNaviView? = null
+
+    fun setNaviView(view: AMapNaviView?) {
+        naviView = view
+    }
+
+    private fun clearMarkersInternal() {
+        try {
+            startMarker?.remove()
+            startMarker = null
+            endMarker?.remove()
+            endMarker = null
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ clearMarkersInternal 失败: ${e.message}")
+        }
+    }
 
     /**
      * 处理来自定位监听器的位置更新，驱动 CarOverlay 自车标记绘制
@@ -143,37 +166,29 @@ class MapController(
                 }
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
 
-                if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
-                    val paths = routeIds.mapNotNull { RoutePathCache.get(it) }
-                    if (paths.isNotEmpty()) {
-                        Log.d(TAG, "📍 showRoutes: RouteOverLay ${paths.size} 条路线, 选中: $selectIndex")
-                        val count = routeRenderer.showRouteOverlays(paths, selectIndex)
-                        result.success(count)
-                        return
-                    }
-                }
-
-                Log.e(TAG, "❌ showRoutes: 未找到有效的 routeIds 或缓存路径")
-                result.success(0)
+                Log.d(TAG, "📍 showRoutes: 使用 SDK 自动画路, ${routeIds?.size ?: 0} 条路线, 选中: $selectIndex")
+                // SDK autoDrawRoute=true 时，路线由 SDK 自动渲染
+                // selectIndex 参数仅用于日志记录
+                result.success(routeIds?.size ?: 0)
             }
 
             "selectRoute" -> {
                 val index = call.argument<Int>("index") ?: 0
-                Log.d(TAG, "📍 selectRoute: index=$index")
-                val success = routeRenderer.selectRoute(index)
-                result.success(success)
+                Log.d(TAG, "📍 selectRoute: index=$index (SDK 自动处理)")
+                // SDK 在多路径时会自动选中最优路线，此处仅记录日志
+                result.success(true)
             }
 
             "enterNavigationMode" -> {
                 val routeId = call.argument<Int>("routeId") ?: 0
-                Log.d(TAG, "🚗 enterNavigationMode: routeId=$routeId")
-                val success = routeRenderer.showNavigateRoute(routeId)
-                result.success(success)
+                Log.d(TAG, "🚗 enterNavigationMode: routeId=$routeId (SDK 自动处理)")
+                // SDK 显示导航路线
+                result.success(true)
             }
 
             "clearRoutes" -> {
-                Log.d(TAG, "📍 clearRoutes")
-                routeRenderer.clearRoutes()
+                Log.d(TAG, "📍 clearRoutes: SDK 自动清除")
+                // SDK 自动画路模式下，路线清除由 SDK 管理
                 result.success(true)
             }
 
@@ -184,17 +199,35 @@ class MapController(
                 val endLng = call.argument<Double>("endLng")
                 val startLabel = call.argument<String>("startLabel") ?: "起点"
                 val endLabel = call.argument<String>("endLabel") ?: "终点"
-                Log.d(TAG, "📍 setRouteMarkers")
+                Log.d(TAG, "📍 setRouteMarkers: start=($startLat,$startLng), end=($endLat,$endLng)")
 
-                val success = routeRenderer.setMarkers(
-                    startLat, startLng, endLat, endLng, startLabel, endLabel
-                )
-                result.success(success)
+                clearMarkersInternal()
+                val aMap = aMapHolder.aMap ?: run {
+                    result.success(false)
+                    return
+                }
+
+                try {
+                    startMarker = aMap.addMarker(MarkerOptions()
+                        .position(LatLng(startLat!!, startLng!!))
+                        .title(startLabel)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
+
+                    endMarker = aMap.addMarker(MarkerOptions()
+                        .position(LatLng(endLat!!, endLng!!))
+                        .title(endLabel)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)))
+
+                    result.success(true)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ setRouteMarkers 失败: ${e.message}")
+                    result.success(false)
+                }
             }
 
             "clearRouteMarkers" -> {
                 Log.d(TAG, "📍 clearRouteMarkers")
-                routeRenderer.clearMarkers()
+                clearMarkersInternal()
                 result.success(true)
             }
 
@@ -205,18 +238,47 @@ class MapController(
                 val label = call.argument<String>("label") ?: (if (isStart) "起点" else "终点")
                 Log.d(TAG, "📍 showSingleMarker: lat=$lat, lng=$lng, isStart=$isStart")
 
-                val success = if (lat != null && lng != null) {
-                    routeRenderer.showSingleMarker(lat, lng, isStart, label)
-                } else {
-                    false
+                if (lat == null || lng == null) {
+                    result.success(false)
+                    return
                 }
-                result.success(success)
+
+                val aMap = aMapHolder.aMap ?: run {
+                    result.success(false)
+                    return
+                }
+
+                try {
+                    val marker = aMap.addMarker(MarkerOptions()
+                        .position(LatLng(lat, lng))
+                        .title(label)
+                        .icon(BitmapDescriptorFactory.defaultMarker(
+                            if (isStart) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_RED)))
+
+                    if (isStart) {
+                        startMarker?.remove()
+                        startMarker = marker
+                    } else {
+                        endMarker?.remove()
+                        endMarker = marker
+                    }
+                    result.success(true)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ showSingleMarker 失败: ${e.message}")
+                    result.success(false)
+                }
             }
 
             "clearSingleMarker" -> {
                 val isStart = call.argument<Boolean>("isStart") ?: true
                 Log.d(TAG, "📍 clearSingleMarker: isStart=$isStart")
-                routeRenderer.clearSingleMarker(isStart)
+                if (isStart) {
+                    startMarker?.remove()
+                    startMarker = null
+                } else {
+                    endMarker?.remove()
+                    endMarker = null
+                }
                 result.success(true)
             }
 
@@ -364,29 +426,23 @@ class MapController(
 
             "setRouteTmcEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
-                routeRenderer.setTmcEnabled(enabled)
+                Log.d(TAG, "🚦 setRouteTmcEnabled: ${if (enabled) "启用" else "禁用"} (SDK 控制)")
+                // TMC 由 SDK 自动控制
                 result.success(true)
             }
 
             "setRouteTrafficIconEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
-                routeRenderer.setTrafficIconEnabled(enabled)
+                Log.d(TAG, "🚧 setRouteTrafficIconEnabled: ${if (enabled) "启用" else "禁用"} (SDK 控制)")
+                // 交通事件图标由 SDK 自动控制
                 result.success(true)
             }
 
             // ======== 路线选中样式（支持自定义颜色/宽度） ========
 
             "updateSelectedRouteStyle" -> {
-                val selectedColor = call.argument<Long>("selectedColor")?.toInt()
-                val unselectedColor = call.argument<Long>("unselectedColor")?.toInt()
-                val selectedWidth = call.argument<Double>("selectedWidth")?.toFloat()
-                val unselectedWidth = call.argument<Double>("unselectedWidth")?.toFloat()
-                routeRenderer.updateRouteStyle(
-                    selectedColor = selectedColor,
-                    unselectedColor = unselectedColor,
-                    selectedWidth = selectedWidth,
-                    unselectedWidth = unselectedWidth
-                )
+                Log.d(TAG, "🎨 updateSelectedRouteStyle: 样式由 SDK 控制")
+                // 路线样式由 SDK 的 AMapNaviViewOptions 控制，不再支持自定义
                 result.success(true)
             }
 

@@ -30,10 +30,10 @@ class NaviViewFactory(
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
             // ======== 路线渲染 ========
-            setAfterRouteAutoGray(true)           // 已过路段自动灰线（RouteOverLay 模式下可用）
-            setAutoDrawRoute(false)              // 禁止自动画路（由 RouteRenderer 手动管理）
-            setDrawBackUpOverlay(false)          // 禁止绘制备选路线（由 Flutter 层控制）
-            setNaviArrowVisible(false)           // 隐藏内置导航箭头（使用 RouteOverLay 箭头）
+            setAfterRouteAutoGray(true)           // 已过路段自动灰线
+            setAutoDrawRoute(true)                // SDK 自动画路
+            setDrawBackUpOverlay(true)            // SDK 绘制备选路线
+            setNaviArrowVisible(true)             // SDK 显示导航箭头
 
             // ======== 导航 UI 元素 ========
             setLayoutVisible(false)              // 隐藏内置导航 UI（由 Flutter 控制）
