@@ -255,6 +255,13 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              onTap: () {
+                if (isOrigin) {
+                  ref.read(locationInputProvider.notifier).showList(isOrigin: true);
+                } else {
+                  ref.read(locationInputProvider.notifier).showList(isOrigin: false);
+                }
+              },
               onChanged: isOrigin
                   ? (value) {
                       callbacks?.onOriginTextChanged?.call(value);
