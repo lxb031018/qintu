@@ -103,12 +103,11 @@ class AmapMapController {
     });
   }
 
-  /// 显示多条路线
+  /// 显示多条路线（RouteOverLay + 方向箭头）
   ///
-  /// [routes] 路线列表，每条路线是 LatLng 点列表
+  /// [routes] 路线列表（仅用于日志，实际使用 routeIds 从缓存获取路径）
   /// [selectIndex] 默认选中的路线索引
-  /// [colors] 每条路线的颜色（可选，默认使用蓝色）
-  /// [widths] 每条路线的宽度（可选，默认12）
+  /// [routeIds] 路线 ID 列表，用于从 RoutePathCache 获取 AMapNaviPath
   Future<int?> showRoutes(
     List<List<LatLng>> routes, {
     int selectIndex = 0,
@@ -118,40 +117,20 @@ class AmapMapController {
     List<int>? routeIds,
   }) async {
     try {
-      final routesData = routes.map((route) => route.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList()).toList();
+      if (routeIds == null || routeIds.isEmpty) {
+        debugPrint('❌ [Flutter] showRoutes: routeIds 不能为空');
+        return 0;
+      }
 
       debugPrint('🗺️ [Flutter] showRoutes 调用:');
-      debugPrint('   - 路线数量: ${routesData.length}');
+      debugPrint('   - 路线数量: ${routes.length}');
       debugPrint('   - 选中索引: $selectIndex');
-      for (int i = 0; i < routesData.length; i++) {
-        debugPrint('   - 路线[$i]: ${routesData[i].length} 个点');
-        if (routesData[i].isNotEmpty) {
-          debugPrint('      起点: ${routesData[i].first}');
-          debugPrint('      终点: ${routesData[i].last}');
-        }
-      }
+      debugPrint('   - RouteOverLay IDs: $routeIds');
 
       final params = <String, dynamic>{
-        'routes': routesData,
+        'routeIds': routeIds,
         'selectIndex': selectIndex,
       };
-
-      if (colors != null) {
-        params['colors'] = colors;
-        debugPrint('   - 自定义颜色: $colors');
-      }
-      if (widths != null) {
-        params['widths'] = widths;
-        debugPrint('   - 自定义宽度: $widths');
-      }
-      if (dashedFlags != null) {
-        params['dashedFlags'] = dashedFlags;
-        debugPrint('   - 虚线标记: $dashedFlags');
-      }
-      if (routeIds != null && routeIds.isNotEmpty) {
-        params['routeIds'] = routeIds;
-        debugPrint('   - RouteOverLay IDs: $routeIds');
-      }
 
       final result = await _channel.invokeMethod<int>('showRoutes', params);
       debugPrint('🗺️ [Flutter] showRoutes 结果: $result 条路线');

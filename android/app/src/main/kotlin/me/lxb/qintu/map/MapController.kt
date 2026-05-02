@@ -138,22 +138,11 @@ class MapController(
             }
 
             "showRoutes" -> {
-                val routesData = call.argument<List<*>>("routes")
-                val selectIndex = call.argument<Int>("selectIndex") ?: 0
                 val routeIds = call.argument<List<*>>("routeIds")?.mapNotNull {
                     (it as? Number)?.toInt()
                 }
-                val colors = call.argument<List<*>>("colors")?.mapNotNull {
-                    (it as? Number)?.toInt()
-                }
-                val widths = call.argument<List<*>>("widths")?.mapNotNull {
-                    (it as? Number)?.toDouble()
-                }
-                val dashedFlags = call.argument<List<*>>("dashedFlags")?.mapNotNull {
-                    it as? Boolean
-                }
+                val selectIndex = call.argument<Int>("selectIndex") ?: 0
 
-                // 优先用 RouteOverLay（与导航样式一致，带方向箭头）
                 if (routeIds != null && routeIds.isNotEmpty() && RoutePathCache.size() > 0) {
                     val paths = routeIds.mapNotNull { RoutePathCache.get(it) }
                     if (paths.isNotEmpty()) {
@@ -164,20 +153,8 @@ class MapController(
                     }
                 }
 
-                // 回退到 Polyline 渲染
-                Log.d(TAG, "📍 showRoutes: Polyline ${routesData?.size} 条路线, 选中: $selectIndex, colors=${colors?.size}, widths=${widths?.size}")
-                val routes = routesData?.mapNotNull { routeData ->
-                    (routeData as? List<*>)?.mapNotNull { point ->
-                        (point as? Map<*, *>)?.let {
-                            val lat = (it["lat"] as? Number)?.toDouble()
-                            val lng = (it["lng"] as? Number)?.toDouble()
-                            if (lat != null && lng != null) mapOf("lat" to lat, "lng" to lng) else null
-                        }
-                    }
-                } ?: emptyList()
-
-                val count = routeRenderer.showRoutes(routes, selectIndex, colors, widths, dashedFlags)
-                result.success(count)
+                Log.e(TAG, "❌ showRoutes: 未找到有效的 routeIds 或缓存路径")
+                result.success(0)
             }
 
             "selectRoute" -> {
@@ -378,13 +355,8 @@ class MapController(
                         LatLng(lat, lng),
                         bearing.toFloat()
                     )
-                    // Camera follow: only when both follow mode AND locked
                     if (isFollowMode && isLocked) {
                         cameraController.animateCamera(lat, lng, bearing = bearing.toFloat())
-                    }
-                    // 手动置灰：灰色 Polyline 覆盖已行驶路段
-                    if (isFollowMode) {
-                        routeRenderer.updatePassedRouteGray(lat, lng)
                     }
                     result.success(true)
                 } else {
