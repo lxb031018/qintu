@@ -83,7 +83,7 @@ class MapController(
                 Log.d(TAG, "🎯 moveToMyLocation")
                 val lastLoc = locationClient.getLastKnownLocation()
                 if (lastLoc != null) {
-                    cameraController.moveCamera(lastLoc.latitude, lastLoc.longitude)
+                    cameraController.moveCameraToCenter(lastLoc.latitude, lastLoc.longitude)
                     result.success(true)
                 } else {
                     result.success(false)

@@ -46,7 +46,7 @@ class AmapMapController {
           final lat = event['latitude'] as double;
           final lng = event['longitude'] as double;
           debugPrint('🚀 首次定位成功，自动移动相机到: $lat, $lng');
-          moveCamera(lat: lat, lng: lng, zoom: 17);
+          moveCameraToCenter(lat: lat, lng: lng, zoom: 17);
         }
       },
       onError: (error) {
