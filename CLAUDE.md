@@ -146,4 +146,4 @@ Android 原生代码位于 `android/app/src/main/kotlin/me/lxb/qintu/`，采用*
 |------|------|
 | 高德地图示例 | examples/amap/ |
 | TTS 语音示例 | examples/tts/flutter_tts_example |
-| 高德 Android SDK | D:\AMap_Android_Navi_SDK_All |
+| 高德 Android SDK | AmapSDK/ |

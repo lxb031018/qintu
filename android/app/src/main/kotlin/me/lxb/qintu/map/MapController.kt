@@ -377,8 +377,23 @@ class MapController(
 
             "setLocationDotEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
-                aMapHolder.aMap?.isMyLocationEnabled = enabled
-                Log.d(TAG, "📍 定位蓝点: ${if (enabled) "显示" else "隐藏"}")
+                val aMap = aMapHolder.aMap
+                if (aMap != null) {
+                    if (enabled) {
+                        // 重新设置定位样式，防止被导航 SDK 清除
+                        val myLocationStyle = com.amap.api.maps.model.MyLocationStyle().apply {
+                            showMyLocation(true)
+                            radiusFillColor(0x301890FF.toInt())
+                            strokeColor(0xFF1890FF.toInt())
+                            strokeWidth(2f)
+                            myLocationType(com.amap.api.maps.model.MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
+                            interval(2000)
+                        }
+                        aMap.myLocationStyle = myLocationStyle
+                    }
+                    aMap.isMyLocationEnabled = enabled
+                    Log.d(TAG, "📍 定位蓝点: ${if (enabled) "显示" else "隐藏"}")
+                }
                 result.success(true)
             }
 

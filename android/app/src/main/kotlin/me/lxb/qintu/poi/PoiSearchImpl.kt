@@ -63,6 +63,9 @@ class PoiSearchImpl(private val context: Context) {
                 if (errorCode == AMapException.CODE_AMAP_SUCCESS && result != null) {
                     val pois = result.pois?.map { serializePoi(it) } ?: emptyList()
                     Log.d(TAG, "✅ POI搜索成功: ${pois.size}条结果, 共${result.count}条")
+                    if (pois.isEmpty()) {
+                        Log.d(TAG, "🔍 无匹配POI结果")
+                    }
                     cb.success(mapOf(
                         "pois" to pois,
                         "count" to result.count
