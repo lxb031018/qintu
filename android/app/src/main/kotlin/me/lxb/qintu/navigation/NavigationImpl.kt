@@ -155,7 +155,9 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     fun stopNavi(result: MethodChannel.Result) {
         try {
-            mAMapNavi?.stopNavi()
+            mAMapNavi?.let {
+                it.stopNavi()
+            }
             isNavigating = false
             sendEvent("naviStatus", "status" to "stopped")
             result.success(true)
@@ -248,7 +250,10 @@ class NavigationImpl(context: Context) : AMapNaviListener {
     // ==================== AMapNaviListener ====================
 
     override fun onCalculateRouteSuccess(result: AMapCalcRouteResult?) {
-        Log.d(TAG, "✅ onCalculateRouteSuccess: routeIds=${result?.routeid?.contentToString()}")
+        val calcType = result?.calcRouteType ?: 0
+        val routeIds = result?.routeid
+
+        Log.d(TAG, "✅ onCalculateRouteSuccess: calcType=$calcType, routeIds=${routeIds?.contentToString()}")
 
         val navi = mAMapNavi
         if (navi == null) {
@@ -257,10 +262,11 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             return
         }
 
-        val routeIds = result?.routeid
         if (routeIds == null || routeIds.isEmpty()) {
-            pendingRouteResult?.success(mapOf("routes" to emptyList<Any>()))
-            pendingRouteResult = null
+            if (calcType == 0) {
+                pendingRouteResult?.success(mapOf("routes" to emptyList<Any>()))
+                pendingRouteResult = null
+            }
             return
         }
 
@@ -277,29 +283,60 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             }
         }
 
-        Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，已缓存到 RoutePathCache")
+        Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，calcType=$calcType")
 
-        // 如果正在导航中算路成功（偏航/拥堵重算），通知 Flutter 更新路线
-        if (isNavigating) {
-            sendEvent("naviStatus", "status" to "recalculated", "routes" to paths)
-            Log.d(TAG, "📡 重算完成，已通知 Flutter 更新路线")
+        when (calcType) {
+            0 -> {
+                // 直接算路（首次算路/用户手动算路）：响应 MethodChannel 请求
+                pendingRouteResult?.success(mapOf(
+                    "routes" to paths,
+                    "strategyId" to lastRouteStrategy
+                ))
+                pendingRouteResult = null
+            }
+            1 -> {
+                // 偏航重算 → 通知 Flutter 更新路线
+                sendEvent("naviStatus", "status" to "recalculated", "reason" to "yaw",
+                    "calcRouteType" to calcType, "routes" to paths)
+                Log.d(TAG, "📡 偏航重算完成: ${paths.size} 条路线")
+            }
+            2 -> {
+                // 拥堵重算 → 通知 Flutter 更新路线
+                sendEvent("naviStatus", "status" to "recalculated", "reason" to "traffic",
+                    "calcRouteType" to calcType, "routes" to paths)
+                Log.d(TAG, "📡 拥堵重算完成: ${paths.size} 条路线")
+            }
+            else -> {
+                // 其他重算类型（策略变更/平行路切换等）
+                val reasonName = when (calcType) {
+                    3 -> "strategyChange"
+                    4 -> "parallelRoad"
+                    else -> "unknown"
+                }
+                sendEvent("naviStatus", "status" to "recalculated", "reason" to reasonName,
+                    "calcRouteType" to calcType, "routes" to paths)
+                Log.d(TAG, "📡 其他重算完成: reason=$reasonName, ${paths.size} 条路线")
+            }
         }
-
-        pendingRouteResult?.success(mapOf(
-            "routes" to paths,
-            "strategyId" to lastRouteStrategy
-        ))
-        pendingRouteResult = null
     }
 
     override fun onCalculateRouteFailure(result: AMapCalcRouteResult?) {
-        Log.e(TAG, "❌ onCalculateRouteFailure: code=${result?.errorCode}, msg=${result?.errorDescription}")
-        pendingRouteResult?.error(
-            "CALC_FAILED",
-            result?.errorDescription ?: "算路失败",
-            null
-        )
-        pendingRouteResult = null
+        val calcType = result?.calcRouteType ?: 0
+        val errCode = result?.errorCode ?: -1
+        val errDesc = result?.errorDescription ?: "算路失败"
+
+        Log.e(TAG, "❌ onCalculateRouteFailure: calcType=$calcType, code=$errCode, msg=$errDesc")
+
+        if (calcType == 0) {
+            // 直接算路失败：响应 MethodChannel 请求
+            pendingRouteResult?.error("CALC_FAILED", errDesc, null)
+            pendingRouteResult = null
+        } else {
+            // 重算失败：通过事件通道通知 Flutter
+            sendEvent("naviStatus", "status" to "recalcFailed",
+                "calcRouteType" to calcType, "errorCode" to errCode, "errorMessage" to errDesc)
+            Log.e(TAG, "📡 重算失败: calcType=$calcType, code=$errCode")
+        }
     }
 
     // 旧版抽象接口（必须实现）
@@ -324,6 +361,8 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     override fun onLocationChange(location: com.amap.api.navi.model.AMapNaviLocation?) {
         location?.let {
+            NavigationStateHolder.isMatched = it.isMatchNaviPath
+            NavigationStateHolder.naviLocation = it
             val coord = it.coord
             sendEvent("locationUpdate",
                 "lat" to coord.latitude,
@@ -337,6 +376,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     override fun onNaviInfoUpdate(naviInfo: com.amap.api.navi.model.NaviInfo?) {
         naviInfo?.let {
+            NavigationStateHolder.pathRetainDistance = it.pathRetainDistance
             val next = it.nextRoadName ?: ""
             val cur = it.currentRoadName ?: ""
             sendEvent("naviInfo",
@@ -361,13 +401,23 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         sendEvent("gpsStatus", "isWeak" to isWeak)
     }
 
+    /**
+     * 偏航后准备重新规划路线前的通知回调。
+     * 仅通知，SDK 内部自动执行重算，开发者无需手动触发算路。
+     * 重算成功后 onCalculateRouteSuccess 会被调用（calcRouteType=1）。
+     */
     override fun onReCalculateRouteForYaw() {
-        Log.d(TAG, "🚨 偏航，重新算路")
+        Log.d(TAG, "🚨 偏航检测 — SDK 即将自动重算路线（仅通知，SDK 内部处理）")
         sendEvent("naviStatus", "status" to "recalculating", "reason" to "yaw")
     }
 
+    /**
+     * 前方遇到拥堵时准备重新规划路线前的通知回调。
+     * 仅通知，SDK 内部自动执行重算，开发者无需手动触发算路。
+     * 重算成功后 onCalculateRouteSuccess 会被调用（calcRouteType=2）。
+     */
     override fun onReCalculateRouteForTrafficJam() {
-        Log.d(TAG, "🚦 拥堵，重新算路")
+        Log.d(TAG, "🚦 拥堵检测 — SDK 即将自动重算路线（仅通知，SDK 内部处理）")
         sendEvent("naviStatus", "status" to "recalculating", "reason" to "traffic")
     }
 

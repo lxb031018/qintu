@@ -1,7 +1,9 @@
 package me.lxb.qintu
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.view.WindowManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -29,6 +31,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var eventChannel: EventChannel? = null
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
+    private var activity: Activity? = null
     private var navigationImpl: NavigationImpl? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -83,16 +86,26 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "startNavigation" -> {
+                activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 val isEmulator = call.argument<Boolean>("isEmulator") ?: false
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true
                 impl.startNavigation(isEmulator, enableVoice, result)
             }
 
-            "stopNavigation" -> impl.stopNavi(result)
+            "stopNavigation" -> {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                impl.stopNavi(result)
+            }
 
-            "pauseNavigation" -> impl.pauseNavi(result)
+            "pauseNavigation" -> {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                impl.pauseNavi(result)
+            }
 
-            "resumeNavigation" -> impl.resumeNavi(result)
+            "resumeNavigation" -> {
+                activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                impl.resumeNavi(result)
+            }
 
             "togglePause" -> impl.pauseNavi(result)
 
@@ -103,16 +116,20 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     // ==================== ActivityAware ====================
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
         Log.d(TAG, "已绑定 Activity")
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
     }
 
     override fun onDetachedFromActivity() {
+        activity = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
