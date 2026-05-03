@@ -138,6 +138,12 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
         }
         currentNaviView = naviView
 
+        // 设置退出导航监听器，将事件发送到 Flutter
+        naviViewFactory.onNaviViewExitListener = {
+            Log.d(TAG, "🚪 导航退出事件，发送到 Flutter")
+            eventSink?.success(mapOf("type" to "naviViewExit"))
+        }
+
         Log.d(TAG, "📍 createNaviView 完成")
 
         return object : PlatformView {

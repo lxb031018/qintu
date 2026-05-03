@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:qintu/models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
 
@@ -14,6 +15,10 @@ class MapControllerService {
 
   /// 暴露底层 AmapMapController（用于直接调用 Platform Channel 方法）
   AmapMapController get map => _controller;
+
+  /// 设置导航退出监听器
+  void setOnNaviViewExitListener(VoidCallback? listener) =>
+      _controller.setOnNaviViewExitListener(listener);
 
   void dispose() => _controller.dispose();
 

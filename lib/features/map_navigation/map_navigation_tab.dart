@@ -79,6 +79,12 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   void _onMapCreated(MapControllerService controller) {
     ref.read(mapControllerNotifierProvider.notifier).setController(controller);
     ref.read(locationSharingProvider.notifier).setMapController(controller);
+
+    // 设置导航退出监听器
+    controller.map.setOnNaviViewExitListener(() {
+      debugPrint('🚪 地图导航 Tab 收到导航退出事件');
+      ref.read(mapNavigationProvider.notifier).stopNavigation();
+    });
   }
 
   void _handleLocationInputChange(LocationInputState? previous, LocationInputState next) {

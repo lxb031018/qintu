@@ -4,7 +4,9 @@ import android.content.Context
 import android.util.Log
 import com.amap.api.maps.model.MyLocationStyle
 import com.amap.api.navi.AMapNaviView
+import com.amap.api.navi.AMapNaviViewListener
 import com.amap.api.navi.AMapNaviViewOptions
+import com.amap.api.navi.AmapPageType
 import me.lxb.qintu.location.LocationClientImpl
 
 /**
@@ -23,6 +25,11 @@ class NaviViewFactory(
     }
 
     private var locationListener: com.amap.api.maps.LocationSource.OnLocationChangedListener? = null
+
+    /**
+     * 导航退出回调（由外部注入，用于通知 Flutter）
+     */
+    var onNaviViewExitListener: (() -> Unit)? = null
 
     /**
      * 创建原生 AMapNaviView
@@ -52,7 +59,38 @@ class NaviViewFactory(
             setLeaderLineEnabled(0)
             setSecondActionVisible(true)
         }
-        return AMapNaviView(context, options)
+        val naviView = AMapNaviView(context, options)
+        naviView.setAMapNaviViewListener(object : AMapNaviViewListener {
+            override fun onNaviViewLoaded() {
+                Log.d(TAG, "✅ AMapNaviView 加载完成")
+            }
+
+            override fun onNaviSetting() {}
+            override fun onNaviCancel() {}
+            override fun onNaviBackClick(): Boolean = false
+            override fun onNaviMapMode(p0: Int) {}
+            override fun onNaviTurnClick() {}
+            override fun onNextRoadClick() {}
+            override fun onScanViewButtonClick() {}
+            override fun onLockMap(p0: Boolean) {}
+            override fun onNaviViewShowMode(p0: Int) {}
+            override fun onStopSpeaking() {}
+            override fun onViewTypeChanged(p0: AmapPageType?) {}
+            override fun onAMapNaviViewExit() {
+                Log.d(TAG, "🚪 onAMapNaviViewExit 被调用")
+                onNaviViewExitListener?.invoke()
+            }
+            override fun onListenToVoiceDuringCallChanged(p0: Boolean) {}
+            override fun onControlMusicVolumeModeChanged(p0: Int) {}
+            override fun onEagleChanged(p0: Boolean) {}
+            override fun onNaviRouteHighlightChange(p0: Long, p1: Int) {}
+            override fun onBroadcastModeChanged(p0: Int) {}
+            override fun onDayAndNightModeChanged(p0: Int) {}
+            override fun onScaleAutoChanged(p0: Boolean) {}
+            override fun onStrategyChanged(p0: Int) {}
+            override fun onMapTypeChanged(p0: Int) {}
+        })
+        return naviView
     }
 
     /**

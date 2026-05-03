@@ -47,12 +47,23 @@ class AmapMapController {
           final lng = event['longitude'] as double;
           debugPrint('🚀 首次定位成功，自动移动相机到: $lat, $lng');
           moveCameraToCenter(lat: lat, lng: lng, zoom: 17);
+        } else if (event['type'] == 'naviViewExit') {
+          debugPrint('🚪 收到导航退出事件');
+          _onNaviViewExit?.call();
         }
       },
       onError: (error) {
         debugPrint('❌ 首次定位事件监听失败: $error');
       },
     );
+  }
+
+  /// 导航退出回调（由外部注入）
+  VoidCallback? _onNaviViewExit;
+
+  /// 设置导航退出回调
+  void setOnNaviViewExitListener(VoidCallback? listener) {
+    _onNaviViewExit = listener;
   }
 
   /// 释放资源
