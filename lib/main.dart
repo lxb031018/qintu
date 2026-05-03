@@ -9,7 +9,6 @@ import 'providers/theme_manager.dart';
 import 'providers/settings_manager.dart';
 import 'config/environments/environment_manager.dart';
 import 'utils/logger.dart';
-import 'theme/app_text_styles.dart';
 import 'theme/app_theme.dart';
 import 'router/app_router.dart';
 import 'widgets/error_boundary.dart';
@@ -75,10 +74,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   Future<void> _initializeAppState() async {
     // 触发 providers 的初始化（在 build 之后）
-    final settingsState = ref.read(settingsManagerProvider);
-
-    // 同步字体缩放到 AppTheme 和 AppTextStyles
-    AppTextStyles.setFontSizeScale(settingsState.fontSizeScale);
+    ref.read(settingsManagerProvider);
 
     // 初始化认证状态
     await ref.read(authStateProvider.notifier).initialize();
@@ -93,14 +89,10 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeManagerProvider);
-    final settingsState = ref.watch(settingsManagerProvider);
 
     return ErrorBoundary(
       child: Builder(
         builder: (context) {
-          // 同步字体缩放到 AppTheme 和 AppTextStyles
-          AppTheme.setFontSizeScale(settingsState.fontSizeScale);
-
           return MaterialApp.router(
             title: AppStrings.appName,
             debugShowCheckedModeBanner: false,

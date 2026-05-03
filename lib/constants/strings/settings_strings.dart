@@ -3,9 +3,6 @@ class SettingsStrings {
   /// 设置
   static const String settings = '设置';
 
-  /// 字体大小
-  static const String fontSize = '字体大小';
-
   /// 主题设置
   static const String themeSettings = '主题设置';
 

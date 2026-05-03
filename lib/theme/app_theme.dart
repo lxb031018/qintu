@@ -6,19 +6,7 @@ import 'app_text_styles.dart';
 /// 应用主题配置
 ///
 /// 统一管理浅色和深色主题的配置
-/// 注意：所有文字样式现在使用 AppTextStyles，支持动态字体缩放
 class AppTheme {
-  /// 字体缩放比例（默认值，实际使用时应从 SettingsManager 获取）
-  static double _fontSizeScale = 1.0;
-
-  /// 设置字体缩放比例
-  static void setFontSizeScale(double scale) {
-    _fontSizeScale = scale;
-  }
-
-  /// 获取当前字体缩放比例
-  static double get fontSizeScale => _fontSizeScale;
-
   /// 构建浅色主题
   static ThemeData buildLightTheme() {
     return _buildTheme(
@@ -63,9 +51,6 @@ class AppTheme {
     required Color focusedBorderColor,
     required Color fabColor,
   }) {
-    // 同步字体缩放到 AppTextStyles
-    AppTextStyles.setFontSizeScale(_fontSizeScale);
-
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(

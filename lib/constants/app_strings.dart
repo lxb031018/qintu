@@ -225,9 +225,6 @@ class AppStrings {
   /// 暂无已绑定的对象
   static const String noBoundTargets = '暂无已绑定的对象，请先建立绑定关系';
 
-  /// 字体大小
-  static const String fontSize = '字体大小';
-
   /// 主题设置
   static const String themeSettings = '主题设置';
 

@@ -5,17 +5,6 @@ import '../constants/app_colors.dart';
 /// 应用文字样式 - 统一定义应用中使用的所有文字样式
 
 class AppTextStyles {
-  /// 字体大小乘数（默认 1.0）
-  static double _fontSizeScale = 1.0;
-
-  /// 设置字体大小乘数
-  static void setFontSizeScale(double scale) {
-    _fontSizeScale = scale;
-  }
-
-  /// 获取当前字体大小乘数
-  static double get fontSizeScale => _fontSizeScale;
-
   // ==================== 尺寸配置 ====================
 
   /// 圆角大小
@@ -33,7 +22,7 @@ class AppTextStyles {
   /// 超大标题（欢迎页）
   static TextStyle get titleLarge => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 40 * _fontSizeScale,
+    fontSize: 40,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.2,
@@ -42,7 +31,7 @@ class AppTextStyles {
   /// 大标题
   static TextStyle get titleMedium => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 32 * _fontSizeScale,
+    fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.3,
@@ -51,7 +40,7 @@ class AppTextStyles {
   /// 标题
   static TextStyle get titleSmall => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 24 * _fontSizeScale,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.4,
@@ -62,7 +51,7 @@ class AppTextStyles {
   /// 大正文
   static TextStyle get bodyLarge => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 24 * _fontSizeScale,
+    fontSize: 24,
     fontWeight: FontWeight.normal,
     color: AppColors.textColor,
     height: 1.5,
@@ -71,7 +60,7 @@ class AppTextStyles {
   /// 正文
   static TextStyle get bodyMedium => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 20 * _fontSizeScale,
+    fontSize: 20,
     fontWeight: FontWeight.normal,
     color: AppColors.textColor,
     height: 1.5,
@@ -80,7 +69,7 @@ class AppTextStyles {
   /// 小正文
   static TextStyle get bodySmall => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.textColor,
     height: 1.5,
@@ -91,7 +80,7 @@ class AppTextStyles {
   /// 辅助文字（提示文字）
   static TextStyle get caption => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 16 * _fontSizeScale,
+    fontSize: 16,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -100,7 +89,7 @@ class AppTextStyles {
   /// 小提示文字
   static TextStyle get captionSmall => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 14 * _fontSizeScale,
+    fontSize: 14,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -111,7 +100,7 @@ class AppTextStyles {
   /// 按钮文字
   static TextStyle get button => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 24 * _fontSizeScale,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.whiteText,
     height: 1.2,
@@ -120,7 +109,7 @@ class AppTextStyles {
   /// 小按钮文字
   static TextStyle get buttonSmall => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     color: AppColors.whiteText,
     height: 1.2,
@@ -131,7 +120,7 @@ class AppTextStyles {
   /// 输入框文字
   static TextStyle get input => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 24 * _fontSizeScale,
+    fontSize: 24,
     fontWeight: FontWeight.normal,
     color: AppColors.textColor,
     height: 1.2,
@@ -140,7 +129,7 @@ class AppTextStyles {
   /// 输入框提示文字
   static TextStyle get inputHint => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.2,
@@ -149,7 +138,7 @@ class AppTextStyles {
   /// 输入框标签
   static TextStyle get inputLabel => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 20 * _fontSizeScale,
+    fontSize: 20,
     fontWeight: FontWeight.normal,
     color: AppColors.primaryColor,
     height: 1.2,
@@ -160,7 +149,7 @@ class AppTextStyles {
   /// AppBar 标题
   static TextStyle get appBarTitle => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 20 * _fontSizeScale,
+    fontSize: 20,
     fontWeight: FontWeight.bold,
     color: AppColors.whiteText,
     height: 1.2,
@@ -169,7 +158,7 @@ class AppTextStyles {
   /// 启动页 Logo 文字
   static TextStyle get splashLogo => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 36 * _fontSizeScale,
+    fontSize: 36,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.2,
@@ -178,7 +167,7 @@ class AppTextStyles {
   /// 启动页副标题
   static TextStyle get splashSubtitle => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 16 * _fontSizeScale,
+    fontSize: 16,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -186,18 +175,18 @@ class AppTextStyles {
 
   /// 角色图标（Emoji）
   static TextStyle get roleIcon => TextStyle(
-    fontSize: 40 * _fontSizeScale,
+    fontSize: 40,
   );
 
   /// 角色卡片图标
   static TextStyle get roleCardIcon => TextStyle(
-    fontSize: 32 * _fontSizeScale,
+    fontSize: 32,
   );
 
   /// 角色名称
   static TextStyle get roleName => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.4,
@@ -206,7 +195,7 @@ class AppTextStyles {
   /// 对话框标题
   static TextStyle get dialogTitle => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 24 * _fontSizeScale,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.3,
@@ -215,7 +204,7 @@ class AppTextStyles {
   /// 对话框内容
   static TextStyle get dialogContent => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.textColor,
     height: 1.4,
@@ -224,7 +213,7 @@ class AppTextStyles {
   /// 对话框按钮
   static TextStyle get dialogButton => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     color: AppColors.primaryColor,
     height: 1.2,
@@ -233,7 +222,7 @@ class AppTextStyles {
   /// 对话框确认按钮（强调色）
   static TextStyle get dialogConfirmButton => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     color: AppColors.errorColor,
     height: 1.2,
@@ -242,7 +231,7 @@ class AppTextStyles {
   /// 错误详情（等宽字体）
   static TextStyle get errorDetail => TextStyle(
     fontFamily: 'monospace',
-    fontSize: 12 * _fontSizeScale,
+    fontSize: 12,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -251,7 +240,7 @@ class AppTextStyles {
   /// 统计数值
   static TextStyle get statValue => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 16 * _fontSizeScale,
+    fontSize: 16,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.2,
@@ -260,7 +249,7 @@ class AppTextStyles {
   /// 统计标签
   static TextStyle get statLabel => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 12 * _fontSizeScale,
+    fontSize: 12,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -269,7 +258,7 @@ class AppTextStyles {
   /// 统计单位
   static TextStyle get statUnit => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 10 * _fontSizeScale,
+    fontSize: 10,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -278,7 +267,7 @@ class AppTextStyles {
   /// 状态标签（小标签）
   static TextStyle get statusTag => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 12 * _fontSizeScale,
+    fontSize: 12,
     fontWeight: FontWeight.normal,
     height: 1.4,
   );
@@ -286,7 +275,7 @@ class AppTextStyles {
   /// 位置信息标题
   static TextStyle get locationTitle => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 14 * _fontSizeScale,
+    fontSize: 14,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     height: 1.3,
@@ -295,7 +284,7 @@ class AppTextStyles {
   /// 位置信息详情
   static TextStyle get locationDetail => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 12 * _fontSizeScale,
+    fontSize: 12,
     fontWeight: FontWeight.normal,
     color: AppColors.lightTextColor,
     height: 1.4,
@@ -304,25 +293,25 @@ class AppTextStyles {
   /// 底部标签（Tab 等）
   static TextStyle get bottomTab => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 10 * _fontSizeScale,
+    fontSize: 10,
     fontWeight: FontWeight.normal,
     height: 1.4,
   );
 
   /// Emoji 图标（通用）
   static TextStyle get emojiIcon => TextStyle(
-    fontSize: 28 * _fontSizeScale,
+    fontSize: 28,
   );
 
   /// 大 Emoji 图标
   static TextStyle get emojiLarge => TextStyle(
-    fontSize: 32 * _fontSizeScale,
+    fontSize: 32,
   );
 
   /// 错误提示
   static TextStyle get error => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.errorColor,
     height: 1.4,
@@ -331,7 +320,7 @@ class AppTextStyles {
   /// 成功提示
   static TextStyle get success => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 18 * _fontSizeScale,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
     color: AppColors.successColor,
     height: 1.4,
@@ -340,7 +329,7 @@ class AppTextStyles {
   /// 数字（验证码输入）
   static TextStyle get number => TextStyle(
     fontFamily: UIConfig.fontFamily,
-    fontSize: 32 * _fontSizeScale,
+    fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textColor,
     letterSpacing: 8,

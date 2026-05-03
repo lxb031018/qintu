@@ -7,7 +7,6 @@ import '../../router/app_router.dart';
 import '../map_navigation/map_navigation_tab.dart';
 import 'widgets/theme_selector_card.dart';
 import 'widgets/logout_card.dart';
-import 'widgets/font_size_selector_card.dart';
 import 'widgets/tab_switch_mode_card.dart';
 import 'provider/settings_page_provider.dart';
 
@@ -34,8 +33,6 @@ class SettingsPage extends ConsumerWidget {
           bottom: 16,
         ),
         children: [
-          const FontSizeSelectorCard(),
-          const SizedBox(height: 16),
           const TabSwitchModeCard(),
           const SizedBox(height: 16),
           const ThemeSelectorCard(),
