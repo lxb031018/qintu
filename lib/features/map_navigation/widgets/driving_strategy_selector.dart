@@ -40,7 +40,9 @@ class DrivingStrategySelector extends StatelessWidget {
           return GestureDetector(
             onTap: () => onStrategyChanged(option.value),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              height: 32,
+              constraints: const BoxConstraints(minWidth: 56),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primaryColor
@@ -53,8 +55,11 @@ class DrivingStrategySelector extends StatelessWidget {
                         width: 1,
                       ),
               ),
+              alignment: Alignment.center,
               child: Text(
                 option.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
