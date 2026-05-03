@@ -26,16 +26,19 @@ class NaviViewFactory(
 
     /**
      * 创建原生 AMapNaviView
+     *
+     * 预览模式：路线预览时使用（autoDrawRoute=false，layoutVisible=false）
+     * 导航模式：调用 enableNaviMode() 切换到全功能导航 UI
      */
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
-            setLayoutVisible(true)
-            setAutoDrawRoute(true)
+            setLayoutVisible(false)
+            setAutoDrawRoute(false)
             setAfterRouteAutoGray(true)
             setTrafficLine(true)
             setEagleMapVisible(true)
             setAutoLockCar(true)
-            setAutoDisplayOverview(true)
+            setAutoDisplayOverview(false)
             setShowCameraDistance(true)
             setNaviArrowVisible(true)
             setLaneInfoShow(true)
@@ -50,6 +53,31 @@ class NaviViewFactory(
             setSecondActionVisible(true)
         }
         return AMapNaviView(context, options)
+    }
+
+    /**
+     * 切换到导航模式：启用完整 SDK 导航 UI
+     * 在 startNavi 前调用
+     */
+    fun enableNaviMode(naviView: AMapNaviView) {
+        val options = naviView.options
+        options.layoutVisible = true
+        options.autoDrawRoute = true
+        options.autoDisplayOverview = true
+        naviView.setOptions(options)
+        Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI + 自动画路")
+    }
+
+    /**
+     * 切换回预览模式：隐藏导航 UI，仅保留地图
+     */
+    fun disableNaviMode(naviView: AMapNaviView) {
+        val options = naviView.options
+        options.layoutVisible = false
+        options.autoDrawRoute = false
+        options.autoDisplayOverview = false
+        naviView.setOptions(options)
+        Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI")
     }
 
     /**

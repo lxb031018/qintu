@@ -215,6 +215,14 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                 currentNaviView?.setShowMode(mode)
                 result.success(true)
             }
+            "enableNaviMode" -> {
+                currentNaviView?.let { naviViewFactory.enableNaviMode(it) }
+                result.success(true)
+            }
+            "disableNaviMode" -> {
+                currentNaviView?.let { naviViewFactory.disableNaviMode(it) }
+                result.success(true)
+            }
             else -> mapController?.handleMethodCall(call, result) ?: result.notImplemented()
         }
     }

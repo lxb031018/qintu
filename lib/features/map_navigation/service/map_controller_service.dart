@@ -188,4 +188,10 @@ class MapControllerService {
   /// 设置导航视图显示模式
   /// 1=锁车态 2=全览态 3=普通态
   Future<void> setNaviShowMode(int mode) => _controller.setNaviShowMode(mode);
+
+  /// 启用导航模式：显示完整 SDK 导航 UI，自动绘制路线
+  Future<void> enableNaviMode() => _controller.enableNaviMode();
+
+  /// 禁用导航模式：隐藏导航 UI，仅显示地图
+  Future<void> disableNaviMode() => _controller.disableNaviMode();
 }

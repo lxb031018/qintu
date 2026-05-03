@@ -449,6 +449,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       showRoutesSheet: false,
     );
 
+    // 启用 SDK 导航模式：显示完整 UI，自动绘制路线
+    ref.read(mapControllerNotifierProvider)?.enableNaviMode();
+
     // 开启跟随模式，隐藏定位蓝点，显示车载标记
     ref.read(mapControllerNotifierProvider)?.setFollowMode(true);
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(false);
@@ -491,6 +494,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   /// 停止导航
   Future<void> stopNavigation() async {
     await _routeService.stopNavigation();
+    ref.read(mapControllerNotifierProvider)?.disableNaviMode();
     ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
     ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(false);

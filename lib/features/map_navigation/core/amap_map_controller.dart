@@ -589,4 +589,14 @@ class AmapMapController {
   Future<void> setNaviShowMode(int mode) async {
     await _channel.invokeMethod('setNaviShowMode', {'mode': mode});
   }
+
+  /// 启用导航模式：显示完整 SDK 导航 UI，自动绘制路线
+  Future<void> enableNaviMode() async {
+    await _channel.invokeMethod('enableNaviMode');
+  }
+
+  /// 禁用导航模式：隐藏导航 UI，仅显示地图
+  Future<void> disableNaviMode() async {
+    await _channel.invokeMethod('disableNaviMode');
+  }
 }
