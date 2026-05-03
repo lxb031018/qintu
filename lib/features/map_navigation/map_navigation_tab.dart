@@ -8,6 +8,7 @@ import 'provider/location_input_provider.dart';
 import 'provider/map_navigation_provider.dart';
 import 'provider/location_sharing_provider.dart';
 import 'provider/map_controller_provider.dart';
+import 'package:qintu/providers/settings_manager.dart';
 import 'widgets/location_input_card.dart';
 import 'widgets/location_category_list.dart';
 import 'widgets/location_status_button.dart';
@@ -150,8 +151,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const LocationInputCard(),
-                  if (ref.watch(locationInputProvider).listVisible)
+                  if (!ref.watch(settingsManagerProvider).doubleTapToSwitchTab)
+                    const LocationInputCard(),
+                  if (!ref.watch(settingsManagerProvider).doubleTapToSwitchTab &&
+                      ref.watch(locationInputProvider).listVisible)
                     const Padding(
                       padding: EdgeInsets.only(top: AppSpacings.sm),
                       child: LocationCategoryList(),
