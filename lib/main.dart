@@ -108,6 +108,15 @@ class _MyAppState extends ConsumerState<MyApp> {
               ErrorWidget.builder = (FlutterErrorDetails details) {
                 return SafeErrorWidget(details: details);
               };
+              // 全局文本缩放锁定
+              if (SettingsState.lockTextScale) {
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(1.0),
+                  ),
+                  child: child!,
+                );
+              }
               return child!;
             },
           );

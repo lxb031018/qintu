@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../constants/app_colors.dart';
-import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
+import '../../../widgets/common/qintu_pill_chip.dart';
 
 class DrivingStrategySelector extends StatelessWidget {
   final int selectedStrategy;
@@ -24,8 +23,6 @@ class DrivingStrategySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return SizedBox(
       height: 32,
       child: ListView.separated(
@@ -37,38 +34,12 @@ class DrivingStrategySelector extends StatelessWidget {
           final option = _strategies[index];
           final isSelected = option.value == selectedStrategy;
 
-          return GestureDetector(
+          return QintuPillChip(
+            label: option.label,
+            isSelected: isSelected,
             onTap: () => onStrategyChanged(option.value),
-            child: Container(
-              height: 32,
-              constraints: const BoxConstraints(minWidth: 56),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryColor
-                    : (isDark ? AppColors.darkCardBackground : AppColors.grey100),
-                borderRadius: BorderRadius.all(AppRadii.xlarge),
-                border: isSelected
-                    ? null
-                    : Border.all(
-                        color: isDark ? AppColors.darkDividerColor : AppColors.grey300,
-                        width: 1,
-                      ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                option.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark ? AppColors.darkTextColor : AppColors.textColor),
-                ),
-              ),
-            ),
+            height: 32,
+            minWidth: 56,
           );
         },
       ),

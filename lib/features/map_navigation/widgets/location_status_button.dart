@@ -53,6 +53,7 @@ class LocationStatusButton extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: Container(
+          height: 36,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacings.md,
             vertical: AppSpacings.sm,
@@ -100,6 +101,8 @@ class LocationStatusButton extends ConsumerWidget {
           const SizedBox(width: AppSpacings.xs),
           Text(
             '检测定位状态...',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.captionSmall.copyWith(
               color: styles.textColor,
               fontWeight: FontWeight.w600,
@@ -115,11 +118,15 @@ class LocationStatusButton extends ConsumerWidget {
       children: [
         Icon(styles.icon, color: styles.textColor, size: 18),
         const SizedBox(width: AppSpacings.xs),
-        Text(
-          styles.text,
-          style: AppTextStyles.captionSmall.copyWith(
-            color: styles.textColor,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            styles.text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.captionSmall.copyWith(
+              color: styles.textColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

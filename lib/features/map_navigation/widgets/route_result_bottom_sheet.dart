@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
+import '../../../widgets/common/qintu_action_button.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import 'driving_strategy_selector.dart';
@@ -317,33 +318,11 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
+              QintuActionButton(
+                label: '查看路线图',
+                icon: Icons.map,
                 onTap: widget.onStartNavigation,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacings.md,
-                    vertical: AppSpacings.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.grey600,
-                    borderRadius: BorderRadius.all(AppRadii.small),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.map, size: 16, color: isDark ? AppColors.darkTextColor : Colors.white),
-                      const SizedBox(width: 4),
-                      Text(
-                        '查看路线图',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextColor : Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                backgroundColor: AppColors.grey600,
               ),
             ],
           ),
@@ -360,38 +339,11 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // 开始导航 / 查看行程按钮
-          GestureDetector(
+          QintuActionButton(
+            label: isTransit ? '查看路线图' : '开始导航',
+            icon: isTransit ? Icons.map : Icons.navigation,
             onTap: widget.onStartNavigation,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacings.md,
-                vertical: AppSpacings.xs,
-              ),
-              decoration: BoxDecoration(
-                color: isTransit ? AppColors.grey600 : AppColors.primaryColor,
-                borderRadius: BorderRadius.all(AppRadii.small),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isTransit ? Icons.map : Icons.navigation,
-                    size: 16,
-                    color: isDark ? AppColors.darkTextColor : Colors.white,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTransit ? '查看路线图' : '开始导航',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkTextColor : Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            backgroundColor: isTransit ? AppColors.grey600 : AppColors.primaryColor,
           ),
         ],
       ),

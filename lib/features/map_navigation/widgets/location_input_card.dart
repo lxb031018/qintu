@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_radii.dart';
 import '../../../constants/app_spacings.dart';
+import '../../../widgets/common/qintu_pill_chip.dart';
 import '../models/amap_routing_models.dart';
 import '../provider/location_input_provider.dart';
 import '../provider/map_navigation_provider.dart';
@@ -336,33 +337,15 @@ class _RouteTypeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: GestureDetector(
+      child: QintuPillChip(
+        label: label,
+        isSelected: isSelected,
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacings.xs),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primaryColor.withValues(alpha: 0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.all(AppRadii.small),
-            border: Border.all(
-              color: isSelected ? AppColors.primaryColor : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? AppColors.primaryColor
-                    : (isDark ? AppColors.darkLightTextColor : AppColors.grey500),
-              ),
-            ),
-          ),
-        ),
+        height: 36,
+        selectedBackgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+        selectedTextColor: AppColors.primaryColor,
+        unselectedTextColor: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+        selectedBorderColor: AppColors.primaryColor,
       ),
     );
   }

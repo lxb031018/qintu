@@ -64,6 +64,10 @@ class SettingsState {
   final bool doubleTapToSwitchTab;
   final int drivingStrategy;
 
+  /// 全局文本缩放锁定（仅开发人员可改，用户不可见）
+  /// true = 锁定为 1.0（字号不随系统字体大小变化），false = 跟随系统
+  static const bool lockTextScale = true;
+
   const SettingsState({
     this.doubleTapToSwitchTab = true,
     this.drivingStrategy = 10,
