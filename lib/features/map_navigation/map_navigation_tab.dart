@@ -176,46 +176,84 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               left: 0,
               right: 0,
               bottom: 0,
-              child: RouteResultBottomSheet(
-                routes: navState.routes.map((route) => RouteResultItem(
-                  distance: route.distance,
-                  formattedDistance: route.distanceText,
-                  duration: route.duration,
-                  formattedDuration: route.durationText,
-                  strategy: route.strategyText,
-                  tolls: route.tolls,
-                  routeType: route.routeType,
-                  transitSegments: route.transitSegments,
-                  transitSummary: route.transitSummaryText,
-                  transitLineNames: route.transitLineNames,
-                  transferCount: route.transferCount,
-                  walkDistance: route.walkDistance,
-                )).toList(),
-                selectedIndex: navState.selectedRouteIndex,
-                currentRouteType: navState.currentRouteType ?? RouteType.driving,
-                onRouteSelected: (index) {
-                  ref.read(mapNavigationProvider.notifier).selectRoute(index);
-                  if (navState.currentRouteType == RouteType.transit) {
-                    final route = navState.routes[index];
-                    ref.read(mapDisplayServiceProvider).showTransitRouteDetail(route);
-                  }
-                },
-                onRouteTypeChanged: (type) {
-                  ref.read(mapNavigationProvider.notifier).switchRouteType(type);
-                },
-                onClose: () {
-                  ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
-                },
-                onStartNavigation: () {
-                  ref.read(mapNavigationProvider.notifier).startNavigation();
-                },
-                onDetailExited: () {
-                  ref.read(mapDisplayServiceProvider).clearRoutes();
-                },
-              ),
+              child: _RouteBottomSheetBuilder(navState: navState),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _RouteBottomSheetBuilder extends ConsumerWidget {
+  final MapNavigationState navState;
+
+  const _RouteBottomSheetBuilder({required this.navState});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final routes = navState.routes;
+    final selectedIdx = navState.selectedRouteIndex;
+    final selectedRoute = selectedIdx < routes.length ? routes[selectedIdx] : null;
+
+    return RouteResultBottomSheet(
+      routes: routes.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final route = entry.value;
+        final isSelected = idx == selectedIdx;
+
+        int? timeDiff;
+        int? distanceDiff;
+        if (!isSelected && selectedRoute != null) {
+          final diffSec = (route.duration - selectedRoute.duration).round();
+          final diffM = (route.distance - selectedRoute.distance).round();
+          if (diffSec.abs() >= 60) timeDiff = diffSec;
+          if (diffM.abs() >= 100) distanceDiff = diffM;
+        }
+
+        return RouteResultItem(
+          distance: route.distance,
+          formattedDistance: route.distanceText,
+          duration: route.duration,
+          formattedDuration: route.durationText,
+          strategy: route.strategyText,
+          tolls: route.tolls,
+          strategyId: route.strategyId,
+          trafficStatuses: route.trafficStatuses,
+          timeDiff: timeDiff,
+          distanceDiff: distanceDiff,
+          routeType: route.routeType,
+          transitSegments: route.transitSegments,
+          transitSummary: route.transitSummaryText,
+          transitLineNames: route.transitLineNames,
+          transferCount: route.transferCount,
+          walkDistance: route.walkDistance,
+        );
+      }).toList(),
+      selectedIndex: selectedIdx,
+      currentRouteType: navState.currentRouteType ?? RouteType.driving,
+      drivingStrategy: navState.drivingStrategy,
+      onDrivingStrategyChanged: (strategy) {
+        ref.read(mapNavigationProvider.notifier).setDrivingStrategy(strategy);
+      },
+      onRouteSelected: (index) {
+        ref.read(mapNavigationProvider.notifier).selectRoute(index);
+        if (navState.currentRouteType == RouteType.transit) {
+          final route = navState.routes[index];
+          ref.read(mapDisplayServiceProvider).showTransitRouteDetail(route);
+        }
+      },
+      onRouteTypeChanged: (type) {
+        ref.read(mapNavigationProvider.notifier).switchRouteType(type);
+      },
+      onClose: () {
+        ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
+      },
+      onStartNavigation: () {
+        ref.read(mapNavigationProvider.notifier).startNavigation();
+      },
+      onDetailExited: () {
+        ref.read(mapDisplayServiceProvider).clearRoutes();
+      },
     );
   }
 }

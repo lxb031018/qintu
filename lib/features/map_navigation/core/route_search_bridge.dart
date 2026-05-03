@@ -178,7 +178,7 @@ class AmapRouteSearchBridge {
         points: points,
         routeType: RouteType.driving,
         trafficLights: (map['trafficLights'] as num?)?.toInt() ?? 0,
-        strategyId: strategyId,
+        strategyId: (map['strategyId'] as num?)?.toInt() ?? strategyId,
         driveSteps: stepsList.map((s) => _parseDriveStep(s as Map<dynamic, dynamic>)).toList(),
         mainRoadInfo: map['mainRoadInfo']?.toString(),
         restrictionInfo: map['restrictionInfo'] as Map<String, dynamic>?,

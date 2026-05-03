@@ -60,6 +60,18 @@ class RouteColors {
   /// 地铁段颜色
   static const int transitSubway = 0xFFFF4D4F; // 红色
 
+  /// TMC路况颜色 - 畅通
+  static const int trafficSmooth = 0xFF52C41A; // 绿色
+
+  /// TMC路况颜色 - 缓行
+  static const int trafficSlow = 0xFFFAAD14; // 橙色
+
+  /// TMC路况颜色 - 拥堵
+  static const int trafficJam = 0xFFFF4D4F; // 红色
+
+  /// TMC路况颜色 - 严重拥堵
+  static const int trafficVeryJam = 0xFF8B0000; // 深红色
+
   /// 获取路线类型对应的颜色
   static int getColor(RouteType type) {
     switch (type) {
@@ -108,6 +120,10 @@ class RouteResultItem {
   final String formattedDuration;
   final String strategy;
   final double? tolls;
+  final int strategyId;
+  final List<Map<String, dynamic>>? trafficStatuses;
+  final int? timeDiff;
+  final int? distanceDiff;
   // Transit-specific fields
   final RouteType? routeType;
   final List<TransitSegment>? transitSegments;
@@ -123,6 +139,10 @@ class RouteResultItem {
     required this.formattedDuration,
     required this.strategy,
     this.tolls,
+    this.strategyId = 0,
+    this.trafficStatuses,
+    this.timeDiff,
+    this.distanceDiff,
     this.routeType,
     this.transitSegments,
     this.transitSummary,

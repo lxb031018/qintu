@@ -24,7 +24,7 @@ class AmapRoutingService {
     required RouteType type,
     required LatLng origin,
     required LatLng destination,
-    int strategy = 0,
+    int strategy = 10,
     String? city,
     int maxTrans = 3,
     int alternativeRoute = 1,

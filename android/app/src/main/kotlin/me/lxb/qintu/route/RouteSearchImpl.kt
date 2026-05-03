@@ -42,6 +42,7 @@ class RouteSearchImpl(private val context: Context) {
         private const val DATE_FORMAT = "HHmm"
 
         fun drivingStrategyFromInt(value: Int): RouteSearchV2.DrivingStrategy = when (value) {
+            // 单路径策略 (0-9) - 已废弃，仅作兼容映射
             0 -> RouteSearchV2.DrivingStrategy.DEFAULT
             1 -> RouteSearchV2.DrivingStrategy.LESS_CHARGE
             2 -> RouteSearchV2.DrivingStrategy.SPEED_PRIORITY
@@ -49,6 +50,18 @@ class RouteSearchImpl(private val context: Context) {
             4 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION_HIGHWAY_PRIORITY
             5 -> RouteSearchV2.DrivingStrategy.LESS_CHARGE_AVOID_HIGHWAY
             6 -> RouteSearchV2.DrivingStrategy.AVOID_HIGHWAY
+            // 多路径策略 (10-20) - 推荐使用
+            10 -> RouteSearchV2.DrivingStrategy.DEFAULT
+            11 -> RouteSearchV2.DrivingStrategy.SPEED_PRIORITY
+            12 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION
+            13 -> RouteSearchV2.DrivingStrategy.AVOID_HIGHWAY
+            14 -> RouteSearchV2.DrivingStrategy.LESS_CHARGE
+            15 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION_HIGHWAY_PRIORITY
+            16 -> RouteSearchV2.DrivingStrategy.LESS_CHARGE_AVOID_HIGHWAY
+            17 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION
+            18 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION_HIGHWAY_PRIORITY
+            19 -> RouteSearchV2.DrivingStrategy.SPEED_PRIORITY
+            20 -> RouteSearchV2.DrivingStrategy.AVOID_CONGESTION_HIGHWAY_PRIORITY
             else -> RouteSearchV2.DrivingStrategy.DEFAULT
         }
     }
@@ -298,6 +311,7 @@ class RouteSearchImpl(private val context: Context) {
             "tollRoad" to (cost?.tollRoad ?: ""),
             "trafficLights" to (cost?.trafficLights ?: 0),
             "strategy" to (path.strategy ?: ""),
+            "strategyId" to _resolveDriveStrategyId(path),
             "restriction" to path.restriction,
             "polyline" to polyline,
             "steps" to steps
@@ -343,6 +357,24 @@ class RouteSearchImpl(private val context: Context) {
             "cityAdcodes" to cities,
             "naviInstruction" to (navi?.action ?: "")
         )
+    }
+
+    private fun _resolveDriveStrategyId(path: DrivePathV2): Int {
+        val strategy = path.strategy ?: return 10
+        return when {
+            strategy.contains("推荐") || strategy.contains("速度优先") -> 10
+            strategy.contains("最短时间") || strategy.contains("高速优先") -> 11
+            strategy.contains("躲避拥堵") || strategy.contains("避免拥堵") -> 12
+            strategy.contains("不走高速") || strategy.contains("高速") -> 13
+            strategy.contains("躲避收费") || strategy.contains("费用") -> 14
+            strategy.contains("不走高速") && strategy.contains("躲避拥堵") -> 15
+            strategy.contains("不走高速") && strategy.contains("费用") -> 16
+            strategy.contains("躲避收费") && strategy.contains("拥堵") -> 17
+            strategy.contains("避免收费") && strategy.contains("高速") && strategy.contains("拥堵") -> 18
+            strategy.contains("高速优先") && !strategy.contains("不走") -> 19
+            strategy.contains("高速优先") && strategy.contains("躲避拥堵") -> 20
+            else -> 10
+        }
     }
 
     private fun deriveTmcStatus(tmcs: List<Map<String, Any?>>): String {

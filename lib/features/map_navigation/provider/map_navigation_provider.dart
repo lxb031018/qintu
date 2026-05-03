@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/async_state.dart';
+import 'package:qintu/providers/settings_manager.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
@@ -9,6 +10,7 @@ import '../service/amap_routing_service.dart';
 import 'map_display_service_provider.dart';
 import '../models/navigation_models.dart';
 import 'map_controller_provider.dart';
+import '../core/amap_navigation_bridge.dart';
 
 /// ============================================
 /// 地图导航状态
@@ -64,6 +66,9 @@ class MapNavigationState {
   final String navNextRoad;
   final String navCurrentRoad;
 
+  /// 驾车策略偏好 (10-20)
+  final int drivingStrategy;
+
   const MapNavigationState({
     this.searchKeyword = '',
     this.originPoi,
@@ -84,6 +89,7 @@ class MapNavigationState {
     this.navRemainingTime = 0,
     this.navNextRoad = '',
     this.navCurrentRoad = '',
+    this.drivingStrategy = 10,
   });
 
   MapNavigationState copyWith({
@@ -107,6 +113,7 @@ class MapNavigationState {
     int? navRemainingTime,
     String? navNextRoad,
     String? navCurrentRoad,
+    int? drivingStrategy,
   }) {
     return MapNavigationState(
       searchKeyword: searchKeyword ?? this.searchKeyword,
@@ -128,6 +135,7 @@ class MapNavigationState {
       navRemainingTime: navRemainingTime ?? this.navRemainingTime,
       navNextRoad: navNextRoad ?? this.navNextRoad,
       navCurrentRoad: navCurrentRoad ?? this.navCurrentRoad,
+      drivingStrategy: drivingStrategy ?? this.drivingStrategy,
     );
   }
 
@@ -162,7 +170,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       _navStreamSub?.cancel();
       _routeService.stopNavigation();
     });
-    return const MapNavigationState();
+    final settings = ref.watch(settingsManagerProvider);
+    return MapNavigationState(drivingStrategy: settings.drivingStrategy);
   }
 
   void _startNavEventListener() {
@@ -359,6 +368,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         type: state.currentRouteType!,
         origin: state.originLocation!,
         destination: state.destinationLocation!,
+        strategy: state.drivingStrategy,
       );
 
       if (_disposed) return;
@@ -374,9 +384,20 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           selectedRouteIndex: 0,
           routesState: AsyncState.success(routes),
         );
-        // 在地图上显示路线预览（公交仅详情页渲染，此处跳过）
+
         if (state.currentRouteType != RouteType.transit) {
-          _mapDisplayService.showRoutes(routes, 0, state.currentRouteType!);
+          final routeIds = await AmapNavigationBridge.calculateRouteForRendering(
+            type: state.currentRouteType!,
+            fromLat: state.originLocation!.latitude,
+            fromLng: state.originLocation!.longitude,
+            toLat: state.destinationLocation!.latitude,
+            toLng: state.destinationLocation!.longitude,
+            strategy: routes.first.strategyId,
+          );
+
+          if (routeIds.isNotEmpty) {
+            _animateCameraToShowAllRoutes(routes);
+          }
         }
       }
     } catch (e) {
@@ -387,6 +408,57 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
   }
 
+  void _animateCameraToShowAllRoutes(List<RouteOption> routes) {
+    if (routes.isEmpty) return;
+
+    double minLat = double.infinity;
+    double maxLat = -double.infinity;
+    double minLng = double.infinity;
+    double maxLng = -double.infinity;
+
+    for (final route in routes) {
+      for (final point in route.points) {
+        if (point.latitude < minLat) minLat = point.latitude;
+        if (point.latitude > maxLat) maxLat = point.latitude;
+        if (point.longitude < minLng) minLng = point.longitude;
+        if (point.longitude > maxLng) maxLng = point.longitude;
+      }
+    }
+
+    if (minLat == double.infinity) return;
+
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
+
+    final latDiff = maxLat - minLat;
+    final lngDiff = maxLng - minLng;
+    final maxDiff = latDiff > lngDiff ? latDiff : lngDiff;
+
+    double zoom = 10;
+    if (maxDiff > 0) {
+      if (maxDiff > 1) {
+        zoom = 6;
+      } else if (maxDiff > 0.5) {
+        zoom = 8;
+      } else if (maxDiff > 0.1) {
+        zoom = 10;
+      } else if (maxDiff > 0.05) {
+        zoom = 12;
+      } else if (maxDiff > 0.01) {
+        zoom = 14;
+      } else {
+        zoom = 16;
+      }
+    }
+
+    ref.read(mapControllerNotifierProvider)?.animateCameraToCenter(
+      lat: centerLat,
+      lng: centerLng,
+      zoom: zoom,
+      duration: 800,
+    );
+  }
+
   /// 切换出行方式并重新规划路线
   Future<void> switchRouteType(RouteType type) async {
     if (!state.canPlanRoute) return;
@@ -394,13 +466,27 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     await planRoute();
   }
 
+  /// 设置驾车策略偏好并重新规划路线
+  Future<void> setDrivingStrategy(int strategy) async {
+    if (state.drivingStrategy == strategy) return;
+    state = state.copyWith(drivingStrategy: strategy);
+    ref.read(settingsManagerProvider.notifier).setDrivingStrategy(strategy);
+    if (state.canPlanRoute && state.currentRouteType == RouteType.driving) {
+      await planRoute();
+    }
+  }
+
   /// 选择路线
   void selectRoute(int index) {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
-      // 公交详情页渲染由 map_navigation_tab 的 onRouteSelected 回调触发
       if (state.currentRouteType != RouteType.transit) {
+        _mapDisplayService.showRoutes(state.routes, index, state.currentRouteType!);
         ref.read(mapControllerNotifierProvider)?.selectRoute(index);
+        final route = state.routes[index];
+        if (route.routeId >= 0) {
+          AmapNavigationBridge.selectRouteId(route.routeId);
+        }
       }
     }
   }
