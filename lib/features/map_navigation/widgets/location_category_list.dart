@@ -149,35 +149,39 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       ),
       child: Row(
         children: [
-          MyLocationButton(
-            onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
-              () async => mapController != null
-                  ? await mapController.getCurrentLocation()
-                  : null,
-              ref.read(mapNavigationProvider.notifier),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  MyLocationButton(
+                    onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
+                      () async => mapController != null
+                          ? await mapController.getCurrentLocation()
+                          : null,
+                      ref.read(mapNavigationProvider.notifier),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacings.sm),
+                  LocationCategoryButton(
+                    label: '绑定者',
+                    icon: Icons.people,
+                    isSelected: state.selectedCategory != LocationCategory.none &&
+                        state.selectedCategory == LocationCategory.binder,
+                    onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.binder),
+                  ),
+                  const SizedBox(width: AppSpacings.sm),
+                  LocationCategoryButton(
+                    label: '历史',
+                    icon: Icons.history,
+                    isSelected: state.selectedCategory != LocationCategory.none &&
+                        state.selectedCategory == LocationCategory.history,
+                    onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: AppSpacings.sm),
-          // 绑定者
-          LocationCategoryButton(
-            label: '绑定者',
-            icon: Icons.people,
-            isSelected: state.selectedCategory != LocationCategory.none &&
-                state.selectedCategory == LocationCategory.binder,
-            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.binder),
-          ),
-          const SizedBox(width: AppSpacings.sm),
-          // 历史
-          LocationCategoryButton(
-            label: '历史',
-            icon: Icons.history,
-            isSelected: state.selectedCategory != LocationCategory.none &&
-                state.selectedCategory == LocationCategory.history,
-            onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
-          ),
-          const SizedBox(width: AppSpacings.sm),
-          // 关闭按钮
-          const Spacer(),
           LocationCloseButton(onTap: _hideListAndUnfocus),
         ],
       ),
