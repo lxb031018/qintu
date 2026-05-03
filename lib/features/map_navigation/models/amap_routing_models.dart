@@ -11,6 +11,7 @@ enum RouteType {
   riding,
   transit,
   eleBike,
+  truck,
 }
 
 /// 公共交通线路类型
@@ -411,6 +412,9 @@ class DriveStep {
   final double tollCost;                  // 该段过路费（元）
   final int trafficLightCount;            // 红绿灯数量
   final bool isArriveWayPoint;            // 是否经过途经点
+  final String? orientation;              // 方向描述
+  final String? naviInstruction;          // 导航指令详情
+  final List<TmcSegment>? tmcs;           // TMC 路况分段列表
 
   const DriveStep({
     required this.instruction,
@@ -428,6 +432,9 @@ class DriveStep {
     this.tollCost = 0,
     this.trafficLightCount = 0,
     this.isArriveWayPoint = false,
+    this.orientation,
+    this.naviInstruction,
+    this.tmcs,
   });
 
   /// 解析动作代码
@@ -560,6 +567,21 @@ class DriveStep {
   bool get isSmooth => tmcStatus == '畅通';
 }
 
+/// TMC 路况分段
+class TmcSegment {
+  final String status;
+  final int distance;
+  final int duration;
+  final List<LatLng> points;
+
+  const TmcSegment({
+    required this.status,
+    required this.distance,
+    required this.duration,
+    this.points = const [],
+  });
+}
+
 /// 路线规划异常
 class RouteOption {
   final int routeId;        // 原生路线 ID（用于 SDK 渲染）
@@ -589,6 +611,9 @@ class RouteOption {
   final List<Map<String, dynamic>>? trafficStatuses; // 交通路况列表
   final Map<String, dynamic>? restrictionInfo; // 限行信息
   final int naviGuideGroupCount; // 导航引导组数量
+  final double? tollDistance;   // 收费路段距离（米）
+  final String? tollRoad;       // 收费道路名称
+  final int? restriction;       // 限行结果（0=不限行, 1=限行）
 
   const RouteOption({
     this.routeId = -1,
@@ -618,6 +643,9 @@ class RouteOption {
     this.trafficStatuses,
     this.restrictionInfo,
     this.naviGuideGroupCount = 0,
+    this.tollDistance,
+    this.tollRoad,
+    this.restriction,
   });
 
   /// 距离显示文本
@@ -650,6 +678,9 @@ class RouteOption {
         return '免费';
       case RouteType.eleBike:
         return '免费';
+      case RouteType.truck:
+        if (tolls > 0) return '过路费 ¥$tolls';
+        return '无过路费';
       case RouteType.transit:
         return '票价 ¥$tolls';
     }
@@ -677,6 +708,9 @@ class RouteOption {
         return '骑行路线';
       case RouteType.eleBike:
         return '电动自行车路线';
+      case RouteType.truck:
+        if (strategy.isNotEmpty) return strategy;
+        return '货车路线';
       case RouteType.transit:
         if (strategyMode != null) {
           switch (strategyMode!) {
@@ -703,6 +737,8 @@ class RouteOption {
         return Icons.directions_bike;
       case RouteType.eleBike:
         return Icons.electric_bike;
+      case RouteType.truck:
+        return Icons.local_shipping;
       case RouteType.transit:
         return Icons.directions_bus;
     }

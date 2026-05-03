@@ -41,6 +41,7 @@ class AmapRouteSearchBridge {
               'toLng': destination.longitude,
               'strategy': strategy,
               'alternativeRoute': alternativeRoute,
+              'carType': carType ?? 0,
             },
           );
           if (result != null) {
@@ -56,6 +57,7 @@ class AmapRouteSearchBridge {
               'fromLng': origin.longitude,
               'toLat': destination.latitude,
               'toLng': destination.longitude,
+              'alternativeRoute': alternativeRoute,
             },
           );
           if (result != null) {
@@ -71,6 +73,7 @@ class AmapRouteSearchBridge {
               'fromLng': origin.longitude,
               'toLat': destination.latitude,
               'toLng': destination.longitude,
+              'alternativeRoute': alternativeRoute,
             },
           );
           if (result != null) {
@@ -86,6 +89,7 @@ class AmapRouteSearchBridge {
               'fromLng': origin.longitude,
               'toLat': destination.latitude,
               'toLng': destination.longitude,
+              'alternativeRoute': alternativeRoute,
             },
           );
           if (result != null) {
@@ -115,6 +119,27 @@ class AmapRouteSearchBridge {
           );
           if (result != null) {
             return _parseBusPaths(result, origin, destination, strategy);
+          }
+          break;
+
+        case RouteType.truck:
+          result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+            'calculateTruckRoute',
+            {
+              'fromLat': origin.latitude,
+              'fromLng': origin.longitude,
+              'toLat': destination.latitude,
+              'toLng': destination.longitude,
+              'strategy': strategy,
+              'truckHeight': truckHeight,
+              'truckWidth': truckWidth,
+              'truckLength': truckLength,
+              'truckWeight': truckWeight,
+              'truckAxis': truckAxis,
+            },
+          );
+          if (result != null) {
+            return _parseTruckPaths(result, strategy);
           }
           break;
       }
@@ -157,6 +182,9 @@ class AmapRouteSearchBridge {
         driveSteps: stepsList.map((s) => _parseDriveStep(s as Map<dynamic, dynamic>)).toList(),
         mainRoadInfo: map['mainRoadInfo']?.toString(),
         restrictionInfo: map['restrictionInfo'] as Map<String, dynamic>?,
+        tollDistance: (map['tollDistance'] as num?)?.toDouble(),
+        tollRoad: map['tollRoad']?.toString(),
+        restriction: (map['restriction'] as num?)?.toInt(),
       );
     }).toList();
   }
@@ -166,6 +194,21 @@ class AmapRouteSearchBridge {
     final points = polylineList.map((p) {
       final pm = p as Map<dynamic, dynamic>;
       return LatLng((pm['lat'] as num).toDouble(), (pm['lng'] as num).toDouble());
+    }).toList();
+
+    final tmcsList = map['tmcs'] as List<dynamic>?;
+    final tmcs = tmcsList?.map((t) {
+      final tm = t as Map<dynamic, dynamic>;
+      final tmcPolyline = tm['polyline'] as List<dynamic>? ?? [];
+      return TmcSegment(
+        status: tm['status']?.toString() ?? '',
+        distance: (tm['distance'] as num?)?.toInt() ?? 0,
+        duration: (tm['duration'] as num?)?.toInt() ?? 0,
+        points: tmcPolyline.map((p) {
+          final pm = p as Map<dynamic, dynamic>;
+          return LatLng((pm['lat'] as num).toDouble(), (pm['lng'] as num).toDouble());
+        }).toList(),
+      );
     }).toList();
 
     return DriveStep(
@@ -182,7 +225,10 @@ class AmapRouteSearchBridge {
       chargeLength: (map['chargeLength'] as num?)?.toDouble() ?? 0,
       tollCost: (map['tollCost'] as num?)?.toDouble() ?? 0,
       trafficLightCount: (map['trafficLightCount'] as num?)?.toInt() ?? 0,
-    );
+      orientation: map['orientation']?.toString(),
+      naviInstruction: map['naviInstruction']?.toString(),
+      tmcs: tmcs,
+     );
   }
 
   static List<RouteOption> _parseWalkPaths(Map<dynamic, dynamic> result) {
@@ -470,6 +516,35 @@ class AmapRouteSearchBridge {
     }
 
     return segments;
+  }
+
+  static List<RouteOption> _parseTruckPaths(Map<dynamic, dynamic> result, int strategyId) {
+    final paths = result['paths'] as List<dynamic>? ?? [];
+    Logs.navigation.info('✅ 货车算路成功：${paths.length} 条路线');
+
+    return paths.map((p) {
+      final map = p as Map<dynamic, dynamic>;
+      final polylineList = map['polyline'] as List<dynamic>? ?? [];
+      final points = polylineList.map((p) {
+        final pm = p as Map<dynamic, dynamic>;
+        return LatLng((pm['lat'] as num).toDouble(), (pm['lng'] as num).toDouble());
+      }).toList();
+
+      final stepsList = map['steps'] as List<dynamic>? ?? [];
+
+      return RouteOption(
+        routeId: (map['routeId'] as num?)?.toInt() ?? -1,
+        distance: (map['distance'] as num?)?.toDouble() ?? 0,
+        duration: (map['duration'] as num?)?.toDouble() ?? 0,
+        strategy: map['strategy']?.toString() ?? '',
+        tolls: (map['tolls'] as num?)?.toDouble() ?? 0,
+        points: points,
+        routeType: RouteType.truck,
+        strategyId: strategyId,
+        tollDistance: (map['tollDistance'] as num?)?.toDouble(),
+        driveSteps: stepsList.map((s) => _parseDriveStep(s as Map<dynamic, dynamic>)).toList(),
+      );
+    }).toList();
   }
 
   static LatLng? _parseCoord(dynamic coord) {

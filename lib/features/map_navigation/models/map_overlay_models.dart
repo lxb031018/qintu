@@ -73,6 +73,8 @@ class RouteColors {
         return 0xFFFF9800; // 橙色（与 riding 区分）
       case RouteType.transit:
         return transit;
+      case RouteType.truck:
+        return 0xFF795548; // 棕色
     }
   }
 
@@ -92,6 +94,8 @@ class RouteColors {
         return 0x80FF9800; // 橙色淡化
       case RouteType.transit:
         return 0x80722ED1; // 紫色淡化
+      case RouteType.truck:
+        return 0x80795548; // 棕色淡化
     }
   }
 }

@@ -74,22 +74,6 @@ class AmapBusSearchPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 impl.searchBusLineById(lineId, city, result)
             }
 
-            "calculateTransitRoute" -> {
-                val fromLat = call.argument<Double>("fromLat") ?: return result.error("INVALID_PARAMS", "fromLat 缺失", null)
-                val fromLng = call.argument<Double>("fromLng") ?: return result.error("INVALID_PARAMS", "fromLng 缺失", null)
-                val toLat = call.argument<Double>("toLat") ?: return result.error("INVALID_PARAMS", "toLat 缺失", null)
-                val toLng = call.argument<Double>("toLng") ?: return result.error("INVALID_PARAMS", "toLng 缺失", null)
-                val city = call.argument<String>("city") ?: ""
-                val mode = call.argument<Int>("mode") ?: BusSearchImpl.TRANSIT_DEFAULT
-                val maxTrans = call.argument<Int>("maxTrans") ?: 3
-                val alternativeRoute = call.argument<Int>("alternativeRoute") ?: 1
-                val time = call.argument<String>("time")
-                val timeType = call.argument<String>("timeType")
-                val destCity = call.argument<String>("destCity")
-                impl.calculateTransitRoute(fromLat, fromLng, toLat, toLng, city, mode, result,
-                    maxTrans, alternativeRoute, time, timeType, destCity)
-            }
-
             else -> result.notImplemented()
         }
     }
