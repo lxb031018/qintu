@@ -69,6 +69,8 @@ class RouteColors {
         return walking;
       case RouteType.riding:
         return riding;
+      case RouteType.eleBike:
+        return 0xFFFF9800; // 橙色（与 riding 区分）
       case RouteType.transit:
         return transit;
     }
@@ -86,6 +88,8 @@ class RouteColors {
         return 0x8052C41A; // 绿色淡化
       case RouteType.riding:
         return 0x80FAAD14; // 橙色淡化
+      case RouteType.eleBike:
+        return 0x80FF9800; // 橙色淡化
       case RouteType.transit:
         return 0x80722ED1; // 紫色淡化
     }

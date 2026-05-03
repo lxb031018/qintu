@@ -51,7 +51,6 @@ class AmapNavigationBridge {
     required LatLng origin,
     required LatLng destination,
     int strategy = 0,
-    bool multiRoute = true,
   }) async {
     if (type == RouteType.transit) {
       throw const RoutingException('公交路线暂不支持原生 SDK 算路');
@@ -69,7 +68,6 @@ class AmapNavigationBridge {
           'toLat': destination.latitude,
           'toLng': destination.longitude,
           'strategy': strategy,
-          'multiRoute': multiRoute,
         },
       );
 
@@ -102,6 +100,8 @@ class AmapNavigationBridge {
         return 'walking';
       case RouteType.riding:
         return 'riding';
+      case RouteType.eleBike:
+        return 'elebike';
       case RouteType.transit:
         return 'transit';
     }
@@ -118,6 +118,14 @@ class AmapNavigationBridge {
     }).toList();
 
     final stepsList = map['steps'] as List<dynamic>? ?? [];
+
+    final routeSubType = (map['routeType'] as num?)?.toInt();
+    final mainRoadInfo = map['mainRoadInfo']?.toString();
+    final cameraCount = (map['cameraCount'] as num?)?.toInt() ?? 0;
+    final cityAdcodes = (map['cityAdcodes'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList();
+    final trafficStatuses = (map['trafficStatuses'] as List<dynamic>?)?.cast<Map<String, dynamic>>();
+    final restrictionInfo = map['restrictionInfo'] as Map<String, dynamic>?;
+    final naviGuideGroupCount = (map['naviGuideGroupCount'] as num?)?.toInt() ?? 0;
 
     return RouteOption(
       routeId: (map['routeId'] as num?)?.toInt() ?? -1,
@@ -139,15 +147,33 @@ class AmapNavigationBridge {
               .map((s) => _parseWalkStep(s as Map<dynamic, dynamic>))
               .toList()
           : null,
-      rideSteps: type == RouteType.riding
+      rideSteps: type == RouteType.riding || type == RouteType.eleBike
           ? stepsList
               .map((s) => _parseWalkStep(s as Map<dynamic, dynamic>))
               .toList()
           : null,
+      routeSubType: routeSubType,
+      mainRoadInfo: mainRoadInfo,
+      cameraCount: cameraCount,
+      cityAdcodes: cityAdcodes,
+      trafficStatuses: trafficStatuses,
+      restrictionInfo: restrictionInfo,
+      naviGuideGroupCount: naviGuideGroupCount,
     );
   }
 
   static DriveStep _parseDriveStep(Map<dynamic, dynamic> map) {
+    final linksRaw = map['links'] as List<dynamic>?;
+    final links = linksRaw?.map((l) {
+      final coords = l as List<dynamic>;
+      return coords.fold<Map<String, double>>({}, (acc, c) {
+        final cm = c as Map<dynamic, dynamic>;
+        acc['lat'] = (cm['lat'] as num).toDouble();
+        acc['lng'] = (cm['lng'] as num).toDouble();
+        return acc;
+      });
+    }).toList();
+
     return DriveStep(
       instruction: map['instruction']?.toString() ?? '',
       action: map['action']?.toString() ?? '',
@@ -159,6 +185,11 @@ class AmapNavigationBridge {
       tmcStatus: map['tmcStatus']?.toString(),
       lat: (map['lat'] as num?)?.toDouble() ?? 0,
       lng: (map['lng'] as num?)?.toDouble() ?? 0,
+      links: links,
+      chargeLength: (map['chargeLength'] as num?)?.toDouble() ?? 0,
+      tollCost: (map['tollCost'] as num?)?.toDouble() ?? 0,
+      trafficLightCount: (map['trafficLightCount'] as num?)?.toInt() ?? 0,
+      isArriveWayPoint: map['isArriveWayPoint'] as bool? ?? false,
     );
   }
 

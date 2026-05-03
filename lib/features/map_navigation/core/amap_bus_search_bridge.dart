@@ -43,6 +43,7 @@ class AmapBusSearchBridge {
     int alternativeRoute = 1,
     String? time,
     String? timeType,
+    String? destCity,
   }) async {
     try {
       Logs.ui.info('🚌 原生公交算路: ($origin → $destination), city=$city, mode=$mode');
@@ -59,6 +60,7 @@ class AmapBusSearchBridge {
           'alternativeRoute': alternativeRoute,
           if (time != null) 'time': time,
           if (timeType != null) 'timeType': timeType,
+          if (destCity != null) 'destCity': destCity,
         },
       );
 

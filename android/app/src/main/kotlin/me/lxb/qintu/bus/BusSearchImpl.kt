@@ -167,7 +167,8 @@ class BusSearchImpl(context: Context) {
         maxTrans: Int = 3,
         alternativeRoute: Int = 1,
         time: String? = null,
-        timeType: String? = null
+        timeType: String? = null,
+        destCity: String? = null
     ) {
         Log.d(TAG, "🚌 公交算路: ($fromLat,$fromLng) → ($toLat,$toLng), city=$city, mode=$mode, maxTrans=$maxTrans")
         if (transitInFlight) {
@@ -182,7 +183,7 @@ class BusSearchImpl(context: Context) {
             LatLonPoint(toLat, toLng)
         )
         val query = RouteSearchV2.BusRouteQuery(fromAndTo, mode, city, 0)
-        query.showFields = RouteSearchV2.ShowFields.ALL  // 必须设置，否则 polyline 数据为空
+        query.showFields = RouteSearchV2.ShowFields.ALL
         if (maxTrans in 0..4) {
             query.setMaxTrans(maxTrans)
         }
@@ -194,6 +195,9 @@ class BusSearchImpl(context: Context) {
             if (timeType == "1") {
                 query.setDate(time)
             }
+        }
+        if (!destCity.isNullOrEmpty()) {
+            query.setCityd(destCity)
         }
         routeSearchV2.calculateBusRouteAsyn(query)
     }

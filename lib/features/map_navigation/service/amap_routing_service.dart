@@ -44,6 +44,7 @@ class AmapRoutingService {
     int alternativeRoute = 1,
     String? time,
     String? timeType,
+    String? destCity,
   }) async {
     // 公共交通路线需要城市区号（如 "010"、"0771"），不能是城市名
     String routeCity = city ?? '';
@@ -52,12 +53,12 @@ class AmapRoutingService {
       case RouteType.driving:
       case RouteType.walking:
       case RouteType.riding:
+      case RouteType.eleBike:
         return withRetry(() => AmapNavigationBridge.calculateRoute(
           type: type,
           origin: origin,
           destination: destination,
           strategy: strategy,
-          multiRoute: true,
         ));
       case RouteType.transit:
         if (routeCity.isEmpty) {
@@ -76,6 +77,7 @@ class AmapRoutingService {
             alternativeRoute: alternativeRoute,
             time: time,
             timeType: timeType,
+            destCity: destCity,
           );
           if (result.isNotEmpty) {
             final supplemented = <RouteOption>[];
@@ -163,7 +165,6 @@ class AmapRoutingService {
         type: RouteType.walking,
         origin: origin,
         destination: firstTransitStop,
-        multiRoute: false,
       );
       if (walkRoutes.isNotEmpty && walkRoutes.first.points.isNotEmpty) {
         firstWalkPoints = walkRoutes.first.points;
@@ -179,7 +180,6 @@ class AmapRoutingService {
         type: RouteType.walking,
         origin: lastTransitStop,
         destination: dest,
-        multiRoute: false,
       );
       if (walkRoutes.isNotEmpty && walkRoutes.first.points.isNotEmpty) {
         lastWalkPoints = walkRoutes.first.points;

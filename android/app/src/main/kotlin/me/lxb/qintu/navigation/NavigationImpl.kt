@@ -6,12 +6,14 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
 import com.amap.api.navi.enums.NaviType
+import com.amap.api.navi.enums.PathPlanningStrategy
 import com.amap.api.navi.enums.TransportType
 import com.amap.api.navi.enums.TravelStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.AMapNaviStep
+import com.amap.api.navi.model.AMapTrafficStatus
 import com.amap.api.navi.model.AMapTravelInfo
 import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.navi.model.NaviPoi
@@ -33,18 +35,12 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     companion object {
         private const val TAG = "NavigationImpl"
-
-        const val STRATEGY_CHEAP = 1
-        const val STRATEGY_SHORT = 2
-        const val STRATEGY_AVOID_CONGESTION = 3
-        const val STRATEGY_CONGESTION_HIGHWAY = 4
-        const val STRATEGY_CHEAP_HIGHWAY = 5
-        const val STRATEGY_AVOID_HIGHWAY = 6
     }
 
     private var mAMapNavi: AMapNavi? = null
     private var pendingRouteResult: MethodChannel.Result? = null
     private var isNavigating = false
+    private var lastRouteStrategy: Int = 0
 
     /** 导航事件回调（由 Plugin 层注入，用于转发到 EventChannel） */
     var eventListener: ((Map<String, Any?>) -> Unit)? = null
@@ -74,13 +70,11 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         mAMapNavi?.selectRouteId(routeId)
     }
 
-    private var lastRouteStrategy = 0
-
     fun calculateRoute(
         routeType: String,
         fromLat: Double, fromLng: Double,
         toLat: Double, toLng: Double,
-        strategy: Int, multiRoute: Boolean,
+        strategy: Int,
         result: MethodChannel.Result
     ) {
         try {
@@ -90,7 +84,6 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                 return
             }
 
-            // 防止并发算路：取消上一个未完成的请求
             pendingRouteResult?.let {
                 Log.w(TAG, "⚠️ 覆盖上一个未完成的算路请求")
                 it.error("CALC_OVERRIDDEN", "被新的算路请求覆盖", null)
@@ -101,26 +94,30 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             val from = NaviLatLng(fromLat, fromLng)
             val to = NaviLatLng(toLat, toLng)
 
-            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, multiRoute=$multiRoute")
+            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy")
 
             when (routeType) {
                 "driving" -> {
-                    val flag = buildDrivingStrategy(strategy, multiRoute)
+                    val flag = buildDrivingStrategy(strategy)
                     navi.calculateDriveRoute(listOf(from), listOf(to), null, flag)
                 }
                 "walking" -> {
                     val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
                     val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    val ts = if (multiRoute) TravelStrategy.MULTIPLE else TravelStrategy.SINGLE
                     navi.setTravelInfo(AMapTravelInfo(TransportType.Walk))
-                    navi.calculateWalkRoute(fromPoi, toPoi, ts)
+                    navi.calculateWalkRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
                 }
                 "riding" -> {
                     val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
                     val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    val ts = if (multiRoute) TravelStrategy.MULTIPLE else TravelStrategy.SINGLE
                     navi.setTravelInfo(AMapTravelInfo(TransportType.Ride))
-                    navi.calculateRideRoute(fromPoi, toPoi, ts)
+                    navi.calculateRideRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
+                }
+                "elebike" -> {
+                    val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
+                    val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
+                    navi.setTravelInfo(AMapTravelInfo(TransportType.EleBike))
+                    navi.calculateEleBikeRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
                 }
                 else -> {
                     pendingRouteResult = null
@@ -197,23 +194,24 @@ class NavigationImpl(context: Context) : AMapNaviListener {
 
     // ==================== 私有方法 ====================
 
-    private fun buildDrivingStrategy(strategy: Int, multiRoute: Boolean): Int {
-        val navi = mAMapNavi ?: return 0
-        // strategyConvert(avoidCongestion, avoidCost, prioritiseHighway, prioritiseFastSpeed, multiRoute)
+    private fun buildDrivingStrategy(strategy: Int): Int {
         return when (strategy) {
-            STRATEGY_CHEAP               -> navi.strategyConvert(true, true, false, false, multiRoute)
-            STRATEGY_SHORT               -> navi.strategyConvert(false, false, false, false, multiRoute)
-            STRATEGY_AVOID_CONGESTION    -> navi.strategyConvert(true, false, false, false, multiRoute)
-            STRATEGY_CONGESTION_HIGHWAY  -> navi.strategyConvert(true, false, true, false, multiRoute)
-            STRATEGY_CHEAP_HIGHWAY       -> navi.strategyConvert(true, true, true, false, multiRoute)
-            STRATEGY_AVOID_HIGHWAY       -> navi.strategyConvert(false, false, false, false, multiRoute)
-            else                         -> navi.strategyConvert(true, false, false, true, multiRoute)
+            0 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_DEFAULT
+            1 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_AVOID_COST
+            2 -> PathPlanningStrategy.DRIVING_MULTIPLE_SHORTEST_TIME_DISTANCE
+            3 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_AVOID_CONGESTION
+            4 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_PRIORITY_HIGHSPEED_AVOID_CONGESTION
+            5 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_AVOID_HIGHTSPEED_COST
+            6 -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_AVOID_HIGHSPEED
+            else -> PathPlanningStrategy.DRIVING_MULTIPLE_ROUTES_DEFAULT
         }
     }
 
     private fun serializeNaviPath(routeId: Int, path: AMapNaviPath): Map<String, Any?> {
         val points = path.coordList.map { it.toCoordinateMap() }
         val steps = path.steps?.map { serializePathStep(it) } ?: emptyList()
+        val allCameras = path.allCameras
+        val trafficStatuses = path.trafficStatuses
         return mapOf(
             "routeId" to routeId,
             "distance" to path.allLength.toDouble(),
@@ -222,13 +220,34 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             "strategy" to (path.labels ?: ""),
             "trafficLights" to (path.lightList?.size ?: 0),
             "points" to points,
-            "steps" to steps
+            "steps" to steps,
+            "routeType" to path.routeType,
+            "mainRoadInfo" to (path.mainRoadInfo ?: ""),
+            "restrictionInfo" to path.restrictionInfo?.let {
+                mapOf(
+                    "title" to it.restrictionTitle,
+                    "titleType" to it.titleType,
+                    "tips" to it.tips,
+                    "cityCode" to it.cityCode,
+                    "cityCodes" to it.cityCodes?.toList(),
+                    "desc" to it.restrictionDesc
+                )
+            },
+            "trafficStatuses" to trafficStatuses?.map { ts ->
+                mapOf("status" to ts.status, "length" to ts.length, "linkIndex" to ts.linkIndex)
+            },
+            "cityAdcodes" to path.cityAdcodeList?.toList(),
+            "cameraCount" to (allCameras?.size ?: 0),
+            "naviGuideGroupCount" to (path.naviGuideList?.size ?: 0)
         )
     }
 
     private fun serializePathStep(step: AMapNaviStep): Map<String, Any?> {
         val coords = step.coords?.map { it.toCoordinateMap() } ?: emptyList()
         val firstCoord = coords.firstOrNull()
+        val links = step.links?.map { link ->
+            link.coords?.map { it.toCoordinateMap() } ?: emptyList()
+        } ?: emptyList()
         return mapOf(
             "instruction" to "",
             "action" to step.iconType.toString(),
@@ -240,7 +259,12 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             "lng" to (firstCoord?.get("lng") ?: 0.0),
             "points" to coords,
             "startIndex" to step.startIndex,
-            "endIndex" to step.endIndex
+            "endIndex" to step.endIndex,
+            "links" to links,
+            "chargeLength" to step.chargeLength.toDouble(),
+            "tollCost" to step.tollCost.toDouble(),
+            "trafficLightCount" to (step.trafficLightNumber ?: 0),
+            "isArriveWayPoint" to step.isArriveWayPoint
         )
     }
 

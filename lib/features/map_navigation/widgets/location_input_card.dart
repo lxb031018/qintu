@@ -150,6 +150,15 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
           },
           isDark: isDark,
         ),
+        // 电动自行车
+        _RouteTypeButton(
+          label: '电动车',
+          isSelected: navState.currentRouteType == RouteType.eleBike,
+          onTap: () {
+            callbacks?.onRouteTypeSelected?.call(RouteType.eleBike);
+          },
+          isDark: isDark,
+        ),
         // 公共交通
         _RouteTypeButton(
           label: '公共交通',

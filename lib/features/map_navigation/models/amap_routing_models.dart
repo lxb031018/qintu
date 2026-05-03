@@ -6,10 +6,11 @@ export 'package:qintu/models/location/lat_lng.dart';
 
 /// 出行方式枚举
 enum RouteType {
-  driving,   // 驾车
-  walking,   // 步行
-  riding,    // 骑行
-  transit,   // 公共交通
+  driving,
+  walking,
+  riding,
+  transit,
+  eleBike,
 }
 
 /// 公共交通线路类型
@@ -405,6 +406,11 @@ class DriveStep {
   final String? tmcStatus;      // 交通状态：畅通/缓行/拥堵/严重拥堵
   final double lat;             // 步骤起始纬度
   final double lng;             // 步骤起始经度
+  final List<Map<String, double>>? links; // 路段道路列表
+  final double chargeLength;              // 收费路段距离（米）
+  final double tollCost;                  // 该段过路费（元）
+  final int trafficLightCount;            // 红绿灯数量
+  final bool isArriveWayPoint;            // 是否经过途经点
 
   const DriveStep({
     required this.instruction,
@@ -417,6 +423,11 @@ class DriveStep {
     this.tmcStatus,
     this.lat = 0,
     this.lng = 0,
+    this.links,
+    this.chargeLength = 0,
+    this.tollCost = 0,
+    this.trafficLightCount = 0,
+    this.isArriveWayPoint = false,
   });
 
   /// 解析动作代码
@@ -571,6 +582,13 @@ class RouteOption {
   final double? taxiCost;       // 打车费用估算（元）
   final int? strategyMode;      // 公交算路策略原始值 (0-5)
   final int trafficLights;      // 途经交通灯数量
+  final int? routeSubType;      // 路线子类型（1=驾车,2=骑行,3=步行,4=电动自行车）
+  final String? mainRoadInfo;   // 主要道路信息
+  final int cameraCount;        // 摄像头数量
+  final List<int>? cityAdcodes; // 途经城市编码
+  final List<Map<String, dynamic>>? trafficStatuses; // 交通路况列表
+  final Map<String, dynamic>? restrictionInfo; // 限行信息
+  final int naviGuideGroupCount; // 导航引导组数量
 
   const RouteOption({
     this.routeId = -1,
@@ -593,6 +611,13 @@ class RouteOption {
     this.strategyMode,
     this.trafficLights = 0,
     this.strategyId = 0,
+    this.routeSubType,
+    this.mainRoadInfo,
+    this.cameraCount = 0,
+    this.cityAdcodes,
+    this.trafficStatuses,
+    this.restrictionInfo,
+    this.naviGuideGroupCount = 0,
   });
 
   /// 距离显示文本
@@ -623,6 +648,8 @@ class RouteOption {
         return '免费';
       case RouteType.riding:
         return '免费';
+      case RouteType.eleBike:
+        return '免费';
       case RouteType.transit:
         return '票价 ¥$tolls';
     }
@@ -648,6 +675,8 @@ class RouteOption {
         return '步行路线';
       case RouteType.riding:
         return '骑行路线';
+      case RouteType.eleBike:
+        return '电动自行车路线';
       case RouteType.transit:
         if (strategyMode != null) {
           switch (strategyMode!) {
@@ -672,6 +701,8 @@ class RouteOption {
         return Icons.directions_walk;
       case RouteType.riding:
         return Icons.directions_bike;
+      case RouteType.eleBike:
+        return Icons.electric_bike;
       case RouteType.transit:
         return Icons.directions_bus;
     }

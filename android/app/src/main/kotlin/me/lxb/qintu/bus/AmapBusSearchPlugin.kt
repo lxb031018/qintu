@@ -85,8 +85,9 @@ class AmapBusSearchPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val alternativeRoute = call.argument<Int>("alternativeRoute") ?: 1
                 val time = call.argument<String>("time")
                 val timeType = call.argument<String>("timeType")
+                val destCity = call.argument<String>("destCity")
                 impl.calculateTransitRoute(fromLat, fromLng, toLat, toLng, city, mode, result,
-                    maxTrans, alternativeRoute, time, timeType)
+                    maxTrans, alternativeRoute, time, timeType, destCity)
             }
 
             else -> result.notImplemented()

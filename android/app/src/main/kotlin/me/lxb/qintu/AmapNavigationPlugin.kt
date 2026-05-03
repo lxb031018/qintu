@@ -77,8 +77,7 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val toLat = call.argument<Double>("toLat") ?: run { result.error("INVALID_PARAMS", "toLat 缺失", null); return }
                 val toLng = call.argument<Double>("toLng") ?: run { result.error("INVALID_PARAMS", "toLng 缺失", null); return }
                 val strategy = call.argument<Int>("strategy") ?: 0
-                val multiRoute = call.argument<Boolean>("multiRoute") ?: true
-                impl.calculateRoute(routeType, fromLat, fromLng, toLat, toLng, strategy, multiRoute, result)
+                impl.calculateRoute(routeType, fromLat, fromLng, toLat, toLng, strategy, result)
             }
 
             "selectRouteId" -> {
