@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qintu/models/location/lat_lng.dart';
 import '../service/map_controller_service.dart';
 
 final mapControllerProvider = Provider<MapControllerService?>((ref) {
@@ -23,15 +22,14 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
   }
 
   Future<int?> showRoutes(
-    List<List<LatLng>> routes, {
+    List<Map<String, dynamic>> routes, {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
     List<bool>? dashedFlags,
-    List<int>? routeIds,
   }) async {
     return await state?.showRoutes(routes, selectIndex: selectIndex,
-        colors: colors, widths: widths, dashedFlags: dashedFlags, routeIds: routeIds);
+        colors: colors, widths: widths, dashedFlags: dashedFlags);
   }
 
   Future<bool> selectRoute(

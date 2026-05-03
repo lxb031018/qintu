@@ -30,6 +30,9 @@ class MainActivity : FlutterActivity() {
         // 注册公交搜索插件
         flutterEngine.plugins.add(me.lxb.qintu.bus.AmapBusSearchPlugin())
 
+        // 注册路径搜索插件（驾车/步行/骑行/货车/公交多路线规划）
+        flutterEngine.plugins.add(me.lxb.qintu.route.RouteSearchPlugin())
+
         // 注册地理编码插件
         flutterEngine.plugins.add(me.lxb.qintu.geocode.GeocodePlugin())
 

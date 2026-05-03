@@ -170,9 +170,9 @@ class NaviViewFactory(
             }
         })
 
-        // 🟢 关键步骤 2：再开启定位功能
-        aMap.isMyLocationEnabled = true
+        // 🟢 关键步骤 2：定位蓝点将在首次 setPointToCenter 后由 AmapMapPlugin 开启
+        // 延迟启用是为了确保地图中心已被修正（AMapNaviView 内部预留空间会导致偏移）
 
-        Log.d(TAG, "🔍 地图配置完成（UiSettings/定位蓝点/图层/缩放范围）")
+        Log.d(TAG, "🔍 地图配置完成（UiSettings/定位源/图层/缩放范围，蓝点待启用）")
     }
 }

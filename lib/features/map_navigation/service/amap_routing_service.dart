@@ -1,20 +1,14 @@
 import 'dart:async';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/features/map_navigation/models/navigation_models.dart';
-import 'package:qintu/features/map_navigation/core/amap_bus_search_bridge.dart';
 import 'package:qintu/features/map_navigation/core/amap_navigation_bridge.dart';
+import 'package:qintu/features/map_navigation/core/route_search_bridge.dart';
 import 'package:qintu/features/map_navigation/core/poi_api.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/utils/retry_utils.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
-/// ============================================
-/// 高德地图路线规划服务（统一入口）
-///
-/// 驾车/步行/骑行 → 通过原生导航 SDK 算路
-/// 公共交通 → 原生 RouteSearchV2.calculateBusRouteAsyn
-/// ============================================
 class AmapRoutingService {
   static final AmapRoutingService _instance = AmapRoutingService._internal();
   factory AmapRoutingService() => _instance;
@@ -22,18 +16,10 @@ class AmapRoutingService {
 
   final _poiApi = PoiApi();
 
-  /// 城市缓存（key: "lat,lng", value: city name or code）
   final Map<String, String> _cityCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
   static const _cacheExpiry = Duration(minutes: 30);
 
-  /// 规划路线（统一入口）
-  ///
-  /// [type] 出行方式（驾车/步行/骑行/公交）
-  /// [origin] 起点坐标
-  /// [destination] 终点坐标
-  /// [strategy] 策略（驾车:0-速度最快,1-避免收费,2-距离最短,3-避免拥堵,4-避免拥堵+高速优先,5-避免收费+高速优先,6-避开高速; 公交:0-较快捷,1-较少换乘,2-较少步行,3-最短时间,4-不乘地铁）
-  /// [city] 城市区号（电话区号如 "010"、"0771"），用于公共交通路线规划（自动从 origin 坐标逆地理编码获取）
   Future<List<RouteOption>> planRoute({
     required RouteType type,
     required LatLng origin,
@@ -46,7 +32,6 @@ class AmapRoutingService {
     String? timeType,
     String? destCity,
   }) async {
-    // 公共交通路线需要城市区号（如 "010"、"0771"），不能是城市名
     String routeCity = city ?? '';
 
     switch (type) {
@@ -54,7 +39,7 @@ class AmapRoutingService {
       case RouteType.walking:
       case RouteType.riding:
       case RouteType.eleBike:
-        return withRetry(() => AmapNavigationBridge.calculateRoute(
+        return withRetry(() => AmapRouteSearchBridge.calculateRoute(
           type: type,
           origin: origin,
           destination: destination,
@@ -68,11 +53,12 @@ class AmapRoutingService {
           throw const RoutingException('公共交通路线需要城市区号，请开启定位权限或手动输入城市区号（如 010）');
         }
         return withRetry(() async {
-          final result = await AmapBusSearchBridge.planTransitRoute(
+          final result = await AmapRouteSearchBridge.calculateRoute(
+            type: type,
             origin: origin,
             destination: destination,
+            strategy: strategy,
             city: routeCity,
-            mode: strategy,
             maxTrans: maxTrans,
             alternativeRoute: alternativeRoute,
             time: time,
@@ -91,9 +77,6 @@ class AmapRoutingService {
     }
   }
 
-  /// 从坐标逆地理编码获取城市区号（电话区号，如 "010"、"0771"，带缓存）
-  ///
-  /// BusRouteQuery 的 city 参数要求城市区号，不能是城市名称
   Future<String> _getCityCodeFromLocation(LatLng location) async {
     final cacheKey = 'citycode_${location.latitude},${location.longitude}';
 
@@ -117,11 +100,6 @@ class AmapRoutingService {
     }
   }
 
-  /// 补充公共交通路线的首端和末端步行段（使用步行 SDK 获取实际路线）
-  ///
-  /// AMap RouteSearchV2 的 BusStepV2.getWalk() 不包含首端步行（起点→首站）
-  /// 和末端步行（末站→终点），本方法用导航 SDK 补充这两段实际路线，
-  /// 始终保留所有原始 transit segment，不会因补充而丢失公交/地铁路段
   Future<RouteOption> _supplementTransitWalkSegments(RouteOption route) async {
     final segments = route.transitSegments;
     if (segments == null || segments.isEmpty) {
@@ -134,7 +112,6 @@ class AmapRoutingService {
       return route;
     }
 
-    // 查找第一个/最后一个乘车段（公交/地铁/铁路，非纯步行段）的首末站坐标
     LatLng? firstTransitStop;
     for (final seg in segments) {
       if (seg.hasTransit && seg.points.isNotEmpty) {
@@ -151,7 +128,6 @@ class AmapRoutingService {
       }
     }
 
-    // 如果找不到乘车段坐标，跳过补充
     if (firstTransitStop == null || lastTransitStop == null) {
       return route;
     }
@@ -159,9 +135,8 @@ class AmapRoutingService {
     List<LatLng>? firstWalkPoints;
     List<LatLng>? lastWalkPoints;
 
-    // 补充首端步行（起点 → 首站）
     try {
-      final walkRoutes = await AmapNavigationBridge.calculateRoute(
+      final walkRoutes = await AmapRouteSearchBridge.calculateRoute(
         type: RouteType.walking,
         origin: origin,
         destination: firstTransitStop,
@@ -174,9 +149,8 @@ class AmapRoutingService {
       Logs.ui.warning('⚠️ 首端步行路线获取失败: $e');
     }
 
-    // 补充末端步行（末站 → 终点）
     try {
-      final walkRoutes = await AmapNavigationBridge.calculateRoute(
+      final walkRoutes = await AmapRouteSearchBridge.calculateRoute(
         type: RouteType.walking,
         origin: lastTransitStop,
         destination: dest,
@@ -189,12 +163,10 @@ class AmapRoutingService {
       Logs.ui.warning('⚠️ 末端步行路线获取失败: $e');
     }
 
-    // 如果两端步行都未能获取，不做处理
     if (firstWalkPoints == null && lastWalkPoints == null) {
       return route;
     }
 
-    // 始终在首尾添加步行段，保留所有原始 transit 段
     final newSegments = <TransitSegment>[];
 
     if (firstWalkPoints != null && firstWalkPoints.length > 1) {
@@ -205,7 +177,6 @@ class AmapRoutingService {
       ));
     }
 
-    // 始终保留所有原始 segments
     newSegments.addAll(segments);
 
     if (lastWalkPoints != null && lastWalkPoints.length > 1) {
@@ -216,7 +187,6 @@ class AmapRoutingService {
       ));
     }
 
-    // 重建 allPoints（含间隙填充）
     final newAllPoints = <LatLng>[];
     for (final seg in newSegments) {
       if (seg.points.isEmpty) continue;
@@ -256,28 +226,21 @@ class AmapRoutingService {
         (a.longitude - b.longitude).abs() < epsilon;
   }
 
-  /// 导航状态流（透传原生桥接层事件）
   Stream<NavigationState> get navigationStateStream =>
       AmapNavigationBridge.navigationStateStream;
 
-  /// 选中路线（多路径时选择导航路线）
   Future<bool> selectRouteId(int routeId) =>
       AmapNavigationBridge.selectRouteId(routeId);
 
-  /// 开始无 View 导航
   Future<bool> startNavigation({bool isEmulator = false, bool enableVoice = true}) =>
       AmapNavigationBridge.startNavigation(isEmulator: isEmulator, enableVoice: enableVoice);
 
-  /// 暂停导航
   Future<bool> pauseNavigation() => AmapNavigationBridge.pauseNavigation();
 
-  /// 恢复导航
   Future<bool> resumeNavigation() => AmapNavigationBridge.resumeNavigation();
 
-  /// 停止导航
   Future<bool> stopNavigation() => AmapNavigationBridge.stopNavigation();
 
-  /// 计算一组坐标的总距离（米）
   double _calcDistance(List<LatLng> points) {
     if (points.length < 2) return 0;
     double dist = 0;

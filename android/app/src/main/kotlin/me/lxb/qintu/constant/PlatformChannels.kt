@@ -20,6 +20,8 @@ object PlatformChannels {
     const val NAVI_VIEW = "com.qintu/amap_map_view"
     // 公交搜索
     const val BUS_SEARCH = "com.qintu/amap_bus_search"
+    // 路径搜索（驾车/步行/骑行/货车/公交多路线规划）
+    const val ROUTE_SEARCH = "com.qintu/amap_route_search"
     // 地理编码（正向 + 逆向）
     const val GEOCODE = "com.qintu/amap_geocode"
     // POI 搜索

@@ -81,7 +81,7 @@ class MapDisplayService {
     final segments = route.transitSegments;
     if (segments == null || segments.isEmpty) return;
 
-    final segmentPoints = <List<LatLng>>[];
+    final routeDataList = <Map<String, dynamic>>[];
     final segmentColors = <int>[];
     final segmentWidths = <double>[];
     final segmentDashed = <bool>[];
@@ -98,17 +98,22 @@ class MapDisplayService {
       } else {
         Logs.map.debug('✅ 渲染侧 segment [$typeLabel] points 共 ${seg.points.length} 个');
       }
-      segmentPoints.add(seg.points);
+
+      final polyline = seg.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
+      routeDataList.add({'polyline': polyline, 'routeId': i});
       segmentColors.add(_segmentColor(seg));
       segmentWidths.add(_segmentWidth(seg));
       segmentDashed.add(seg.segmentType == 0);
 
-      // 填充当前段终点 → 下一段起点的间隙（虚线步行样式连接线，防止视觉断裂）
       if (i < segments.length - 1) {
         final nextSeg = segments[i + 1];
         if (nextSeg.points.isNotEmpty &&
             !_pointsNear(seg.points.last, nextSeg.points.first)) {
-          segmentPoints.add([seg.points.last, nextSeg.points.first]);
+          final gapPolyline = [
+            {'lat': seg.points.last.latitude, 'lng': seg.points.last.longitude},
+            {'lat': nextSeg.points.first.latitude, 'lng': nextSeg.points.first.longitude}
+          ];
+          routeDataList.add({'polyline': gapPolyline, 'routeId': -1});
           segmentColors.add(RouteColors.transitWalk);
           segmentWidths.add(_walkWidth);
           segmentDashed.add(true);
@@ -116,10 +121,10 @@ class MapDisplayService {
       }
     }
 
-    if (segmentPoints.isEmpty) return;
+    if (routeDataList.isEmpty) return;
 
     await _notifier.showRoutes(
-      segmentPoints,
+      routeDataList,
       selectIndex: 0,
       colors: segmentColors,
       widths: segmentWidths,
@@ -138,15 +143,16 @@ class MapDisplayService {
     int selectedIndex,
     RouteType routeType,
   ) async {
-    final routePoints = routes.map((r) => r.points).toList();
+    final routeDataList = routes.map((r) {
+      final polyline = r.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
+      return {'polyline': polyline, 'routeId': r.routeId};
+    }).toList();
     final colors = routes.map((r) => RouteColors.getColor(r.routeType)).toList();
-    final routeIds = routes.map((r) => r.routeId).where((id) => id >= 0).toList();
 
     await _notifier.showRoutes(
-      routePoints,
+      routeDataList,
       selectIndex: selectedIndex,
       colors: colors,
-      routeIds: routeIds.isNotEmpty ? routeIds : null,
     );
   }
 

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/platform_channels.dart';
-import '../../../models/location/lat_lng.dart';
 import '../../../utils/logger.dart';
 
 /// ============================================
@@ -114,32 +113,24 @@ class AmapMapController {
     });
   }
 
-  /// 显示多条路线（SDK 自动渲染）
+  /// 显示多条路线（自定义渲染）
   ///
-  /// [routes] 路线列表（仅用于日志）
+  /// [routes] 路线列表，每条路线包含 polyline 坐标点和 routeId
   /// [selectIndex] 默认选中的路线索引
-  /// [routeIds] 路线 ID 列表，用于 SDK 获取路径
   Future<int?> showRoutes(
-    List<List<LatLng>> routes, {
+    List<Map<String, dynamic>> routes, {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
     List<bool>? dashedFlags,
-    List<int>? routeIds,
   }) async {
     try {
-      if (routeIds == null || routeIds.isEmpty) {
-        debugPrint('❌ [Flutter] showRoutes: routeIds 不能为空');
-        return 0;
-      }
-
       debugPrint('🗺️ [Flutter] showRoutes 调用:');
       debugPrint('   - 路线数量: ${routes.length}');
       debugPrint('   - 选中索引: $selectIndex');
-      debugPrint('   - Route IDs: $routeIds');
 
       final params = <String, dynamic>{
-        'routeIds': routeIds,
+        'routes': routes,
         'selectIndex': selectIndex,
       };
 

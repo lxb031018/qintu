@@ -8,6 +8,8 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.maps.model.BitmapDescriptorFactory
+import com.amap.api.maps.model.Polyline
+import com.amap.api.maps.model.PolylineOptions
 import com.amap.api.navi.AMapNaviView
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -53,8 +55,45 @@ class MapController(
     // Current AMapNaviView for SDK route operations
     private var naviView: AMapNaviView? = null
 
+    // Multi-route rendering
+    private val routePolylines = mutableListOf<Polyline>()
+    private var currentSelectedIndex: Int = 0
+    private val routeColors = listOf(
+        0xFF1890FF.toInt(),   // 选中-蓝色
+        0x8000FFFF.toInt(),   // 其他1-青色半透明
+        0x8000FF00.toInt(),   // 其他2-绿色半透明
+        0x80FF8800.toInt(),   // 其他3-橙色半透明
+        0x80FF0088.toInt()    // 其他4-紫色半透明
+    )
+
     fun setNaviView(view: AMapNaviView?) {
         naviView = view
+    }
+
+    private fun clearRoutePolylinesInternal() {
+        try {
+            routePolylines.forEach { it.remove() }
+            routePolylines.clear()
+            currentSelectedIndex = 0
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ clearRoutePolylinesInternal 失败: ${e.message}")
+        }
+    }
+
+    private fun highlightRouteInternal(index: Int) {
+        if (index < 0 || index >= routePolylines.size) return
+        currentSelectedIndex = index
+        val aMap = aMapHolder.aMap ?: return
+        try {
+            routePolylines.forEachIndexed { i, polyline ->
+                val color = if (i == index) routeColors[0] else routeColors.getOrElse(i % routeColors.size) { routeColors[1] }
+                val lineWidth = if (i == index) 14f else 10f
+                polyline.color = color
+                polyline.width = lineWidth
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ highlightRouteInternal 失败: ${e.message}")
+        }
     }
 
     private fun clearMarkersInternal() {
@@ -161,34 +200,63 @@ class MapController(
             }
 
             "showRoutes" -> {
-                val routeIds = call.argument<List<*>>("routeIds")?.mapNotNull {
-                    (it as? Number)?.toInt()
-                }
+                val routesData = call.argument<List<*>>("routes")
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
 
-                Log.d(TAG, "📍 showRoutes: 使用 SDK 自动画路, ${routeIds?.size ?: 0} 条路线, 选中: $selectIndex")
-                // SDK autoDrawRoute=true 时，路线由 SDK 自动渲染
-                // selectIndex 参数仅用于日志记录
-                result.success(routeIds?.size ?: 0)
+                Log.d(TAG, "📍 showRoutes: 自定义渲染 ${routesData?.size ?: 0} 条路线, 选中: $selectIndex")
+                clearRoutePolylinesInternal()
+
+                if (routesData.isNullOrEmpty()) {
+                    result.success(0)
+                    return
+                }
+
+                val aMap = aMapHolder.aMap ?: run {
+                    result.success(0)
+                    return
+                }
+
+                try {
+                    routesData.forEachIndexed { index, routeData ->
+                        val routeMap = routeData as? Map<*, *>
+                        val polylineList = routeMap?.get("polyline") as? List<*>
+                        if (polylineList != null) {
+                            val latLngs = polylineList.mapNotNull { item ->
+                                val coord = item as? Map<*, *>
+                                val lat = (coord?.get("lat") as? Number)?.toDouble()
+                                val lng = (coord?.get("lng") as? Number)?.toDouble()
+                                if (lat != null && lng != null) LatLng(lat, lng) else null
+                            }
+                            if (latLngs.isNotEmpty()) {
+                                val color = if (index == selectIndex) routeColors[0] else routeColors.getOrElse(index % routeColors.size) { routeColors[1] }
+                                val lineWidth = if (index == selectIndex) 14f else 10f
+                                val polyline = aMap.addPolyline(PolylineOptions()
+                                    .addAll(latLngs)
+                                    .color(color)
+                                    .width(lineWidth)
+                                    .setDottedLine(false))
+                                routePolylines.add(polyline)
+                            }
+                        }
+                    }
+                    currentSelectedIndex = selectIndex
+                    result.success(routePolylines.size)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ showRoutes 渲染失败: ${e.message}")
+                    result.success(0)
+                }
             }
 
             "selectRoute" -> {
                 val index = call.argument<Int>("index") ?: 0
-                Log.d(TAG, "📍 selectRoute: index=$index (SDK 自动处理)")
-                // SDK 在多路径时会自动选中最优路线，此处仅记录日志
-                result.success(true)
-            }
-
-            "enterNavigationMode" -> {
-                val routeId = call.argument<Int>("routeId") ?: 0
-                Log.d(TAG, "🚗 enterNavigationMode: routeId=$routeId (SDK 自动处理)")
-                // SDK 显示导航路线
+                Log.d(TAG, "📍 selectRoute: index=$index")
+                highlightRouteInternal(index)
                 result.success(true)
             }
 
             "clearRoutes" -> {
-                Log.d(TAG, "📍 clearRoutes: SDK 自动清除")
-                // SDK 自动画路模式下，路线清除由 SDK 管理
+                Log.d(TAG, "📍 clearRoutes: 清除所有路线")
+                clearRoutePolylinesInternal()
                 result.success(true)
             }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:qintu/models/location/lat_lng.dart';
 import '../core/amap_map_controller.dart';
 
 /// ============================================
@@ -41,14 +40,13 @@ class MapControllerService {
   // ==================== 路线 ====================
 
   Future<int?> showRoutes(
-    List<List<LatLng>> routes, {
+    List<Map<String, dynamic>> routes, {
     int selectIndex = 0,
     List<int>? colors,
     List<double>? widths,
     List<bool>? dashedFlags,
-    List<int>? routeIds,
   }) => _controller.showRoutes(routes, selectIndex: selectIndex,
-          colors: colors, widths: widths, dashedFlags: dashedFlags, routeIds: routeIds);
+          colors: colors, widths: widths, dashedFlags: dashedFlags);
 
   Future<bool> selectRoute(int index,
           {int selectedColor = 0xFFFF4D4F, int unselectedColor = 0x401890FF}) =>

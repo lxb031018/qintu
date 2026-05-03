@@ -26,6 +26,7 @@ import me.lxb.qintu.map.NaviViewFactory
 import me.lxb.qintu.overlay.CarOverlay
 
 import me.lxb.qintu.util.AMapPrivacy
+import com.amap.api.location.AMapLocation
 
 // 类型别名，避免与 kotlin.Result 冲突
 typealias Result = MethodChannel.Result
@@ -63,6 +64,12 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
 
     // 当前激活的 AMapNaviView 实例（用于生命周期管理）
     private var currentNaviView: AMapNaviView? = null
+
+    // 首次定位是否已触发（等待视图就绪后再发送）
+    private var firstLocationPending: AMapLocation? = null
+
+    // 定位蓝点是否已启用（延迟到首次 setPointToCenter 后开启）
+    private var myLocationEnabled = false
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -116,16 +123,21 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
             )
         }
 
-        // 首次定位成功监听器 - 发送事件给 Flutter
+        // 首次定位成功监听器 - 等待视图就绪后再发送
         locationClient.setFirstLocationListener { location ->
-            eventSink?.success(mapOf(
-                "type" to "firstLocation",
-                "latitude" to location.latitude,
-                "longitude" to location.longitude,
-                "accuracy" to location.accuracy,
-                "city" to (location.city ?: "")
-            ))
-            Log.d(TAG, "🚀 首次定位事件已发送: ${location.latitude}, ${location.longitude}")
+            if (cameraController?.isViewSizeReady() == true) {
+                eventSink?.success(mapOf(
+                    "type" to "firstLocation",
+                    "latitude" to location.latitude,
+                    "longitude" to location.longitude,
+                    "accuracy" to location.accuracy,
+                    "city" to (location.city ?: "")
+                ))
+                Log.d(TAG, "🚀 首次定位事件已发送: ${location.latitude}, ${location.longitude}")
+            } else {
+                firstLocationPending = location
+                Log.d(TAG, "⏳ 首次定位事件暂存，等待视图就绪: ${location.latitude}, ${location.longitude}")
+            }
         }
 
         Log.d(TAG, "✅ AmapMapPlugin 初始化完成")
@@ -186,7 +198,27 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                                 val centerY = naviView.height / 2
                                 cameraController?.setViewSize(naviView.width, naviView.height)
                                 naviView.map.setPointToCenter(centerX, centerY)
+
+                                // 首次布局完成后才启用定位蓝点，确保地图中心已被修正
+                                if (!myLocationEnabled) {
+                                    myLocationEnabled = true
+                                    naviView.map.isMyLocationEnabled = true
+                                    Log.d(TAG, "🔵 首次布局完成，中心已修正，启用定位蓝点")
+                                }
+
                                 Log.d(TAG, "🎯 地图中心已修正: (${centerX}, ${centerY}), size=(${naviView.width}x${naviView.height})")
+
+                                firstLocationPending?.let { location ->
+                                    eventSink?.success(mapOf(
+                                        "type" to "firstLocation",
+                                        "latitude" to location.latitude,
+                                        "longitude" to location.longitude,
+                                        "accuracy" to location.accuracy,
+                                        "city" to (location.city ?: "")
+                                    ))
+                                    firstLocationPending = null
+                                    Log.d(TAG, "🚀 暂存的首次定位事件已发送: ${location.latitude}, ${location.longitude}")
+                                }
                             }
                         }
                     }

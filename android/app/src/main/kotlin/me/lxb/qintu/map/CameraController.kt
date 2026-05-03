@@ -23,6 +23,8 @@ class CameraController(private val aMap: AMap) {
         viewHeight = height
     }
 
+    fun isViewSizeReady(): Boolean = viewWidth > 0 && viewHeight > 0
+
     private fun resetCenterPoint() {
         if (viewWidth > 0 && viewHeight > 0) {
             aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
@@ -37,6 +39,7 @@ class CameraController(private val aMap: AMap) {
      */
     fun moveCamera(lat: Double, lng: Double, zoom: Float = DEFAULT_ZOOM,
                    bearing: Float = -1f, tilt: Float = -1f) {
+        resetCenterPoint()
         val latLng = LatLng(lat, lng)
         Log.d(TAG, "🎥 移动相机到: lat=$lat, lng=$lng, zoom=$zoom, bearing=$bearing, tilt=$tilt")
         val update = if (bearing >= 0 || tilt >= 0) {
@@ -62,8 +65,8 @@ class CameraController(private val aMap: AMap) {
         if (viewWidth > 0 && viewHeight > 0) {
             aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
         } else {
-            aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
-            Log.w(TAG, "⚠️ moveCameraToCenter: viewSize 未就绪 (${viewWidth}x${viewHeight}), centerPoint 可能偏移")
+            Log.w(TAG, "⚠️ moveCameraToCenter: viewSize 未就绪 (${viewWidth}x${viewHeight}), 使用默认中心点")
+            aMap.setPointToCenter(viewWidth.coerceAtLeast(200), viewHeight.coerceAtLeast(200))
         }
         Log.d(TAG, "🎯 moveCameraToCenter: lat=$lat, lng=$lng, zoom=$zoom (center=${viewWidth/2},${viewHeight/2})")
         val latLng = LatLng(lat, lng)

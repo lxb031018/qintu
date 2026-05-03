@@ -18,6 +18,8 @@ class PlatformChannels {
   static const String naviView = 'com.qintu/amap_map_view';
   // 公交搜索
   static const String busSearch = 'com.qintu/amap_bus_search';
+  // 路径搜索（驾车/步行/骑行/货车/公交多路线规划）
+  static const String routeSearch = 'com.qintu/amap_route_search';
   // 地理编码（正向 + 逆向）
   static const String geocode = 'com.qintu/amap_geocode';
   // POI 搜索
