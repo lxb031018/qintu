@@ -61,9 +61,9 @@ class NaviViewFactory(
      */
     fun enableNaviMode(naviView: AMapNaviView) {
         val options = naviView.viewOptions
-        options.layoutVisible = true
-        options.autoDrawRoute = true
-        options.autoDisplayOverview = true
+        options.setLayoutVisible(true)
+        options.setAutoDrawRoute(true)
+        options.setAutoDisplayOverview(true)
         naviView.setViewOptions(options)
         Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI + 自动画路")
     }
@@ -73,9 +73,9 @@ class NaviViewFactory(
      */
     fun disableNaviMode(naviView: AMapNaviView) {
         val options = naviView.viewOptions
-        options.layoutVisible = false
-        options.autoDrawRoute = false
-        options.autoDisplayOverview = false
+        options.setLayoutVisible(false)
+        options.setAutoDrawRoute(false)
+        options.setAutoDisplayOverview(false)
         naviView.setViewOptions(options)
         Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI")
     }
