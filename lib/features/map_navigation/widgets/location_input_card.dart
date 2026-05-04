@@ -144,6 +144,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             },
             isDark: isDark,
           ),
+          SizedBox(width: AppSpacings.sm),
           // 骑行
           _RouteTypeButton(
             label: '骑行',
@@ -153,6 +154,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             },
             isDark: isDark,
           ),
+          SizedBox(width: AppSpacings.sm),
           // 电动自行车
           _RouteTypeButton(
             label: '电动车',
@@ -162,6 +164,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             },
             isDark: isDark,
           ),
+          SizedBox(width: AppSpacings.sm),
           // 公共交通
           _RouteTypeButton(
             label: '公共交通',
@@ -171,6 +174,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             },
             isDark: isDark,
           ),
+          SizedBox(width: AppSpacings.sm),
           // 驾车
           _RouteTypeButton(
             label: '驾车',
