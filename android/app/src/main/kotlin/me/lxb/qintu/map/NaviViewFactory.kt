@@ -2,13 +2,11 @@ package me.lxb.qintu.map
 
 import android.content.Context
 import android.util.Log
-import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.MyLocationStyle
 import com.amap.api.navi.AMapNaviView
 import com.amap.api.navi.AMapNaviViewListener
 import com.amap.api.navi.AMapNaviViewOptions
 import com.amap.api.navi.AmapPageType
-import com.amap.api.navi.model.RouteOverlayOptions
 import me.lxb.qintu.location.LocationClientImpl
 
 /**
@@ -40,17 +38,6 @@ class NaviViewFactory(
      * 导航模式：调用 enableNaviMode() 切换到全功能导航 UI
      */
     fun createNativeView(): AMapNaviView {
-        val routeOverlayOptions = RouteOverlayOptions().apply {
-            setRouteWidth(25)
-            setArrowOnRoute(true)
-            setOnRouteCameShow(true)
-            setStartPointBitmap(BitmapDescriptorFactory.fromAsset("amap_start.png"))
-            setEndPointBitmap(BitmapDescriptorFactory.fromAsset("amap_end.png"))
-            setArrowOnTrafficRoute(BitmapDescriptorFactory.fromAsset("navi_direction.png"))
-            setTrafficLine(true)
-            setSmoothMove(true)
-        }
-
         val options = AMapNaviViewOptions().apply {
             setLayoutVisible(false)
             setAutoDrawRoute(true)
@@ -71,7 +58,6 @@ class NaviViewFactory(
             setDrawBackUpOverlay(true)
             setLeaderLineEnabled(0)
             setSecondActionVisible(true)
-            setRouteOverlayOptions(routeOverlayOptions)
         }
         val naviView = AMapNaviView(context, options)
         naviView.setAMapNaviViewListener(object : AMapNaviViewListener {
