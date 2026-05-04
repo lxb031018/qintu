@@ -208,9 +208,9 @@ class LocationInputCardCallbacks {
 
 class LocationInputNotifier extends Notifier<LocationInputState> {
   Timer? _debounceTimer;
-  PoiService get _poiService => ref.read(poiServiceProvider);
-  LocationCategoryService get _categoryService => ref.read(locationCategoryServiceProvider);
-  BindingLocationService get _bindingLocationService => ref.read(bindingLocationServiceProvider);
+  late final PoiService _poiService = ref.read(poiServiceProvider);
+  late final LocationCategoryService _categoryService = ref.read(locationCategoryServiceProvider);
+  late final BindingLocationService _bindingLocationService = ref.read(bindingLocationServiceProvider);
   bool _hasShownList = false;
 
   @override

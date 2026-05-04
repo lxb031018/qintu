@@ -260,9 +260,11 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
                   duration: AppDurations.fastAnimation,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 4, bottom: 8),
-                    child: Text(
-                      AppStrings.doubleTapSettingsHint,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    child: Center(
+                      child: Text(
+                        AppStrings.doubleTapSettingsHint,
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                     ),
                   ),
                 ),

@@ -42,9 +42,9 @@ class LocationSharingState {
 class LocationSharingNotifier extends Notifier<LocationSharingState> {
   Timer? _uploadTimer;
   MapControllerService? _mapController;
-  LocationSharingService get _service => ref.read(locationSharingServiceProvider);
-  BackgroundLocationService get _bgService => ref.read(backgroundLocationServiceProvider);
-  LocationUploadService get _uploadService => ref.read(locationUploadServiceProvider);
+  late final LocationSharingService _service = ref.read(locationSharingServiceProvider);
+  late final BackgroundLocationService _bgService = ref.read(backgroundLocationServiceProvider);
+  late final LocationUploadService _uploadService = ref.read(locationUploadServiceProvider);
 
   @override
   LocationSharingState build() => const LocationSharingState();
