@@ -154,9 +154,9 @@ class MapNavigationState {
 /// ============================================
 
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
-  AmapRoutingService get _routeService => ref.read(amapRoutingServiceProvider);
-  PoiService get _poiService => ref.read(poiServiceProvider);
-  MapDisplayCoordinator get _mapDisplayCoordinator => ref.read(mapDisplayCoordinatorProvider);
+  late final AmapRoutingService _routeService = ref.read(amapRoutingServiceProvider);
+  late final PoiService _poiService = ref.read(poiServiceProvider);
+  late final MapDisplayCoordinator _mapDisplayCoordinator = ref.read(mapDisplayCoordinatorProvider);
   bool _disposed = false;
   StreamSubscription<NavigationState>? _navStreamSub;
 

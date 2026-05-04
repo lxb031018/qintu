@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// ============================================
 
 class SettingsManager extends Notifier<SettingsState> {
-  static const String _doubleTapTabKey = 'double_tap_tab_switch';
+  static const String _antiCollisionModeKey = 'double_tap_tab_switch';
   static const String _drivingStrategyKey = 'driving_strategy';
 
   @override
@@ -20,27 +20,27 @@ class SettingsManager extends Notifier<SettingsState> {
 
   /// 异步加载设置
   Future<void> _loadSettings() async {
-    final doubleTapTab = await loadDoubleTapTab();
+    final doubleTapTab = await loadAntiCollisionMode();
     final strategy = await loadDrivingStrategy();
     state = state.copyWith(
-      doubleTapToSwitchTab: doubleTapTab,
+      isAntiCollisionEnabled: doubleTapTab,
       drivingStrategy: strategy,
     );
   }
 
   /// 加载 Tab 双击设置
-  static Future<bool> loadDoubleTapTab() async {
+  static Future<bool> loadAntiCollisionMode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_doubleTapTabKey) ?? true;
+    return prefs.getBool(_antiCollisionModeKey) ?? true;
   }
 
   /// 设置 Tab 双击模式
-  Future<void> setDoubleTapTab(bool value) async {
-    if (state.doubleTapToSwitchTab == value) return;
+  Future<void> setAntiCollisionMode(bool value) async {
+    if (state.isAntiCollisionEnabled == value) return;
 
-    state = state.copyWith(doubleTapToSwitchTab: value);
+    state = state.copyWith(isAntiCollisionEnabled: value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_doubleTapTabKey, value);
+    await prefs.setBool(_antiCollisionModeKey, value);
   }
 
   /// 加载驾车策略
@@ -61,7 +61,7 @@ class SettingsManager extends Notifier<SettingsState> {
 
 /// 设置状态
 class SettingsState {
-  final bool doubleTapToSwitchTab;
+  final bool isAntiCollisionEnabled;
   final int drivingStrategy;
 
   /// 全局文本缩放锁定（仅开发人员可改，用户不可见）
@@ -69,16 +69,16 @@ class SettingsState {
   static const bool lockTextScale = true;
 
   const SettingsState({
-    this.doubleTapToSwitchTab = true,
+    this.isAntiCollisionEnabled = true,
     this.drivingStrategy = 10,
   });
 
   SettingsState copyWith({
-    bool? doubleTapToSwitchTab,
+    bool? isAntiCollisionEnabled,
     int? drivingStrategy,
   }) {
     return SettingsState(
-      doubleTapToSwitchTab: doubleTapToSwitchTab ?? this.doubleTapToSwitchTab,
+      isAntiCollisionEnabled: isAntiCollisionEnabled ?? this.isAntiCollisionEnabled,
       drivingStrategy: drivingStrategy ?? this.drivingStrategy,
     );
   }

@@ -240,7 +240,7 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
                     key: _tabBarKey,
                     color: backgroundColor,
                     padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-                    child: _buildTabBar(context, isDark, settingsState.doubleTapToSwitchTab),
+                    child: _buildTabBar(context, isDark, settingsState.isAntiCollisionEnabled),
                   ),
                 ),
               ),
@@ -248,7 +248,7 @@ class _UnifiedHomePageState extends ConsumerState<UnifiedHomePage>
           ),
 
           // 防误触提示文本浮层
-          if (settingsState.doubleTapToSwitchTab)
+          if (settingsState.isAntiCollisionEnabled)
             Positioned(
               top: ref.watch(tabBarHeightProvider) + 4, // Tab Bar 底部 + 间距
               left: 0,

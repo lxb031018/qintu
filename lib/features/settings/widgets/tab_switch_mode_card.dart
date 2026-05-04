@@ -18,7 +18,7 @@ class TabSwitchModeCard extends ConsumerWidget {
       title: '防误触模式',
       child: SwitchListTile(
         title: Text(
-          settingsState.doubleTapToSwitchTab
+          settingsState.isAntiCollisionEnabled
               ? '双击切换页面，已禁止路线规划'
               : '单击切换页面，已启用路线规划',
           style: AppTextStyles.bodyMedium.copyWith(
@@ -26,16 +26,16 @@ class TabSwitchModeCard extends ConsumerWidget {
           ),
         ),
         subtitle: Text(
-          settingsState.doubleTapToSwitchTab
+          settingsState.isAntiCollisionEnabled
               ? '避免误触顶部标签切换页面'
               : '单击顶部标签即可切换页面',
           style: AppTextStyles.caption.copyWith(
             color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
           ),
         ),
-        value: settingsState.doubleTapToSwitchTab,
+        value: settingsState.isAntiCollisionEnabled,
         onChanged: (value) {
-          ref.read(settingsManagerProvider.notifier).setDoubleTapTab(value);
+          ref.read(settingsManagerProvider.notifier).setAntiCollisionMode(value);
         },
         activeThumbColor: AppColors.primaryColor,
       ),

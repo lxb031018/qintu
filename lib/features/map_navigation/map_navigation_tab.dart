@@ -151,9 +151,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!ref.watch(settingsManagerProvider).doubleTapToSwitchTab)
+                  if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled)
                     const LocationInputCard(),
-                  if (!ref.watch(settingsManagerProvider).doubleTapToSwitchTab &&
+                  if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled &&
                       ref.watch(locationInputProvider).listVisible)
                     const Padding(
                       padding: EdgeInsets.only(top: AppSpacings.sm),
