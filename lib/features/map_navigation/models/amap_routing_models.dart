@@ -11,7 +11,6 @@ enum RouteType {
   riding,
   transit,
   eleBike,
-  truck,
 }
 
 /// 公共交通线路类型
@@ -678,9 +677,6 @@ class RouteOption {
         return '免费';
       case RouteType.eleBike:
         return '免费';
-      case RouteType.truck:
-        if (tolls > 0) return '过路费 ¥$tolls';
-        return '无过路费';
       case RouteType.transit:
         return '票价 ¥$tolls';
     }
@@ -708,9 +704,6 @@ class RouteOption {
         return '骑行路线';
       case RouteType.eleBike:
         return '电动自行车路线';
-      case RouteType.truck:
-        if (strategy.isNotEmpty) return strategy;
-        return '货车路线';
       case RouteType.transit:
         if (strategyMode != null) {
           switch (strategyMode!) {
@@ -737,8 +730,6 @@ class RouteOption {
         return Icons.directions_bike;
       case RouteType.eleBike:
         return Icons.electric_bike;
-      case RouteType.truck:
-        return Icons.local_shipping;
       case RouteType.transit:
         return Icons.directions_bus;
     }

@@ -90,10 +90,9 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   /// 最大拖动距离
   static const double _maxDragOffset = 120;
 
-  /// 是否显示策略选择器（仅驾车/货车模式）
+  /// 是否显示策略选择器（仅驾车模式）
   bool get _showStrategySelector =>
-      widget.currentRouteType == RouteType.driving ||
-      widget.currentRouteType == RouteType.truck;
+      widget.currentRouteType == RouteType.driving;
 
   /// 当前查看详情的路线（仅公交模式，null = 列表页）
   RouteResultItem? _detailRoute;

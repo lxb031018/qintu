@@ -37,7 +37,6 @@ class AmapRoutingService {
       case RouteType.walking:
       case RouteType.riding:
       case RouteType.eleBike:
-      case RouteType.truck:
         return withRetry(() => AmapRouteSearchBridge.calculateRoute(
           type: type,
           origin: origin,
