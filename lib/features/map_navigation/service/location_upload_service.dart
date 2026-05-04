@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/location_upload_api.dart';
 import '../utils/location_distance_service.dart';
 import 'package:qintu/utils/retry_utils.dart';
@@ -78,5 +79,4 @@ class LocationUploadService {
   }
 }
 
-/// 全局单例
-final locationUploadService = LocationUploadService();
+final locationUploadServiceProvider = Provider<LocationUploadService>((ref) => LocationUploadService());

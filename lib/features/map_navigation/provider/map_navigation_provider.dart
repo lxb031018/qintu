@@ -7,10 +7,9 @@ import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
-import 'map_display_service_provider.dart';
+import 'map_display_coordinator.dart';
 import '../models/navigation_models.dart';
 import 'map_controller_provider.dart';
-import '../core/amap_navigation_bridge.dart';
 
 /// ============================================
 /// 地图导航状态
@@ -155,15 +154,14 @@ class MapNavigationState {
 /// ============================================
 
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
-  final AmapRoutingService _routeService = AmapRoutingService();
-  final PoiService _poiService = poiService;
-  late final MapDisplayService _mapDisplayService;
+  AmapRoutingService get _routeService => ref.read(amapRoutingServiceProvider);
+  PoiService get _poiService => ref.read(poiServiceProvider);
+  MapDisplayCoordinator get _mapDisplayCoordinator => ref.read(mapDisplayCoordinatorProvider);
   bool _disposed = false;
   StreamSubscription<NavigationState>? _navStreamSub;
 
   @override
   MapNavigationState build() {
-    _mapDisplayService = ref.watch(mapDisplayServiceProvider);
     _startNavEventListener();
     ref.onDispose(() {
       _disposed = true;
@@ -298,7 +296,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     );
 
     // 清除地图上的路线预览
-    _mapDisplayService.clearRoutes();
+    _mapDisplayCoordinator.clearRoutes();
 
     // 如果已有出行方式，自动重新规划路线
     if (state.canPlanRoute && state.currentRouteType != null) {
@@ -470,11 +468,11 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
       if (state.currentRouteType != RouteType.transit) {
-        _mapDisplayService.showRoutes(state.routes, index, state.currentRouteType!);
+        _mapDisplayCoordinator.showRoutes(state.routes, index, state.currentRouteType!);
         ref.read(mapControllerNotifierProvider)?.selectRoute(index);
         final route = state.routes[index];
         if (route.routeId >= 0) {
-          AmapNavigationBridge.selectRouteId(route.routeId);
+          _routeService.selectRouteId(route.routeId);
         }
       }
     }
@@ -514,7 +512,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     // 公共交通无需 GPS 导航：行程详情已在 route_result_bottom_sheet 展开；
     // 点击按钮仅刷新地图视野以完整显示路线
     if (state.currentRouteType == RouteType.transit) {
-      _mapDisplayService.showRoutes(state.routes, state.selectedRouteIndex, state.currentRouteType!);
+      _mapDisplayCoordinator.showRoutes(state.routes, state.selectedRouteIndex, state.currentRouteType!);
       return;
     }
 

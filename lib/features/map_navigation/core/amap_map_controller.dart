@@ -23,6 +23,7 @@ class AmapMapController {
 
   StreamSubscription? _locationSubscription;
   bool _hasMovedToFirstLocation = false;
+  String? _lastKnownCity;
 
   /// 启动高德原生定位 (蓝点 + 箭头)
   ///
@@ -78,6 +79,9 @@ class AmapMapController {
     }
   }
 
+  /// 缓存的上一次城市名
+  String? get lastKnownCity => _lastKnownCity;
+
   /// 获取当前位置坐标
   /// 返回包含 latitude、longitude、accuracy、timestamp、city 的 Map
   /// 如果有缓存位置直接返回，否则发起单次定位
@@ -85,12 +89,13 @@ class AmapMapController {
     try {
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('getCurrentLocation');
       if (result != null) {
+        _lastKnownCity = result['city'] as String? ?? '';
         return {
           'latitude': result['latitude'] as double,
           'longitude': result['longitude'] as double,
           'accuracy': result['accuracy'] as double,
           'timestamp': result['timestamp'] as int,
-          'city': result['city'] as String? ?? '',
+          'city': _lastKnownCity,
         };
       }
       return null;
@@ -98,6 +103,24 @@ class AmapMapController {
       Logs.location.error('getCurrentLocation: Platform Channel异常', stackTrace: StackTrace.current);
       return null;
     }
+  }
+
+  /// 获取设备上一次缓存的位置（无需发起 GPS 请求）
+  Future<Map<String, dynamic>?> getLastKnownLocation() async {
+    try {
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('getLastKnownLocation');
+      if (result != null) {
+        _lastKnownCity = result['city'] as String? ?? '';
+        return {
+          'latitude': result['latitude'] as double,
+          'longitude': result['longitude'] as double,
+          'city': _lastKnownCity,
+        };
+      }
+    } catch (e) {
+      // 忽略错误
+    }
+    return null;
   }
 
   /// 移动相机

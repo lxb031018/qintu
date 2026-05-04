@@ -42,8 +42,9 @@ class LocationSharingState {
 class LocationSharingNotifier extends Notifier<LocationSharingState> {
   Timer? _uploadTimer;
   MapControllerService? _mapController;
-  final _service = locationSharingService;
-  final _bgService = backgroundLocationService;
+  LocationSharingService get _service => ref.read(locationSharingServiceProvider);
+  BackgroundLocationService get _bgService => ref.read(backgroundLocationServiceProvider);
+  LocationUploadService get _uploadService => ref.read(locationUploadServiceProvider);
 
   @override
   LocationSharingState build() => const LocationSharingState();
@@ -81,7 +82,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
     _uploadTimer = null;
     _bgService.stop();
     state = state.copyWith(isSharing: false);
-    locationUploadService.deleteLocation();
+    _uploadService.deleteLocation();
     _service.clearUploaded();
   }
 
@@ -96,7 +97,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
       final lat = location['latitude'] as double;
       final lng = location['longitude'] as double;
 
-      await locationUploadService.uploadLocation(
+      await _uploadService.uploadLocation(
         latitude: lat,
         longitude: lng,
         accuracy: (location['accuracy'] as double?)?.toInt(),
@@ -123,7 +124,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
 
       if (!_service.shouldUpload(lat, lng)) return;
 
-      await locationUploadService.uploadLocation(
+      await _uploadService.uploadLocation(
         latitude: lat,
         longitude: lng,
         accuracy: (location['accuracy'] as double?)?.toInt(),
@@ -146,7 +147,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
 
     if (!_service.shouldUpload(lat, lng)) return;
 
-    locationUploadService.uploadLocation(
+    _uploadService.uploadLocation(
       latitude: lat,
       longitude: lng,
       accuracy: (location['accuracy'] as double?)?.toInt(),

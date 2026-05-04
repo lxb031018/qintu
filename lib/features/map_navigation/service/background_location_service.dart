@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/background/background_location_channel.dart';
 
 /// ============================================
@@ -54,4 +55,4 @@ class BackgroundLocationService {
 }
 
 /// 全局单例
-final backgroundLocationService = BackgroundLocationService();
+final backgroundLocationServiceProvider = Provider<BackgroundLocationService>((ref) => BackgroundLocationService());

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/features/map_navigation/models/navigation_models.dart';
 import 'package:qintu/features/map_navigation/core/amap_navigation_bridge.dart';
@@ -10,9 +11,6 @@ import 'package:qintu/utils/retry_utils.dart';
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
 class AmapRoutingService {
-  static final AmapRoutingService _instance = AmapRoutingService._internal();
-  factory AmapRoutingService() => _instance;
-  AmapRoutingService._internal();
 
   final _poiApi = PoiApi();
 
@@ -251,3 +249,5 @@ class AmapRoutingService {
     return dist;
   }
 }
+
+final amapRoutingServiceProvider = Provider<AmapRoutingService>((ref) => AmapRoutingService());

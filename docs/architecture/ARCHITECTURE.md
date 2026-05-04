@@ -6,7 +6,7 @@ Feature 模块遵循 **api → service → provider → widget** 四层分离：
 
 | 层 | 职责 | 禁止 |
 |---|------|------|
-| api 层 | HTTP/原生 SDK 调用，返回数据模型 | 调用 service |
+| core 层 | HTTP/原生 SDK 调用，返回数据模型 | 调用 service |
 | service 层 | 业务逻辑，不持有状态 | 继承 ChangeNotifier |
 | provider 层 | UI 状态，编排 service | 直接调 api 层 |
 | widget 层 | 纯 UI，只读 provider | 含业务逻辑 |

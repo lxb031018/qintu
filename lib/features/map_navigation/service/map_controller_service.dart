@@ -31,6 +31,11 @@ class MapControllerService {
   Future<Map<String, dynamic>?> getCurrentLocation() =>
       _controller.getCurrentLocation();
 
+  String? get lastKnownCity => _controller.lastKnownCity;
+
+  Future<Map<String, dynamic>?> getLastKnownLocation() =>
+      _controller.getLastKnownLocation();
+
   Future<void> moveCamera({
     required double lat,
     required double lng,

@@ -5,11 +5,11 @@ import '../models/map_overlay_models.dart';
 import 'location_input_provider.dart';
 import 'map_controller_provider.dart';
 
-class MapDisplayService {
+class MapDisplayCoordinator {
   MapControllerNotifier get _notifier => _ref.read(mapControllerNotifierProvider.notifier);
   final Ref _ref;
 
-  MapDisplayService(this._ref);
+  MapDisplayCoordinator(this._ref);
 
   void handleLocationInputChange(
     LocationInputState? previous,
@@ -187,6 +187,6 @@ class MapDisplayService {
   }
 }
 
-final mapDisplayServiceProvider = Provider<MapDisplayService>((ref) {
-  return MapDisplayService(ref);
+final mapDisplayCoordinatorProvider = Provider<MapDisplayCoordinator>((ref) {
+  return MapDisplayCoordinator(ref);
 });

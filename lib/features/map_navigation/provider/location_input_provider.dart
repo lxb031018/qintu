@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../utils/logger.dart';
-import 'package:qintu/core/gps/gps_service.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/location_category_service.dart';
 import '../service/binding_location_service.dart';
 import '../models/amap_routing_models.dart';
-import '../../relationship_binding/service/binding_service.dart';
 import 'map_navigation_provider.dart';
 import 'map_controller_provider.dart';
 
@@ -190,6 +188,7 @@ class LocationInputCardCallbacks {
   final void Function(bool hasFocus)? onOriginFocusChanged;
   final void Function(bool hasFocus)? onDestinationFocusChanged;
   final void Function(RouteType type)? onRouteTypeSelected;
+  final void Function(bool isOrigin)? onInputTap;
 
   const LocationInputCardCallbacks({
     this.onOriginTextChanged,
@@ -199,6 +198,7 @@ class LocationInputCardCallbacks {
     this.onOriginFocusChanged,
     this.onDestinationFocusChanged,
     this.onRouteTypeSelected,
+    this.onInputTap,
   });
 }
 
@@ -208,9 +208,9 @@ class LocationInputCardCallbacks {
 
 class LocationInputNotifier extends Notifier<LocationInputState> {
   Timer? _debounceTimer;
-  final PoiService _poiService = poiService;
-  final GpsService _gpsService = GpsService();
-  final LocationCategoryService _categoryService = LocationCategoryService();
+  PoiService get _poiService => ref.read(poiServiceProvider);
+  LocationCategoryService get _categoryService => ref.read(locationCategoryServiceProvider);
+  BindingLocationService get _bindingLocationService => ref.read(bindingLocationServiceProvider);
   bool _hasShownList = false;
 
   @override
@@ -247,6 +247,9 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
           final mapNotifier = ref.read(mapNavigationProvider.notifier);
           mapNotifier.switchRouteType(type);
           mapNotifier.showRoutesSheet();
+        },
+        onInputTap: (isOrigin) {
+          showList(isOrigin: isOrigin);
         },
       ),
     );
@@ -298,46 +301,12 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     );
   }
 
-  /// 加载绑定者位置列表
-  ///
-  /// 提供者层负责跨 feature 数据编排：
-  /// 1. 从 relationship_binding 获取绑定列表
-  /// 2. 逐项获取绑定者位置
-  /// 3. 将数据传入 LocationCategoryService 做 PoiSuggestion 转换
+  /// 加载绑定者位置列表（委托给 BindingLocationService 处理跨 feature 调用）
   Future<void> loadBinderLocations() async {
     state = state.copyWith(isLoadingBinderItems: true);
 
     try {
-      final bindingService = BindingService();
-      final bindings = await bindingService.getBindingsList();
-
-      if (bindings.isEmpty) {
-        state = state.copyWith(binderItems: [], isLoadingBinderItems: false);
-        return;
-      }
-
-      final binderDataList = <BinderLocationData>[];
-      for (final binding in bindings) {
-        final openid = binding.partnerOpenid;
-        if (openid == null) continue;
-
-        try {
-          final result = await bindingLocationService.getBinderLocation(openid);
-          if (result.isSuccess && result.location != null) {
-            binderDataList.add(BinderLocationData(
-              openid: openid,
-              nickname: binding.partnerNickname ?? '绑定者',
-              address: result.location!.address,
-              lat: result.location!.latitude,
-              lng: result.location!.longitude,
-            ));
-          }
-        } catch (e) {
-          // 单个绑定者获取失败不影响其他
-          continue;
-        }
-      }
-
+      final binderDataList = await _bindingLocationService.fetchBinderDataList();
       final items = _categoryService.getBinderLocations(binderDataList);
 
       state = state.copyWith(
@@ -558,7 +527,8 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         }
       } else {
         Logs.ui.debug('开始获取 GPS 位置...');
-        final gpsResult = await _gpsService.getCurrentLocation();
+        final mcService = ref.read(mapControllerProvider);
+        final gpsResult = await mcService?.getCurrentLocation();
         Logs.ui.debug('GPS 结果: $gpsResult');
 
         if (gpsResult != null) {
@@ -585,8 +555,12 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
           Logs.ui.debug('使用 GPS 位置: ${center.latitude},${center.longitude}, 城市: $searchCity');
         } else {
           Logs.ui.debug('GPS 不可用，尝试获取设备缓存位置...');
-          final lastLoc = await _gpsService.getLastKnownLocation();
-          if (lastLoc != null) {
+          final lastLocMap = await mcService?.getLastKnownLocation();
+          if (lastLocMap != null) {
+            final lastLoc = LatLng(
+              lastLocMap['latitude'] as double,
+              lastLocMap['longitude'] as double,
+            );
             center = lastLoc;
             searchCity = await _poiService.getCityFromLocation(lastLoc);
             if (searchCity != null) {
@@ -597,7 +571,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
             }
           } else {
             Logs.ui.debug('无缓存位置，使用 lastKnownCity');
-            final cachedCity = _gpsService.lastKnownCity;
+            final cachedCity = mcService?.lastKnownCity;
             if (cachedCity != null && cachedCity.isNotEmpty) {
               searchCity = cachedCity.endsWith('市')
                   ? cachedCity.substring(0, cachedCity.length - 1)

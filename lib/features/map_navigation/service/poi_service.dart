@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/poi_api.dart';
 import '../../../models/location/lat_lng.dart';
 
@@ -95,5 +96,4 @@ class _CachedSearch {
   _CachedSearch({required this.result, required this.timestamp});
 }
 
-/// 全局单例
-final poiService = PoiService();
+final poiServiceProvider = Provider<PoiService>((ref) => PoiService());

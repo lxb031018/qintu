@@ -266,11 +266,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
               controller: controller,
               focusNode: focusNode,
               onTap: () {
-                if (isOrigin) {
-                  ref.read(locationInputProvider.notifier).showList(isOrigin: true);
-                } else {
-                  ref.read(locationInputProvider.notifier).showList(isOrigin: false);
-                }
+                callbacks?.onInputTap?.call(isOrigin);
               },
               onChanged: isOrigin
                   ? (value) {

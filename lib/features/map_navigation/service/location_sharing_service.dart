@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/location_distance_service.dart';
 
 /// ============================================
@@ -54,5 +55,4 @@ class LocationSharingService {
   }
 }
 
-/// 全局单例
-final locationSharingService = LocationSharingService();
+final locationSharingServiceProvider = Provider<LocationSharingService>((ref) => LocationSharingService());

@@ -16,7 +16,7 @@ import 'widgets/route_result_bottom_sheet.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
-import 'provider/map_display_service_provider.dart';
+import 'provider/map_display_coordinator.dart';
 
 /// 由 UnifiedHomePage 在首次布局后写入 Tab Bar 实际高度
 final tabBarHeightProvider =
@@ -89,7 +89,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   }
 
   void _handleLocationInputChange(LocationInputState? previous, LocationInputState next) {
-    ref.read(mapDisplayServiceProvider).handleLocationInputChange(previous, next);
+    ref.read(mapDisplayCoordinatorProvider).handleLocationInputChange(previous, next);
   }
 
   @override
@@ -116,10 +116,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       if (showRoutesSheet && routes.isNotEmpty && routeType != null
           && originLocation != null && destinationLocation != null) {
         if (routeType != RouteType.transit) {
-          ref.read(mapDisplayServiceProvider).showRoutes(routes, 0, routeType);
+          ref.read(mapDisplayCoordinatorProvider).showRoutes(routes, 0, routeType);
         }
       } else {
-        ref.read(mapDisplayServiceProvider).clearRoutes();
+        ref.read(mapDisplayCoordinatorProvider).clearRoutes();
       }
     });
 
@@ -239,7 +239,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         ref.read(mapNavigationProvider.notifier).selectRoute(index);
         if (navState.currentRouteType == RouteType.transit) {
           final route = navState.routes[index];
-          ref.read(mapDisplayServiceProvider).showTransitRouteDetail(route);
+          ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
         }
       },
       onRouteTypeChanged: (type) {
@@ -252,7 +252,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         ref.read(mapNavigationProvider.notifier).startNavigation();
       },
       onDetailExited: () {
-        ref.read(mapDisplayServiceProvider).clearRoutes();
+        ref.read(mapDisplayCoordinatorProvider).clearRoutes();
       },
     );
   }

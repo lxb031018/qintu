@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/poi_models.dart';
 import '../../../models/location/lat_lng.dart';
@@ -173,5 +174,4 @@ class LocationCategoryService {
   }
 }
 
-/// 全局单例
-final locationCategoryService = LocationCategoryService();
+final locationCategoryServiceProvider = Provider<LocationCategoryService>((ref) => LocationCategoryService());
