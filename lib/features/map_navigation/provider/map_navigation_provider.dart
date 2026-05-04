@@ -386,18 +386,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
 
         if (state.currentRouteType != RouteType.transit) {
-          final routeIds = await AmapNavigationBridge.calculateRouteForRendering(
-            type: state.currentRouteType!,
-            fromLat: state.originLocation!.latitude,
-            fromLng: state.originLocation!.longitude,
-            toLat: state.destinationLocation!.latitude,
-            toLng: state.destinationLocation!.longitude,
-            strategy: routes.first.strategyId,
-          );
-
-          if (routeIds.isNotEmpty) {
-            _animateCameraToShowAllRoutes(routes);
-          }
+          _animateCameraToShowAllRoutes(routes);
         }
       }
     } catch (e) {

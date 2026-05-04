@@ -2,11 +2,13 @@ package me.lxb.qintu.map
 
 import android.content.Context
 import android.util.Log
+import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.MyLocationStyle
 import com.amap.api.navi.AMapNaviView
 import com.amap.api.navi.AMapNaviViewListener
 import com.amap.api.navi.AMapNaviViewOptions
 import com.amap.api.navi.AmapPageType
+import com.amap.api.navi.model.RouteOverlayOptions
 import me.lxb.qintu.location.LocationClientImpl
 
 /**
@@ -38,9 +40,20 @@ class NaviViewFactory(
      * 导航模式：调用 enableNaviMode() 切换到全功能导航 UI
      */
     fun createNativeView(): AMapNaviView {
+        val routeOverlayOptions = RouteOverlayOptions().apply {
+            setRouteWidth(25)
+            setArrowOnRoute(true)
+            setOnRouteCameShow(true)
+            setStartPointBitmap(BitmapDescriptorFactory.fromAsset("amap_start.png"))
+            setEndPointBitmap(BitmapDescriptorFactory.fromAsset("amap_end.png"))
+            setArrowOnTrafficRoute(BitmapDescriptorFactory.fromAsset("navi_direction.png"))
+            setTrafficLine(true)
+            setSmoothMove(true)
+        }
+
         val options = AMapNaviViewOptions().apply {
             setLayoutVisible(false)
-            setAutoDrawRoute(false)
+            setAutoDrawRoute(true)
             setAfterRouteAutoGray(true)
             setTrafficLine(true)
             setEagleMapVisible(true)
@@ -58,6 +71,7 @@ class NaviViewFactory(
             setDrawBackUpOverlay(true)
             setLeaderLineEnabled(0)
             setSecondActionVisible(true)
+            setRouteOverlayOptions(routeOverlayOptions)
         }
         val naviView = AMapNaviView(context, options)
         naviView.setAMapNaviViewListener(object : AMapNaviViewListener {
@@ -112,10 +126,9 @@ class NaviViewFactory(
     fun disableNaviMode(naviView: AMapNaviView) {
         val options = naviView.viewOptions
         options.setLayoutVisible(false)
-        options.setAutoDrawRoute(false)
         options.setAutoDisplayOverview(false)
         naviView.setViewOptions(options)
-        Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI")
+        Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI，autoDrawRoute 保持开启")
     }
 
     /**

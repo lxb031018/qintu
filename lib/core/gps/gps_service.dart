@@ -59,7 +59,9 @@ class GpsService {
           result['longitude'] as double,
         );
       }
-    } catch (e) { }
+    } catch (e) {
+      // 忽略错误，返回 null
+    }
     return null;
   }
 }
