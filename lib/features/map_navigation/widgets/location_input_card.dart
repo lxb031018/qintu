@@ -131,54 +131,57 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     final navState = ref.watch(mapNavigationProvider);
     final callbacks = ref.read(locationInputProvider).callbacks;
 
-    return Row(
-      children: [
-        // 步行
-        _RouteTypeButton(
-          label: '步行',
-          isSelected: navState.currentRouteType == RouteType.walking,
-          onTap: () {
-            callbacks?.onRouteTypeSelected?.call(RouteType.walking);
-          },
-          isDark: isDark,
-        ),
-        // 骑行
-        _RouteTypeButton(
-          label: '骑行',
-          isSelected: navState.currentRouteType == RouteType.riding,
-          onTap: () {
-            callbacks?.onRouteTypeSelected?.call(RouteType.riding);
-          },
-          isDark: isDark,
-        ),
-        // 电动自行车
-        _RouteTypeButton(
-          label: '电动车',
-          isSelected: navState.currentRouteType == RouteType.eleBike,
-          onTap: () {
-            callbacks?.onRouteTypeSelected?.call(RouteType.eleBike);
-          },
-          isDark: isDark,
-        ),
-        // 公共交通
-        _RouteTypeButton(
-          label: '公共交通',
-          isSelected: navState.currentRouteType == RouteType.transit,
-          onTap: () {
-            callbacks?.onRouteTypeSelected?.call(RouteType.transit);
-          },
-          isDark: isDark,
-        ),
-        // 驾车
-        _RouteTypeButton(
-          label: '驾车',
-          isSelected: navState.currentRouteType == RouteType.driving,
-          onTap: () {
-            callbacks?.onRouteTypeSelected?.call(RouteType.driving);
-          },
-          isDark: isDark,
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          // 步行
+          _RouteTypeButton(
+            label: '步行',
+            isSelected: navState.currentRouteType == RouteType.walking,
+            onTap: () {
+              callbacks?.onRouteTypeSelected?.call(RouteType.walking);
+            },
+            isDark: isDark,
+          ),
+          // 骑行
+          _RouteTypeButton(
+            label: '骑行',
+            isSelected: navState.currentRouteType == RouteType.riding,
+            onTap: () {
+              callbacks?.onRouteTypeSelected?.call(RouteType.riding);
+            },
+            isDark: isDark,
+          ),
+          // 电动自行车
+          _RouteTypeButton(
+            label: '电动车',
+            isSelected: navState.currentRouteType == RouteType.eleBike,
+            onTap: () {
+              callbacks?.onRouteTypeSelected?.call(RouteType.eleBike);
+            },
+            isDark: isDark,
+          ),
+          // 公共交通
+          _RouteTypeButton(
+            label: '公共交通',
+            isSelected: navState.currentRouteType == RouteType.transit,
+            onTap: () {
+              callbacks?.onRouteTypeSelected?.call(RouteType.transit);
+            },
+            isDark: isDark,
+          ),
+          // 驾车
+          _RouteTypeButton(
+            label: '驾车',
+            isSelected: navState.currentRouteType == RouteType.driving,
+            onTap: () {
+              callbacks?.onRouteTypeSelected?.call(RouteType.driving);
+            },
+            isDark: isDark,
+          ),
+        ],
+      ),
     );
   }
 
@@ -332,17 +335,15 @@ class _RouteTypeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: QintuPillChip(
-        label: label,
-        isSelected: isSelected,
-        onTap: onTap,
-        height: 36,
-        selectedBackgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-        selectedTextColor: AppColors.primaryColor,
-        unselectedTextColor: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
-        selectedBorderColor: AppColors.primaryColor,
-      ),
+    return QintuPillChip(
+      label: label,
+      isSelected: isSelected,
+      onTap: onTap,
+      height: 36,
+      selectedBackgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+      selectedTextColor: AppColors.primaryColor,
+      unselectedTextColor: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+      selectedBorderColor: AppColors.primaryColor,
     );
   }
 }
