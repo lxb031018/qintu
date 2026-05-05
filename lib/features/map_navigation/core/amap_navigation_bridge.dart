@@ -45,6 +45,26 @@ class AmapNavigationBridge {
     }
   }
 
+  static Future<List<int>> getAllRouteIds() async {
+    try {
+      final result = await _methodChannel.invokeMethod<List<dynamic>>('getAllRouteIds');
+      return result?.map((e) => (e as num).toInt()).toList() ?? [];
+    } catch (e) {
+      Logs.navigation.error('❌ getAllRouteIds failed: $e');
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getRouteInfoList() async {
+    try {
+      final result = await _methodChannel.invokeMethod<List<dynamic>>('getRouteInfoList');
+      return result?.map((e) => Map<String, dynamic>.from(e as Map)).toList() ?? [];
+    } catch (e) {
+      Logs.navigation.error('❌ getRouteInfoList failed: $e');
+      return [];
+    }
+  }
+
   static Future<bool> startNavigation({
     bool isEmulator = false,
     bool enableVoice = true,

@@ -86,6 +86,16 @@ class AmapNavigationPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.success(true)
             }
 
+            "getAllRouteIds" -> {
+                val ids = impl.getAllRouteIds()
+                result.success(ids)
+            }
+
+            "getRouteInfoList" -> {
+                val infoList = impl.getRouteInfoList()
+                result.success(infoList)
+            }
+
             "startNavigation" -> {
                 val isEmulator = call.argument<Boolean>("isEmulator") ?: false
                 val enableVoice = call.argument<Boolean>("enableVoice") ?: true

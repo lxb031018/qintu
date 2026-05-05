@@ -7,14 +7,12 @@ import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
 import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.PathPlanningStrategy
-import com.amap.api.navi.enums.TransportType
 import com.amap.api.navi.enums.TravelStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.AMapNaviStep
 import com.amap.api.navi.model.AMapTrafficStatus
-import com.amap.api.navi.model.AMapTravelInfo
 import com.amap.api.navi.model.NaviLatLng
 import com.amap.api.navi.model.NaviPoi
 import io.flutter.plugin.common.MethodChannel
@@ -70,6 +68,31 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         mAMapNavi?.selectRouteId(routeId)
     }
 
+    /**
+     * 获取当前算路结果中的所有路线 ID。
+     * 用于 MapController 通过 RouteOverLay 渲染多路线。
+     */
+    fun getAllRouteIds(): List<Int> {
+        return mAMapNavi?.naviPaths?.keys?.toList() ?: emptyList()
+    }
+
+    /**
+     * 获取所有路线的摘要信息（距离、时长、费用等）。
+     */
+    fun getRouteInfoList(): List<Map<String, Any?>> {
+        val navi = mAMapNavi ?: return emptyList()
+        return navi.naviPaths.map { (routeId, path) ->
+            mapOf(
+                "routeId" to routeId,
+                "distance" to path.allLength.toDouble(),
+                "duration" to path.allTime.toDouble(),
+                "tolls" to path.tollCost.toDouble(),
+                "strategy" to (path.labels ?: ""),
+                "trafficLights" to (path.lightList?.size ?: 0)
+            )
+        }
+    }
+
     fun calculateRoute(
         routeType: String,
         fromLat: Double, fromLng: Double,
@@ -104,19 +127,16 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                 "walking" -> {
                     val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
                     val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.setTravelInfo(AMapTravelInfo(TransportType.Walk))
                     navi.calculateWalkRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
                 }
                 "riding" -> {
                     val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
                     val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.setTravelInfo(AMapTravelInfo(TransportType.Ride))
                     navi.calculateRideRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
                 }
                 "elebike" -> {
                     val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
                     val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.setTravelInfo(AMapTravelInfo(TransportType.EleBike))
                     navi.calculateEleBikeRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
                 }
                 else -> {
@@ -316,9 +336,11 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         when (calcType) {
             0 -> {
                 // 直接算路（首次算路/用户手动算路）：响应 MethodChannel 请求
+                val routeIds = routeIds?.toList() ?: emptyList()
                 pendingRouteResult?.success(mapOf(
                     "routes" to paths,
-                    "strategyId" to lastRouteStrategy
+                    "strategyId" to lastRouteStrategy,
+                    "routeIds" to routeIds
                 ))
                 pendingRouteResult = null
             }

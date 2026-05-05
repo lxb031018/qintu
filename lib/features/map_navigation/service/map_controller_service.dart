@@ -63,6 +63,12 @@ class MapControllerService {
 
   Future<void> clearRoutes() => _controller.clearRoutes();
 
+  Future<int?> showRoutesWithOverlay(List<int> routeIds, {int selectIndex = 0}) =>
+      _controller.showRoutesWithOverlay(routeIds, selectIndex: selectIndex);
+
+  Future<bool> highlightRouteOverlay(int routeId) =>
+      _controller.highlightRouteOverlay(routeId);
+
   // ==================== 标记 ====================
 
   Future<bool> setRouteMarkers({

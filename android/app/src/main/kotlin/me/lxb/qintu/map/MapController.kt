@@ -11,6 +11,8 @@ import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
 import com.amap.api.navi.AMapNaviView
+import com.amap.api.navi.view.RouteOverLay
+import me.lxb.qintu.route.RoutePathCache
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.geocode.GeocodeImpl
@@ -57,6 +59,8 @@ class MapController(
 
     // Multi-route rendering
     private val routePolylines = mutableListOf<Polyline>()
+    private val routeOverlays = mutableMapOf<Int, RouteOverLay>()
+    private var currentNavigatingRouteId: Int = -1
     private var currentSelectedIndex: Int = 0
     private val routeColors = listOf(
         0xFF1890FF.toInt(),   // 选中-蓝色
@@ -74,10 +78,67 @@ class MapController(
         try {
             routePolylines.forEach { it.remove() }
             routePolylines.clear()
+            clearRouteOverlaysInternal()
             currentSelectedIndex = 0
         } catch (e: Exception) {
             Log.e(TAG, "❌ clearRoutePolylinesInternal 失败: ${e.message}")
         }
+    }
+
+    private fun clearRouteOverlaysInternal() {
+        try {
+            routeOverlays.values.forEach { it.removeFromMap() }
+            routeOverlays.clear()
+            currentNavigatingRouteId = -1
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ clearRouteOverlaysInternal failed: ${e.message}")
+        }
+    }
+
+    /**
+     * 使用 SDK 原生 RouteOverLay 渲染多路线。
+     */
+    fun showRoutesWithOverlay(routeIds: List<Int>, selectIndex: Int) {
+        clearRouteOverlaysInternal()
+
+        val aMap = aMapHolder.aMap ?: return
+        val naviView = this.naviView
+
+        if (naviView == null) {
+            Log.w(TAG, "⚠️ showRoutesWithOverlay: naviView is null")
+            return
+        }
+
+        routeIds.forEachIndexed { index, routeId ->
+            val path = RoutePathCache.get(routeId) ?: return@forEachIndexed
+
+            val overlay = RouteOverLay(aMap, path, naviView.context).apply {
+                setTransparency(if (index == selectIndex) 1.0f else 0.6f)
+                setZindex(if (index == selectIndex) 100 else 0)
+                addToMap()
+            }
+            routeOverlays[routeId] = overlay
+        }
+
+        currentSelectedIndex = selectIndex
+        Log.d(TAG, "✅ showRoutesWithOverlay: rendered ${routeOverlays.size} routes, selected=$selectIndex")
+    }
+
+    /**
+     * 高亮指定路线（用于路线选择）。
+     */
+    fun highlightRouteOverlay(routeId: Int) {
+        routeOverlays.forEach { (id, overlay) ->
+            if (id == routeId) {
+                overlay.setTransparency(1.0f)
+                overlay.setZindex(100)
+            } else {
+                overlay.setTransparency(0.6f)
+                overlay.setZindex(0)
+            }
+        }
+        currentNavigatingRouteId = routeId
+        Log.d(TAG, "✅ highlightRouteOverlay: selected routeId=$routeId")
     }
 
     private fun highlightRouteInternal(index: Int) {
@@ -257,6 +318,27 @@ class MapController(
             "clearRoutes" -> {
                 Log.d(TAG, "📍 clearRoutes: 清除所有路线")
                 clearRoutePolylinesInternal()
+                result.success(true)
+            }
+
+            "showRoutesWithOverlay" -> {
+                val routeIds = call.argument<List<Int>>("routeIds") ?: emptyList()
+                val selectIndex = call.argument<Int>("selectIndex") ?: 0
+                Log.d(TAG, "📍 showRoutesWithOverlay: routeIds=${routeIds.size}, selectIndex=$selectIndex")
+                showRoutesWithOverlay(routeIds, selectIndex)
+                result.success(routeOverlays.size)
+            }
+
+            "highlightRouteOverlay" -> {
+                val routeId = call.argument<Int>("routeId") ?: -1
+                Log.d(TAG, "📍 highlightRouteOverlay: routeId=$routeId")
+                highlightRouteOverlay(routeId)
+                result.success(true)
+            }
+
+            "clearRouteOverlays" -> {
+                Log.d(TAG, "📍 clearRouteOverlays")
+                clearRouteOverlaysInternal()
                 result.success(true)
             }
 

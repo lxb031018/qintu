@@ -209,6 +209,38 @@ class AmapMapController {
     await _channel.invokeMethod('clearRoutes');
   }
 
+  /// 使用 SDK 原生 RouteOverLay 显示多条路线
+  ///
+  /// [routeIds] 路线 ID 列表（从 NavigationImpl.getAllRouteIds() 获取）
+  /// [selectIndex] 默认选中的路线索引
+  Future<int?> showRoutesWithOverlay(List<int> routeIds, {int selectIndex = 0}) async {
+    try {
+      debugPrint('🗺️ [Flutter] showRoutesWithOverlay: routeIds=${routeIds.length}, selectIndex=$selectIndex');
+      final result = await _channel.invokeMethod<int>('showRoutesWithOverlay', {
+        'routeIds': routeIds,
+        'selectIndex': selectIndex,
+      });
+      return result;
+    } catch (e) {
+      debugPrint('❌ [Flutter] showRoutesWithOverlay failed: $e');
+      return null;
+    }
+  }
+
+  /// 高亮指定路线（用于路线选择）
+  Future<bool> highlightRouteOverlay(int routeId) async {
+    try {
+      debugPrint('🗺️ [Flutter] highlightRouteOverlay: routeId=$routeId');
+      final result = await _channel.invokeMethod<bool>('highlightRouteOverlay', {
+        'routeId': routeId,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ [Flutter] highlightRouteOverlay failed: $e');
+      return false;
+    }
+  }
+
   /// 设置路线起点/终点标记
   ///
   /// [startLat] 起点纬度
