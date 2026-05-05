@@ -112,12 +112,9 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       s.destinationLocation,
     )), (previous, next) {
       final (showRoutesSheet, isNavigating, routes, routeType, originLocation, destinationLocation) = next;
-      if (isNavigating) return; // 导航中不清除路线
+      if (isNavigating) return;
       if (showRoutesSheet && routes.isNotEmpty && routeType != null
           && originLocation != null && destinationLocation != null) {
-        if (routeType != RouteType.transit) {
-          ref.read(mapDisplayCoordinatorProvider).showRoutes(routes, 0, routeType);
-        }
       } else {
         ref.read(mapDisplayCoordinatorProvider).clearRoutes();
       }
