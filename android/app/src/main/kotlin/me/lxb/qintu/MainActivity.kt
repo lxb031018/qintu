@@ -38,5 +38,8 @@ class MainActivity : FlutterActivity() {
 
         // 注册后台定位插件
         flutterEngine.plugins.add(me.lxb.qintu.background.BackgroundLocationPlugin())
+
+        // 注册公交路线搜索插件
+        flutterEngine.plugins.add(me.lxb.qintu.route.RouteSearchV2Plugin())
     }
 }
