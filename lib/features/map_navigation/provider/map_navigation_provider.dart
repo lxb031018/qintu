@@ -368,11 +368,13 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
       if (state.currentRouteType == RouteType.transit) {
         // 公共交通：使用 RouteSearchV2 API
+        // 从起点坐标获取城市区号（用于 BusRouteQuery 的 city 参数）
+        final cityCode = await _poiService.getCityCodeFromLocation(state.originLocation!);
         final busService = BusRouteService();
         final busPaths = await busService.calculateBusRoute(
           from: state.originLocation!,
           to: state.destinationLocation!,
-          city: '北京', // TODO: 从起点城市获取
+          city: cityCode ?? '010', // 默认为北京，null 时回退到 '010'
         );
         routes = busPaths.map((bp) => _busPathToRouteOption(bp)).toList();
       } else {
@@ -397,6 +399,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           routes: routes,
           selectedRouteIndex: 0,
           routesState: AsyncState.success(routes),
+          showRoutesSheet: true,
         );
 
         if (state.currentRouteType != RouteType.transit) {
@@ -440,13 +443,60 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           type: seg.type == bus.TransitSegmentType.subway
               ? TransitLineType.subway
               : TransitLineType.bus,
-          stationCount: 0,
+          stationCount: seg.stationCount ?? 0,
+          departureStation: seg.departureStation,
+          arrivalStation: seg.arrivalStation,
+          duration: seg.duration,
+          busLineId: seg.busLineId,
+          lineType: seg.lineType,
+          basicPrice: seg.basicPrice,
+          totalPrice: seg.totalPrice,
+          firstBusTime: seg.firstBusTime,
+          lastBusTime: seg.lastBusTime,
+          originatingStation: seg.originatingStation,
+          terminalStation: seg.terminalStation,
+          busCompany: seg.busCompany,
+          passStations: seg.passStations,
         ));
       }
+
+      RailwaySegment? railway;
+      if (seg.type == bus.TransitSegmentType.railway && seg.railway != null) {
+        final r = seg.railway!;
+        railway = RailwaySegment(
+          name: r.name,
+          trip: r.trip,
+          type: r.type,
+          distance: r.distance,
+          duration: r.duration,
+          departureStation: r.departureStation,
+          arrivalStation: r.arrivalStation,
+          viaStations: r.viaStations,
+          spaces: r.spaces,
+        );
+      }
+
+      TaxiSegment? taxi;
+      if (seg.type == bus.TransitSegmentType.taxi) {
+        taxi = TaxiSegment(
+          origin: seg.taxiOrigin,
+          destination: seg.taxiDestination,
+          distance: seg.distance,
+          duration: seg.taxiDuration,
+          price: seg.taxiPrice,
+          points: seg.points,
+        );
+      }
+
       return TransitSegment(
         lines: lines,
         walkingDistance: seg.type == bus.TransitSegmentType.walk ? seg.distance.toInt() : 0,
         points: seg.points,
+        entrance: seg.entrance,
+        exit: seg.exit,
+        walkSteps: seg.walkSteps,
+        taxi: taxi,
+        railway: railway,
       );
     }).toList();
 

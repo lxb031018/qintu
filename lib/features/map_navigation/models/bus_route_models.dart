@@ -1,4 +1,7 @@
-import 'package:qintu/models/location/lat_lng.dart';
+import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/features/map_navigation/models/amap_bus_models.dart';
+
+export 'package:qintu/features/map_navigation/models/amap_routing_models.dart' show StationEntrance, RailwaySegment, RailwayStationDetail, RailwaySpace, WalkStep;
 
 enum TransitSegmentType {
   walk,
@@ -12,13 +15,62 @@ class BusTransitSegment {
   final TransitSegmentType type;
   final List<LatLng> points;
   final double distance;
+  final double? duration;
   final String? lineName;
+  // 公交/地铁线路详情
+  final String? busLineId;
+  final String? lineType;
+  final int? stationCount;
+  final String? departureStation;
+  final String? arrivalStation;
+  final double? basicPrice;
+  final double? totalPrice;
+  final String? firstBusTime;
+  final String? lastBusTime;
+  final String? originatingStation;
+  final String? terminalStation;
+  final String? busCompany;
+  final List<BusLineStation>? passStations;
+  // 地铁进出站
+  final StationEntrance? entrance;
+  final StationEntrance? exit;
+  // 步行导航步骤
+  final List<WalkStep>? walkSteps;
+  // 铁路段
+  final RailwaySegment? railway;
+  // 打车段
+  final double? taxiDuration;
+  final double? taxiPrice;
+  final LatLng? taxiOrigin;
+  final LatLng? taxiDestination;
 
   const BusTransitSegment({
     required this.type,
     required this.points,
     required this.distance,
+    this.duration,
     this.lineName,
+    this.busLineId,
+    this.lineType,
+    this.stationCount,
+    this.departureStation,
+    this.arrivalStation,
+    this.basicPrice,
+    this.totalPrice,
+    this.firstBusTime,
+    this.lastBusTime,
+    this.originatingStation,
+    this.terminalStation,
+    this.busCompany,
+    this.passStations,
+    this.entrance,
+    this.exit,
+    this.walkSteps,
+    this.railway,
+    this.taxiDuration,
+    this.taxiPrice,
+    this.taxiOrigin,
+    this.taxiDestination,
   });
 
   factory BusTransitSegment.fromMap(Map<String, dynamic> map) {
@@ -30,11 +82,104 @@ class BusTransitSegment {
       return LatLng(coords[1] as double, coords[0] as double);
     }).toList();
 
+    // 解析 passStations
+    final passStationsRaw = map['passStations'] as List<dynamic>?;
+    final passStations = passStationsRaw?.map((p) {
+      final m = p as Map<String, dynamic>;
+      return BusLineStation(
+        id: m['id']?.toString() ?? '',
+        name: m['name']?.toString() ?? '',
+        lat: (m['lat'] as num?)?.toDouble() ?? 0,
+        lng: (m['lng'] as num?)?.toDouble() ?? 0,
+      );
+    }).toList();
+
+    // 解析 entrance/exit
+    StationEntrance? entrance;
+    final entranceRaw = map['entrance'] as Map<String, dynamic>?;
+    if (entranceRaw != null) {
+      entrance = StationEntrance(
+        name: entranceRaw['name']?.toString() ?? '',
+        lat: (entranceRaw['lat'] as num?)?.toDouble() ?? 0,
+        lng: (entranceRaw['lng'] as num?)?.toDouble() ?? 0,
+      );
+    }
+    StationEntrance? exit;
+    final exitRaw = map['exit'] as Map<String, dynamic>?;
+    if (exitRaw != null) {
+      exit = StationEntrance(
+        name: exitRaw['name']?.toString() ?? '',
+        lat: (exitRaw['lat'] as num?)?.toDouble() ?? 0,
+        lng: (exitRaw['lng'] as num?)?.toDouble() ?? 0,
+      );
+    }
+
+    // 解析 walkSteps
+    final walkStepsRaw = map['walkSteps'] as List<dynamic>?;
+    final walkSteps = walkStepsRaw?.map((s) {
+      final m = s as Map<String, dynamic>;
+      final coords = (m['points'] as List?)?.cast<dynamic>() ?? [];
+      final stepPoints = coords.map((p) {
+        final c = p as List<dynamic>;
+        return LatLng(c[1] as double, c[0] as double);
+      }).toList();
+      return WalkStep(
+        instruction: m['instruction']?.toString() ?? '',
+        action: m['action']?.toString() ?? '',
+        road: m['road']?.toString() ?? '',
+        distance: (m['distance'] as num?)?.toDouble() ?? 0,
+        duration: (m['duration'] as num?)?.toDouble() ?? 0,
+        points: stepPoints,
+        walkAction: WalkStep.parseAction(m['action']?.toString()),
+      );
+    }).toList();
+
+    // 解析 railway
+    RailwaySegment? railway;
+    final railwayRaw = map['railway'] as Map<String, dynamic>?;
+    if (railwayRaw != null) {
+      railway = RailwaySegment.fromMap(railwayRaw);
+    }
+
+    // 解析 taxi
+    LatLng? taxiOrigin;
+    final originRaw = map['origin'] as List<dynamic>?;
+    if (originRaw != null && originRaw.length >= 2) {
+      taxiOrigin = LatLng(originRaw[1] as double, originRaw[0] as double);
+    }
+    LatLng? taxiDestination;
+    final destRaw = map['destination'] as List<dynamic>?;
+    if (destRaw != null && destRaw.length >= 2) {
+      taxiDestination = LatLng(destRaw[1] as double, destRaw[0] as double);
+    }
+
     return BusTransitSegment(
       type: type,
       points: points,
       distance: (map['distance'] as num?)?.toDouble() ?? 0,
+      duration: (map['duration'] as num?)?.toDouble(),
       lineName: map['lineName'] as String?,
+      busLineId: map['busLineId'] as String?,
+      lineType: map['lineType'] as String?,
+      stationCount: (map['stationCount'] as num?)?.toInt(),
+      departureStation: (map['departureStation'] as Map<String, dynamic>?)?['name']?.toString(),
+      arrivalStation: (map['arrivalStation'] as Map<String, dynamic>?)?['name']?.toString(),
+      basicPrice: (map['basicPrice'] as num?)?.toDouble(),
+      totalPrice: (map['totalPrice'] as num?)?.toDouble(),
+      firstBusTime: map['firstBusTime'] as String?,
+      lastBusTime: map['lastBusTime'] as String?,
+      originatingStation: map['originatingStation'] as String?,
+      terminalStation: map['terminalStation'] as String?,
+      busCompany: map['busCompany'] as String?,
+      passStations: passStations,
+      entrance: entrance,
+      exit: exit,
+      walkSteps: walkSteps,
+      railway: railway,
+      taxiDuration: (map['duration'] as num?)?.toDouble(),
+      taxiPrice: (map['price'] as num?)?.toDouble(),
+      taxiOrigin: taxiOrigin,
+      taxiDestination: taxiDestination,
     );
   }
 
@@ -103,11 +248,11 @@ class BusPath {
   }
 
   String get durationText {
-    if (duration < 60) return '${duration}秒';
+    if (duration < 60) return '$duration秒';
     final hours = duration ~/ 3600;
     final minutes = (duration % 3600) ~/ 60;
     if (hours > 0) {
-      return '${hours}小时$minutes分钟';
+      return '$hours小时$minutes分钟';
     }
     return '$minutes分钟';
   }

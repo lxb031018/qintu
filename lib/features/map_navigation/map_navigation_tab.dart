@@ -209,6 +209,19 @@ class _RouteBottomSheetPositionerState extends State<_RouteBottomSheetPositioner
     });
   }
 
+  @override
+  void didUpdateWidget(_RouteBottomSheetPositioner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // showRoutesSheet 从 false 变为 true 且尚未测量时，重新测量
+    if (!oldWidget.navState.showRoutesSheet &&
+        widget.navState.showRoutesSheet &&
+        !_cardMeasured) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _measureCard();
+      });
+    }
+  }
+
   void _measureCard() {
     final cardRenderBox = _cardKey.currentContext?.findRenderObject() as RenderBox?;
     if (cardRenderBox != null && cardRenderBox.hasSize) {
