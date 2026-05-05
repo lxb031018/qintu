@@ -1,20 +1,9 @@
 package me.lxb.qintu.map
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.Marker
-import com.amap.api.maps.model.MarkerOptions
-import com.amap.api.maps.model.BitmapDescriptorFactory
-import com.amap.api.maps.model.Polyline
-import com.amap.api.maps.model.PolylineOptions
 import com.amap.api.navi.AMapNaviView
-import com.amap.api.navi.AMapNaviViewListener
-import com.amap.api.navi.AmapPageType
-import com.amap.api.navi.view.RouteOverLay
-import me.lxb.qintu.route.RoutePathCache
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.geocode.GeocodeImpl
@@ -23,14 +12,12 @@ import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.overlay.CarOverlay
 
 /**
- * 地图业务控制器（功能模块层）
+ * 地图业务控制器（协调层）
  *
- * 负责处理地图相关的所有业务逻辑：
- * - 定位管理
- * - 路线渲染
- * - 标记管理
- * - 相机控制
- * - 车载标记
+ * 职责：
+ * - MethodCall 路由分发
+ * - 协调 RouteRenderer、MarkerManager、GestureHandler
+ * - 不直接处理渲染逻辑
  *
  * Plugin 层仅负责 Flutter 通信，不含业务逻辑
  */
@@ -41,247 +28,35 @@ class MapController(
     private val aMapHolder: AMapHolder,
     private val carOverlayRef: () -> CarOverlay?,
     private val onCarOverlayDestroyed: () -> Unit,
-    var isFollowMode: Boolean = false
+    routeRenderer: RouteRenderer,
+    markerManager: MarkerManager,
+    gestureHandler: GestureHandler
 ) {
     companion object {
         private const val TAG = "MapController"
-        private const val AUTO_RELOCK_DELAY_MS = 6000L
     }
 
-    // Lock/unlock state for navigation
-    private var isLocked: Boolean = false
-    private var autoRelockHandler: Handler? = null
-
-    // Marker references for route start/end
-    private var startMarker: Marker? = null
-    private var endMarker: Marker? = null
-
-    // Current AMapNaviView for SDK route operations
-    private var naviView: AMapNaviView? = null
-
-    // AMapNaviView 加载状态（用于 RouteOverLay 安全渲染）
-    private var isNaviViewLoaded = false
-    // 路线数据就绪状态（算路成功且缓存完成）
-    private var isRouteReady = false
-    // 待渲染的路线 ID（视图未加载时暂存）
-    private val pendingRouteIds = mutableListOf<Int>()
-    private var pendingSelectIndex = 0
-
-    // Multi-route rendering
-    private val routePolylines = mutableListOf<Polyline>()
-    private val routeOverlays = mutableMapOf<Int, RouteOverLay>()
-    private var currentNavigatingRouteId: Int = -1
-    private var currentSelectedIndex: Int = 0
-    private val routeColors = listOf(
-        0xFF1890FF.toInt(),   // 选中-蓝色
-        0x8000FFFF.toInt(),   // 其他1-青色半透明
-        0x8000FF00.toInt(),   // 其他2-绿色半透明
-        0x80FF8800.toInt(),   // 其他3-橙色半透明
-        0x80FF0088.toInt()    // 其他4-紫色半透明
-    )
+    // 子模块
+    private val routeRenderer = routeRenderer
+    private val markerManager = markerManager
+    private val gestureHandler = gestureHandler
 
     fun setNaviView(view: AMapNaviView?) {
-        naviView = view
-        if (view != null) {
-            // 设置监听器以检测视图加载完成状态
-            view.setAMapNaviViewListener(object : AMapNaviViewListener {
-                override fun onNaviViewLoaded() {
-                    isNaviViewLoaded = true
-                    Log.d(TAG, "✅ AMapNaviView 加载完成")
-                    // 渲染暂存的路线
-                    if (pendingRouteIds.isNotEmpty()) {
-                        Log.d(TAG, "📍 渲染暂存的 ${pendingRouteIds.size} 条路线")
-                        showRoutesWithOverlayInternal(pendingRouteIds.toList(), pendingSelectIndex)
-                        pendingRouteIds.clear()
-                    }
-                }
-                override fun onNaviSetting() {}
-                override fun onNaviCancel() {}
-                override fun onNaviBackClick(): Boolean = false
-                override fun onNaviMapMode(p0: Int) {}
-                override fun onNaviTurnClick() {}
-                override fun onNextRoadClick() {}
-                override fun onScanViewButtonClick() {}
-                override fun onLockMap(p0: Boolean) {}
-                override fun onNaviViewShowMode(p0: Int) {}
-                override fun onStopSpeaking() {}
-                override fun onViewTypeChanged(p0: AmapPageType?) {}
-                override fun onAMapNaviViewExit() {}
-                override fun onListenToVoiceDuringCallChanged(p0: Boolean) {}
-                override fun onControlMusicVolumeModeChanged(p0: Int) {}
-                override fun onEagleChanged(p0: Boolean) {}
-                override fun onNaviRouteHighlightChange(p0: Long, p1: Int) {}
-                override fun onBroadcastModeChanged(p0: Int) {}
-                override fun onDayAndNightModeChanged(p0: Int) {}
-                override fun onScaleAutoChanged(p0: Boolean) {}
-                override fun onStrategyChanged(p0: Int) {}
-                override fun onMapTypeChanged(p0: Int) {}
-            })
-        } else {
-            isNaviViewLoaded = false
-        }
-    }
-
-    private fun clearRoutePolylinesInternal() {
-        try {
-            routePolylines.forEach { it.remove() }
-            routePolylines.clear()
-            clearRouteOverlaysInternal()
-            currentSelectedIndex = 0
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ clearRoutePolylinesInternal 失败: ${e.message}")
-        }
-    }
-
-    private fun clearRouteOverlaysInternal() {
-        try {
-            routeOverlays.values.forEach { it.removeFromMap() }
-            routeOverlays.clear()
-            currentNavigatingRouteId = -1
-            isRouteReady = false  // 重置路线就绪状态
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ clearRouteOverlaysInternal failed: ${e.message}")
-        }
-    }
-
-    /**
-     * 使用 SDK 原生 RouteOverLay 渲染多路线。
-     * 如果 AMapNaviView 尚未加载完成，暂存路线 ID 等加载完成后再渲染。
-     */
-    fun showRoutesWithOverlay(routeIds: List<Int>, selectIndex: Int) {
-        if (routeIds.isEmpty()) {
-            clearRouteOverlaysInternal()
-            isRouteReady = false
-            return
-        }
-
-        val aMap = aMapHolder.aMap ?: return
-        val naviView = this.naviView
-
-        // 缓存路线 ID 并标记路线数据就绪
-        pendingRouteIds.clear()
-        pendingRouteIds.addAll(routeIds)
-        pendingSelectIndex = selectIndex
-        isRouteReady = true
-
-        if (naviView == null) {
-            Log.w(TAG, "⚠️ showRoutesWithOverlay: naviView is null，暂存路线")
-            return
-        }
-
-        if (!isNaviViewLoaded) {
-            Log.w(TAG, "⚠️ showRoutesWithOverlay: AMapNaviView 尚未加载完成，暂存路线")
-            return
-        }
-
-        showRoutesWithOverlayInternal(routeIds, selectIndex)
-    }
-
-    /**
-     * 内部方法：实际执行 RouteOverLay 渲染
-     * 必须在 NaviView 加载完成且路线数据就绪时调用
-     */
-    private fun showRoutesWithOverlayInternal(routeIds: List<Int>, selectIndex: Int) {
-        // 双重检查：NaviView 已加载 + 路线数据就绪
-        if (!isNaviViewLoaded) {
-            Log.w(TAG, "⚠️ showRoutesWithOverlayInternal: NaviView 未加载，拒绝渲染")
-            return
-        }
-        if (!isRouteReady) {
-            Log.w(TAG, "⚠️ showRoutesWithOverlayInternal: 路线数据未就绪，拒绝渲染")
-            return
-        }
-
-        clearRouteOverlaysInternal()
-
-        val aMap = aMapHolder.aMap ?: return
-        val naviView = this.naviView ?: return
-
-        routeIds.forEachIndexed { index, routeId ->
-            val path = RoutePathCache.get(routeId) ?: return@forEachIndexed
-
-            val overlay = RouteOverLay(aMap, path, naviView.context).apply {
-                setTransparency(if (index == selectIndex) 1.0f else 0.6f)
-                setZindex(if (index == selectIndex) 100 else 0)
-                addToMap()
-            }
-            routeOverlays[routeId] = overlay
-        }
-
-        currentSelectedIndex = selectIndex
-        Log.d(TAG, "✅ showRoutesWithOverlayInternal: rendered ${routeOverlays.size} routes, selected=$selectIndex")
-    }
-
-    /**
-     * 高亮指定路线（用于路线选择）。
-     * 只有在 NaviView 加载完成后才执行。
-     */
-    fun highlightRouteOverlay(routeId: Int) {
-        if (!isNaviViewLoaded) {
-            Log.w(TAG, "⚠️ highlightRouteOverlay: NaviView 未加载，忽略")
-            return
-        }
-        routeOverlays.forEach { (id, overlay) ->
-            if (id == routeId) {
-                overlay.setTransparency(1.0f)
-                overlay.setZindex(100)
-            } else {
-                overlay.setTransparency(0.6f)
-                overlay.setZindex(0)
-            }
-        }
-        currentNavigatingRouteId = routeId
-        Log.d(TAG, "✅ highlightRouteOverlay: selected routeId=$routeId")
-    }
-
-    private fun highlightRouteInternal(index: Int) {
-        if (index < 0 || index >= routePolylines.size) return
-        currentSelectedIndex = index
-        val aMap = aMapHolder.aMap ?: return
-        try {
-            routePolylines.forEachIndexed { i, polyline ->
-                val color = if (i == index) routeColors[0] else routeColors.getOrElse(i % routeColors.size) { routeColors[1] }
-                val lineWidth = if (i == index) 14f else 10f
-                polyline.color = color
-                polyline.width = lineWidth
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ highlightRouteInternal 失败: ${e.message}")
-        }
-    }
-
-    private fun clearMarkersInternal() {
-        try {
-            startMarker?.remove()
-            startMarker = null
-            endMarker?.remove()
-            endMarker = null
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ clearMarkersInternal 失败: ${e.message}")
-        }
+        routeRenderer.setNaviView(view)
     }
 
     /**
      * 处理来自定位监听器的位置更新，驱动 CarOverlay 自车标记绘制
      */
     fun onLocationChanged(lat: Double, lng: Double, bearing: Float) {
-        carOverlayRef()?.draw(aMapHolder.aMap, LatLng(lat, lng), bearing)
+        gestureHandler.updateCarMarkerForLocation(lat, lng, bearing)
     }
 
     /**
      * 用户触摸地图时调用：解锁相机并安排 6 秒后自动重新锁定
      */
     fun onMapTouched() {
-        if (isFollowMode && isLocked) {
-            isLocked = false
-            autoRelockHandler?.removeCallbacksAndMessages(null)
-            autoRelockHandler = Handler(Looper.getMainLooper())
-            autoRelockHandler?.postDelayed({
-                isLocked = true
-                Log.d(TAG, "🔒 触摸超时后自动重新锁定")
-            }, AUTO_RELOCK_DELAY_MS)
-            Log.d(TAG, "👆 地图被触摸，解锁相机 — ${AUTO_RELOCK_DELAY_MS}ms 后自动重新锁定")
-        }
+        gestureHandler.onMapTouched()
     }
 
     /**
@@ -289,6 +64,7 @@ class MapController(
      */
     fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            // ======== 定位 ========
             "startLocation" -> {
                 Log.d(TAG, "📡 startLocation")
                 locationClient.startLocation()
@@ -327,6 +103,7 @@ class MapController(
                 }
             }
 
+            // ======== 地理编码 ========
             "geocodeAddress" -> {
                 val address = call.argument<String>("address")
                 if (address.isNullOrEmpty()) {
@@ -337,6 +114,7 @@ class MapController(
                 }
             }
 
+            // ======== 距离计算 ========
             "calculateDistance" -> {
                 val fromLat = call.argument<Double>("fromLat")
                 val fromLng = call.argument<Double>("fromLng")
@@ -353,88 +131,51 @@ class MapController(
                 }
             }
 
+            // ======== 路线渲染（自定义 Polyline） ========
             "showRoutes" -> {
                 val routesData = call.argument<List<*>>("routes")
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
-
                 Log.d(TAG, "📍 showRoutes: 自定义渲染 ${routesData?.size ?: 0} 条路线, 选中: $selectIndex")
-                clearRoutePolylinesInternal()
-
-                if (routesData.isNullOrEmpty()) {
-                    result.success(0)
-                    return
-                }
-
-                val aMap = aMapHolder.aMap ?: run {
-                    result.success(0)
-                    return
-                }
-
-                try {
-                    routesData.forEachIndexed { index, routeData ->
-                        val routeMap = routeData as? Map<*, *>
-                        val polylineList = routeMap?.get("polyline") as? List<*>
-                        if (polylineList != null) {
-                            val latLngs = polylineList.mapNotNull { item ->
-                                val coord = item as? Map<*, *>
-                                val lat = (coord?.get("lat") as? Number)?.toDouble()
-                                val lng = (coord?.get("lng") as? Number)?.toDouble()
-                                if (lat != null && lng != null) LatLng(lat, lng) else null
-                            }
-                            if (latLngs.isNotEmpty()) {
-                                val color = if (index == selectIndex) routeColors[0] else routeColors.getOrElse(index % routeColors.size) { routeColors[1] }
-                                val lineWidth = if (index == selectIndex) 14f else 10f
-                                val polyline = aMap.addPolyline(PolylineOptions()
-                                    .addAll(latLngs)
-                                    .color(color)
-                                    .width(lineWidth)
-                                    .setDottedLine(false))
-                                routePolylines.add(polyline)
-                            }
-                        }
-                    }
-                    currentSelectedIndex = selectIndex
-                    result.success(routePolylines.size)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ showRoutes 渲染失败: ${e.message}")
-                    result.success(0)
-                }
+                val count = routeRenderer.showRoutes(routesData, selectIndex)
+                result.success(count)
             }
 
             "selectRoute" -> {
                 val index = call.argument<Int>("index") ?: 0
                 Log.d(TAG, "📍 selectRoute: index=$index")
-                highlightRouteInternal(index)
+                routeRenderer.selectRoute(index)
                 result.success(true)
             }
 
             "clearRoutes" -> {
                 Log.d(TAG, "📍 clearRoutes: 清除所有路线")
-                clearRoutePolylinesInternal()
+                routeRenderer.clearRoutes()
                 result.success(true)
             }
 
+            // ======== 路线渲染（SDK RouteOverLay） ========
             "showRoutesWithOverlay" -> {
                 val routeIds = call.argument<List<Int>>("routeIds") ?: emptyList()
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
                 Log.d(TAG, "📍 showRoutesWithOverlay: routeIds=${routeIds.size}, selectIndex=$selectIndex")
-                showRoutesWithOverlay(routeIds, selectIndex)
-                result.success(routeOverlays.size)
+                val count = routeRenderer.showRoutesWithOverlay(routeIds, selectIndex)
+                result.success(count)
             }
 
             "highlightRouteOverlay" -> {
                 val routeId = call.argument<Int>("routeId") ?: -1
                 Log.d(TAG, "📍 highlightRouteOverlay: routeId=$routeId")
-                highlightRouteOverlay(routeId)
+                routeRenderer.highlightRoute(routeId)
                 result.success(true)
             }
 
             "clearRouteOverlays" -> {
                 Log.d(TAG, "📍 clearRouteOverlays")
-                clearRouteOverlaysInternal()
+                routeRenderer.clearRouteOverlays()
                 result.success(true)
             }
 
+            // ======== 标记管理 ========
             "setRouteMarkers" -> {
                 val startLat = call.argument<Double>("startLat")
                 val startLng = call.argument<Double>("startLng")
@@ -444,33 +185,17 @@ class MapController(
                 val endLabel = call.argument<String>("endLabel") ?: "终点"
                 Log.d(TAG, "📍 setRouteMarkers: start=($startLat,$startLng), end=($endLat,$endLng)")
 
-                clearMarkersInternal()
-                val aMap = aMapHolder.aMap ?: run {
+                if (startLat == null || startLng == null || endLat == null || endLng == null) {
                     result.success(false)
                     return
                 }
-
-                try {
-                    startMarker = aMap.addMarker(MarkerOptions()
-                        .position(LatLng(startLat!!, startLng!!))
-                        .title(startLabel)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
-
-                    endMarker = aMap.addMarker(MarkerOptions()
-                        .position(LatLng(endLat!!, endLng!!))
-                        .title(endLabel)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)))
-
-                    result.success(true)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ setRouteMarkers 失败: ${e.message}")
-                    result.success(false)
-                }
+                val success = markerManager.setRouteMarkers(startLat, startLng, endLat, endLng, startLabel, endLabel)
+                result.success(success)
             }
 
             "clearRouteMarkers" -> {
                 Log.d(TAG, "📍 clearRouteMarkers")
-                clearMarkersInternal()
+                markerManager.clearRouteMarkers()
                 result.success(true)
             }
 
@@ -485,46 +210,18 @@ class MapController(
                     result.success(false)
                     return
                 }
-
-                val aMap = aMapHolder.aMap ?: run {
-                    result.success(false)
-                    return
-                }
-
-                try {
-                    val marker = aMap.addMarker(MarkerOptions()
-                        .position(LatLng(lat, lng))
-                        .title(label)
-                        .icon(BitmapDescriptorFactory.defaultMarker(
-                            if (isStart) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_RED)))
-
-                    if (isStart) {
-                        startMarker?.remove()
-                        startMarker = marker
-                    } else {
-                        endMarker?.remove()
-                        endMarker = marker
-                    }
-                    result.success(true)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ showSingleMarker 失败: ${e.message}")
-                    result.success(false)
-                }
+                val success = markerManager.showSingleMarker(lat, lng, isStart, label)
+                result.success(success)
             }
 
             "clearSingleMarker" -> {
                 val isStart = call.argument<Boolean>("isStart") ?: true
                 Log.d(TAG, "📍 clearSingleMarker: isStart=$isStart")
-                if (isStart) {
-                    startMarker?.remove()
-                    startMarker = null
-                } else {
-                    endMarker?.remove()
-                    endMarker = null
-                }
+                markerManager.clearSingleMarker(isStart)
                 result.success(true)
             }
 
+            // ======== 相机控制 ========
             "moveCamera" -> {
                 val lat = call.argument<Double>("lat")
                 val lng = call.argument<Double>("lng")
@@ -610,7 +307,6 @@ class MapController(
             }
 
             // ======== 地图图层控制 ========
-
             "setMapType" -> {
                 val type = call.argument<Int>("type") ?: 1
                 aMapHolder.aMap?.mapType = type
@@ -640,7 +336,6 @@ class MapController(
             }
 
             // ======== 手势控制 ========
-
             "setScrollGesturesEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
                 aMapHolder.aMap?.uiSettings?.isScrollGesturesEnabled = enabled
@@ -665,43 +360,31 @@ class MapController(
                 result.success(true)
             }
 
-            // ======== 路线渲染样式 ========
-
+            // ======== 路线渲染样式（已废弃，保留接口兼容性）=======
             "setRouteTmcEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
                 Log.d(TAG, "🚦 setRouteTmcEnabled: ${if (enabled) "启用" else "禁用"} (SDK 控制)")
-                // TMC 由 SDK 自动控制
                 result.success(true)
             }
 
             "setRouteTrafficIconEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
                 Log.d(TAG, "🚧 setRouteTrafficIconEnabled: ${if (enabled) "启用" else "禁用"} (SDK 控制)")
-                // 交通事件图标由 SDK 自动控制
                 result.success(true)
             }
-
-            // ======== 路线选中样式（支持自定义颜色/宽度） ========
 
             "updateSelectedRouteStyle" -> {
                 Log.d(TAG, "🎨 updateSelectedRouteStyle: 样式由 SDK 控制")
-                // 路线样式由 SDK 的 AMapNaviViewOptions 控制，不再支持自定义
                 result.success(true)
             }
 
+            // ======== 车辆与跟随模式 ========
             "updateCarMarker" -> {
                 val lat = call.argument<Double>("lat")
                 val lng = call.argument<Double>("lng")
                 val bearing = call.argument<Double>("bearing") ?: 0.0
                 if (lat != null && lng != null) {
-                    carOverlayRef()?.draw(
-                        aMapHolder.aMap,
-                        LatLng(lat, lng),
-                        bearing.toFloat()
-                    )
-                    if (isFollowMode && isLocked) {
-                        cameraController.animateCamera(lat, lng, bearing = bearing.toFloat())
-                    }
+                    gestureHandler.updateCarMarker(lat, lng, bearing)
                     result.success(true)
                 } else {
                     result.success(false)
@@ -709,59 +392,31 @@ class MapController(
             }
 
             "setFollowMode" -> {
-                isFollowMode = call.argument<Boolean>("enabled") ?: false
-                if (isFollowMode) {
-                    isLocked = true
-                } else {
-                    isLocked = false
-                    autoRelockHandler?.removeCallbacksAndMessages(null)
-                    autoRelockHandler = null
-                }
+                val enabled = call.argument<Boolean>("enabled") ?: false
+                gestureHandler.setFollowMode(enabled)
                 result.success(true)
             }
 
             "setLockCar" -> {
                 val lock = call.argument<Boolean>("locked") ?: true
-                isLocked = lock
-                if (!lock) {
-                    autoRelockHandler?.removeCallbacksAndMessages(null)
-                }
-                Log.d(TAG, "🔒 锁车状态: ${if (lock) "锁定" else "解锁"}")
+                gestureHandler.setLockCar(lock)
                 result.success(true)
             }
 
             "clearCarMarker" -> {
-                carOverlayRef()?.destroy()
-                onCarOverlayDestroyed()
+                gestureHandler.clearCarMarker(onCarOverlayDestroyed)
                 result.success(true)
             }
 
             "setLocationDotEnabled" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: true
-                val aMap = aMapHolder.aMap
-                if (aMap != null) {
-                    if (enabled) {
-                        // 重新设置定位样式，防止被导航 SDK 清除
-                        val myLocationStyle = com.amap.api.maps.model.MyLocationStyle().apply {
-                            showMyLocation(true)
-                            radiusFillColor(0x301890FF.toInt())
-                            strokeColor(0xFF1890FF.toInt())
-                            strokeWidth(2f)
-                            myLocationType(com.amap.api.maps.model.MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
-                            interval(2000)
-                        }
-                        aMap.myLocationStyle = myLocationStyle
-                    }
-                    aMap.isMyLocationEnabled = enabled
-                    Log.d(TAG, "📍 定位蓝点: ${if (enabled) "显示" else "隐藏"}")
-                }
+                gestureHandler.setLocationDotEnabled(enabled)
                 result.success(true)
             }
 
             "setCarOverlayVisible" -> {
                 val visible = call.argument<Boolean>("visible") ?: true
-                carOverlayRef()?.setVisible(visible)
-                Log.d(TAG, "📍 车载标记: ${if (visible) "显示" else "隐藏"}")
+                gestureHandler.setCarOverlayVisible(visible)
                 result.success(true)
             }
 

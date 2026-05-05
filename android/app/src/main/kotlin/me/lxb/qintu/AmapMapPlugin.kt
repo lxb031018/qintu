@@ -22,7 +22,10 @@ import me.lxb.qintu.location.LocationClientImpl
 import me.lxb.qintu.map.AMapHolder
 import me.lxb.qintu.map.CameraController
 import me.lxb.qintu.map.MapController
+import me.lxb.qintu.map.MarkerManager
 import me.lxb.qintu.map.NaviViewFactory
+import me.lxb.qintu.map.RouteRenderer
+import me.lxb.qintu.map.GestureHandler
 import me.lxb.qintu.overlay.CarOverlay
 
 import me.lxb.qintu.util.AMapPrivacy
@@ -169,6 +172,16 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                 // 初始化功能模块组件
                 cameraController = CameraController(aMap)
 
+                // 初始化子模块
+                val routeRenderer = RouteRenderer(aMapHolder, { currentNaviView })
+                val markerManager = MarkerManager(aMapHolder)
+                val gestureHandler = GestureHandler(
+                    cameraController!!,
+                    { carOverlay },
+                    aMapHolder,
+                    { }  // onMapGestureDetected - 在 Plugin 层处理
+                )
+
                 // 初始化业务控制器
                 mapController = MapController(
                     locationClient = locationClient,
@@ -176,7 +189,10 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                     cameraController = cameraController!!,
                     aMapHolder = aMapHolder,
                     carOverlayRef = { carOverlay },
-                    onCarOverlayDestroyed = { carOverlay = null }
+                    onCarOverlayDestroyed = { carOverlay = null },
+                    routeRenderer = routeRenderer,
+                    markerManager = markerManager,
+                    gestureHandler = gestureHandler
                 )
                 mapController?.setNaviView(naviView)
 

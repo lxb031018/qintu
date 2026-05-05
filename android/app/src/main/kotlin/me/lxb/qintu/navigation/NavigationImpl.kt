@@ -9,13 +9,10 @@ import com.amap.api.navi.enums.PathPlanningStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
-import com.amap.api.navi.model.AMapNaviStep
-import com.amap.api.navi.model.AMapTrafficStatus
 import com.amap.api.navi.model.NaviLatLng
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.route.RoutePathCache
 import me.lxb.qintu.util.AMapPrivacy
-import me.lxb.qintu.util.toCoordinateMap
 
 /**
  * 导航功能模块
@@ -25,6 +22,8 @@ import me.lxb.qintu.util.toCoordinateMap
  * - 多路线管理
  * - 导航启停控制
  * - 导航事件回调
+ *
+ * 序列化逻辑委托给 NaviPathSerializer
  */
 class NavigationImpl(context: Context) : AMapNaviListener {
 
@@ -215,67 +214,6 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         }
     }
 
-    private fun serializeNaviPath(routeId: Int, path: AMapNaviPath): Map<String, Any?> {
-        val points = path.coordList.map { it.toCoordinateMap() }
-        val steps = path.steps?.map { serializePathStep(it) } ?: emptyList()
-        val allCameras = path.allCameras
-        val trafficStatuses = path.trafficStatuses
-        return mapOf(
-            "routeId" to routeId,
-            "distance" to path.allLength.toDouble(),
-            "duration" to path.allTime.toDouble(),
-            "tolls" to path.tollCost.toDouble(),
-            "strategy" to (path.labels ?: ""),
-            "trafficLights" to (path.lightList?.size ?: 0),
-            "points" to points,
-            "steps" to steps,
-            "routeType" to path.routeType,
-            "mainRoadInfo" to (path.mainRoadInfo ?: ""),
-            "restrictionInfo" to path.restrictionInfo?.let {
-                mapOf(
-                    "title" to it.restrictionTitle,
-                    "titleType" to it.titleType,
-                    "tips" to it.tips,
-                    "cityCode" to it.cityCode,
-                    "cityCodes" to it.cityCodes?.toList(),
-                    "desc" to it.restrictionDesc
-                )
-            },
-            "trafficStatuses" to trafficStatuses?.map { ts ->
-                mapOf("status" to ts.status, "length" to ts.length, "linkIndex" to ts.linkIndex)
-            },
-            "cityAdcodes" to path.cityAdcodeList?.toList(),
-            "cameraCount" to (allCameras?.size ?: 0),
-            "naviGuideGroupCount" to (path.naviGuideList?.size ?: 0)
-        )
-    }
-
-    private fun serializePathStep(step: AMapNaviStep): Map<String, Any?> {
-        val coords = step.coords?.map { it.toCoordinateMap() } ?: emptyList()
-        val firstCoord = coords.firstOrNull()
-        val links = step.links?.map { link ->
-            link.coords?.map { it.toCoordinateMap() } ?: emptyList()
-        } ?: emptyList()
-        return mapOf(
-            "instruction" to "",
-            "action" to step.iconType.toString(),
-            "road" to "",
-            "distance" to step.length.toDouble(),
-            "duration" to step.time.toDouble(),
-            "tmcStatus" to "",
-            "lat" to (firstCoord?.get("lat") ?: 0.0),
-            "lng" to (firstCoord?.get("lng") ?: 0.0),
-            "points" to coords,
-            "startIndex" to step.startIndex,
-            "endIndex" to step.endIndex,
-            "links" to links,
-            "chargeLength" to step.chargeLength.toDouble(),
-            "tollCost" to step.tollCost.toDouble(),
-            "trafficLightCount" to (step.trafficLightNumber ?: 0),
-            "isArriveWayPoint" to step.isArriveWayPoint
-        )
-    }
-
     private fun sendEvent(type: String, vararg pairs: Pair<String, Any?>) {
         val data = mutableMapOf<String, Any?>("type" to type)
         pairs.forEach { data[it.first] = it.second }
@@ -315,7 +253,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         for (routeId in routeIds) {
             val path = allPaths[routeId]
             if (path != null) {
-                paths.add(serializeNaviPath(routeId, path))
+                paths.add(NaviPathSerializer.serialize(routeId, path))
             }
         }
 
