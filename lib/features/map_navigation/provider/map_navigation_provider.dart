@@ -5,8 +5,10 @@ import 'package:qintu/models/async_state.dart';
 import 'package:qintu/providers/settings_manager.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
+import '../models/amap_routing_models.dart';
+import '../models/bus_route_models.dart' as bus;
 import '../service/poi_service.dart';
-import '../service/amap_routing_service.dart';
+import '../service/bus_route_service.dart';
 import '../core/amap_navigation_bridge.dart';
 import 'map_display_coordinator.dart';
 import '../models/navigation_models.dart';
@@ -364,16 +366,15 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     try {
       List<RouteOption> routes;
 
-      // 公共交通：使用 AmapRoutingService（RouteSearchV2）
-      // 驾车/步行/骑行：使用 AMapNavi（AMapNaviView 新系统）
       if (state.currentRouteType == RouteType.transit) {
-        final routeService = AmapRoutingService();
-        routes = await routeService.planRoute(
-          type: state.currentRouteType!,
-          origin: state.originLocation!,
-          destination: state.destinationLocation!,
-          strategy: state.drivingStrategy,
+        // 公共交通：使用 RouteSearchV2 API
+        final busService = BusRouteService();
+        final busPaths = await busService.calculateBusRoute(
+          from: state.originLocation!,
+          to: state.destinationLocation!,
+          city: '北京', // TODO: 从起点城市获取
         );
+        routes = busPaths.map((bp) => _busPathToRouteOption(bp)).toList();
       } else {
         final naviRoutes = await AmapNavigationBridge.calculateRoute(
           routeType: _routeTypeToString(state.currentRouteType!),
@@ -426,6 +427,42 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       case RouteType.transit:
         return 'transit';
     }
+  }
+
+  /// 将 BusPath 转换为 RouteOption
+  RouteOption _busPathToRouteOption(bus.BusPath bp) {
+    // 将 BusTransitSegment 转换为 TransitSegment 模型
+    final transitSegments = bp.segments.map((seg) {
+      final lines = <TransitLine>[];
+      if (seg.type == bus.TransitSegmentType.bus || seg.type == bus.TransitSegmentType.subway) {
+        lines.add(TransitLine(
+          name: seg.lineName ?? '',
+          type: seg.type == bus.TransitSegmentType.subway
+              ? TransitLineType.subway
+              : TransitLineType.bus,
+          stationCount: 0,
+        ));
+      }
+      return TransitSegment(
+        lines: lines,
+        walkingDistance: seg.type == bus.TransitSegmentType.walk ? seg.distance.toInt() : 0,
+        points: seg.points,
+      );
+    }).toList();
+
+    return RouteOption(
+      routeId: bp.routeId,
+      distance: bp.distance,
+      duration: bp.duration.toDouble(),
+      strategy: '公共交通',
+      tolls: bp.cost,
+      points: bp.points,
+      routeType: RouteType.transit,
+      transitSegments: transitSegments,
+      walkDistance: bp.walkDistance,
+      busDistance: bp.busDistance,
+      isNightBus: bp.nightBus,
+    );
   }
 
   void _animateCameraToShowAllRoutes(List<RouteOption> routes) {

@@ -171,15 +171,91 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
           ],
 
           // 路线栏（非导航时）
-          if (!navState.isNavigating && navState.showRoutesSheet && navState.routes.isNotEmpty)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _RouteBottomSheetBuilder(navState: navState),
+          if (!navState.isNavigating && navState.showRoutesSheet &&
+              (navState.routes.isNotEmpty || navState.routesState.isLoading))
+            _RouteBottomSheetPositioner(
+              navState: navState,
+              tabBarHeight: ref.watch(tabBarHeightProvider),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _RouteBottomSheetPositioner extends StatefulWidget {
+  final MapNavigationState navState;
+  final double tabBarHeight;
+
+  const _RouteBottomSheetPositioner({
+    required this.navState,
+    required this.tabBarHeight,
+  });
+
+  @override
+  State<_RouteBottomSheetPositioner> createState() => _RouteBottomSheetPositionerState();
+}
+
+class _RouteBottomSheetPositionerState extends State<_RouteBottomSheetPositioner> {
+  final _cardKey = GlobalKey();
+  bool _cardMeasured = false;
+  double _cardBottom = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureCard();
+    });
+  }
+
+  void _measureCard() {
+    final cardRenderBox = _cardKey.currentContext?.findRenderObject() as RenderBox?;
+    if (cardRenderBox != null && cardRenderBox.hasSize) {
+      final cardSize = cardRenderBox.size;
+      final cardPosition = cardRenderBox.localToGlobal(Offset.zero);
+      final screenHeight = MediaQuery.of(context).size.height;
+      setState(() {
+        _cardMeasured = true;
+        _cardBottom = screenHeight - cardPosition.dy - cardSize.height;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTransit = widget.navState.currentRouteType == RouteType.transit;
+
+    if (!isTransit) {
+      return Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: _RouteBottomSheetBuilder(navState: widget.navState),
+      );
+    }
+
+    return Stack(
+      children: [
+        // 占位透明的定位参考物（隐藏）
+        Positioned(
+          left: AppSpacings.smd,
+          right: AppSpacings.smd,
+          top: MediaQuery.of(context).padding.top + AppSpacings.smd,
+          child: Opacity(
+            opacity: 0,
+            child: LocationInputCard(key: _cardKey),
+          ),
+        ),
+        // 路线栏定位到 input card 底部 + smd 间距
+        if (_cardMeasured)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: _cardBottom + AppSpacings.smd,
+            child: _RouteBottomSheetBuilder(navState: widget.navState),
+          ),
+      ],
     );
   }
 }
