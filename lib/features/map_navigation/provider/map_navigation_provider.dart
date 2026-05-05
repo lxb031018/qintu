@@ -7,6 +7,7 @@ import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
 import '../service/poi_service.dart';
 import '../service/amap_routing_service.dart';
+import '../core/amap_navigation_bridge.dart';
 import 'map_display_coordinator.dart';
 import '../models/navigation_models.dart';
 import 'map_controller_provider.dart';
@@ -362,12 +363,26 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     );
 
     try {
-      final routes = await _routeService.planRoute(
-        type: state.currentRouteType!,
-        origin: state.originLocation!,
-        destination: state.destinationLocation!,
-        strategy: state.drivingStrategy,
-      );
+      List<RouteOption> routes;
+
+      // 公共交通：使用 AmapRoutingService（RouteSearchV2）
+      // 驾车/步行/骑行：使用 AMapNavi（AMapNaviView 新系统）
+      if (state.currentRouteType == RouteType.transit) {
+        routes = await _routeService.planRoute(
+          type: state.currentRouteType!,
+          origin: state.originLocation!,
+          destination: state.destinationLocation!,
+          strategy: state.drivingStrategy,
+        );
+      } else {
+        final naviRoutes = await AmapNavigationBridge.calculateRoute(
+          routeType: _routeTypeToString(state.currentRouteType!),
+          origin: state.originLocation!,
+          destination: state.destinationLocation!,
+          strategy: state.drivingStrategy,
+        );
+        routes = naviRoutes ?? [];
+      }
 
       if (_disposed) return;
 
@@ -384,6 +399,11 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         );
 
         if (state.currentRouteType != RouteType.transit) {
+          // 使用 RouteOverLay 渲染多路线
+          final routeIds = routes.map((r) => r.routeId).where((id) => id >= 0).toList();
+          if (routeIds.isNotEmpty) {
+            ref.read(mapControllerNotifierProvider)?.showRoutesWithOverlay(routeIds, selectIndex: 0);
+          }
           _animateCameraToShowAllRoutes(routes);
         }
       }
@@ -392,6 +412,21 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       state = state.copyWith(
         routesState: AsyncState.error(e.toString()),
       );
+    }
+  }
+
+  String _routeTypeToString(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return 'driving';
+      case RouteType.walking:
+        return 'walking';
+      case RouteType.riding:
+        return 'riding';
+      case RouteType.eleBike:
+        return 'elebike';
+      case RouteType.transit:
+        return 'transit';
     }
   }
 
@@ -468,11 +503,12 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     if (index >= 0 && index < state.routes.length) {
       state = state.copyWith(selectedRouteIndex: index);
       if (state.currentRouteType != RouteType.transit) {
-        _mapDisplayCoordinator.showRoutes(state.routes, index, state.currentRouteType!);
-        ref.read(mapControllerNotifierProvider)?.selectRoute(index);
         final route = state.routes[index];
+        // 使用 RouteOverLay 高亮选中路线
         if (route.routeId >= 0) {
-          _routeService.selectRouteId(route.routeId);
+          ref.read(mapControllerNotifierProvider)?.highlightRouteOverlay(route.routeId);
+          // 通知 AMapNavi 选中该路线
+          AmapNavigationBridge.selectRouteId(route.routeId);
         }
       }
     }

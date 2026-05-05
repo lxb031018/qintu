@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/navigation_models.dart';
+import '../models/amap_routing_models.dart';
 
 /// 高德导航桥接层
 ///
@@ -62,6 +63,87 @@ class AmapNavigationBridge {
     } catch (e) {
       Logs.navigation.error('❌ getRouteInfoList failed: $e');
       return [];
+    }
+  }
+
+  /// 使用 AMapNavi 计算路线（驾车/步行/骑行）
+  ///
+  /// 返回路线列表，每条路线包含 routeId（用于 RouteOverLay 渲染）
+  static Future<List<RouteOption>?> calculateRoute({
+    required String routeType,
+    required LatLng origin,
+    required LatLng destination,
+    int strategy = 10,
+  }) async {
+    try {
+      Logs.navigation.info('🗺️ calculateRoute via AMapNavi: $routeType, ($origin → $destination), strategy=$strategy');
+
+      final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('calculateRoute', {
+        'routeType': routeType,
+        'fromLat': origin.latitude,
+        'fromLng': origin.longitude,
+        'toLat': destination.latitude,
+        'toLng': destination.longitude,
+        'strategy': strategy,
+      });
+
+      if (result == null) {
+        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned null');
+        return null;
+      }
+
+      final routes = result['routes'] as List<dynamic>?;
+      final routeIds = result['routeIds'] as List<dynamic>?;
+
+      if (routes == null || routes.isEmpty) {
+        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned empty routes');
+        return [];
+      }
+
+      return routes.asMap().entries.map((entry) {
+        final map = entry.value as Map<dynamic, dynamic>;
+        final index = entry.key;
+        final pointsList = map['points'] as List<dynamic>? ?? [];
+        final points = pointsList.map((p) {
+          final pm = p as Map<dynamic, dynamic>;
+          return LatLng((pm['lat'] as num).toDouble(), (pm['lng'] as num).toDouble());
+        }).toList();
+
+        return RouteOption(
+          routeId: routeIds != null && index < routeIds.length
+              ? (routeIds[index] as num).toInt()
+              : -1,
+          distance: (map['distance'] as num?)?.toDouble() ?? 0,
+          duration: (map['duration'] as num?)?.toDouble() ?? 0,
+          strategy: map['strategy']?.toString() ?? '',
+          tolls: (map['tolls'] as num?)?.toDouble() ?? 0,
+          points: points,
+          routeType: _parseRouteType(routeType),
+          trafficLights: (map['trafficLights'] as num?)?.toInt() ?? 0,
+          strategyId: strategy,
+        );
+      }).toList();
+    } on PlatformException catch (e) {
+      Logs.navigation.error('❌ calculateRoute via AMapNavi failed: ${e.message}');
+      return null;
+    } catch (e) {
+      Logs.navigation.error('❌ calculateRoute via AMapNavi unknown error: $e');
+      return null;
+    }
+  }
+
+  static RouteType _parseRouteType(String type) {
+    switch (type) {
+      case 'driving':
+        return RouteType.driving;
+      case 'walking':
+        return RouteType.walking;
+      case 'riding':
+        return RouteType.riding;
+      case 'elebike':
+        return RouteType.eleBike;
+      default:
+        return RouteType.driving;
     }
   }
 
