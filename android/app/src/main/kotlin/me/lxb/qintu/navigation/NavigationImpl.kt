@@ -2,19 +2,16 @@ package me.lxb.qintu.navigation
 
 import android.content.Context
 import android.util.Log
-import com.amap.api.maps.model.LatLng
 import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
 import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.PathPlanningStrategy
-import com.amap.api.navi.enums.TravelStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.AMapNaviStep
 import com.amap.api.navi.model.AMapTrafficStatus
 import com.amap.api.navi.model.NaviLatLng
-import com.amap.api.navi.model.NaviPoi
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.route.RoutePathCache
 import me.lxb.qintu.util.AMapPrivacy
@@ -125,19 +122,13 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                     navi.calculateDriveRoute(listOf(from), listOf(to), null, flag)
                 }
                 "walking" -> {
-                    val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
-                    val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.calculateWalkRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
+                    navi.calculateWalkRoute(from, to)
                 }
                 "riding" -> {
-                    val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
-                    val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.calculateRideRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
+                    navi.calculateRideRoute(from, to)
                 }
                 "elebike" -> {
-                    val fromPoi = NaviPoi("起点", LatLng(fromLat, fromLng), "")
-                    val toPoi = NaviPoi("终点", LatLng(toLat, toLng), "")
-                    navi.calculateEleBikeRoute(fromPoi, toPoi, TravelStrategy.MULTIPLE)
+                    navi.calculateEleBikeRoute(from, to)
                 }
                 else -> {
                     pendingRouteResult = null
