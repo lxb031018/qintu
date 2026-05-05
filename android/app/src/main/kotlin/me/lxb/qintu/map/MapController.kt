@@ -11,6 +11,8 @@ import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
 import com.amap.api.navi.AMapNaviView
+import com.amap.api.navi.AMapNaviViewListener
+import com.amap.api.navi.AmapPageType
 import com.amap.api.navi.view.RouteOverLay
 import me.lxb.qintu.route.RoutePathCache
 import io.flutter.plugin.common.MethodCall
@@ -57,6 +59,14 @@ class MapController(
     // Current AMapNaviView for SDK route operations
     private var naviView: AMapNaviView? = null
 
+    // AMapNaviView 加载状态（用于 RouteOverLay 安全渲染）
+    private var isNaviViewLoaded = false
+    // 路线数据就绪状态（算路成功且缓存完成）
+    private var isRouteReady = false
+    // 待渲染的路线 ID（视图未加载时暂存）
+    private val pendingRouteIds = mutableListOf<Int>()
+    private var pendingSelectIndex = 0
+
     // Multi-route rendering
     private val routePolylines = mutableListOf<Polyline>()
     private val routeOverlays = mutableMapOf<Int, RouteOverLay>()
@@ -72,6 +82,44 @@ class MapController(
 
     fun setNaviView(view: AMapNaviView?) {
         naviView = view
+        if (view != null) {
+            // 设置监听器以检测视图加载完成状态
+            view.setAMapNaviViewListener(object : AMapNaviViewListener {
+                override fun onNaviViewLoaded() {
+                    isNaviViewLoaded = true
+                    Log.d(TAG, "✅ AMapNaviView 加载完成")
+                    // 渲染暂存的路线
+                    if (pendingRouteIds.isNotEmpty()) {
+                        Log.d(TAG, "📍 渲染暂存的 ${pendingRouteIds.size} 条路线")
+                        showRoutesWithOverlayInternal(pendingRouteIds.toList(), pendingSelectIndex)
+                        pendingRouteIds.clear()
+                    }
+                }
+                override fun onNaviSetting() {}
+                override fun onNaviCancel() {}
+                override fun onNaviBackClick(): Boolean = false
+                override fun onNaviMapMode(p0: Int) {}
+                override fun onNaviTurnClick() {}
+                override fun onNextRoadClick() {}
+                override fun onScanViewButtonClick() {}
+                override fun onLockMap(p0: Boolean) {}
+                override fun onNaviViewShowMode(p0: Int) {}
+                override fun onStopSpeaking() {}
+                override fun onViewTypeChanged(p0: AmapPageType?) {}
+                override fun onAMapNaviViewExit() {}
+                override fun onListenToVoiceDuringCallChanged(p0: Boolean) {}
+                override fun onControlMusicVolumeModeChanged(p0: Int) {}
+                override fun onEagleChanged(p0: Boolean) {}
+                override fun onNaviRouteHighlightChange(p0: Long, p1: Int) {}
+                override fun onBroadcastModeChanged(p0: Int) {}
+                override fun onDayAndNightModeChanged(p0: Int) {}
+                override fun onScaleAutoChanged(p0: Boolean) {}
+                override fun onStrategyChanged(p0: Int) {}
+                override fun onMapTypeChanged(p0: Int) {}
+            })
+        } else {
+            isNaviViewLoaded = false
+        }
     }
 
     private fun clearRoutePolylinesInternal() {
@@ -90,6 +138,7 @@ class MapController(
             routeOverlays.values.forEach { it.removeFromMap() }
             routeOverlays.clear()
             currentNavigatingRouteId = -1
+            isRouteReady = false  // 重置路线就绪状态
         } catch (e: Exception) {
             Log.e(TAG, "❌ clearRouteOverlaysInternal failed: ${e.message}")
         }
@@ -97,17 +146,56 @@ class MapController(
 
     /**
      * 使用 SDK 原生 RouteOverLay 渲染多路线。
+     * 如果 AMapNaviView 尚未加载完成，暂存路线 ID 等加载完成后再渲染。
      */
     fun showRoutesWithOverlay(routeIds: List<Int>, selectIndex: Int) {
-        clearRouteOverlaysInternal()
+        if (routeIds.isEmpty()) {
+            clearRouteOverlaysInternal()
+            isRouteReady = false
+            return
+        }
 
         val aMap = aMapHolder.aMap ?: return
         val naviView = this.naviView
 
+        // 缓存路线 ID 并标记路线数据就绪
+        pendingRouteIds.clear()
+        pendingRouteIds.addAll(routeIds)
+        pendingSelectIndex = selectIndex
+        isRouteReady = true
+
         if (naviView == null) {
-            Log.w(TAG, "⚠️ showRoutesWithOverlay: naviView is null")
+            Log.w(TAG, "⚠️ showRoutesWithOverlay: naviView is null，暂存路线")
             return
         }
+
+        if (!isNaviViewLoaded) {
+            Log.w(TAG, "⚠️ showRoutesWithOverlay: AMapNaviView 尚未加载完成，暂存路线")
+            return
+        }
+
+        showRoutesWithOverlayInternal(routeIds, selectIndex)
+    }
+
+    /**
+     * 内部方法：实际执行 RouteOverLay 渲染
+     * 必须在 NaviView 加载完成且路线数据就绪时调用
+     */
+    private fun showRoutesWithOverlayInternal(routeIds: List<Int>, selectIndex: Int) {
+        // 双重检查：NaviView 已加载 + 路线数据就绪
+        if (!isNaviViewLoaded) {
+            Log.w(TAG, "⚠️ showRoutesWithOverlayInternal: NaviView 未加载，拒绝渲染")
+            return
+        }
+        if (!isRouteReady) {
+            Log.w(TAG, "⚠️ showRoutesWithOverlayInternal: 路线数据未就绪，拒绝渲染")
+            return
+        }
+
+        clearRouteOverlaysInternal()
+
+        val aMap = aMapHolder.aMap ?: return
+        val naviView = this.naviView ?: return
 
         routeIds.forEachIndexed { index, routeId ->
             val path = RoutePathCache.get(routeId) ?: return@forEachIndexed
@@ -121,13 +209,18 @@ class MapController(
         }
 
         currentSelectedIndex = selectIndex
-        Log.d(TAG, "✅ showRoutesWithOverlay: rendered ${routeOverlays.size} routes, selected=$selectIndex")
+        Log.d(TAG, "✅ showRoutesWithOverlayInternal: rendered ${routeOverlays.size} routes, selected=$selectIndex")
     }
 
     /**
      * 高亮指定路线（用于路线选择）。
+     * 只有在 NaviView 加载完成后才执行。
      */
     fun highlightRouteOverlay(routeId: Int) {
+        if (!isNaviViewLoaded) {
+            Log.w(TAG, "⚠️ highlightRouteOverlay: NaviView 未加载，忽略")
+            return
+        }
         routeOverlays.forEach { (id, overlay) ->
             if (id == routeId) {
                 overlay.setTransparency(1.0f)

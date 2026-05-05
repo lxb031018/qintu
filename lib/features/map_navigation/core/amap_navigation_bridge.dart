@@ -140,8 +140,6 @@ class AmapNavigationBridge {
         return RouteType.walking;
       case 'riding':
         return RouteType.riding;
-      case 'elebike':
-        return RouteType.eleBike;
       default:
         return RouteType.driving;
     }

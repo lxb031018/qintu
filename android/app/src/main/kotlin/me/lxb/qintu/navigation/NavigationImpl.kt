@@ -127,9 +127,6 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                 "riding" -> {
                     navi.calculateRideRoute(from, to)
                 }
-                "elebike" -> {
-                    navi.calculateEleBikeRoute(from, to)
-                }
                 else -> {
                     pendingRouteResult = null
                     result.error("INVALID_TYPE", "不支持的出行方式：$routeType", null)

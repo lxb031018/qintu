@@ -76,22 +76,6 @@ class AmapRouteSearchBridge {
           }
           break;
 
-        case RouteType.eleBike:
-          result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-            'calculateRideRoute',
-            {
-              'fromLat': origin.latitude,
-              'fromLng': origin.longitude,
-              'toLat': destination.latitude,
-              'toLng': destination.longitude,
-              'alternativeRoute': alternativeRoute,
-            },
-          );
-          if (result != null) {
-            return _parseRidePaths(result, isEleBike: true);
-          }
-          break;
-
         case RouteType.transit:
           if (city == null || city.isEmpty) {
             throw const RoutingException('公共交通路线需要城市区号');
@@ -253,11 +237,9 @@ class AmapRouteSearchBridge {
     );
   }
 
-  static List<RouteOption> _parseRidePaths(Map<dynamic, dynamic> result, {bool isEleBike = false}) {
+  static List<RouteOption> _parseRidePaths(Map<dynamic, dynamic> result) {
     final paths = result['paths'] as List<dynamic>? ?? [];
     Logs.navigation.info('✅ 骑行算路成功：${paths.length} 条路线');
-
-    final routeType = isEleBike ? RouteType.eleBike : RouteType.riding;
 
     return paths.map((p) {
       final map = p as Map<dynamic, dynamic>;
@@ -276,7 +258,7 @@ class AmapRouteSearchBridge {
         strategy: map['strategy']?.toString() ?? '',
         tolls: 0,
         points: points,
-        routeType: routeType,
+        routeType: RouteType.riding,
         rideSteps: stepsList.map((s) => _parseWalkStep(s as Map<dynamic, dynamic>)).toList(),
       );
     }).toList();

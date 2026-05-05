@@ -155,7 +155,6 @@ class MapNavigationState {
 /// ============================================
 
 class MapNavigationNotifier extends Notifier<MapNavigationState> {
-  late final AmapRoutingService _routeService = ref.read(amapRoutingServiceProvider);
   late final PoiService _poiService = ref.read(poiServiceProvider);
   late final MapDisplayCoordinator _mapDisplayCoordinator = ref.read(mapDisplayCoordinatorProvider);
   bool _disposed = false;
@@ -167,7 +166,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     ref.onDispose(() {
       _disposed = true;
       _navStreamSub?.cancel();
-      _routeService.stopNavigation();
+      AmapNavigationBridge.stopNavigation();
     });
     final settings = ref.watch(settingsManagerProvider);
     return MapNavigationState(drivingStrategy: settings.drivingStrategy);
@@ -175,7 +174,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   void _startNavEventListener() {
     _navStreamSub?.cancel();
-    _navStreamSub = _routeService.navigationStateStream.listen((navState) {
+    _navStreamSub = AmapNavigationBridge.navigationStateStream.listen((navState) {
       if (_disposed) return;
       switch (navState.status) {
         case NavigationStatus.navigating:
@@ -223,7 +222,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     final routeId = firstRoute['routeId'] as int?;
     if (routeId != null && routeId >= 0) {
       // 通知原生导航 SDK 选中此路线
-      _routeService.selectRouteId(routeId);
+      AmapNavigationBridge.selectRouteId(routeId);
       // 更新地图渲染：切换到新的导航路线
       ref.read(mapControllerNotifierProvider)?.enterNavigationMode(routeId);
     }
@@ -368,7 +367,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       // 公共交通：使用 AmapRoutingService（RouteSearchV2）
       // 驾车/步行/骑行：使用 AMapNavi（AMapNaviView 新系统）
       if (state.currentRouteType == RouteType.transit) {
-        routes = await _routeService.planRoute(
+        final routeService = AmapRoutingService();
+        routes = await routeService.planRoute(
           type: state.currentRouteType!,
           origin: state.originLocation!,
           destination: state.destinationLocation!,
@@ -423,8 +423,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         return 'walking';
       case RouteType.riding:
         return 'riding';
-      case RouteType.eleBike:
-        return 'elebike';
       case RouteType.transit:
         return 'transit';
     }
@@ -570,7 +568,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(true);
 
     // 选中路线（多路径时需要）
-    await _routeService.selectRouteId(state.selectedRouteIndex);
+    await AmapNavigationBridge.selectRouteId(route.routeId);
 
     // 切换到导航渲染：SDK 自动处理路线显示
     if (route.routeId >= 0) {
@@ -578,9 +576,9 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
 
     // 启动无 View 导航
-    Logs.navigation.info('📍 调用 _routeService.startNavigation...');
-    final success = await _routeService.startNavigation(enableVoice: true);
-    Logs.navigation.info('📍 _routeService.startNavigation 返回: $success');
+    Logs.navigation.info('📍 调用 AmapNavigationBridge.startNavigation...');
+    final success = await AmapNavigationBridge.startNavigation(enableVoice: true);
+    Logs.navigation.info('📍 AmapNavigationBridge.startNavigation 返回: $success');
 
     if (!success) {
       state = state.copyWith(
@@ -592,17 +590,17 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   /// 暂停导航
   Future<void> pauseNavigation() async {
-    await _routeService.pauseNavigation();
+    await AmapNavigationBridge.pauseNavigation();
   }
 
   /// 恢复导航
   Future<void> resumeNavigation() async {
-    await _routeService.resumeNavigation();
+    await AmapNavigationBridge.resumeNavigation();
   }
 
   /// 停止导航
   Future<void> stopNavigation() async {
-    await _routeService.stopNavigation();
+    await AmapNavigationBridge.stopNavigation();
     ref.read(mapControllerNotifierProvider)?.disableNaviMode();
     ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
     ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);

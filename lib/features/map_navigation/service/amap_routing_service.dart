@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
-import 'package:qintu/features/map_navigation/models/navigation_models.dart';
-import 'package:qintu/features/map_navigation/core/amap_navigation_bridge.dart';
 import 'package:qintu/features/map_navigation/core/route_search_bridge.dart';
 import 'package:qintu/features/map_navigation/core/poi_api.dart';
 import 'package:qintu/utils/logger.dart';
@@ -10,6 +8,8 @@ import 'package:qintu/utils/retry_utils.dart';
 
 export 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 
+/// 仅用于公共交通路线规划的服务类
+/// 驾车/步行/骑行已迁移至 AmapNavigationBridge (AMapNavi)
 class AmapRoutingService {
 
   final _poiApi = PoiApi();
@@ -18,6 +18,7 @@ class AmapRoutingService {
   final Map<String, DateTime> _cacheTimestamps = {};
   static const _cacheExpiry = Duration(minutes: 30);
 
+  /// 公共交通路线规划（保留 RouteSearchV2）
   Future<List<RouteOption>> planRoute({
     required RouteType type,
     required LatLng origin,
@@ -30,49 +31,40 @@ class AmapRoutingService {
     String? timeType,
     String? destCity,
   }) async {
-    String routeCity = city ?? '';
-
-    switch (type) {
-      case RouteType.driving:
-      case RouteType.walking:
-      case RouteType.riding:
-      case RouteType.eleBike:
-        return withRetry(() => AmapRouteSearchBridge.calculateRoute(
-          type: type,
-          origin: origin,
-          destination: destination,
-          strategy: strategy,
-        ));
-      case RouteType.transit:
-        if (routeCity.isEmpty) {
-          routeCity = await _getCityCodeFromLocation(origin);
-        }
-        if (routeCity.isEmpty) {
-          throw const RoutingException('公共交通路线需要城市区号，请开启定位权限或手动输入城市区号（如 010）');
-        }
-        return withRetry(() async {
-          final result = await AmapRouteSearchBridge.calculateRoute(
-            type: type,
-            origin: origin,
-            destination: destination,
-            strategy: strategy,
-            city: routeCity,
-            maxTrans: maxTrans,
-            alternativeRoute: alternativeRoute,
-            time: time,
-            timeType: timeType,
-            destCity: destCity,
-          );
-          if (result.isNotEmpty) {
-            final supplemented = <RouteOption>[];
-            for (final r in result) {
-              supplemented.add(await _supplementTransitWalkSegments(r));
-            }
-            return supplemented;
-          }
-          return result;
-        });
+    // 仅支持公共交通
+    if (type != RouteType.transit) {
+      throw const RoutingException('AmapRoutingService 仅支持公共交通，请使用 AmapNavigationBridge');
     }
+
+    String routeCity = city ?? '';
+    if (routeCity.isEmpty) {
+      routeCity = await _getCityCodeFromLocation(origin);
+    }
+    if (routeCity.isEmpty) {
+      throw const RoutingException('公共交通路线需要城市区号，请开启定位权限或手动输入城市区号（如 010）');
+    }
+    return withRetry(() async {
+      final result = await AmapRouteSearchBridge.calculateRoute(
+        type: type,
+        origin: origin,
+        destination: destination,
+        strategy: strategy,
+        city: routeCity,
+        maxTrans: maxTrans,
+        alternativeRoute: alternativeRoute,
+        time: time,
+        timeType: timeType,
+        destCity: destCity,
+      );
+      if (result.isNotEmpty) {
+        final supplemented = <RouteOption>[];
+        for (final r in result) {
+          supplemented.add(await _supplementTransitWalkSegments(r));
+        }
+        return supplemented;
+      }
+      return result;
+    });
   }
 
   Future<String> _getCityCodeFromLocation(LatLng location) async {
@@ -223,21 +215,6 @@ class AmapRoutingService {
     return (a.latitude - b.latitude).abs() < epsilon &&
         (a.longitude - b.longitude).abs() < epsilon;
   }
-
-  Stream<NavigationState> get navigationStateStream =>
-      AmapNavigationBridge.navigationStateStream;
-
-  Future<bool> selectRouteId(int routeId) =>
-      AmapNavigationBridge.selectRouteId(routeId);
-
-  Future<bool> startNavigation({bool isEmulator = false, bool enableVoice = true}) =>
-      AmapNavigationBridge.startNavigation(isEmulator: isEmulator, enableVoice: enableVoice);
-
-  Future<bool> pauseNavigation() => AmapNavigationBridge.pauseNavigation();
-
-  Future<bool> resumeNavigation() => AmapNavigationBridge.resumeNavigation();
-
-  Future<bool> stopNavigation() => AmapNavigationBridge.stopNavigation();
 
   double _calcDistance(List<LatLng> points) {
     if (points.length < 2) return 0;

@@ -40,12 +40,12 @@ class NaviViewFactory(
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
             setLayoutVisible(false)
-            setAutoDrawRoute(true)
+            setAutoDrawRoute(false)  // 禁用 SDK 自动渲染，由 RouteOverLay 接管
             setAfterRouteAutoGray(true)
             setTrafficLine(true)
             setEagleMapVisible(true)
             setAutoLockCar(true)
-            setAutoDisplayOverview(false)
+            setAutoDisplayOverview(true)
             setShowCameraDistance(true)
             setNaviArrowVisible(true)
             setLaneInfoShow(true)
@@ -55,7 +55,7 @@ class NaviViewFactory(
             setShowSettingsPanel(true)
             setShowRouteStrategyPreferencePanel(true)
             setShowNaviPopTips(true)
-            setDrawBackUpOverlay(true)
+            setDrawBackUpOverlay(false)  // 禁用备选路线，由 RouteOverLay 统一管理
             setLeaderLineEnabled(0)
             setSecondActionVisible(true)
         }
