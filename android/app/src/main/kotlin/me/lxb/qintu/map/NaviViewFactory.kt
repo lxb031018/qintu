@@ -66,8 +66,24 @@ class NaviViewFactory(
             }
 
             override fun onNaviSetting() {}
-            override fun onNaviCancel() {}
-            override fun onNaviBackClick(): Boolean = false
+
+            /** 统一的退出处理逻辑 */
+            private fun handleNaviExit() {
+                Log.d(TAG, "🚪 导航退出，统一处理")
+                onNaviViewExitListener?.invoke()
+            }
+
+            override fun onNaviCancel() {
+                Log.d(TAG, "🚪 onNaviCancel 被调用")
+                handleNaviExit()
+            }
+
+            override fun onNaviBackClick(): Boolean {
+                Log.d(TAG, "🚪 onNaviBackClick 被调用")
+                handleNaviExit()
+                return true  // true = 我们处理退出，SDK 不弹确认对话框
+            }
+
             override fun onNaviMapMode(p0: Int) {}
             override fun onNaviTurnClick() {}
             override fun onNextRoadClick() {}
@@ -78,7 +94,7 @@ class NaviViewFactory(
             override fun onViewTypeChanged(p0: AmapPageType?) {}
             override fun onAMapNaviViewExit() {
                 Log.d(TAG, "🚪 onAMapNaviViewExit 被调用")
-                onNaviViewExitListener?.invoke()
+                handleNaviExit()
             }
             override fun onListenToVoiceDuringCallChanged(p0: Boolean) {}
             override fun onControlMusicVolumeModeChanged(p0: Int) {}
@@ -102,8 +118,11 @@ class NaviViewFactory(
         options.setLayoutVisible(true)
         options.setAutoDrawRoute(true)
         options.setAutoDisplayOverview(true)
+        options.setSecondActionVisible(true)
+        options.setNaviArrowVisible(true)
+        options.setRouteListButtonShow(true)
         naviView.setViewOptions(options)
-        Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI + 自动画路")
+        Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI")
     }
 
     /**
