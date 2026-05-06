@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/platform_channels.dart';
-import '../service/map_controller_service.dart';
+import '../service/map_controller_service/map_controller_service.dart';
 import '../provider/map_controller_provider.dart';
 
 /// ============================================

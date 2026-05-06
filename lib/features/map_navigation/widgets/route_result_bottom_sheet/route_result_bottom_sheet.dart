@@ -1,0 +1,293 @@
+import 'package:flutter/material.dart';
+import '../../../../constants/app_colors.dart';
+import '../../../../constants/app_radii.dart';
+import '../../../../constants/app_spacings.dart';
+import '../../../../widgets/common/qintu_action_button.dart';
+import '../../models/amap_routing_models.dart';
+import '../../models/map_overlay_models.dart';
+import 'detail_page_header.dart';
+import 'drag_handle.dart';
+import 'empty_state.dart';
+import 'route_card.dart';
+import 'transit_itinerary_card/transit_itinerary_card.dart';
+import 'driving_strategy_selector.dart';
+
+/// ============================================
+/// 路线规划结果底部弹窗
+///
+/// 纯 UI 组件，以底部弹窗形式显示路线规划结果
+/// 供用户选择不同的路线方案
+///
+/// 功能特性：
+/// - 纵向全宽显示多条路线选项（距离、耗时、策略、线路名称）
+/// - 支持路线选择交互
+/// - 空状态提示
+/// - 暗黑模式适配
+/// - 支持下拉拖动隐藏
+/// - 公交路线显示行程详情
+/// ============================================
+
+class RouteResultBottomSheet extends StatefulWidget {
+  /// 路线选项数据模型列表
+  final List<RouteResultItem> routes;
+
+  /// 当前选中的路线索引
+  final int selectedIndex;
+
+  /// 路线选择回调，参数为选中的路线索引
+  final ValueChanged<int>? onRouteSelected;
+
+  /// 关闭按钮点击回调
+  final VoidCallback? onClose;
+
+  /// 当前选中的出行方式
+  final RouteType currentRouteType;
+
+  /// 出行方式切换回调
+  final ValueChanged<RouteType>? onRouteTypeChanged;
+
+  /// 是否可见（用于控制显示/隐藏动画）
+  final bool isVisible;
+
+  /// 开始导航按钮点击回调
+  final VoidCallback? onStartNavigation;
+
+  /// 查看行程详情回调（公交模式）
+  final VoidCallback? onViewItinerary;
+
+  /// 退出详情页回调（公交模式），用于恢复地图扁平渲染
+  final VoidCallback? onDetailExited;
+
+  /// 当前驾车策略 (10-20)，驾车模式时传递给策略选择器
+  final int drivingStrategy;
+
+  /// 驾车策略切换回调
+  final ValueChanged<int>? onDrivingStrategyChanged;
+
+  const RouteResultBottomSheet({
+    super.key,
+    this.routes = const [],
+    this.selectedIndex = 0,
+    this.onRouteSelected,
+    this.onClose,
+    this.currentRouteType = RouteType.driving,
+    this.onRouteTypeChanged,
+    this.isVisible = true,
+    this.onStartNavigation,
+    this.onViewItinerary,
+    this.onDetailExited,
+    this.drivingStrategy = 10,
+    this.onDrivingStrategyChanged,
+  });
+
+  @override
+  State<RouteResultBottomSheet> createState() => _RouteResultBottomSheetState();
+}
+
+class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
+  double _dragOffset = 0;
+  bool _isDragging = false;
+
+  /// 下拉隐藏阈值
+  static const double _dismissThreshold = 80;
+
+  /// 最大拖动距离
+  static const double _maxDragOffset = 120;
+
+  /// 是否显示策略选择器（仅驾车模式）
+  bool get _showStrategySelector =>
+      widget.currentRouteType == RouteType.driving;
+
+  /// 当前查看详情的路线（仅公交模式，null = 列表页）
+  RouteResultItem? _detailRoute;
+
+  @override
+  void didUpdateWidget(RouteResultBottomSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 切换出行方式时退出详情
+    if (oldWidget.currentRouteType != widget.currentRouteType) {
+      _detailRoute = null;
+    }
+  }
+
+  void _onVerticalDragStart(DragStartDetails details) {
+    setState(() {
+      _isDragging = true;
+      _dragOffset = 0;
+    });
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      // 只能向下拉（正值），不能向上推
+      _dragOffset = (_dragOffset + details.delta.dy).clamp(0, _maxDragOffset);
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    if (_dragOffset > _dismissThreshold) {
+      // 拖动超过阈值，隐藏 bottom sheet
+      widget.onClose?.call();
+    }
+    setState(() {
+      _isDragging = false;
+      _dragOffset = 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 计算拖动时的偏移量
+    final double translateY = _isDragging ? _dragOffset : 0;
+
+    final isTransit = widget.currentRouteType == RouteType.transit;
+    final showDetail = isTransit && _detailRoute != null;
+
+    return GestureDetector(
+      onVerticalDragStart: _onVerticalDragStart,
+      onVerticalDragUpdate: _onVerticalDragUpdate,
+      onVerticalDragEnd: _onVerticalDragEnd,
+      child: Transform.translate(
+        offset: Offset(0, translateY),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: AppRadii.large,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: showDetail
+              ? _buildDetailPage(isDark)
+              : _buildListPage(isDark),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListPage(bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const RouteDragHandle(),
+        if (_showStrategySelector)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacings.sm),
+            child: DrivingStrategySelector(
+              selectedStrategy: widget.drivingStrategy,
+              onStrategyChanged: widget.onDrivingStrategyChanged ?? (_) {},
+            ),
+          ),
+        if (widget.routes.isEmpty)
+          const RouteEmptyState()
+        else
+          _buildRouteList(isDark),
+        if (widget.routes.isNotEmpty) _buildActionButtons(isDark),
+      ],
+    );
+  }
+
+  Widget _buildRouteList(bool isDark) {
+    final isTransit = widget.currentRouteType == RouteType.transit;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 240),
+      child: ListView.separated(
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(AppSpacings.sm),
+        itemCount: widget.routes.length,
+        separatorBuilder: (context, index) => const SizedBox(height: AppSpacings.sm),
+        itemBuilder: (context, index) => RouteCard(
+          route: widget.routes[index],
+          isSelected: index == widget.selectedIndex,
+          onTap: () {
+            if (isTransit) {
+              setState(() => _detailRoute = widget.routes[index]);
+            }
+            widget.onRouteSelected?.call(index);
+          },
+          isDark: isDark,
+          currentRouteType: widget.currentRouteType,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailPage(bool isDark) {
+    final route = _detailRoute;
+    if (route == null) return const SizedBox.shrink();
+
+    final segments = route.transitSegments;
+    if (segments == null || segments.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RouteDetailHeader(
+          route: route,
+          isDark: isDark,
+          onBack: () {
+            setState(() => _detailRoute = null);
+            widget.onDetailExited?.call();
+          },
+        ),
+        Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: AppSpacings.sm),
+            child: TransitItineraryCard(
+              segments: segments,
+              totalDistance: route.distance,
+              totalDuration: route.duration,
+              tolls: route.tolls ?? 0,
+              walkDistance: route.walkDistance,
+              transferCount: route.transferCount,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              QintuActionButton(
+                label: '查看路线图',
+                icon: Icons.map,
+                onTap: widget.onStartNavigation,
+                backgroundColor: AppColors.grey600,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(bool isDark) {
+    final isTransit = widget.currentRouteType == RouteType.transit;
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacings.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          QintuActionButton(
+            label: isTransit ? '查看路线图' : '开始导航',
+            icon: isTransit ? Icons.map : Icons.navigation,
+            onTap: widget.onStartNavigation,
+            backgroundColor: isTransit ? AppColors.grey600 : AppColors.primaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+}

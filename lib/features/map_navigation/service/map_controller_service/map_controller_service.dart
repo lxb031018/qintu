@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../core/amap_map_controller.dart';
+import '../../core/amap_map_controller.dart';
 
 /// ============================================
 /// 地图控制器服务（service 层）

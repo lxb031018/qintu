@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../constants/app_spacings.dart';
-import '../../../widgets/common/qintu_pill_chip.dart';
+import '../../../../constants/app_spacings.dart';
+import '../../../../widgets/common/qintu_pill_chip.dart';
 
 class DrivingStrategySelector extends StatelessWidget {
   final int selectedStrategy;

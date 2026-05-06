@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../service/map_controller_service.dart';
+import '../service/map_controller_service/map_controller_service.dart';
 
 final mapControllerProvider = Provider<MapControllerService?>((ref) {
   final controller = MapControllerService();
