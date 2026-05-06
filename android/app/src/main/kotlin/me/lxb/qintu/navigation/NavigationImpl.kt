@@ -6,10 +6,13 @@ import com.amap.api.navi.AMapNavi
 import com.amap.api.navi.AMapNaviListener
 import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.PathPlanningStrategy
+import com.amap.api.navi.enums.TravelStrategy
 import com.amap.api.navi.model.AMapCalcRouteResult
 import com.amap.api.navi.model.AMapNaviCameraInfo
 import com.amap.api.navi.model.AMapNaviPath
 import com.amap.api.navi.model.NaviLatLng
+import com.amap.api.navi.model.NaviPoi
+import com.amap.api.maps.model.LatLng
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.route.RoutePathCache
 import me.lxb.qintu.util.AMapPrivacy
@@ -94,6 +97,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
         fromLat: Double, fromLng: Double,
         toLat: Double, toLng: Double,
         strategy: Int,
+        isMultiple: Boolean,
         result: MethodChannel.Result
     ) {
         try {
@@ -113,7 +117,7 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             val from = NaviLatLng(fromLat, fromLng)
             val to = NaviLatLng(toLat, toLng)
 
-            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy")
+            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, isMultiple=$isMultiple")
 
             when (routeType) {
                 "driving" -> {
@@ -121,10 +125,16 @@ class NavigationImpl(context: Context) : AMapNaviListener {
                     navi.calculateDriveRoute(listOf(from), listOf(to), null, flag)
                 }
                 "walking" -> {
-                    navi.calculateWalkRoute(from, to)
+                    val travelStrategy = if (isMultiple) TravelStrategy.MULTIPLE else TravelStrategy.SINGLE
+                    val fromPoi = NaviPoi("", LatLng(fromLat, fromLng), "")
+                    val toPoi = NaviPoi("", LatLng(toLat, toLng), "")
+                    navi.calculateWalkRoute(fromPoi, toPoi, travelStrategy)
                 }
                 "riding" -> {
-                    navi.calculateRideRoute(from, to)
+                    val travelStrategy = if (isMultiple) TravelStrategy.MULTIPLE else TravelStrategy.SINGLE
+                    val fromPoi = NaviPoi("", LatLng(fromLat, fromLng), "")
+                    val toPoi = NaviPoi("", LatLng(toLat, toLng), "")
+                    navi.calculateRideRoute(fromPoi, toPoi, travelStrategy)
                 }
                 else -> {
                     pendingRouteResult = null

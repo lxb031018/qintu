@@ -69,14 +69,17 @@ class AmapNavigationBridge {
   /// 使用 AMapNavi 计算路线（驾车/步行/骑行）
   ///
   /// 返回路线列表，每条路线包含 routeId（用于 RouteOverLay 渲染）
+  ///
+  /// [isMultiple] - 是否多路径（仅对 walking/riding 有效，driving 忽略此参数）
   static Future<List<RouteOption>?> calculateRoute({
     required String routeType,
     required LatLng origin,
     required LatLng destination,
     int strategy = 10,
+    bool isMultiple = true,
   }) async {
     try {
-      Logs.navigation.info('🗺️ calculateRoute via AMapNavi: $routeType, ($origin → $destination), strategy=$strategy');
+      Logs.navigation.info('🗺️ calculateRoute via AMapNavi: $routeType, ($origin → $destination), strategy=$strategy, isMultiple=$isMultiple');
 
       final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('calculateRoute', {
         'routeType': routeType,
@@ -85,6 +88,7 @@ class AmapNavigationBridge {
         'toLat': destination.latitude,
         'toLng': destination.longitude,
         'strategy': strategy,
+        'isMultiple': isMultiple,
       });
 
       if (result == null) {
