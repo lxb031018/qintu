@@ -40,7 +40,7 @@ class NaviViewFactory(
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
             setLayoutVisible(false)
-            setAutoDrawRoute(false)  // 禁用 SDK 自动渲染，由 RouteOverLay 接管
+            setAutoDrawRoute(true)
             setAfterRouteAutoGray(true)
             setTrafficLine(true)
             setEagleMapVisible(true)
