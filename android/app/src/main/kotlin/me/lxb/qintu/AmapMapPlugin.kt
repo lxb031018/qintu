@@ -60,6 +60,7 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
     private var cameraController: CameraController? = null
     
     private var carOverlay: CarOverlay? = null
+    private var isNavigating = false
     private var geocodeImpl: GeocodeImpl? = null
 
     // 业务控制器（功能模块层）
@@ -111,10 +112,10 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
             }
         )
 
-        // 定位监听器 — 更新车载标记（仅导航时显示）
+        // 定位监听器 — 更新车载标记（仅导航激活时创建）
         locationClient.setLocationChangeListener { location ->
-            // 懒初始化 CarOverlay（资源初始化，非业务逻辑）
-            if (carOverlay == null && context != null) {
+            // 仅在导航激活时懒初始化 CarOverlay，防止退出导航后重建
+            if (isNavigating && carOverlay == null && context != null) {
                 carOverlay = CarOverlay(context!!).apply {
                     setDirectionVisible(false)
                     setVisible(false)
@@ -273,10 +274,12 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                 result.success(true)
             }
             "enableNaviMode" -> {
+                isNavigating = true
                 currentNaviView?.let { naviViewFactory.enableNaviMode(it) }
                 result.success(true)
             }
             "disableNaviMode" -> {
+                isNavigating = false
                 currentNaviView?.let { naviViewFactory.disableNaviMode(it) }
                 result.success(true)
             }
