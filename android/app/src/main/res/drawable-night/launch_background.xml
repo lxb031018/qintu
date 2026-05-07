@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 浅色模式启动页：奶油白背景 + 珊瑚橙圆形导航图标 -->
+<!-- 深色模式启动页：深黑背景 + 珊瑚橙圆形导航图标 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#FFF8F0" />
+            <solid android:color="#121212" />
         </shape>
     </item>
 </layer-list>
