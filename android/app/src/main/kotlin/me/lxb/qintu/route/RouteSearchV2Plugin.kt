@@ -60,16 +60,16 @@ class RouteSearchV2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
 
-                val routes = impl.calculateBusRoute(
+                impl.calculateBusRoute(
                     fromLat = fromLat,
                     fromLng = fromLng,
                     toLat = toLat,
                     toLng = toLng,
                     city = city,
                     mode = mode,
-                    nightFlag = nightFlag
+                    nightFlag = nightFlag,
+                    callback = result
                 )
-                result.success(routes)
             }
 
             else -> result.notImplemented()
@@ -84,6 +84,7 @@ class RouteSearchV2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        busRouteSearchImpl?.destroy()
         busRouteSearchImpl = null
     }
 
@@ -92,11 +93,13 @@ class RouteSearchV2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onDetachedFromActivity() {
+        busRouteSearchImpl?.destroy()
         busRouteSearchImpl = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        busRouteSearchImpl?.destroy()
         busRouteSearchImpl = null
         Log.d(TAG, "公交路线搜索插件已分离")
     }
