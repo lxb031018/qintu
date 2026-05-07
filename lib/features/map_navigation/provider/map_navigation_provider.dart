@@ -469,22 +469,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         ));
       }
 
-      RailwaySegment? railway;
-      if (seg.type == bus.TransitSegmentType.railway && seg.railway != null) {
-        final r = seg.railway!;
-        railway = RailwaySegment(
-          name: r.name,
-          trip: r.trip,
-          type: r.type,
-          distance: r.distance,
-          duration: r.duration,
-          departureStation: r.departureStation,
-          arrivalStation: r.arrivalStation,
-          viaStations: r.viaStations,
-          spaces: r.spaces,
-        );
-      }
-
       TaxiSegment? taxi;
       if (seg.type == bus.TransitSegmentType.taxi) {
         taxi = TaxiSegment(
@@ -505,7 +489,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         exit: seg.exit,
         walkSteps: seg.walkSteps,
         taxi: taxi,
-        railway: railway,
       );
     }).toList();
 

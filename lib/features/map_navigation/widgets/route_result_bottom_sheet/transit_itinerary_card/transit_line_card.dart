@@ -43,8 +43,6 @@ class TransitLineCard extends StatelessWidget {
             _buildInfoTags(),
           if (line.passStations != null && line.passStations!.isNotEmpty)
             _buildPassStations(),
-          if (line.spaces != null && line.spaces!.isNotEmpty)
-            _buildSpaces(),
         ],
       ),
     );
@@ -194,47 +192,12 @@ class TransitLineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSpaces() {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacings.xs),
-      child: Wrap(
-        spacing: AppSpacings.sm,
-        children: line.spaces!.map((space) {
-          final seatLabel = _seatLabel(space.code);
-          return Text(
-            '$seatLabel ¥${space.cost.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontSize: 10,
-              color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   static Color _lineColor(TransitLine line) {
     switch (line.type) {
       case TransitLineType.subway:
-      case TransitLineType.suburban:
         return const Color(0xFFFF4D4F);
       case TransitLineType.bus:
         return const Color(0xFF1890FF);
-    }
-  }
-
-  static String _seatLabel(String code) {
-    switch (code.toUpperCase()) {
-      case 'M':
-        return '一等座';
-      case 'O':
-        return '二等座';
-      case 'F':
-        return '商务座';
-      case 'P':
-        return '特等座';
-      default:
-        return code;
     }
   }
 }

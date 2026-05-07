@@ -115,7 +115,7 @@ class MarkerManager(private val aMapHolder: AMapHolder) {
      *   - lat: Double - 纬度
      *   - lng: Double - 经度
      *   - name: String? - 站点名称（可选）
-     *   - type: String - 站点类型 ("bus", "subway", "walk", "railway", "taxi")
+     *   - type: String - 站点类型 ("bus", "subway", "walk", "taxi")
      */
     fun addStationMarkers(stationsData: List<*>?): Boolean {
         if (stationsData.isNullOrEmpty()) return false
@@ -174,7 +174,6 @@ class MarkerManager(private val aMapHolder: AMapHolder) {
         return when (type) {
             "subway" -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
             "bus" -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-            "railway" -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
             "walk" -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
             "taxi" -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
             else -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)

@@ -6,7 +6,6 @@ import '../../../models/amap_routing_models.dart';
 import 'segment_timeline.dart';
 import 'walk_segment_card.dart';
 import 'transit_line_card.dart';
-import 'railway_segment_card.dart';
 import 'taxi_segment_card.dart';
 import 'shared/summary_chip.dart';
 
@@ -14,7 +13,7 @@ import 'shared/summary_chip.dart';
 /// 公共交通行程详情卡片
 ///
 /// 显示 step-by-step 的公共交通行程分解：
-/// 步行 → 公交/地铁/铁路 → 步行 → ...
+/// 步行 → 公交/地铁 → 步行 → ...
 /// ============================================
 
 class TransitItineraryCard extends StatelessWidget {
@@ -143,9 +142,6 @@ class TransitItineraryCard extends StatelessWidget {
   }
 
   Widget _buildSegmentContent(TransitSegment seg, bool isDark) {
-    if (seg.hasRailway) {
-      return RailwaySegmentCard(railway: seg.railway!, isDark: isDark);
-    }
     if (seg.hasTaxi) {
       return TaxiSegmentCard(taxi: seg.taxi!, isDark: isDark);
     }
@@ -167,8 +163,6 @@ class TransitItineraryCard extends StatelessWidget {
         return const Color(0xFF1890FF);
       case 2:
         return const Color(0xFFFF4D4F);
-      case 3:
-        return const Color(0xFF52C41A);
       case 4:
         return const Color(0xFF722ED1);
       default:

@@ -99,67 +99,6 @@ object BusSegmentParser {
                 }
             }
 
-            // 火车路段
-            val railway = step.railway
-            if (railway != null) {
-                val departureStop = railway.departurestop?.let { stop ->
-                    val loc = stop.location
-                    mapOf(
-                        "id" to (stop.id ?: ""),
-                        "name" to (stop.name ?: ""),
-                        "lat" to (loc?.latitude ?: 0.0),
-                        "lng" to (loc?.longitude ?: 0.0),
-                        "time" to (stop.time ?: ""),
-                        "wait" to (stop.wait ?: 0f).toDouble(),
-                        "isStart" to stop.isStart,
-                        "isEnd" to stop.isEnd
-                    )
-                }
-                val arrivalStop = railway.arrivalstop?.let { stop ->
-                    val loc = stop.location
-                    mapOf(
-                        "id" to (stop.id ?: ""),
-                        "name" to (stop.name ?: ""),
-                        "lat" to (loc?.latitude ?: 0.0),
-                        "lng" to (loc?.longitude ?: 0.0),
-                        "time" to (stop.time ?: ""),
-                        "wait" to (stop.wait ?: 0f).toDouble(),
-                        "isStart" to stop.isStart,
-                        "isEnd" to stop.isEnd
-                    )
-                }
-                val viaStops = railway.viastops?.map { stop ->
-                    val loc = stop.location
-                    mapOf(
-                        "id" to (stop.id ?: ""),
-                        "name" to (stop.name ?: ""),
-                        "lat" to (loc?.latitude ?: 0.0),
-                        "lng" to (loc?.longitude ?: 0.0),
-                        "time" to (stop.time ?: ""),
-                        "wait" to (stop.wait ?: 0f).toDouble(),
-                        "isStart" to stop.isStart,
-                        "isEnd" to stop.isEnd
-                    )
-                } ?: emptyList()
-                val spaces = railway.spaces?.map { space ->
-                    mapOf("code" to (space.code ?: ""), "cost" to (space.cost ?: 0f).toDouble())
-                } ?: emptyList()
-
-                segments.add(mapOf(
-                    "type" to "railway",
-                    "lineName" to (railway.name ?: railway.trip ?: ""),
-                    "trip" to (railway.trip ?: ""),
-                    "railwayType" to (railway.type ?: ""),
-                    "distance" to railway.distance.toDouble(),
-                    "duration" to (railway.time?.toDoubleOrNull() ?: 0.0),
-                    "departureStation" to departureStop,
-                    "arrivalStation" to arrivalStop,
-                    "viaStations" to viaStops,
-                    "spaces" to spaces,
-                    "points" to buildRailwayPolyline(railway)
-                ))
-            }
-
             // 打车路段
             val taxi = step.taxi
             if (taxi != null) {
@@ -190,35 +129,9 @@ object BusSegmentParser {
         val lineType = busLine.busLineType ?: ""
         return when {
             lineType.contains("地铁") || lineType.contains("轨交") || lineType.contains("MTR") -> "subway"
-            lineType.contains("郊区") || lineType.contains("市域") || lineType.contains("城际") -> "suburban"
             lineType.contains("机场") && (lineType.contains("大巴") || lineType.contains("快线")) -> "bus"
             else -> "bus"
         }
-    }
-
-    /**
-     * 构建铁路轨迹点列表
-     * 使用 departureStop + viaStops + arrivalStop 的位置构建
-     */
-    private fun buildRailwayPolyline(railway: RouteRailwayItem): List<List<Double>> {
-        val points = mutableListOf<List<Double>>()
-        val departureStop = railway.departurestop
-        if (departureStop?.location != null) {
-            points.add(listOf(departureStop.location.longitude, departureStop.location.latitude))
-        }
-        val viaStops = railway.viastops
-        if (!viaStops.isNullOrEmpty()) {
-            for (stop in viaStops) {
-                if (stop.location != null) {
-                    points.add(listOf(stop.location.longitude, stop.location.latitude))
-                }
-            }
-        }
-        val arrivalStop = railway.arrivalstop
-        if (arrivalStop?.location != null) {
-            points.add(listOf(arrivalStop.location.longitude, arrivalStop.location.latitude))
-        }
-        return points
     }
 
     /**
@@ -233,7 +146,7 @@ object BusSegmentParser {
 
         val lastTransitIndex = segments.indexOfLast { seg ->
             val t = seg["type"] as? String
-            return@indexOfLast t == "subway" || t == "bus" || t == "suburban"
+            return@indexOfLast t == "subway" || t == "bus"
         }
         if (lastTransitIndex >= 0) {
             val seg = segments[lastTransitIndex].toMutableMap()

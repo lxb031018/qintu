@@ -324,7 +324,7 @@ class AmapMapController {
   ///   - lat: 纬度
   ///   - lng: 经度
   ///   - name: 站点名称（可选）
-  ///   - type: 站点类型 ("bus", "subway", "walk", "railway", "taxi")
+  ///   - type: 站点类型 ("bus", "subway", "walk", "taxi")
   Future<bool> showStationMarkers(List<Map<String, dynamic>> stations) async {
     try {
       debugPrint('🗺️ [Flutter] showStationMarkers: ${stations.length} 个站点');

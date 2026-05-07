@@ -1,13 +1,12 @@
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import 'package:qintu/features/map_navigation/models/amap_bus_models.dart';
 
-export 'package:qintu/features/map_navigation/models/amap_routing_models.dart' show StationEntrance, RailwaySegment, RailwayStationDetail, RailwaySpace, WalkStep;
+export 'package:qintu/features/map_navigation/models/amap_routing_models.dart' show StationEntrance, WalkStep;
 
 enum TransitSegmentType {
   walk,
   bus,
   subway,
-  railway,
   taxi,
 }
 
@@ -36,8 +35,6 @@ class BusTransitSegment {
   final StationEntrance? exit;
   // 步行导航步骤
   final List<WalkStep>? walkSteps;
-  // 铁路段
-  final RailwaySegment? railway;
   // 打车段
   final double? taxiDuration;
   final double? taxiPrice;
@@ -66,7 +63,6 @@ class BusTransitSegment {
     this.entrance,
     this.exit,
     this.walkSteps,
-    this.railway,
     this.taxiDuration,
     this.taxiPrice,
     this.taxiOrigin,
@@ -134,13 +130,6 @@ class BusTransitSegment {
       );
     }).toList();
 
-    // 解析 railway
-    RailwaySegment? railway;
-    final railwayRaw = map['railway'] as Map<String, dynamic>?;
-    if (railwayRaw != null) {
-      railway = RailwaySegment.fromMap(railwayRaw);
-    }
-
     // 解析 taxi
     LatLng? taxiOrigin;
     final originRaw = map['origin'] as List<dynamic>?;
@@ -175,7 +164,6 @@ class BusTransitSegment {
       entrance: entrance,
       exit: exit,
       walkSteps: walkSteps,
-      railway: railway,
       taxiDuration: (map['duration'] as num?)?.toDouble(),
       taxiPrice: (map['price'] as num?)?.toDouble(),
       taxiOrigin: taxiOrigin,
@@ -191,8 +179,6 @@ class BusTransitSegment {
         return TransitSegmentType.bus;
       case 'subway':
         return TransitSegmentType.subway;
-      case 'railway':
-        return TransitSegmentType.railway;
       case 'taxi':
         return TransitSegmentType.taxi;
       default:

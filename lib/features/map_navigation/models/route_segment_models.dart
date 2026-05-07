@@ -8,13 +8,12 @@ export 'package:qintu/models/location/lat_lng.dart';
 enum TransitLineType {
   bus,      // 公交
   subway,   // 地铁
-  suburban, // 郊区/市域铁路
 }
 
 /// 公共交通线路信息
 class TransitLine {
   final String name;               // 线路名称，如 "1号线"、"特11路"
-  final TransitLineType type;      // 类型：公交/地铁/郊区
+  final TransitLineType type;      // 类型：公交/地铁
   final int stationCount;          // 站数
   final String? departureStation;  // 上车站名
   final String? arrivalStation;   // 下车站名
@@ -30,12 +29,6 @@ class TransitLine {
   final String? terminalStation;   // 终点站
   final String? busCompany;        // 运营公司
   final List<BusLineStation>? passStations;  // 途经站点
-  // 铁路详情
-  final String? trip;              // 车次号 (如 "G1234")
-  final String? railwayType;       // 铁路类型
-  final double? railwayDistance;   // 铁路距离
-  final List<RailwayStationDetail>? railwayStations;  // 详细站点
-  final List<RailwaySpace>? spaces;  // 舱位/票价
 
   const TransitLine({
     required this.name,
@@ -54,11 +47,6 @@ class TransitLine {
     this.terminalStation,
     this.busCompany,
     this.passStations,
-    this.trip,
-    this.railwayType,
-    this.railwayDistance,
-    this.railwayStations,
-    this.spaces,
   });
 
   String get typeText {
@@ -67,8 +55,6 @@ class TransitLine {
         return '公交';
       case TransitLineType.subway:
         return '地铁';
-      case TransitLineType.suburban:
-        return '市域铁路';
     }
   }
 
@@ -78,8 +64,6 @@ class TransitLine {
         return Icons.directions_bus;
       case TransitLineType.subway:
         return Icons.subway;
-      case TransitLineType.suburban:
-        return Icons.train;
     }
   }
 }
@@ -108,7 +92,6 @@ class TransitSegment {
   final StationEntrance? exit;            // 出站出口（地铁）
   final List<WalkStep>? walkSteps;         // 步行导航步骤详情（transit 内步行段）
   final TaxiSegment? taxi;                // 打车段详情
-  final RailwaySegment? railway;          // 铁路段详情（与 lines 二选一）
 
   const TransitSegment({
     required this.lines,
@@ -118,60 +101,21 @@ class TransitSegment {
     this.exit,
     this.walkSteps,
     this.taxi,
-    this.railway,
   });
 
   bool get hasTransit => lines.isNotEmpty;
   bool get hasWalking => walkingDistance > 0;
-  bool get hasRailway => railway != null;
   bool get hasTaxi => taxi != null;
 
-  /// 路段类型：0=纯步行, 1=公交, 2=地铁, 3=铁路, 4=打车
+  /// 路段类型：0=纯步行, 1=公交, 2=地铁, 4=打车
   int get segmentType {
-    if (railway != null) return 3;
     if (taxi != null) return 4;
     if (lines.isEmpty) return 0;
     for (final line in lines) {
-      if (line.type == TransitLineType.subway || line.type == TransitLineType.suburban) return 2;
+      if (line.type == TransitLineType.subway) return 2;
     }
     return 1;
   }
-}
-
-/// 铁路站点详情
-class RailwayStationDetail {
-  final String id;
-  final String name;
-  final double lat;
-  final double lng;
-  final String time;       // 到达/发车时间
-  final double wait;       // 停留时间（分钟）
-  final bool isStart;      // 是否为始发站
-  final bool isEnd;        // 是否为终点站
-
-  const RailwayStationDetail({
-    required this.id,
-    required this.name,
-    required this.lat,
-    required this.lng,
-    this.time = '',
-    this.wait = 0,
-    this.isStart = false,
-    this.isEnd = false,
-  });
-
-  LatLng get latLng => LatLng(lat, lng);
-}
-
-/// 铁路舱位/票价
-class RailwaySpace {
-  final String code;   // 舱位代码，如 "M"、"O"、"F"（一等座/二等座/商务座）
-  final double cost;   // 票价
-
-  const RailwaySpace({
-    required this.code,
-    required this.cost,
-  });
 }
 
 /// 出租车段
@@ -191,96 +135,6 @@ class TaxiSegment {
     this.price,
     this.points = const [],
   });
-}
-
-/// 铁路段（用于公共交通路线中的火车/高铁段）
-class RailwaySegment {
-  final String name;            // 铁路名称/车次
-  final String trip;           // 车次号
-  final String? type;          // 列车类型描述，如 "高铁"、"动车"
-  final double? distance;      // 行车距离（米）
-  final double? duration;      // 行车时长（秒）
-  final RailwayStationDetail? departureStation;  // 出发站
-  final RailwayStationDetail? arrivalStation;  // 到达站
-  final List<RailwayStationDetail> viaStations;  // 途经站
-  final List<RailwaySpace> spaces; // 舱位/票价
-
-  const RailwaySegment({
-    required this.name,
-    required this.trip,
-    this.type,
-    this.distance,
-    this.duration,
-    this.departureStation,
-    this.arrivalStation,
-    this.viaStations = const [],
-    this.spaces = const [],
-  });
-
-  factory RailwaySegment.fromMap(Map<String, dynamic> map) {
-    RailwayStationDetail? depStation;
-    final depRaw = map['departureStation'] as Map<String, dynamic>?;
-    if (depRaw != null) {
-      depStation = RailwayStationDetail(
-        id: depRaw['id']?.toString() ?? '',
-        name: depRaw['name']?.toString() ?? '',
-        lat: (depRaw['lat'] as num?)?.toDouble() ?? 0,
-        lng: (depRaw['lng'] as num?)?.toDouble() ?? 0,
-        time: depRaw['time']?.toString() ?? '',
-        wait: (depRaw['wait'] as num?)?.toDouble() ?? 0,
-        isStart: depRaw['isStart'] as bool? ?? false,
-        isEnd: depRaw['isEnd'] as bool? ?? false,
-      );
-    }
-    RailwayStationDetail? arrStation;
-    final arrRaw = map['arrivalStation'] as Map<String, dynamic>?;
-    if (arrRaw != null) {
-      arrStation = RailwayStationDetail(
-        id: arrRaw['id']?.toString() ?? '',
-        name: arrRaw['name']?.toString() ?? '',
-        lat: (arrRaw['lat'] as num?)?.toDouble() ?? 0,
-        lng: (arrRaw['lng'] as num?)?.toDouble() ?? 0,
-        time: arrRaw['time']?.toString() ?? '',
-        wait: (arrRaw['wait'] as num?)?.toDouble() ?? 0,
-        isStart: arrRaw['isStart'] as bool? ?? false,
-        isEnd: arrRaw['isEnd'] as bool? ?? false,
-      );
-    }
-    final viaRaw = map['viaStations'] as List<dynamic>? ?? [];
-    final viaStations = viaRaw.map((v) {
-      final m = v as Map<String, dynamic>;
-      return RailwayStationDetail(
-        id: m['id']?.toString() ?? '',
-        name: m['name']?.toString() ?? '',
-        lat: (m['lat'] as num?)?.toDouble() ?? 0,
-        lng: (m['lng'] as num?)?.toDouble() ?? 0,
-        time: m['time']?.toString() ?? '',
-        wait: (m['wait'] as num?)?.toDouble() ?? 0,
-        isStart: m['isStart'] as bool? ?? false,
-        isEnd: m['isEnd'] as bool? ?? false,
-      );
-    }).toList();
-    final spacesRaw = map['spaces'] as List<dynamic>? ?? [];
-    final spaces = spacesRaw.map((s) {
-      final m = s as Map<String, dynamic>;
-      return RailwaySpace(
-        code: m['code']?.toString() ?? '',
-        cost: (m['cost'] as num?)?.toDouble() ?? 0,
-      );
-    }).toList();
-
-    return RailwaySegment(
-      name: map['lineName']?.toString() ?? '',
-      trip: map['trip']?.toString() ?? '',
-      type: map['railwayType'] as String?,
-      distance: (map['distance'] as num?)?.toDouble(),
-      duration: (map['duration'] as num?)?.toDouble(),
-      departureStation: depStation,
-      arrivalStation: arrStation,
-      viaStations: viaStations,
-      spaces: spaces,
-    );
-  }
 }
 
 /// ============================================
