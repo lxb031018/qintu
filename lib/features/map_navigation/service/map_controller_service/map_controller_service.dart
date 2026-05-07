@@ -63,6 +63,8 @@ class MapControllerService {
 
   Future<void> clearRoutes() => _controller.clearRoutes();
 
+  Future<void> clearRouteOverlays() => _controller.clearRouteOverlays();
+
   Future<int?> showRoutesWithOverlay(List<int> routeIds, {int selectIndex = 0}) =>
       _controller.showRoutesWithOverlay(routeIds, selectIndex: selectIndex);
 
@@ -117,6 +119,8 @@ class MapControllerService {
 
   Future<bool> setCarOverlayVisible(bool visible) =>
       _controller.setCarOverlayVisible(visible);
+
+  Future<bool> clearCarMarker() => _controller.clearCarMarker();
 
   // ==================== 相机增强 ====================
 

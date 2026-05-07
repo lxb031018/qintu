@@ -48,6 +48,14 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     await state?.clearRoutes();
   }
 
+  Future<void> clearRouteOverlays() async {
+    await state?.clearRouteOverlays();
+  }
+
+  Future<void> moveToMyLocation() async {
+    await state?.moveToMyLocation();
+  }
+
   Future<int?> showRoutesWithOverlay(List<int> routeIds, {int selectIndex = 0}) async {
     return await state?.showRoutesWithOverlay(routeIds, selectIndex: selectIndex);
   }

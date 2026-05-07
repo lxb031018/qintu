@@ -209,6 +209,11 @@ class AmapMapController {
     await _channel.invokeMethod('clearRoutes');
   }
 
+  /// 清除所有 RouteOverLay 路线
+  Future<void> clearRouteOverlays() async {
+    await _channel.invokeMethod('clearRouteOverlays');
+  }
+
   /// 使用 SDK 原生 RouteOverLay 显示多条路线
   ///
   /// [routeIds] 路线 ID 列表（从 NavigationImpl.getAllRouteIds() 获取）
