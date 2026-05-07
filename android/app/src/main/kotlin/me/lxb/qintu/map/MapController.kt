@@ -220,6 +220,20 @@ class MapController(
                 result.success(true)
             }
 
+            // ======== 公共交通站点标记 ========
+            "showStationMarkers" -> {
+                val stationsData = call.argument<List<*>>("stations")
+                Log.d(TAG, "📍 showStationMarkers: ${stationsData?.size ?: 0} 个站点")
+                val success = markerManager.addStationMarkers(stationsData)
+                result.success(success)
+            }
+
+            "clearStationMarkers" -> {
+                Log.d(TAG, "📍 clearStationMarkers")
+                markerManager.clearStationMarkers()
+                result.success(true)
+            }
+
             // ======== 相机控制 ========
             "moveCamera" -> {
                 val lat = call.argument<Double>("lat")

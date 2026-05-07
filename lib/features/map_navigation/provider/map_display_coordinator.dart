@@ -85,6 +85,7 @@ class MapDisplayCoordinator {
     final segmentColors = <int>[];
     final segmentWidths = <double>[];
     final segmentDashed = <bool>[];
+    final stationDataList = <Map<String, dynamic>>[];
 
     for (int i = 0; i < segments.length; i++) {
       final seg = segments[i];
@@ -104,6 +105,9 @@ class MapDisplayCoordinator {
       segmentColors.add(_segmentColor(seg));
       segmentWidths.add(_segmentWidth(seg));
       segmentDashed.add(seg.segmentType == 0);
+
+      // 构建站点数据
+      _buildStationData(seg, stationDataList);
 
       if (i < segments.length - 1) {
         final nextSeg = segments[i + 1];
@@ -130,12 +134,123 @@ class MapDisplayCoordinator {
       widths: segmentWidths,
       dashedFlags: segmentDashed,
     );
+
+    // 显示站点标记
+    if (stationDataList.isNotEmpty) {
+      await _notifier.showStationMarkers(stationDataList);
+    }
   }
 
-  static bool _pointsNear(LatLng a, LatLng b) {
-    const double epsilon = 1e-5;
-    return (a.latitude - b.latitude).abs() < epsilon &&
-        (a.longitude - b.longitude).abs() < epsilon;
+  /// 从 TransitSegment 构建站点数据
+  void _buildStationData(TransitSegment seg, List<Map<String, dynamic>> stations) {
+    final segmentType = seg.segmentType;
+
+    // 地铁站入口/出口
+    if (seg.entrance != null) {
+      stations.add({
+        'lat': seg.entrance!.lat,
+        'lng': seg.entrance!.lng,
+        'name': seg.entrance!.name,
+        'type': 'subway_entrance',
+      });
+    }
+    if (seg.exit != null) {
+      stations.add({
+        'lat': seg.exit!.lat,
+        'lng': seg.exit!.lng,
+        'name': seg.exit!.name,
+        'type': 'subway_exit',
+      });
+    }
+
+    // 公交/地铁线路站点
+    if (seg.hasTransit && seg.lines.isNotEmpty) {
+      final line = seg.lines.first;
+      final stationType = segmentType == 2 ? 'subway' : 'bus';
+
+      // 起点站
+      if (line.departureStation != null && line.departureStation!.isNotEmpty) {
+        // 起点站坐标从 passStations 获取（如果有的话）
+        final startStation = _findStationByName(line.passStations, line.departureStation!);
+        if (startStation != null) {
+          stations.add({
+            'lat': startStation.lat,
+            'lng': startStation.lng,
+            'name': line.departureStation,
+            'type': stationType,
+          });
+        }
+      }
+
+      // 途经站（只添加前几个，避免太多标记）
+      if (line.passStations != null && line.passStations!.isNotEmpty) {
+        final passCount = line.passStations!.length > 5 ? 5 : line.passStations!.length;
+        for (int i = 0; i < passCount; i++) {
+          final station = line.passStations![i];
+          stations.add({
+            'lat': station.lat,
+            'lng': station.lng,
+            'name': station.name,
+            'type': stationType,
+          });
+        }
+      }
+
+      // 终点站
+      if (line.arrivalStation != null && line.arrivalStation!.isNotEmpty) {
+        final endStation = _findStationByName(line.passStations, line.arrivalStation!);
+        if (endStation != null) {
+          stations.add({
+            'lat': endStation.lat,
+            'lng': endStation.lng,
+            'name': line.arrivalStation,
+            'type': stationType,
+          });
+        }
+      }
+    }
+  }
+
+  /// 从站点列表中查找指定名称的站点
+  dynamic _findStationByName(List<dynamic>? stations, String name) {
+    if (stations == null) return null;
+    for (final station in stations) {
+      if (station.name == name) return station;
+    }
+    return null;
+  }
+
+  /// 检查两个点是否足够接近
+  ///
+  /// [epsilon] 距离阈值（度数），默认 1e-5 约等于 1 米
+  /// 对于步行段到公交段的连接，使用更大的阈值（约 50 米）
+  static bool _pointsNear(LatLng a, LatLng b, {double? epsilon}) {
+    final eps = epsilon ?? _defaultEpsilon;
+    return (a.latitude - b.latitude).abs() < eps &&
+        (a.longitude - b.longitude).abs() < eps;
+  }
+
+  /// 默认距离阈值：约 1 米（1e-5 度）
+  static const double _defaultEpsilon = 1e-5;
+
+  /// 步行到公交/地铁连接的阈值：约 50 米
+  static const double _walkToTransitEpsilon = 5e-4;
+
+  /// 检查步行段终点与下一公交段起点是否连接
+  static bool _walkToTransitConnected(LatLng walkEnd, LatLng transitStart) {
+    // 步行段终点到公交段起点的检查使用更大的阈值
+    return _pointsNear(walkEnd, transitStart, epsilon: _walkToTransitEpsilon);
+  }
+
+  /// 检查公交段终点与下一步行段起点是否连接
+  static bool _transitToWalkConnected(LatLng transitEnd, LatLng walkStart) {
+    return _pointsNear(transitEnd, walkStart, epsilon: _walkToTransitEpsilon);
+  }
+
+  /// 检查两个连续公交段是否直接连接（换乘）
+  static bool _transitToTransitConnected(LatLng firstEnd, LatLng secondStart) {
+    // 公交到公交的换乘使用更小的阈值，因为公交站点是精确的
+    return _pointsNear(firstEnd, secondStart, epsilon: _defaultEpsilon);
   }
 
   Future<void> _drawFlatRoutes(
@@ -184,6 +299,7 @@ class MapDisplayCoordinator {
 
   Future<void> clearRoutes() async {
     await _notifier.clearRoutes();
+    await _notifier.clearStationMarkers();
   }
 }
 

@@ -77,6 +77,14 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     return await state?.clearSingleMarker(isStart) ?? false;
   }
 
+  Future<bool> showStationMarkers(List<Map<String, dynamic>> stations) async {
+    return await state?.showStationMarkers(stations) ?? false;
+  }
+
+  Future<bool> clearStationMarkers() async {
+    return await state?.clearStationMarkers() ?? false;
+  }
+
   Future<void> setNaviShowMode(int mode) async {
     await state?.setNaviShowMode(mode);
   }

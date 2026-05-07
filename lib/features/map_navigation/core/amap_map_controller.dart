@@ -318,6 +318,37 @@ class AmapMapController {
     }
   }
 
+  /// 显示公共交通站点标记
+  ///
+  /// [stations] 站点列表，每项包含:
+  ///   - lat: 纬度
+  ///   - lng: 经度
+  ///   - name: 站点名称（可选）
+  ///   - type: 站点类型 ("bus", "subway", "walk", "railway", "taxi")
+  Future<bool> showStationMarkers(List<Map<String, dynamic>> stations) async {
+    try {
+      debugPrint('🗺️ [Flutter] showStationMarkers: ${stations.length} 个站点');
+      final result = await _channel.invokeMethod<bool>('showStationMarkers', {
+        'stations': stations,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ [Flutter] 显示站点标记失败: $e');
+      return false;
+    }
+  }
+
+  /// 清除公共交通站点标记
+  Future<bool> clearStationMarkers() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('clearStationMarkers');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ [Flutter] 清除站点标记失败: $e');
+      return false;
+    }
+  }
+
   /// 清除单条路线标记
   ///
   /// [isStart] 是否为起点（true=清除起点，false=清除终点）

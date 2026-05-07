@@ -100,6 +100,11 @@ class MapControllerService {
   Future<bool> clearSingleMarker(bool isStart) =>
       _controller.clearSingleMarker(isStart);
 
+  Future<bool> showStationMarkers(List<Map<String, dynamic>> stations) =>
+      _controller.showStationMarkers(stations);
+
+  Future<bool> clearStationMarkers() => _controller.clearStationMarkers();
+
   // ==================== 导航/车载 ====================
 
   Future<bool> updateCarMarker({

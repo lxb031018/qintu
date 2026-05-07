@@ -156,7 +156,7 @@ object BusSegmentParser {
                     "arrivalStation" to arrivalStop,
                     "viaStations" to viaStops,
                     "spaces" to spaces,
-                    "points" to emptyList<List<Double>>()
+                    "points" to buildRailwayPolyline(railway)
                 ))
             }
 
@@ -190,9 +190,35 @@ object BusSegmentParser {
         val lineType = busLine.busLineType ?: ""
         return when {
             lineType.contains("地铁") || lineType.contains("轨交") || lineType.contains("MTR") -> "subway"
+            lineType.contains("郊区") || lineType.contains("市域") || lineType.contains("城际") -> "suburban"
             lineType.contains("机场") && (lineType.contains("大巴") || lineType.contains("快线")) -> "bus"
             else -> "bus"
         }
+    }
+
+    /**
+     * 构建铁路轨迹点列表
+     * 使用 departureStop + viaStops + arrivalStop 的位置构建
+     */
+    private fun buildRailwayPolyline(railway: RouteRailwayItem): List<List<Double>> {
+        val points = mutableListOf<List<Double>>()
+        val departureStop = railway.departurestop
+        if (departureStop?.location != null) {
+            points.add(listOf(departureStop.location.longitude, departureStop.location.latitude))
+        }
+        val viaStops = railway.viastops
+        if (!viaStops.isNullOrEmpty()) {
+            for (stop in viaStops) {
+                if (stop.location != null) {
+                    points.add(listOf(stop.location.longitude, stop.location.latitude))
+                }
+            }
+        }
+        val arrivalStop = railway.arrivalstop
+        if (arrivalStop?.location != null) {
+            points.add(listOf(arrivalStop.location.longitude, arrivalStop.location.latitude))
+        }
+        return points
     }
 
     /**
