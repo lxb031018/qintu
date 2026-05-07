@@ -9,6 +9,7 @@ import 'detail_page_header.dart';
 import 'drag_handle.dart';
 import 'empty_state.dart';
 import 'route_card.dart';
+import 'transit_route_summary_card.dart';
 import 'transit_itinerary_card/transit_itinerary_card.dart';
 import 'driving_strategy_selector.dart';
 
@@ -198,26 +199,48 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   Widget _buildRouteList(bool isDark) {
     final isTransit = widget.currentRouteType == RouteType.transit;
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 240),
+    if (isTransit) {
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 240),
+        child: ListView.separated(
+          scrollDirection: Axis.vertical,
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          itemCount: widget.routes.length,
+          separatorBuilder: (context, index) => const SizedBox(height: AppSpacings.sm),
+          itemBuilder: (context, index) {
+            return TransitRouteSummaryCard(
+              route: widget.routes[index],
+              isSelected: index == widget.selectedIndex,
+              onTap: () {
+                setState(() => _detailRoute = widget.routes[index]);
+                widget.onRouteSelected?.call(index);
+              },
+              isDark: isDark,
+            );
+          },
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 120,
       child: ListView.separated(
-        scrollDirection: Axis.vertical,
-        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(AppSpacings.sm),
         itemCount: widget.routes.length,
-        separatorBuilder: (context, index) => const SizedBox(height: AppSpacings.sm),
-        itemBuilder: (context, index) => RouteCard(
-          route: widget.routes[index],
-          isSelected: index == widget.selectedIndex,
-          onTap: () {
-            if (isTransit) {
-              setState(() => _detailRoute = widget.routes[index]);
-            }
-            widget.onRouteSelected?.call(index);
-          },
-          isDark: isDark,
-          currentRouteType: widget.currentRouteType,
-        ),
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacings.sm),
+        itemBuilder: (context, index) {
+          return RouteCard(
+            route: widget.routes[index],
+            isSelected: index == widget.selectedIndex,
+            onTap: () {
+              widget.onRouteSelected?.call(index);
+            },
+            isDark: isDark,
+            currentRouteType: widget.currentRouteType,
+          );
+        },
       ),
     );
   }
