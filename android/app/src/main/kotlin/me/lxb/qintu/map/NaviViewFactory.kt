@@ -182,7 +182,7 @@ class NaviViewFactory(
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
         myLocationStyle.interval(2000) // 定位间隔 2 秒
         aMap.myLocationStyle = myLocationStyle
-        aMap.isMyLocationEnabled = false
+        aMap.isMyLocationEnabled = true  // 预览模式默认显示蓝点
 
         // ======== UiSettings ========
         val ui = aMap.uiSettings
@@ -219,8 +219,8 @@ class NaviViewFactory(
             }
         })
 
-        // 🟢 关键步骤 2：定位蓝点将在首次 setPointToCenter 后由 AmapMapPlugin 开启
-        // 延迟启用是为了确保地图中心已被修正（AMapNaviView 内部预留空间会导致偏移）
+        // 🟢 关键步骤 2：定位蓝点已在预览模式默认开启
+        // 首次布局时会修正地图中心（AMapNaviView 内部预留空间会导致偏移）
 
         Log.d(TAG, "🔍 地图配置完成（UiSettings/定位源/图层/缩放范围，蓝点待启用）")
     }
