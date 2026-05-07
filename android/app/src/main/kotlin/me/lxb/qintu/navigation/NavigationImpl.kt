@@ -3,7 +3,7 @@ package me.lxb.qintu.navigation
 import android.content.Context
 import android.util.Log
 import com.amap.api.navi.AMapNavi
-import com.amap.api.navi.AMapNaviListener
+import com.amap.api.navi.SimpleNaviListener
 import com.amap.api.navi.enums.NaviType
 import com.amap.api.navi.enums.PathPlanningStrategy
 import com.amap.api.navi.enums.TravelStrategy
@@ -28,7 +28,7 @@ import me.lxb.qintu.util.AMapPrivacy
  *
  * 序列化逻辑委托给 NaviPathSerializer
  */
-class NavigationImpl(context: Context) : AMapNaviListener {
+class NavigationImpl(context: Context) : SimpleNaviListener() {
 
     companion object {
         private const val TAG = "NavigationImpl"
@@ -324,10 +324,6 @@ class NavigationImpl(context: Context) : AMapNaviListener {
             Log.e(TAG, "📡 重算失败: calcType=$calcType, code=$errCode")
         }
     }
-
-    // 旧版抽象接口（必须实现）
-    override fun onCalculateRouteSuccess(ints: IntArray?) {}
-    override fun onCalculateRouteFailure(errorCode: Int) {}
 
     override fun onInitNaviSuccess() {
         Log.d(TAG, "✅ 导航引擎初始化成功")
