@@ -211,7 +211,7 @@ class RouteRenderer(
 
             val overlay = RouteOverLay(aMap, path, naviView.context).apply {
                 setTransparency(if (index == selectIndex) 1.0f else 0.6f)
-                setZindex(if (index == selectIndex) 100 else 0)
+                setZindex(0)
                 addToMap()
             }
             routeOverlays[routeId] = overlay
@@ -230,7 +230,7 @@ class RouteRenderer(
         routeOverlays.forEach { (id, overlay) ->
             if (id == routeId) {
                 overlay.setTransparency(1.0f)
-                overlay.setZindex(100)
+                overlay.setZindex(0)
             } else {
                 overlay.setTransparency(0.6f)
                 overlay.setZindex(0)
