@@ -233,10 +233,19 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void _handleNavEnd() {
     state = state.copyWith(
       isNavigating: false,
-      showRoutesSheet: true,
+      showRoutesSheet: false,
+      clearCurrentRouteType: true,
     );
+    ref.read(mapControllerNotifierProvider)?.disableNaviMode();
+    ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
+    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
+    ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(false);
+    ref.read(mapControllerNotifierProvider)?.clearCarMarker();
     ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(false);
     ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(false);
+    ref.read(mapControllerNotifierProvider)?.clearRoutes();
+    ref.read(mapControllerNotifierProvider)?.clearRouteOverlays();
+    ref.read(mapControllerNotifierProvider)?.moveToMyLocation();
   }
 
   /// 设置起点
@@ -672,6 +681,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         isNavigating: false,
         errorMessage: '启动导航失败',
       );
+      _handleNavEnd();
     }
   }
 
@@ -688,10 +698,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   /// 停止导航
   Future<void> stopNavigation() async {
     await AmapNavigationBridge.stopNavigation();
-    ref.read(mapControllerNotifierProvider)?.disableNaviMode();
-    ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
-    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
-    ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(false);
     _handleNavEnd();
   }
 }
