@@ -194,48 +194,11 @@ class _RouteBottomSheetPositioner extends StatefulWidget {
 }
 
 class _RouteBottomSheetPositionerState extends State<_RouteBottomSheetPositioner> {
-  final _cardKey = GlobalKey();
-  bool _cardMeasured = false;
-  double _cardBottom = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _measureCard();
-    });
-  }
-
-  @override
-  void didUpdateWidget(_RouteBottomSheetPositioner oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // showRoutesSheet 从 false 变为 true 且尚未测量时，重新测量
-    if (!oldWidget.navState.showRoutesSheet &&
-        widget.navState.showRoutesSheet &&
-        !_cardMeasured) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _measureCard();
-      });
-    }
-  }
-
-  void _measureCard() {
-    final cardRenderBox = _cardKey.currentContext?.findRenderObject() as RenderBox?;
-    if (cardRenderBox != null && cardRenderBox.hasSize) {
-      final cardSize = cardRenderBox.size;
-      final cardPosition = cardRenderBox.localToGlobal(Offset.zero);
-      final screenHeight = MediaQuery.of(context).size.height;
-      setState(() {
-        _cardMeasured = true;
-        _cardBottom = screenHeight - cardPosition.dy - cardSize.height;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isTransit = widget.navState.currentRouteType == RouteType.transit;
 
+    // 公交模式也需要从屏幕底部弹出，保持与驾车模式一致的行为
     if (!isTransit) {
       return Positioned(
         left: 0,
@@ -245,27 +208,12 @@ class _RouteBottomSheetPositionerState extends State<_RouteBottomSheetPositioner
       );
     }
 
-    return Stack(
-      children: [
-        // 占位透明的定位参考物（隐藏）
-        Positioned(
-          left: AppSpacings.smd,
-          right: AppSpacings.smd,
-          top: MediaQuery.of(context).padding.top + AppSpacings.smd,
-          child: Opacity(
-            opacity: 0,
-            child: LocationInputCard(key: _cardKey),
-          ),
-        ),
-        // 路线栏定位到 input card 底部 + smd 间距
-        if (_cardMeasured)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: _cardBottom + AppSpacings.smd,
-            child: _RouteBottomSheetBuilder(navState: widget.navState),
-          ),
-      ],
+    // 公交模式：从屏幕底部弹出
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: _RouteBottomSheetBuilder(navState: widget.navState),
     );
   }
 }
