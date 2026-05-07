@@ -122,7 +122,20 @@ class NaviViewFactory(
         options.setNaviArrowVisible(true)
         options.setRouteListButtonShow(true)
         naviView.setViewOptions(options)
-        Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI")
+
+        // 导航模式：隐藏定位蓝点，由 CarOverlay 替代显示
+        // 同时使用 isMyLocationEnabled 和 showMyLocation(false) 确保蓝点完全消失
+        val aMap = naviView.map
+        aMap.isMyLocationEnabled = false
+        val myLocationStyle = MyLocationStyle()
+        myLocationStyle.showMyLocation(false)
+        myLocationStyle.radiusFillColor(0x301890FF.toInt())
+        myLocationStyle.strokeColor(0xFF1890FF.toInt())
+        myLocationStyle.strokeWidth(2f)
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
+        myLocationStyle.interval(2000)
+        aMap.myLocationStyle = myLocationStyle
+        Log.d(TAG, "🎮 导航模式已启用：SDK 完整 UI，定位蓝点已隐藏")
     }
 
     /**
@@ -133,7 +146,20 @@ class NaviViewFactory(
         options.setLayoutVisible(false)
         options.setAutoDisplayOverview(false)
         naviView.setViewOptions(options)
-        Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI，autoDrawRoute 保持开启")
+
+        // 预览模式：恢复定位蓝点
+        // 同时使用 isMyLocationEnabled 和 showMyLocation(true) 确保蓝点正常显示
+        val aMap = naviView.map
+        aMap.isMyLocationEnabled = true
+        val myLocationStyle = MyLocationStyle()
+        myLocationStyle.showMyLocation(true)
+        myLocationStyle.radiusFillColor(0x301890FF.toInt())
+        myLocationStyle.strokeColor(0xFF1890FF.toInt())
+        myLocationStyle.strokeWidth(2f)
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
+        myLocationStyle.interval(2000)
+        aMap.myLocationStyle = myLocationStyle
+        Log.d(TAG, "🗺️ 预览模式已启用：隐藏导航 UI，autoDrawRoute 保持开启，定位蓝点已恢复")
     }
 
     /**
