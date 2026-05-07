@@ -159,6 +159,11 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
             eventSink?.success(mapOf("type" to "naviViewExit"))
         }
 
+        // 设置导航视图加载完成回调，通知 RouteRenderer 可以渲染路线
+        naviViewFactory.onNaviViewLoadedCallback = {
+            mapController?.onNaviViewLoaded()
+        }
+
         Log.d(TAG, "📍 createNaviView 完成")
 
         return object : PlatformView {
@@ -194,8 +199,6 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
                     markerManager = markerManager,
                     gestureHandler = gestureHandler
                 )
-                mapController?.setNaviView(naviView)
-
                 // 触摸监听：检测地图手势 → 解锁车辆 → 安排自动重新锁定
                 aMap.setOnMapTouchListener { motionEvent ->
                     if (motionEvent.action == MotionEvent.ACTION_UP) {

@@ -32,6 +32,11 @@ class NaviViewFactory(
     var onNaviViewExitListener: (() -> Unit)? = null
 
     /**
+     * 导航视图加载完成回调（由外部注入，用于通知 RouteRenderer）
+     */
+    var onNaviViewLoadedCallback: (() -> Unit)? = null
+
+    /**
      * 创建原生 AMapNaviView
      *
      * 预览模式：路线预览时使用（autoDrawRoute=false，layoutVisible=false）
@@ -63,6 +68,7 @@ class NaviViewFactory(
         naviView.setAMapNaviViewListener(object : AMapNaviViewListener {
             override fun onNaviViewLoaded() {
                 Log.d(TAG, "✅ AMapNaviView 加载完成")
+                onNaviViewLoadedCallback?.invoke()
             }
 
             override fun onNaviSetting() {}
@@ -79,9 +85,8 @@ class NaviViewFactory(
             }
 
             override fun onNaviBackClick(): Boolean {
-                Log.d(TAG, "🚪 onNaviBackClick 被调用")
-                handleNaviExit()
-                return true  // true = 我们处理退出，SDK 不弹确认对话框
+                Log.d(TAG, "🚪 onNaviBackClick 被调用，返回 false 让 SDK 显示确认对话框")
+                return false  // false = SDK 显示"退出导航"确认对话框，防止误触
             }
 
             override fun onNaviMapMode(p0: Int) {}

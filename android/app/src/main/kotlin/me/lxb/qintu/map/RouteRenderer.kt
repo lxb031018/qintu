@@ -50,43 +50,13 @@ class RouteRenderer(
         0x80FF0088.toInt()
     )
 
-    fun setNaviView(view: AMapNaviView?) {
-        if (view != null) {
-            view.setAMapNaviViewListener(object : com.amap.api.navi.AMapNaviViewListener {
-                override fun onNaviViewLoaded() {
-                    isNaviViewLoaded = true
-                    Log.d(TAG, "✅ AMapNaviView 加载完成")
-                    if (pendingRouteIds.isNotEmpty()) {
-                        Log.d(TAG, "📍 渲染暂存的 ${pendingRouteIds.size} 条路线")
-                        showRoutesWithOverlayInternal(pendingRouteIds.toList(), pendingSelectIndex)
-                        pendingRouteIds.clear()
-                    }
-                }
-
-                override fun onNaviSetting() {}
-                override fun onNaviCancel() {}
-                override fun onNaviBackClick(): Boolean = false
-                override fun onNaviMapMode(p0: Int) {}
-                override fun onNaviTurnClick() {}
-                override fun onNextRoadClick() {}
-                override fun onScanViewButtonClick() {}
-                override fun onLockMap(p0: Boolean) {}
-                override fun onNaviViewShowMode(p0: Int) {}
-                override fun onStopSpeaking() {}
-                override fun onViewTypeChanged(p0: com.amap.api.navi.AmapPageType?) {}
-                override fun onAMapNaviViewExit() {}
-                override fun onListenToVoiceDuringCallChanged(p0: Boolean) {}
-                override fun onControlMusicVolumeModeChanged(p0: Int) {}
-                override fun onEagleChanged(p0: Boolean) {}
-                override fun onNaviRouteHighlightChange(p0: Long, p1: Int) {}
-                override fun onBroadcastModeChanged(p0: Int) {}
-                override fun onDayAndNightModeChanged(p0: Int) {}
-                override fun onScaleAutoChanged(p0: Boolean) {}
-                override fun onStrategyChanged(p0: Int) {}
-                override fun onMapTypeChanged(p0: Int) {}
-            })
-        } else {
-            isNaviViewLoaded = false
+    fun onNaviViewLoaded() {
+        isNaviViewLoaded = true
+        Log.d(TAG, "✅ AMapNaviView 加载完成")
+        if (pendingRouteIds.isNotEmpty()) {
+            Log.d(TAG, "📍 渲染暂存的 ${pendingRouteIds.size} 条路线")
+            showRoutesWithOverlayInternal(pendingRouteIds.toList(), pendingSelectIndex)
+            pendingRouteIds.clear()
         }
     }
 

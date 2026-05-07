@@ -3,7 +3,6 @@ package me.lxb.qintu.map
 import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
-import com.amap.api.navi.AMapNaviView
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import me.lxb.qintu.geocode.GeocodeImpl
@@ -41,8 +40,8 @@ class MapController(
     private val markerManager = markerManager
     private val gestureHandler = gestureHandler
 
-    fun setNaviView(view: AMapNaviView?) {
-        routeRenderer.setNaviView(view)
+    fun onNaviViewLoaded() {
+        routeRenderer.onNaviViewLoaded()
     }
 
     /**
