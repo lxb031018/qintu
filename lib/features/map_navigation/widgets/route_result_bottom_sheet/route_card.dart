@@ -28,7 +28,7 @@ class RouteCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
+        width: 110,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacings.sm,
           vertical: AppSpacings.sm,
@@ -132,20 +132,6 @@ class RouteCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (isSelected)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 14,
-                      color: _getRouteTypeColor(currentRouteType),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
