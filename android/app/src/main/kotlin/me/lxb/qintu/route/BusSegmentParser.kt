@@ -14,7 +14,7 @@ object BusSegmentParser {
 
     private const val TAG = "BusSegmentParser"
 
-    fun parseSegments(steps: List<BusStepV2>?): List<Map<String, Any?>> {
+    fun parseSegments(steps: List<BusStepV2>?, cityCode: String): List<Map<String, Any?>> {
         if (steps.isNullOrEmpty()) return emptyList()
 
         val segments = mutableListOf<Map<String, Any?>>()
@@ -93,6 +93,7 @@ object BusSegmentParser {
                         "terminalStation" to (busLine.terminalStation ?: ""),
                         "busCompany" to (busLine.busCompany ?: ""),
                         "passStations" to passStations,
+                        "cityCode" to cityCode,
                         "points" to (busLine.directionsCoordinates?.map { listOf(it.longitude, it.latitude) }
                             ?: emptyList<List<Double>>())
                     ))

@@ -25,7 +25,7 @@ class BusRouteSearchImpl(private val context: Context) {
         private const val TAG = "BusRouteSearchImpl"
     }
 
-    private val busRouteCallbacks = mutableMapOf<String, MethodChannel.Result>()
+    private val busRouteCallbacks = mutableMapOf<String, Pair<MethodChannel.Result, String>>()
 
     private val routeSearch: RouteSearchV2 by lazy {
         AMapPrivacy.initSearch(context)
@@ -36,14 +36,15 @@ class BusRouteSearchImpl(private val context: Context) {
     init {
         routeSearch.setRouteSearchListener(object : RouteSearchV2.OnRouteSearchListener {
             override fun onBusRouteSearched(result: BusRouteResultV2?, errorCode: Int) {
-                val callback = busRouteCallbacks.remove("bus_route")
-                if (callback == null) {
+                val callbackPair = busRouteCallbacks.remove("bus_route")
+                if (callbackPair == null) {
                     Log.w(TAG, "⚠️ 未找到公交路线搜索回调")
                     return
                 }
+                val (callback, cityCode) = callbackPair
                 if (errorCode == AMapException.CODE_AMAP_SUCCESS && result != null) {
                     Log.d(TAG, "✅ 公交路线搜索成功: ${result.paths?.size ?: 0} 条方案")
-                    callback.success(parseBusPaths(result))
+                    callback.success(parseBusPaths(result, cityCode))
                 } else {
                     Log.e(TAG, "❌ 公交路线搜索失败: errorCode=$errorCode")
                     callback.error("BUS_ROUTE_ERROR", "公交路线搜索失败: $errorCode", null)
@@ -62,11 +63,12 @@ class BusRouteSearchImpl(private val context: Context) {
         toLat: Double,
         toLng: Double,
         city: String,
+        cityCode: String,
         mode: Int = RouteSearchV2.BusMode.BUS_DEFAULT,
         nightFlag: Int = 0,
         callback: MethodChannel.Result
     ) {
-        Log.d(TAG, "🚌 计算公交路线: from=($fromLat,$fromLng), to=($toLat,$toLng), city=$city, mode=$mode")
+        Log.d(TAG, "🚌 计算公交路线: from=($fromLat,$fromLng), to=($toLat,$toLng), city=$city, cityCode=$cityCode, mode=$mode")
 
         val fromAndTo = RouteSearchV2.FromAndTo(
             LatLonPoint(fromLat, fromLng),
@@ -76,7 +78,7 @@ class BusRouteSearchImpl(private val context: Context) {
         val query = RouteSearchV2.BusRouteQuery(fromAndTo, mode, city, nightFlag)
         query.setShowFields(RouteSearchV2.ShowFields.ALL)
 
-        busRouteCallbacks["bus_route"] = callback
+        busRouteCallbacks["bus_route"] = callback to cityCode
         routeSearch.calculateBusRouteAsyn(query)
     }
 
@@ -84,7 +86,7 @@ class BusRouteSearchImpl(private val context: Context) {
         busRouteCallbacks.clear()
     }
 
-    private fun parseBusPaths(result: BusRouteResultV2?): List<Map<String, Any?>> {
+    private fun parseBusPaths(result: BusRouteResultV2?, cityCode: String): List<Map<String, Any?>> {
         if (result == null) {
             Log.w(TAG, "⚠️ 公交路线结果为空")
             return emptyList()
@@ -99,7 +101,7 @@ class BusRouteSearchImpl(private val context: Context) {
         Log.d(TAG, "📍 获取到 ${paths.size} 条公交路线方案")
 
         return paths.mapIndexed { index, busPath ->
-            val segments = BusSegmentParser.parseSegments(busPath.steps)
+            val segments = BusSegmentParser.parseSegments(busPath.steps, cityCode)
             mapOf(
                 "routeId" to index,
                 "distance" to busPath.distance.toDouble(),

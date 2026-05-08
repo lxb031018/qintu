@@ -33,57 +33,116 @@ import 'kaohsiung_subway_colors.dart';
 import 'taipei_subway_colors.dart';
 import 'hongkong_subway_colors.dart';
 import 'macau_subway_colors.dart';
+import 'guiyang_subway_colors.dart';
+import 'honghe_subway_colors.dart';
+import 'wenshan_subway_colors.dart';
+import 'lijiang_subway_colors.dart';
+import 'yibin_subway_colors.dart';
+import 'urumqi_subway_colors.dart';
+import 'yinchuan_subway_colors.dart';
+import 'tianshui_subway_colors.dart';
+import 'lanzhou_subway_colors.dart';
+import 'sanya_subway_colors.dart';
+import 'luoyang_subway_colors.dart';
+import 'huangshi_subway_colors.dart';
+import 'xiangxi_subway_colors.dart';
+import 'taichung_subway_colors.dart';
+import 'taoyuan_subway_colors.dart';
+import 'new_taipei_subway_colors.dart';
+import 'fuzhou_subway_colors.dart';
+import 'wuhu_subway_colors.dart';
+import 'jinhua_subway_colors.dart';
+import 'taizhou_subway_colors.dart';
+import 'wenzhou_subway_colors.dart';
+import 'shaoxing_subway_colors.dart';
+import 'yancheng_subway_colors.dart';
+import 'huaian_subway_colors.dart';
+import 'xuzhou_subway_colors.dart';
+
+import 'nantong_subway_colors.dart';
+import 'qingyuan_subway_colors.dart';
+import 'zhangjiakou_subway_colors.dart';
+import 'shijiazhuang_subway_colors.dart';
+import 'hohhot_subway_colors.dart';
+import 'nanping_subway_colors.dart';
 
 class SubwayColorHelper {
-  static const Map<int, String> _adcodeToHelper = {
-    110000: 'beijing',
-    310000: 'shanghai',
-    440100: 'guangzhou',
-    440300: 'shenzhen',
-    510100: 'chengdu',
-    330100: 'hangzhou',
-    320100: 'nanjing',
-    420100: 'wuhan',
-    610100: 'xian',
-    500000: 'chongqing',
-    120000: 'tianjin',
-    320500: 'suzhou',
-    210200: 'dalian',
-    360100: 'nanchang',
-    230100: 'harbin',
-    210100: 'shenyang',
-    350200: 'xiamen',
-    430100: 'changsha',
-    410100: 'zhengzhou',
-    530100: 'kunming',
-    330200: 'ningbo',
-    340100: 'hefei',
-    320200: 'wuxi',
-    370200: 'qingdao',
-    370100: 'jinan',
-    350500: 'quanzhou',
-    440400: 'zhuhai',
-    441900: 'dongguan',
-    220100: 'changchun',
-    140100: 'taiyuan',
-    450100: 'nanning',
-    810000: 'hongkong',
-    820000: 'macau',
-    850000: 'kaohsiung',
-    830000: 'taipei',
+  static const Map<String, String> _cityCodeToHelper = {
+    // 华北
+    '010': 'beijing',
+    '022': 'tianjin',
+    '0311': 'shijiazhuang',
+    '0313': 'zhangjiakou',
+    '0351': 'taiyuan',
+    '0471': 'hohhot',
+    // 东北
+    '024': 'shenyang',
+    '0411': 'dalian',
+    '0431': 'changchun',
+    '0451': 'harbin',
+    // 华东
+    '021': 'shanghai',
+    '025': 'nanjing',
+    '0512': 'suzhou',
+    '0510': 'wuxi',
+    '0519': 'changzhou',
+    '0513': 'nantong',
+    '0516': 'xuzhou',
+    '0515': 'yancheng',
+    '0517': 'huaian',
+    '0571': 'hangzhou',
+    '0574': 'ningbo',
+    '0575': 'shaoxing',
+    '0579': 'jinhua',
+    '0576': 'taizhou',
+    '0577': 'wenzhou',
+    '0551': 'hefei',
+    '0553': 'wuhu',
+    '0531': 'jinan',
+    '0532': 'qingdao',
+    '0591': 'fuzhou',
+    '0592': 'xiamen',
+    '0791': 'nanchang',
+    // 华中
+    '027': 'wuhan',
+    '0371': 'zhengzhou',
+    '0731': 'changsha',
+    // 华南
+    '020': 'guangzhou',
+    '0755': 'shenzhen',
+    '0757': 'foshan',
+    '0769': 'dongguan',
+    '0763': 'qingyuan',
+    '0771': 'nanning',
+    // 西南
+    '023': 'chongqing',
+    '028': 'chengdu',
+    '0851': 'guiyang',
+    '0871': 'kunming',
+    '0888': 'lijiang',
+    '0831': 'yibin',
+    '0873': 'honghe',
+    '0876': 'wenshan',
+    // 西北
+    '029': 'xian',
+    '0931': 'lanzhou',
+    '0938': 'tianshui',
+    '0951': 'yinchuan',
+    '0991': 'urumqi',
+    // 港澳台
+    '852': 'hongkong',
+    '853': 'macau',
+    '02': 'taipei',
+    '03': 'taoyuan',
+    '04': 'taichung',
+    '07': 'kaohsiung',
   };
 
-  static int? toCityLevelAdcode(int? districtAdcode) {
-    if (districtAdcode == null) return null;
-    return (districtAdcode ~/ 1000) * 1000;
-  }
-
-  static Color getSubwayColor(String? lineName, int? cityAdcode, {Color defaultColor = const Color(0xFFFF4D4F)}) {
+  static Color getSubwayColor(String? lineName, String? cityCode, {Color defaultColor = const Color(0xFFFF4D4F)}) {
     if (lineName == null || lineName.isEmpty) return defaultColor;
 
-    final cityLevelAdcode = toCityLevelAdcode(cityAdcode);
-    if (cityLevelAdcode != null) {
-      final helperName = _adcodeToHelper[cityLevelAdcode];
+    if (cityCode != null) {
+      final helperName = _cityCodeToHelper[cityCode];
       if (helperName != null) {
         final color = _getColorFromHelper(helperName, lineName);
         if (color != null) return color;
@@ -163,6 +222,68 @@ class SubwayColorHelper {
         return KaohsiungSubwayColors.getColor(lineName);
       case 'taipei':
         return TaipeiSubwayColors.getColor(lineName);
+      case 'guiyang':
+        return GuiyangSubwayColors.getColor(lineName);
+      case 'honghe':
+        return HongheSubwayColors.getColor(lineName);
+      case 'wenshan':
+        return WenshanSubwayColors.getColor(lineName);
+      case 'lijiang':
+        return LijiangSubwayColors.getColor(lineName);
+      case 'yibin':
+        return YibinSubwayColors.getColor(lineName);
+      case 'urumqi':
+        return UrumqiSubwayColors.getColor(lineName);
+      case 'yinchuan':
+        return YinchuanSubwayColors.getColor(lineName);
+      case 'tianshui':
+        return TianshuiSubwayColors.getColor(lineName);
+      case 'lanzhou':
+        return LanzhouSubwayColors.getColor(lineName);
+      case 'sanya':
+        return SanyaSubwayColors.getColor(lineName);
+      case 'luoyang':
+        return LuoyangSubwayColors.getColor(lineName);
+      case 'huangshi':
+        return HuangshiSubwayColors.getColor(lineName);
+      case 'xiangxi':
+        return XiangxiSubwayColors.getColor(lineName);
+      case 'taichung':
+        return TaichungSubwayColors.getColor(lineName);
+      case 'taoyuan':
+        return TaoyuanSubwayColors.getColor(lineName);
+      case 'new_taipei':
+        return NewTaipeiSubwayColors.getColor(lineName);
+      case 'fuzhou':
+        return FuzhouSubwayColors.getColor(lineName);
+      case 'wuhu':
+        return WuhuSubwayColors.getColor(lineName);
+      case 'jinhua':
+        return JinhuaSubwayColors.getColor(lineName);
+      case 'taizhou':
+        return TaizhouSubwayColors.getColor(lineName);
+      case 'wenzhou':
+        return WenzhouSubwayColors.getColor(lineName);
+      case 'shaoxing':
+        return ShaoxingSubwayColors.getColor(lineName);
+      case 'yancheng':
+        return YanchengSubwayColors.getColor(lineName);
+      case 'huaian':
+        return HuaianSubwayColors.getColor(lineName);
+      case 'xuzhou':
+        return XuzhouSubwayColors.getColor(lineName);
+      case 'nantong':
+        return NantongSubwayColors.getColor(lineName);
+      case 'qingyuan':
+        return QingyuanSubwayColors.getColor(lineName);
+      case 'zhangjiakou':
+        return ZhangjiakouSubwayColors.getColor(lineName);
+      case 'shijiazhuang':
+        return ShijiazhuangSubwayColors.getColor(lineName);
+      case 'hohhot':
+        return HohhotSubwayColors.getColor(lineName);
+      case 'nanping':
+        return NanpingSubwayColors.getColor(lineName);
       default:
         return null;
     }

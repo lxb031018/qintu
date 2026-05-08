@@ -16,12 +16,14 @@ class BusRouteService {
   ///
   /// [from] 起点坐标
   /// [to] 终点坐标
-  /// [city] 城市名称（用于公交规划）
+  /// [city] 城市区号（用于公交规划）
+  /// [cityCode] 城市区号（用于地铁颜色匹配）
   /// [mode] 公交模式，默认推荐模式
   Future<List<BusPath>> calculateBusRoute({
     required LatLng from,
     required LatLng to,
     required String city,
+    required String cityCode,
     int mode = BusModeValues.defaultMode,
     int nightFlag = 0,
   }) async {
@@ -29,6 +31,7 @@ class BusRouteService {
       from: from,
       to: to,
       city: city,
+      cityCode: cityCode,
       mode: mode,
       nightFlag: nightFlag,
     );

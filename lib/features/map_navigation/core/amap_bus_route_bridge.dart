@@ -13,6 +13,7 @@ class AmapBusRouteBridge {
     required LatLng from,
     required LatLng to,
     required String city,
+    required String cityCode,
     int mode = BusModeValues.defaultMode,
     int nightFlag = 0,
   }) async {
@@ -23,6 +24,7 @@ class AmapBusRouteBridge {
         'toLat': to.latitude,
         'toLng': to.longitude,
         'city': city,
+        'cityCode': cityCode,
         'mode': mode,
         'nightFlag': nightFlag,
       });

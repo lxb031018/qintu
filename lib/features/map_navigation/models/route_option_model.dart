@@ -35,7 +35,7 @@ class RouteOption {
   final int? routeSubType;      // 路线子类型（1=驾车,2=骑行,3=步行,4=电动自行车）
   final String? mainRoadInfo;   // 主要道路信息
   final int cameraCount;        // 摄像头数量
-  final List<int>? cityAdcodes; // 途经城市编码
+  final List<String>? cityCodes; // 起点城市区号（用于地铁颜色匹配）
   final List<Map<String, dynamic>>? trafficStatuses; // 交通路况列表
   final Map<String, dynamic>? restrictionInfo; // 限行信息
   final int naviGuideGroupCount; // 导航引导组数量
@@ -67,7 +67,7 @@ class RouteOption {
     this.routeSubType,
     this.mainRoadInfo,
     this.cameraCount = 0,
-    this.cityAdcodes,
+    this.cityCodes,
     this.trafficStatuses,
     this.restrictionInfo,
     this.naviGuideGroupCount = 0,

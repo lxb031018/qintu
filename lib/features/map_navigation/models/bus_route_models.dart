@@ -41,6 +41,8 @@ class BusTransitSegment {
   final double? taxiPrice;
   final LatLng? taxiOrigin;
   final LatLng? taxiDestination;
+  // 城市区号（用于地铁颜色匹配）
+  final String? cityCode;
 
   const BusTransitSegment({
     required this.type,
@@ -68,6 +70,7 @@ class BusTransitSegment {
     this.taxiPrice,
     this.taxiOrigin,
     this.taxiDestination,
+    this.cityCode,
   });
 
   factory BusTransitSegment.fromMap(Map<dynamic, dynamic> map) {
@@ -169,6 +172,7 @@ class BusTransitSegment {
       taxiPrice: (map['price'] as num?)?.toDouble(),
       taxiOrigin: taxiOrigin,
       taxiDestination: taxiDestination,
+      cityCode: map['cityCode'] as String?,
     );
   }
 

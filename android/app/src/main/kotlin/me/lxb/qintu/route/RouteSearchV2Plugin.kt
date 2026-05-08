@@ -46,6 +46,7 @@ class RouteSearchV2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val toLat = call.argument<Double>("toLat")
                 val toLng = call.argument<Double>("toLng")
                 val city = call.argument<String>("city") ?: ""
+                val cityCode = call.argument<String>("cityCode") ?: ""
                 val mode = call.argument<Int>("mode") ?: 0
                 val nightFlag = call.argument<Int>("nightFlag") ?: 0
 
@@ -66,6 +67,7 @@ class RouteSearchV2Plugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     toLat = toLat,
                     toLng = toLng,
                     city = city,
+                    cityCode = cityCode,
                     mode = mode,
                     nightFlag = nightFlag,
                     callback = result

@@ -131,7 +131,7 @@ class TransitRouteSummaryCard extends StatelessWidget {
           name: seg.lineName ?? '',
           stationCount: seg.stationCount ?? 0,
           type: seg.type,
-          cityAdcode: route.cityAdcode,
+          cityCode: route.cityCode,
         ));
         if (i < segments.length - 1) {
           tags.add(const _ArrowSeparator());
@@ -206,20 +206,20 @@ class _TransitTag extends StatelessWidget {
   final String name;
   final int stationCount;
   final TransitSegmentType type;
-  final int? cityAdcode;
+  final String? cityCode;
 
   const _TransitTag({
     required this.name,
     required this.stationCount,
     required this.type,
-    this.cityAdcode,
+    this.cityCode,
   });
 
   Color get _color {
     if (type == TransitSegmentType.subway) {
       return SubwayColorHelper.getSubwayColor(
         name,
-        cityAdcode,
+        cityCode,
         defaultColor: const Color(0xFFFF4D4F),
       );
     }
