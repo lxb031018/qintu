@@ -5,6 +5,7 @@ import '../../../../constants/app_spacings.dart';
 import '../../models/amap_routing_models.dart';
 import '../../models/map_overlay_models.dart';
 import '../../models/bus_route_models.dart';
+import 'transit_itinerary_card/color/subway_color_helper.dart';
 
 class TransitRouteSummaryCard extends StatelessWidget {
   final RouteResultItem route;
@@ -130,6 +131,7 @@ class TransitRouteSummaryCard extends StatelessWidget {
           name: seg.lineName ?? '',
           stationCount: seg.stationCount ?? 0,
           type: seg.type,
+          cityAdcode: route.cityAdcode,
         ));
         if (i < segments.length - 1) {
           tags.add(const _ArrowSeparator());
@@ -204,22 +206,24 @@ class _TransitTag extends StatelessWidget {
   final String name;
   final int stationCount;
   final TransitSegmentType type;
+  final int? cityAdcode;
 
   const _TransitTag({
     required this.name,
     required this.stationCount,
     required this.type,
+    this.cityAdcode,
   });
 
   Color get _color {
-    switch (type) {
-      case TransitSegmentType.subway:
-        return const Color(0xFFFF4D4F);
-      case TransitSegmentType.bus:
-        return const Color(0xFF1890FF);
-      default:
-        return const Color(0xFF1890FF);
+    if (type == TransitSegmentType.subway) {
+      return SubwayColorHelper.getSubwayColor(
+        name,
+        cityAdcode,
+        defaultColor: const Color(0xFFFF4D4F),
+      );
     }
+    return const Color(0xFF1890FF);
   }
 
   IconData get _icon {

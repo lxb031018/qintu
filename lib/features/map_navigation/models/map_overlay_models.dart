@@ -123,6 +123,7 @@ class RouteResultItem {
   final List<String>? transitLineNames;
   final int transferCount;
   final double? walkDistance;
+  final int? cityAdcode;
 
   const RouteResultItem({
     required this.distance,
@@ -141,5 +142,6 @@ class RouteResultItem {
     this.transitLineNames,
     this.transferCount = 0,
     this.walkDistance,
+    this.cityAdcode,
   });
 }

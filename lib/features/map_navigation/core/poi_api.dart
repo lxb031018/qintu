@@ -91,4 +91,16 @@ class PoiApi {
       return null;
     }
   }
+
+  /// 从坐标获取完整的逆地理编码结果
+  ///
+  /// 返回包含 cityCode（电话区号）和 adCode（行政区划码）的完整信息
+  Future<RegeocodeResult?> getRegeocodeFromLocation(LatLng location) async {
+    try {
+      return await GeocodeBridge.regeocode(location.latitude, location.longitude);
+    } catch (e) {
+      Logs.map.warning('获取逆地理编码异常: $e');
+      return null;
+    }
+  }
 }

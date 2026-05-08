@@ -73,30 +73,21 @@ class SubwayColorHelper {
     830000: 'taipei',
   };
 
+  static int? toCityLevelAdcode(int? districtAdcode) {
+    if (districtAdcode == null) return null;
+    return (districtAdcode ~/ 1000) * 1000;
+  }
+
   static Color getSubwayColor(String? lineName, int? cityAdcode, {Color defaultColor = const Color(0xFFFF4D4F)}) {
     if (lineName == null || lineName.isEmpty) return defaultColor;
 
-    if (cityAdcode != null) {
-      final helperName = _adcodeToHelper[cityAdcode];
+    final cityLevelAdcode = toCityLevelAdcode(cityAdcode);
+    if (cityLevelAdcode != null) {
+      final helperName = _adcodeToHelper[cityLevelAdcode];
       if (helperName != null) {
         final color = _getColorFromHelper(helperName, lineName);
         if (color != null) return color;
       }
-    }
-
-    final allHelpers = [
-      'beijing', 'shanghai', 'guangzhou', 'shenzhen', 'chengdu',
-      'hangzhou', 'nanjing', 'wuhan', 'xian', 'chongqing',
-      'tianjin', 'suzhou', 'dalian', 'nanchang', 'harbin',
-      'shenyang', 'xiamen', 'changsha', 'zhengzhou', 'kunming',
-      'ningbo', 'hefei', 'wuxi', 'qingdao', 'jinan',
-      'foshan', 'dongguan', 'changchun', 'taiyuan', 'nanning',
-      'hongkong', 'macau', 'kaohsiung', 'taipei',
-    ];
-
-    for (final helper in allHelpers) {
-      final color = _getColorFromHelper(helper, lineName);
-      if (color != null) return color;
     }
 
     return defaultColor;

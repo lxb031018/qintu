@@ -267,6 +267,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
           transitLineNames: route.transitLineNames,
           transferCount: route.transferCount,
           walkDistance: route.walkDistance,
+          cityAdcode: route.cityAdcodes?.isNotEmpty == true ? route.cityAdcodes!.first : null,
         );
       }).toList(),
       selectedIndex: selectedIdx,

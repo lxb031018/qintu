@@ -10,6 +10,7 @@ import '../models/bus_route_models.dart' as bus;
 import '../service/poi_service.dart';
 import '../service/bus_route_service.dart';
 import '../core/amap_navigation_bridge.dart';
+import '../widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
 import 'map_display_coordinator.dart';
 import '../models/navigation_models.dart';
 import 'map_controller_provider.dart';
@@ -383,7 +384,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       if (state.currentRouteType == RouteType.transit) {
         // 公共交通：使用 RouteSearchV2 API
         // 从起点坐标获取城市区号（用于 BusRouteQuery 的 city 参数）
-        final cityCode = await _poiService.getCityCodeFromLocation(state.originLocation!);
+        final geoResult = await _poiService.getRegeocodeFromLocation(state.originLocation!);
+        final cityCode = geoResult?.cityCode;
         Logs.navigation.info('公交路线搜索：起点(${state.originLocation!.latitude},${state.originLocation!.longitude}) 终点(${state.destinationLocation!.latitude},${state.destinationLocation!.longitude}) 城市码=$cityCode');
         final busService = BusRouteService();
         final busPaths = await busService.calculateBusRoute(
@@ -392,7 +394,10 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           city: cityCode ?? '010', // 默认为北京，null 时回退到 '010'
         );
         Logs.navigation.info('公交路线搜索结果：${busPaths.length} 条路径');
-        routes = busPaths.map((bp) => _busPathToRouteOption(bp)).toList();
+        final originCityAdcode = geoResult?.adCode != null
+            ? SubwayColorHelper.toCityLevelAdcode(int.tryParse(geoResult!.adCode!))
+            : null;
+        routes = busPaths.map((bp) => _busPathToRouteOption(bp, originCityAdcode)).toList();
       } else {
         final naviRoutes = await AmapNavigationBridge.calculateRoute(
           routeType: _routeTypeToString(state.currentRouteType!),
@@ -456,7 +461,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   }
 
   /// 将 BusPath 转换为 RouteOption
-  RouteOption _busPathToRouteOption(bus.BusPath bp) {
+  RouteOption _busPathToRouteOption(bus.BusPath bp, int? originCityAdcode) {
     return RouteOption(
       routeId: bp.routeId,
       distance: bp.distance,
@@ -469,6 +474,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       walkDistance: bp.walkDistance,
       busDistance: bp.busDistance,
       isNightBus: bp.nightBus,
+      cityAdcodes: originCityAdcode != null ? [originCityAdcode] : null,
     );
   }
 

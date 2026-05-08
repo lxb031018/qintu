@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/poi_api.dart';
+import '../core/geocode_bridge.dart';
 import '../../../models/location/lat_lng.dart';
 
 /// ============================================
@@ -86,6 +87,11 @@ class PoiService {
   /// 从坐标获取城市区号（电话区号，如 "0771"）
   Future<String?> getCityCodeFromLocation(LatLng location) async {
     return await _api.getCityCodeFromLocation(location);
+  }
+
+  /// 从坐标获取完整的逆地理编码结果
+  Future<RegeocodeResult?> getRegeocodeFromLocation(LatLng location) async {
+    return await _api.getRegeocodeFromLocation(location);
   }
 }
 
