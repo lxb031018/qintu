@@ -11,7 +11,6 @@ import 'empty_state.dart';
 import 'route_card.dart';
 import 'transit_route_summary_card.dart';
 import 'transit_itinerary_card/transit_itinerary_card.dart';
-import 'driving_strategy_selector.dart';
 
 /// ============================================
 /// 路线规划结果底部弹窗
@@ -20,7 +19,7 @@ import 'driving_strategy_selector.dart';
 /// 供用户选择不同的路线方案
 ///
 /// 功能特性：
-/// - 纵向全宽显示多条路线选项（距离、耗时、策略、线路名称）
+/// - 纵向全宽显示多条路线选项（距离、耗时、线路名称）
 /// - 支持路线选择交互
 /// - 空状态提示
 /// - 暗黑模式适配
@@ -56,12 +55,6 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 退出详情页回调（公交模式），用于恢复地图扁平渲染
   final VoidCallback? onDetailExited;
 
-  /// 当前驾车策略 (10-20)，驾车模式时传递给策略选择器
-  final int drivingStrategy;
-
-  /// 驾车策略切换回调
-  final ValueChanged<int>? onDrivingStrategyChanged;
-
   /// 错误信息（空结果时显示）
   final String? errorMessage;
 
@@ -82,8 +75,6 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.onStartNavigation,
     this.onViewItinerary,
     this.onDetailExited,
-    this.drivingStrategy = 10,
-    this.onDrivingStrategyChanged,
     this.errorMessage,
     this.isLoading = false,
     this.maxHeight,
@@ -102,10 +93,6 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
 
   /// 最大拖动距离
   static const double _maxDragOffset = 120;
-
-  /// 是否显示策略选择器（仅驾车模式）
-  bool get _showStrategySelector =>
-      widget.currentRouteType == RouteType.driving;
 
   /// 当前查看详情的路线（仅公交模式，null = 列表页）
   RouteResultItem? _detailRoute;
@@ -187,14 +174,6 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const RouteDragHandle(),
-        if (_showStrategySelector)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacings.sm),
-            child: DrivingStrategySelector(
-              selectedStrategy: widget.drivingStrategy,
-              onStrategyChanged: widget.onDrivingStrategyChanged ?? (_) {},
-            ),
-          ),
         if (widget.isLoading)
           _buildLoadingState(isDark)
         else if (widget.routes.isEmpty)

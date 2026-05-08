@@ -328,7 +328,6 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
           formattedDuration: route.durationText,
           strategy: route.strategyText,
           tolls: route.tolls,
-          strategyId: route.strategyId,
           trafficStatuses: route.trafficStatuses,
           timeDiff: timeDiff,
           distanceDiff: distanceDiff,
@@ -343,10 +342,6 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
       }).toList(),
       selectedIndex: selectedIdx,
       currentRouteType: currentState.currentRouteType ?? RouteType.driving,
-      drivingStrategy: currentState.drivingStrategy,
-      onDrivingStrategyChanged: (strategy) {
-        ref.read(mapNavigationProvider.notifier).setDrivingStrategy(strategy);
-      },
       onRouteSelected: (index) {
         ref.read(mapNavigationProvider.notifier).selectRoute(index);
         if (currentState.currentRouteType == RouteType.transit) {

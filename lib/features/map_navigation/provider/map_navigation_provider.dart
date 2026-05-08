@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/async_state.dart';
-import 'package:qintu/providers/settings_manager.dart';
 import 'package:qintu/utils/logger.dart';
 import '../models/poi_models.dart';
 import '../models/amap_routing_models.dart';
@@ -68,9 +67,6 @@ class MapNavigationState {
   final String navNextRoad;
   final String navCurrentRoad;
 
-  /// 驾车策略偏好 (10-20)
-  final int drivingStrategy;
-
   const MapNavigationState({
     this.searchKeyword = '',
     this.originPoi,
@@ -91,7 +87,6 @@ class MapNavigationState {
     this.navRemainingTime = 0,
     this.navNextRoad = '',
     this.navCurrentRoad = '',
-    this.drivingStrategy = 10,
   });
 
   MapNavigationState copyWith({
@@ -115,7 +110,6 @@ class MapNavigationState {
     int? navRemainingTime,
     String? navNextRoad,
     String? navCurrentRoad,
-    int? drivingStrategy,
   }) {
     return MapNavigationState(
       searchKeyword: searchKeyword ?? this.searchKeyword,
@@ -137,7 +131,6 @@ class MapNavigationState {
       navRemainingTime: navRemainingTime ?? this.navRemainingTime,
       navNextRoad: navNextRoad ?? this.navNextRoad,
       navCurrentRoad: navCurrentRoad ?? this.navCurrentRoad,
-      drivingStrategy: drivingStrategy ?? this.drivingStrategy,
     );
   }
 
@@ -170,8 +163,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       _navStreamSub?.cancel();
       AmapNavigationBridge.stopNavigation();
     });
-    final settings = ref.watch(settingsManagerProvider);
-    return MapNavigationState(drivingStrategy: settings.drivingStrategy);
+    return const MapNavigationState();
   }
 
   void _startNavEventListener() {
@@ -400,7 +392,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           routeType: _routeTypeToString(state.currentRouteType!),
           origin: state.originLocation!,
           destination: state.destinationLocation!,
-          strategy: state.drivingStrategy,
+          strategy: 10,
         );
         routes = naviRoutes ?? [];
       }
@@ -531,16 +523,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     state = state.copyWith(currentRouteType: type);
     if (!state.canPlanRoute) return;
     await planRoute();
-  }
-
-  /// 设置驾车策略偏好并重新规划路线
-  Future<void> setDrivingStrategy(int strategy) async {
-    if (state.drivingStrategy == strategy) return;
-    state = state.copyWith(drivingStrategy: strategy);
-    ref.read(settingsManagerProvider.notifier).setDrivingStrategy(strategy);
-    if (state.canPlanRoute && state.currentRouteType == RouteType.driving) {
-      await planRoute();
-    }
   }
 
   /// 选择路线
