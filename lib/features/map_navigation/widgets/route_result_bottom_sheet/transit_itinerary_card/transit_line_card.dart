@@ -4,6 +4,7 @@ import '../../../../../../constants/app_radii.dart';
 import '../../../../../../constants/app_spacings.dart';
 import '../../../models/amap_routing_models.dart';
 import '../../../models/bus_route_models.dart';
+import 'color/subway_color_helper.dart';
 import 'shared/entrance_exit_info.dart';
 import 'shared/info_tag.dart';
 
@@ -201,7 +202,11 @@ class TransitLineCard extends StatelessWidget {
   static Color _lineColor(BusTransitSegment segment) {
     switch (segment.type) {
       case TransitSegmentType.subway:
-        return const Color(0xFFFF4D4F);
+        return SubwayColorHelper.getSubwayColor(
+          segment.lineName,
+          segment.cityCode,
+          defaultColor: const Color(0xFFFF4D4F),
+        );
       case TransitSegmentType.bus:
         return const Color(0xFF1890FF);
       default:
