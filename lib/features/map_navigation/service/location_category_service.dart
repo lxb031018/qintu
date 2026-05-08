@@ -115,6 +115,23 @@ class LocationCategoryService {
     await _saveToStorage(history);
   }
 
+  /// 将指定历史记录移到列表最顶部
+  Future<void> moveHistoryItemToTop(String poiId) async {
+    final history = await _loadHistoryFromStorage();
+
+    final timestampStr = poiId.substring(8);
+    final timestamp = int.tryParse(timestampStr);
+    if (timestamp == null) return;
+
+    final index = history.indexWhere((item) => item.timestamp.millisecondsSinceEpoch == timestamp);
+    if (index <= 0) return;
+
+    final item = history.removeAt(index);
+    history.insert(0, item);
+
+    await _saveToStorage(history);
+  }
+
   /// 从存储加载历史记录
   Future<List<HistoryLocationItem>> _loadHistoryFromStorage() async {
     try {

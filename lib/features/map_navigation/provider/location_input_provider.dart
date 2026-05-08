@@ -381,7 +381,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   }
 
   /// 选择 POI
-  void selectPoi(PoiSuggestion poi, MapNavigationNotifier mapNotifier) {
+  Future<void> selectPoi(PoiSuggestion poi, MapNavigationNotifier mapNotifier) async {
     if (state.isOriginFocused) {
       state = state.copyWith(origin: InputFieldState(text: poi.name, poi: poi));
       mapNotifier.setOrigin(poi);
@@ -406,6 +406,15 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         address: poi.address,
         location: poi.latLng!,
       );
+    }
+
+    if (poi.source == PoiSource.history) {
+      Logs.ui.debug('selectPoi: 开始处理历史 POI 置顶, poi.id=${poi.id}');
+      final updatedHistory = List<PoiSuggestion>.from(state.historyItems);
+      updatedHistory.removeWhere((item) => item.id == poi.id);
+      updatedHistory.insert(0, poi);
+      state = state.copyWith(historyItems: updatedHistory);
+      await _categoryService.moveHistoryItemToTop(poi.id);
     }
 
     hideList();
