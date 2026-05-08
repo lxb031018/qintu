@@ -41,21 +41,24 @@ class TransitItineraryCard extends StatelessWidget {
         color: isDark ? AppColors.darkBackgroundColor : AppColors.grey50,
         borderRadius: const BorderRadius.vertical(top: AppRadii.large),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...List.generate(segments.length, (i) {
-            final isFirst = i == 0;
-            final isLast = i == segments.length - 1;
-            return _buildSegmentRow(
-              segments[i],
-              isFirst: isFirst,
-              isLast: isLast,
-              isDark: isDark,
-            );
-          }),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpacings.sm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...List.generate(segments.length, (i) {
+              final isFirst = i == 0;
+              final isLast = i == segments.length - 1;
+              return _buildSegmentRow(
+                segments[i],
+                isFirst: isFirst,
+                isLast: isLast,
+                isDark: isDark,
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -69,7 +72,7 @@ class TransitItineraryCard extends StatelessWidget {
     final color = _segmentThemeColor(segment);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacings.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacings.sm),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +86,7 @@ class TransitItineraryCard extends StatelessWidget {
             const SizedBox(width: AppSpacings.sm),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacings.md),
+                padding: const EdgeInsets.only(bottom: AppSpacings.sm),
                 child: _buildSegmentContent(segment, isDark),
               ),
             ),
