@@ -153,7 +153,7 @@ class RouteCard extends StatelessWidget {
   }
 
   String _getRouteTypeLabel(RouteType type) {
-    if (type == RouteType.driving) return '驾车';
+    if (type == RouteType.driving) return '出租车';
     if (type == RouteType.walking) return '步行';
     if (type == RouteType.riding) return '骑行';
     return '公交';

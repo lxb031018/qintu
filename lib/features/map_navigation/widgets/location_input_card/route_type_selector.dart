@@ -57,7 +57,7 @@ class RouteTypeSelector extends ConsumerWidget {
           ),
           SizedBox(width: AppSpacings.sm),
           RouteTypeButton(
-            label: '驾车',
+            label: '出租车',
             isSelected: navState.currentRouteType == RouteType.driving,
             onTap: () => _onRouteTypeTap(ref, callbacks, RouteType.driving),
             isDark: isDark,
