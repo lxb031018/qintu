@@ -30,7 +30,7 @@ class AmapBusRouteBridge {
       if (result == null) return [];
 
       final routes = result as List<dynamic>;
-      return routes.map((r) => BusPath.fromMap(r as Map<String, dynamic>)).toList();
+      return routes.map((r) => BusPath.fromMap(r as Map<dynamic, dynamic>)).toList();
     } on PlatformException catch (e) {
       Logs.ui.warning('Bus route search failed: ${e.code} ${e.message}');
       rethrow;

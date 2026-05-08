@@ -65,6 +65,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 错误信息（空结果时显示）
   final String? errorMessage;
 
+  /// 是否正在加载路线数据
+  final bool isLoading;
+
   const RouteResultBottomSheet({
     super.key,
     this.routes = const [],
@@ -79,6 +82,7 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.drivingStrategy = 10,
     this.onDrivingStrategyChanged,
     this.errorMessage,
+    this.isLoading = false,
   });
 
   @override
@@ -187,12 +191,43 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
               onStrategyChanged: widget.onDrivingStrategyChanged ?? (_) {},
             ),
           ),
-        if (widget.routes.isEmpty)
+        if (widget.isLoading)
+          _buildLoadingState(isDark)
+        else if (widget.routes.isEmpty)
           RouteEmptyState(errorMessage: widget.errorMessage)
         else
           _buildRouteList(isDark),
-        if (widget.routes.isNotEmpty) _buildActionButtons(isDark),
+        if (!widget.isLoading && widget.routes.isNotEmpty) _buildActionButtons(isDark),
       ],
+    );
+  }
+
+  Widget _buildLoadingState(bool isDark) {
+    return SizedBox(
+      height: 80,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+              ),
+            ),
+            const SizedBox(height: AppSpacings.xs),
+            Text(
+              '正在规划路线...',
+              style: TextStyle(
+                color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -292,6 +292,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
       onDetailExited: () {
         ref.read(mapDisplayCoordinatorProvider).clearRoutes();
       },
+      isLoading: currentState.routesState.isLoading,
     );
   }
 }

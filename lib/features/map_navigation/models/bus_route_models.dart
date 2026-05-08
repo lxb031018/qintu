@@ -70,7 +70,7 @@ class BusTransitSegment {
     this.taxiDestination,
   });
 
-  factory BusTransitSegment.fromMap(Map<String, dynamic> map) {
+  factory BusTransitSegment.fromMap(Map<dynamic, dynamic> map) {
     final typeStr = map['type'] as String? ?? 'walk';
     final type = _parseType(typeStr);
     final pointsRaw = map['points'] as List<dynamic>? ?? [];
@@ -82,7 +82,7 @@ class BusTransitSegment {
     // 解析 passStations
     final passStationsRaw = map['passStations'] as List<dynamic>?;
     final passStations = passStationsRaw?.map((p) {
-      final m = p as Map<String, dynamic>;
+      final m = p as Map<dynamic, dynamic>;
       return BusLineStation(
         id: m['id']?.toString() ?? '',
         name: m['name']?.toString() ?? '',
@@ -93,7 +93,7 @@ class BusTransitSegment {
 
     // 解析 entrance/exit
     StationEntrance? entrance;
-    final entranceRaw = map['entrance'] as Map<String, dynamic>?;
+    final entranceRaw = map['entrance'] as Map<dynamic, dynamic>?;
     if (entranceRaw != null) {
       entrance = StationEntrance(
         name: entranceRaw['name']?.toString() ?? '',
@@ -102,7 +102,7 @@ class BusTransitSegment {
       );
     }
     StationEntrance? exit;
-    final exitRaw = map['exit'] as Map<String, dynamic>?;
+    final exitRaw = map['exit'] as Map<dynamic, dynamic>?;
     if (exitRaw != null) {
       exit = StationEntrance(
         name: exitRaw['name']?.toString() ?? '',
@@ -114,7 +114,7 @@ class BusTransitSegment {
     // 解析 walkSteps
     final walkStepsRaw = map['walkSteps'] as List<dynamic>?;
     final walkSteps = walkStepsRaw?.map((s) {
-      final m = s as Map<String, dynamic>;
+      final m = s as Map<dynamic, dynamic>;
       final coords = (m['points'] as List?)?.cast<dynamic>() ?? [];
       final stepPoints = coords.map((p) {
         final c = p as List<dynamic>;
@@ -152,8 +152,8 @@ class BusTransitSegment {
       busLineId: map['busLineId'] as String?,
       lineType: map['lineType'] as String?,
       stationCount: (map['stationCount'] as num?)?.toInt(),
-      departureStation: (map['departureStation'] as Map<String, dynamic>?)?['name']?.toString(),
-      arrivalStation: (map['arrivalStation'] as Map<String, dynamic>?)?['name']?.toString(),
+      departureStation: (map['departureStation'] as Map<dynamic, dynamic>?)?['name']?.toString(),
+      arrivalStation: (map['arrivalStation'] as Map<dynamic, dynamic>?)?['name']?.toString(),
       basicPrice: (map['basicPrice'] as num?)?.toDouble(),
       totalPrice: (map['totalPrice'] as num?)?.toDouble(),
       firstBusTime: map['firstBusTime'] as String?,
@@ -232,7 +232,7 @@ class BusPath {
     required this.segments,
   });
 
-  factory BusPath.fromMap(Map<String, dynamic> map) {
+  factory BusPath.fromMap(Map<dynamic, dynamic> map) {
     final pointsRaw = map['points'] as List<dynamic>? ?? [];
     final points = pointsRaw.map((p) {
       final coords = p as List<dynamic>;
@@ -240,7 +240,7 @@ class BusPath {
     }).toList();
 
     final segmentsRaw = map['segments'] as List<dynamic>? ?? [];
-    final segments = segmentsRaw.map((s) => BusTransitSegment.fromMap(s as Map<String, dynamic>)).toList();
+    final segments = segmentsRaw.map((s) => BusTransitSegment.fromMap(s as Map<dynamic, dynamic>)).toList();
 
     return BusPath(
       routeId: (map['routeId'] as num?)?.toInt() ?? 0,
