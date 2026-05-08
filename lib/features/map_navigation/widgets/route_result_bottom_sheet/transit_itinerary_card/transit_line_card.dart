@@ -41,7 +41,9 @@ class TransitLineCard extends StatelessWidget {
             _buildStationRoute(color),
           ],
           if ((segment.stationCount ?? 0) > 0 ||
-              segment.totalPrice != null)
+              segment.totalPrice != null ||
+              segment.firstBusTime != null ||
+              segment.lastBusTime != null)
             _buildInfoTags(),
           if (segment.passStations != null && segment.passStations!.isNotEmpty)
             _buildPassStations(),
@@ -50,7 +52,7 @@ class TransitLineCard extends StatelessWidget {
     );
   }
 
-Widget _buildHeader(Color color) {
+  Widget _buildHeader(Color color) {
     final typeLabel = segment.type == TransitSegmentType.subway ? '地铁' : '公交';
     return Wrap(
       spacing: AppSpacings.xs,
@@ -108,7 +110,7 @@ Widget _buildHeader(Color color) {
     );
   }
 
-Widget _buildStationRoute(Color color) {
+  Widget _buildStationRoute(Color color) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,6 +174,12 @@ Widget _buildStationRoute(Color color) {
               icon: Icons.attach_money,
               isDark: isDark,
             ),
+          if (segment.firstBusTime != null || segment.lastBusTime != null)
+            _TimeInfoTag(
+              firstBusTime: segment.firstBusTime,
+              lastBusTime: segment.lastBusTime,
+              isDark: isDark,
+            ),
         ],
       ),
     );
@@ -198,6 +206,59 @@ Widget _buildStationRoute(Color color) {
         return const Color(0xFF1890FF);
       default:
         return const Color(0xFF1890FF);
+    }
+  }
+}
+
+class _TimeInfoTag extends StatelessWidget {
+  final String? firstBusTime;
+  final String? lastBusTime;
+  final bool isDark;
+
+  const _TimeInfoTag({
+    this.firstBusTime,
+    this.lastBusTime,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = <String>[];
+    if (firstBusTime != null) {
+      parts.add('首 ${_formatTime(firstBusTime!)}');
+    }
+    if (lastBusTime != null) {
+      parts.add('末 ${_formatTime(lastBusTime!)}');
+    }
+
+    if (parts.isEmpty) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.schedule, size: 10, color: AppColors.grey400),
+        const SizedBox(width: 2),
+        Text(
+          parts.join(' '),
+          style: TextStyle(
+            fontSize: 10,
+            color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatTime(String timeStr) {
+    try {
+      final dt = DateTime.parse(timeStr);
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      final match = RegExp(r'(\d{2}):(\d{2}):\d{2}').firstMatch(timeStr);
+      if (match != null) {
+        return '${match.group(1)}:${match.group(2)}';
+      }
+      return timeStr;
     }
   }
 }
