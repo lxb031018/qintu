@@ -239,10 +239,8 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     final isTransit = widget.currentRouteType == RouteType.transit;
 
     if (isTransit) {
-      return ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 240),
+      return Expanded(
         child: ListView.separated(
-          scrollDirection: Axis.vertical,
           shrinkWrap: true,
           padding: const EdgeInsets.all(AppSpacings.sm),
           itemCount: widget.routes.length,
