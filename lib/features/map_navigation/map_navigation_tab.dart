@@ -53,6 +53,7 @@ class MapNavigationTab extends ConsumerStatefulWidget {
 class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   final _mapKey = GlobalKey();
+  final _locationCardKey = GlobalKey();
 
   @override
   void initState() {
@@ -149,7 +150,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled)
-                    const LocationInputCard(),
+                    LocationInputCard(key: _locationCardKey),
                   if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled &&
                       ref.watch(locationInputProvider).listVisible)
                     const Padding(
@@ -173,6 +174,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
             _RouteBottomSheetPositioner(
               navState: navState,
               tabBarHeight: ref.watch(tabBarHeightProvider),
+              locationCardKey: _locationCardKey,
             ),
         ],
       ),
@@ -180,48 +182,105 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
   }
 }
 
-class _RouteBottomSheetPositioner extends StatefulWidget {
+class _RouteBottomSheetPositioner extends ConsumerStatefulWidget {
   final MapNavigationState navState;
   final double tabBarHeight;
+  final GlobalKey locationCardKey;
 
   const _RouteBottomSheetPositioner({
     required this.navState,
     required this.tabBarHeight,
+    required this.locationCardKey,
   });
 
   @override
-  State<_RouteBottomSheetPositioner> createState() => _RouteBottomSheetPositionerState();
+  ConsumerState<_RouteBottomSheetPositioner> createState() => _RouteBottomSheetPositionerState();
 }
 
-class _RouteBottomSheetPositionerState extends State<_RouteBottomSheetPositioner> {
+class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPositioner> {
+  double _dragOffset = 0;
+  bool _isDragging = false;
+
+  static const double _maxDragOffset = 120;
+  static const double _dismissThreshold = 80;
+
+  bool get _isTransit => widget.navState.currentRouteType == RouteType.transit;
+
+  void _onVerticalDragStart(DragStartDetails details) {
+    setState(() {
+      _isDragging = true;
+      _dragOffset = 0;
+    });
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    if (!_isTransit) return;
+    setState(() {
+      _dragOffset = (_dragOffset + details.delta.dy).clamp(0, _maxDragOffset);
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    if (_dragOffset > _dismissThreshold) {
+      ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
+    }
+    setState(() {
+      _isDragging = false;
+      _dragOffset = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isTransit = widget.navState.currentRouteType == RouteType.transit;
+    final isTransit = _isTransit;
 
-    // 公交模式也需要从屏幕底部弹出，保持与驾车模式一致的行为
     if (!isTransit) {
       return Positioned(
         left: 0,
         right: 0,
         bottom: 0,
-        child: _RouteBottomSheetBuilder(navState: widget.navState),
+        child: _RouteBottomSheetBuilder(
+          navState: widget.navState,
+          locationCardKey: widget.locationCardKey,
+        ),
       );
     }
 
-    // 公交模式：从屏幕底部弹出
+    final cardBox =
+        widget.locationCardKey.currentContext?.findRenderObject() as RenderBox?;
+    final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
+    final cardHeight = cardBox?.size.height ?? 0;
+    final cardBottom = cardTop + cardHeight;
+    final sheetTop = cardBottom + AppSpacings.sm;
+
+    final top = _isDragging ? sheetTop + _dragOffset : sheetTop;
+
     return Positioned(
+      top: top,
+      bottom: 0,
       left: 0,
       right: 0,
-      bottom: 0,
-      child: _RouteBottomSheetBuilder(navState: widget.navState),
+      child: GestureDetector(
+        onVerticalDragStart: _onVerticalDragStart,
+        onVerticalDragUpdate: _onVerticalDragUpdate,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        child: _RouteBottomSheetBuilder(
+          navState: widget.navState,
+          locationCardKey: widget.locationCardKey,
+        ),
+      ),
     );
   }
 }
 
 class _RouteBottomSheetBuilder extends ConsumerWidget {
   final MapNavigationState navState;
+  final GlobalKey locationCardKey;
 
-  const _RouteBottomSheetBuilder({required this.navState});
+  const _RouteBottomSheetBuilder({
+    required this.navState,
+    required this.locationCardKey,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -235,7 +294,19 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
     final selectedIdx = currentState.selectedRouteIndex;
     final selectedRoute = selectedIdx < routes.length ? routes[selectedIdx] : null;
 
+    // 计算公共交通的 maxHeight
+    double? maxHeight;
+    if (currentState.currentRouteType == RouteType.transit) {
+      final cardBox =
+          locationCardKey.currentContext?.findRenderObject() as RenderBox?;
+      final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
+      final cardHeight = cardBox?.size.height ?? 0;
+      final screenHeight = MediaQuery.of(context).size.height;
+      maxHeight = screenHeight - cardTop - cardHeight - AppSpacings.sm;
+    }
+
     return RouteResultBottomSheet(
+      maxHeight: maxHeight,
       routes: routes.asMap().entries.map((entry) {
         final idx = entry.key;
         final route = entry.value;

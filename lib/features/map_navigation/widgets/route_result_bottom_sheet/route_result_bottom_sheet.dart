@@ -68,6 +68,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 是否正在加载路线数据
   final bool isLoading;
 
+  /// 列表最大高度（公共交通模式使用）
+  final double? maxHeight;
+
   const RouteResultBottomSheet({
     super.key,
     this.routes = const [],
@@ -83,6 +86,7 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.onDrivingStrategyChanged,
     this.errorMessage,
     this.isLoading = false,
+    this.maxHeight,
   });
 
   @override
@@ -308,7 +312,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
               totalDuration: route.duration,
               tolls: route.tolls ?? 0,
               walkDistance: route.walkDistance,
-              transferCount: route.transferCount,
+              // transferCount: route.transferCount,
             ),
           ),
         ),
