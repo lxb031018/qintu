@@ -8,7 +8,6 @@ import 'segment_timeline.dart';
 import 'walk_segment_card.dart';
 import 'transit_line_card.dart';
 import 'taxi_segment_card.dart';
-import 'shared/summary_chip.dart';
 
 /// ============================================
 /// 公共交通行程详情卡片
@@ -23,7 +22,6 @@ class TransitItineraryCard extends StatelessWidget {
   final double totalDuration;
   final double tolls;
   final double? walkDistance;
-  final int transferCount;
 
   const TransitItineraryCard({
     super.key,
@@ -32,7 +30,6 @@ class TransitItineraryCard extends StatelessWidget {
     required this.totalDuration,
     required this.tolls,
     this.walkDistance,
-    this.transferCount = 0,
   });
 
   @override
@@ -48,8 +45,6 @@ class TransitItineraryCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSummaryHeader(isDark),
-          const SizedBox(height: AppSpacings.sm),
           ...List.generate(segments.length, (i) {
             final isFirst = i == 0;
             final isLast = i == segments.length - 1;
@@ -60,50 +55,6 @@ class TransitItineraryCard extends StatelessWidget {
               isDark: isDark,
             );
           }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryHeader(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacings.md, AppSpacings.md, AppSpacings.md, 0,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.directions_bus, size: 18, color: AppColors.primaryColor),
-          const SizedBox(width: AppSpacings.xs),
-          Text(
-            '行程详情',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextColor : AppColors.textColor,
-            ),
-          ),
-          const Spacer(),
-          SummaryChip(
-            text: '${totalDuration ~/ 60}分钟',
-            icon: Icons.access_time,
-            isDark: isDark,
-          ),
-          const SizedBox(width: AppSpacings.sm),
-          SummaryChip(
-            text: totalDistance >= 1000
-                ? '${(totalDistance / 1000).toStringAsFixed(1)}km'
-                : '${totalDistance.toInt()}m',
-            icon: Icons.straighten,
-            isDark: isDark,
-          ),
-          if (transferCount > 0) ...[
-            const SizedBox(width: AppSpacings.sm),
-            SummaryChip(
-              text: '换乘$transferCount次',
-              icon: Icons.swap_horiz,
-              isDark: isDark,
-            ),
-          ],
         ],
       ),
     );

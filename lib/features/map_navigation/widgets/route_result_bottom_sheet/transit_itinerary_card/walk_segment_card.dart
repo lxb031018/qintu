@@ -63,13 +63,11 @@ class WalkSegmentCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      segment.walkSteps!.map((s) => s.actionText).join(' → '),
+                      '${segment.walkSteps!.first.instruction} → ${segment.walkSteps!.last.instruction}',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
               ],
