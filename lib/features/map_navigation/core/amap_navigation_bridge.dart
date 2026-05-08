@@ -35,6 +35,7 @@ class AmapNavigationBridge {
 
   static Stream<NavigationState>? _stateStream;
   static StreamController<NavigationState>? _stateController;
+  static int _currentRequestId = 0;
 
   static Future<bool> selectRouteId(int routeId) async {
     try {
@@ -78,8 +79,9 @@ class AmapNavigationBridge {
     int strategy = 10,
     bool isMultiple = true,
   }) async {
+    final requestId = ++_currentRequestId;
     try {
-      Logs.navigation.info('🗺️ calculateRoute via AMapNavi: $routeType, ($origin → $destination), strategy=$strategy, isMultiple=$isMultiple');
+      Logs.navigation.info('🗺️ calculateRoute via AMapNavi: $routeType, requestId=$requestId, ($origin → $destination), strategy=$strategy, isMultiple=$isMultiple');
 
       final result = await _methodChannel.invokeMethod<Map<dynamic, dynamic>>('calculateRoute', {
         'routeType': routeType,
@@ -89,20 +91,29 @@ class AmapNavigationBridge {
         'toLng': destination.longitude,
         'strategy': strategy,
         'isMultiple': isMultiple,
+        'requestId': requestId,
       });
 
       if (result == null) {
-        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned null');
+        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned null, requestId=$requestId');
         return null;
       }
+
+      final responseRequestId = result['requestId'] as int?;
+    if (responseRequestId != null && responseRequestId != requestId) {
+      Logs.navigation.warning('⚠️ calculateRoute stale response ignored: expected requestId=$requestId, got $responseRequestId');
+      return null;
+    }
 
       final routes = result['routes'] as List<dynamic>?;
       final routeIds = result['routeIds'] as List<dynamic>?;
 
       if (routes == null || routes.isEmpty) {
-        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned empty routes');
+        Logs.navigation.warning('⚠️ calculateRoute via AMapNavi returned empty routes, requestId=$requestId');
         return [];
       }
+
+      Logs.navigation.info('✅ calculateRoute success: ${routes.length} routes, requestId=$requestId');
 
       return routes.asMap().entries.map((entry) {
         final map = entry.value as Map<dynamic, dynamic>;
@@ -128,10 +139,14 @@ class AmapNavigationBridge {
         );
       }).toList();
     } on PlatformException catch (e) {
-      Logs.navigation.error('❌ calculateRoute via AMapNavi failed: ${e.message}');
+      if (e.code == 'CALC_OVERRIDDEN') {
+      Logs.navigation.warning('⚠️ calculateRoute overridden: requestId=$requestId, ${e.message}');
+      return null;
+    }
+    Logs.navigation.error('❌ calculateRoute via AMapNavi failed: ${e.message}, requestId=$requestId');
       return null;
     } catch (e) {
-      Logs.navigation.error('❌ calculateRoute via AMapNavi unknown error: $e');
+      Logs.navigation.error('❌ calculateRoute via AMapNavi unknown error: $e, requestId=$requestId');
       return null;
     }
   }

@@ -36,6 +36,8 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
 
     private var mAMapNavi: AMapNavi? = null
     private var pendingRouteResult: MethodChannel.Result? = null
+    private var pendingFlutterRequestId: Int = 0
+    private var pendingStrategy: Int = 0
     private var isNavigating = false
     private var lastRouteStrategy: Int = 0
 
@@ -98,6 +100,7 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
         toLat: Double, toLng: Double,
         strategy: Int,
         isMultiple: Boolean,
+        requestId: Int,
         result: MethodChannel.Result
     ) {
         try {
@@ -108,17 +111,15 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
             }
 
             pendingRouteResult?.let {
-                Log.w(TAG, "⚠️ 覆盖上一个未完成的算路请求")
-                it.error("CALC_OVERRIDDEN", "被新的算路请求覆盖", null)
+                Log.w(TAG, "⚠️ 覆盖上一个未完成的算路请求: requestId=$pendingFlutterRequestId")
             }
             pendingRouteResult = result
-            lastRouteStrategy = strategy
-
+            pendingFlutterRequestId = requestId
+            pendingStrategy = strategy
             val from = NaviLatLng(fromLat, fromLng)
             val to = NaviLatLng(toLat, toLng)
 
-            Log.d(TAG, "🗺️ 开始算路：type=$routeType, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, isMultiple=$isMultiple")
-
+            Log.d(TAG, "🗺️ 开始算路：type=$routeType, requestId=$requestId, from=($fromLat,$fromLng), to=($toLat,$toLng), strategy=$strategy, isMultiple=$isMultiple")
             when (routeType) {
                 "driving" -> {
                     val flag = buildDrivingStrategy(strategy)
@@ -138,11 +139,13 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
                 }
                 else -> {
                     pendingRouteResult = null
+                    pendingFlutterRequestId = 0
                     result.error("INVALID_TYPE", "不支持的出行方式：$routeType", null)
                 }
             }
         } catch (e: Exception) {
             pendingRouteResult = null
+            pendingFlutterRequestId = 0
             Log.e(TAG, "❌ 算路异常：${e.message}")
             result.error("CALC_ERROR", e.message, null)
         }
@@ -236,20 +239,27 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
     override fun onCalculateRouteSuccess(result: AMapCalcRouteResult?) {
         val calcType = result?.calcRouteType ?: 0
         val routeIds = result?.routeid
+        val responseRequestId = pendingFlutterRequestId
 
-        Log.d(TAG, "✅ onCalculateRouteSuccess: calcType=$calcType, routeIds=${routeIds?.contentToString()}")
+        Log.d(TAG, "✅ onCalculateRouteSuccess: calcType=$calcType, requestId=$responseRequestId, routeIds=${routeIds?.contentToString()}")
 
         val navi = mAMapNavi
         if (navi == null) {
             pendingRouteResult?.error("NAVI_NULL", "AMapNavi 未初始化", null)
             pendingRouteResult = null
+            pendingFlutterRequestId = 0
             return
         }
 
         if (routeIds == null || routeIds.isEmpty()) {
             if (calcType == 0) {
-                pendingRouteResult?.success(mapOf("routes" to emptyList<Any>()))
+                pendingRouteResult?.success(mapOf(
+                    "routes" to emptyList<Any>(),
+                    "strategyId" to pendingStrategy,
+                    "requestId" to responseRequestId
+                ))
                 pendingRouteResult = null
+                pendingFlutterRequestId = 0
             }
             return
         }
@@ -267,33 +277,31 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
             }
         }
 
-        Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，calcType=$calcType")
+        Log.d(TAG, "✅ 算路成功：${paths.size} 条路线，calcType=$calcType, requestId=$responseRequestId")
 
         when (calcType) {
             0 -> {
-                // 直接算路（首次算路/用户手动算路）：响应 MethodChannel 请求
-                val routeIds = routeIds?.toList() ?: emptyList()
+                val routeIdList = routeIds?.toList() ?: emptyList()
                 pendingRouteResult?.success(mapOf(
                     "routes" to paths,
-                    "strategyId" to lastRouteStrategy,
-                    "routeIds" to routeIds
+                    "strategyId" to pendingStrategy,
+                    "routeIds" to routeIdList,
+                    "requestId" to responseRequestId
                 ))
                 pendingRouteResult = null
+                pendingFlutterRequestId = 0
             }
             1 -> {
-                // 偏航重算 → 通知 Flutter 更新路线
                 sendEvent("naviStatus", "status" to "recalculated", "reason" to "yaw",
                     "calcRouteType" to calcType, "routes" to paths)
                 Log.d(TAG, "📡 偏航重算完成: ${paths.size} 条路线")
             }
             2 -> {
-                // 拥堵重算 → 通知 Flutter 更新路线
                 sendEvent("naviStatus", "status" to "recalculated", "reason" to "traffic",
                     "calcRouteType" to calcType, "routes" to paths)
                 Log.d(TAG, "📡 拥堵重算完成: ${paths.size} 条路线")
             }
             else -> {
-                // 其他重算类型（策略变更/平行路切换等）
                 val reasonName = when (calcType) {
                     3 -> "strategyChange"
                     4 -> "parallelRoad"
@@ -308,17 +316,17 @@ class NavigationImpl(context: Context) : SimpleNaviListener() {
 
     override fun onCalculateRouteFailure(result: AMapCalcRouteResult?) {
         val calcType = result?.calcRouteType ?: 0
+        val responseRequestId = pendingFlutterRequestId
         val errCode = result?.errorCode ?: -1
         val errDesc = result?.errorDescription ?: "算路失败"
 
-        Log.e(TAG, "❌ onCalculateRouteFailure: calcType=$calcType, code=$errCode, msg=$errDesc")
+        Log.e(TAG, "❌ onCalculateRouteFailure: calcType=$calcType, requestId=$responseRequestId, code=$errCode, msg=$errDesc")
 
         if (calcType == 0) {
-            // 直接算路失败：响应 MethodChannel 请求
             pendingRouteResult?.error("CALC_FAILED", errDesc, null)
             pendingRouteResult = null
+            pendingFlutterRequestId = 0
         } else {
-            // 重算失败：通过事件通道通知 Flutter
             sendEvent("naviStatus", "status" to "recalcFailed",
                 "calcRouteType" to calcType, "errorCode" to errCode, "errorMessage" to errDesc)
             Log.e(TAG, "📡 重算失败: calcType=$calcType, code=$errCode")
