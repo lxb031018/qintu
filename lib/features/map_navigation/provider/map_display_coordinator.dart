@@ -141,9 +141,9 @@ class MapDisplayCoordinator {
     }
   }
 
-  /// 从 TransitSegment 构建站点数据
-  void _buildStationData(TransitSegment seg, List<Map<String, dynamic>> stations) {
-    final segmentType = seg.segmentType;
+  /// 从 BusTransitSegment 构建站点数据
+  void _buildStationData(BusTransitSegment seg, List<Map<String, dynamic>> stations) {
+    final segType = seg.segmentType;
 
     // 地铁站入口/出口
     if (seg.entrance != null) {
@@ -164,29 +164,27 @@ class MapDisplayCoordinator {
     }
 
     // 公交/地铁线路站点
-    if (seg.hasTransit && seg.lines.isNotEmpty) {
-      final line = seg.lines.first;
-      final stationType = segmentType == 2 ? 'subway' : 'bus';
+    if (seg.hasTransit) {
+      final stationType = segType == 2 ? 'subway' : 'bus';
 
       // 起点站
-      if (line.departureStation != null && line.departureStation!.isNotEmpty) {
-        // 起点站坐标从 passStations 获取（如果有的话）
-        final startStation = _findStationByName(line.passStations, line.departureStation!);
+      if (seg.departureStation != null && seg.departureStation!.isNotEmpty) {
+        final startStation = _findStationByName(seg.passStations, seg.departureStation!);
         if (startStation != null) {
           stations.add({
             'lat': startStation.lat,
             'lng': startStation.lng,
-            'name': line.departureStation,
+            'name': seg.departureStation,
             'type': stationType,
           });
         }
       }
 
       // 途经站（只添加前几个，避免太多标记）
-      if (line.passStations != null && line.passStations!.isNotEmpty) {
-        final passCount = line.passStations!.length > 5 ? 5 : line.passStations!.length;
+      if (seg.passStations != null && seg.passStations!.isNotEmpty) {
+        final passCount = seg.passStations!.length > 5 ? 5 : seg.passStations!.length;
         for (int i = 0; i < passCount; i++) {
-          final station = line.passStations![i];
+          final station = seg.passStations![i];
           stations.add({
             'lat': station.lat,
             'lng': station.lng,
@@ -197,13 +195,13 @@ class MapDisplayCoordinator {
       }
 
       // 终点站
-      if (line.arrivalStation != null && line.arrivalStation!.isNotEmpty) {
-        final endStation = _findStationByName(line.passStations, line.arrivalStation!);
+      if (seg.arrivalStation != null && seg.arrivalStation!.isNotEmpty) {
+        final endStation = _findStationByName(seg.passStations, seg.arrivalStation!);
         if (endStation != null) {
           stations.add({
             'lat': endStation.lat,
             'lng': endStation.lng,
-            'name': line.arrivalStation,
+            'name': seg.arrivalStation,
             'type': stationType,
           });
         }
@@ -212,7 +210,7 @@ class MapDisplayCoordinator {
   }
 
   /// 从站点列表中查找指定名称的站点
-  dynamic _findStationByName(List<dynamic>? stations, String name) {
+  BusLineStation? _findStationByName(List<BusLineStation>? stations, String name) {
     if (stations == null) return null;
     for (final station in stations) {
       if (station.name == name) return station;
@@ -275,7 +273,7 @@ class MapDisplayCoordinator {
   static const double _busWidth = 12.0;
   static const double _subwayWidth = 14.0;
 
-  static int _segmentColor(TransitSegment seg) {
+  static int _segmentColor(BusTransitSegment seg) {
     switch (seg.segmentType) {
       case 1:
         return RouteColors.transitBus;
@@ -286,7 +284,7 @@ class MapDisplayCoordinator {
     }
   }
 
-  static double _segmentWidth(TransitSegment seg) {
+  static double _segmentWidth(BusTransitSegment seg) {
     switch (seg.segmentType) {
       case 1:
         return _busWidth;

@@ -4,6 +4,7 @@ import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/amap_routing_models.dart';
 import '../../models/map_overlay_models.dart';
+import '../../models/bus_route_models.dart';
 
 class TransitRouteSummaryCard extends StatelessWidget {
   final RouteResultItem route;
@@ -111,31 +112,25 @@ class TransitRouteSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSegmentTagFlow(List<TransitSegment> segments) {
+  Widget _buildSegmentTagFlow(List<BusTransitSegment> segments) {
     final tags = <Widget>[];
 
     for (int i = 0; i < segments.length; i++) {
       final seg = segments[i];
 
       if (seg.hasWalking) {
-        tags.add(_WalkTag(distance: seg.walkingDistance, isDark: isDark));
+        tags.add(_WalkTag(distance: seg.distance, isDark: isDark));
         if (i < segments.length - 1) {
           tags.add(const _ArrowSeparator());
         }
       }
 
       if (seg.hasTransit) {
-        for (int j = 0; j < seg.lines.length; j++) {
-          final line = seg.lines[j];
-          tags.add(_TransitTag(
-            name: line.name,
-            stationCount: line.stationCount,
-            type: line.type,
-          ));
-          if (j < seg.lines.length - 1) {
-            tags.add(const _ArrowSeparator());
-          }
-        }
+        tags.add(_TransitTag(
+          name: seg.lineName ?? '',
+          stationCount: seg.stationCount ?? 0,
+          type: seg.type,
+        ));
         if (i < segments.length - 1) {
           tags.add(const _ArrowSeparator());
         }
@@ -163,7 +158,7 @@ class TransitRouteSummaryCard extends StatelessWidget {
 }
 
 class _WalkTag extends StatelessWidget {
-  final int distance;
+  final double distance;
   final bool isDark;
 
   const _WalkTag({required this.distance, required this.isDark});
@@ -172,7 +167,7 @@ class _WalkTag extends StatelessWidget {
     if (distance >= 1000) {
       return '${(distance / 1000).toStringAsFixed(1)}公里';
     }
-    return '$distance米';
+    return '${distance.toInt()}米';
   }
 
   @override
@@ -208,7 +203,7 @@ class _WalkTag extends StatelessWidget {
 class _TransitTag extends StatelessWidget {
   final String name;
   final int stationCount;
-  final TransitLineType type;
+  final TransitSegmentType type;
 
   const _TransitTag({
     required this.name,
@@ -218,18 +213,22 @@ class _TransitTag extends StatelessWidget {
 
   Color get _color {
     switch (type) {
-      case TransitLineType.subway:
+      case TransitSegmentType.subway:
         return const Color(0xFFFF4D4F);
-      case TransitLineType.bus:
+      case TransitSegmentType.bus:
+        return const Color(0xFF1890FF);
+      default:
         return const Color(0xFF1890FF);
     }
   }
 
   IconData get _icon {
     switch (type) {
-      case TransitLineType.subway:
+      case TransitSegmentType.subway:
         return Icons.subway;
-      case TransitLineType.bus:
+      case TransitSegmentType.bus:
+        return Icons.directions_bus;
+      default:
         return Icons.directions_bus;
     }
   }

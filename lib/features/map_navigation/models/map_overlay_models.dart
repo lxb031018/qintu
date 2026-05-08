@@ -118,7 +118,7 @@ class RouteResultItem {
   final int? distanceDiff;
   // Transit-specific fields
   final RouteType? routeType;
-  final List<TransitSegment>? transitSegments;
+  final List<BusTransitSegment>? transitSegments;
   final String? transitSummary;
   final List<String>? transitLineNames;
   final int transferCount;

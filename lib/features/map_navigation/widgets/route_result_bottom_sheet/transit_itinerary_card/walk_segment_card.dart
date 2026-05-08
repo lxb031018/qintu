@@ -6,7 +6,7 @@ import '../../../models/amap_routing_models.dart';
 
 /// 步行段展示组件
 class WalkSegmentCard extends StatelessWidget {
-  final TransitSegment segment;
+  final BusTransitSegment segment;
   final Color themeColor;
   final bool isDark;
 
@@ -19,8 +19,8 @@ class WalkSegmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final walkDistance = segment.walkingDistance > 0
-        ? segment.walkingDistance
+    final walkDistance = segment.distance > 0
+        ? segment.distance.round()
         : _calcDistance(segment.points).round();
     final distanceText = walkDistance >= 1000
         ? '${(walkDistance / 1000).toStringAsFixed(1)}km'

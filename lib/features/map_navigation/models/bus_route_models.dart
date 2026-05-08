@@ -1,7 +1,8 @@
-import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/features/map_navigation/models/route_segment_models.dart';
 import 'package:qintu/features/map_navigation/models/amap_bus_models.dart';
 
-export 'package:qintu/features/map_navigation/models/amap_routing_models.dart' show StationEntrance, WalkStep;
+export 'package:qintu/features/map_navigation/models/route_segment_models.dart' show StationEntrance, WalkStep;
+export 'package:qintu/features/map_navigation/models/amap_bus_models.dart' show BusLineStation;
 
 enum TransitSegmentType {
   walk,
@@ -176,6 +177,7 @@ class BusTransitSegment {
       case 'walk':
         return TransitSegmentType.walk;
       case 'bus':
+      case 'suburban':
         return TransitSegmentType.bus;
       case 'subway':
         return TransitSegmentType.subway;
@@ -183,6 +185,26 @@ class BusTransitSegment {
         return TransitSegmentType.taxi;
       default:
         return TransitSegmentType.walk;
+    }
+  }
+
+  // ── UI 计算属性 ──
+
+  bool get hasTransit => type == TransitSegmentType.bus || type == TransitSegmentType.subway;
+  bool get hasWalking => type == TransitSegmentType.walk;
+  bool get hasTaxi => type == TransitSegmentType.taxi;
+
+  /// 0=walk, 1=bus, 2=subway, 4=taxi
+  int get segmentType {
+    switch (type) {
+      case TransitSegmentType.walk:
+        return 0;
+      case TransitSegmentType.bus:
+        return 1;
+      case TransitSegmentType.subway:
+        return 2;
+      case TransitSegmentType.taxi:
+        return 4;
     }
   }
 }

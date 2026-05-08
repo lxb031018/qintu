@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'route_segment_models.dart';
+import 'bus_route_models.dart';
 
 /// 出行方式枚举
 enum RouteType {
@@ -19,7 +20,7 @@ class RouteOption {
   final List<LatLng> points; // 路线坐标点
   final RouteType routeType; // 出行方式
   final int strategyId;      // 算路策略编号 (0-6)
-  final List<TransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
+  final List<BusTransitSegment>? transitSegments; // 公共交通段详情（仅 transit 类型）
   final List<WalkStep>? walkSteps; // 步行导航步骤详情（仅 walking 类型）
   final List<WalkStep>? rideSteps; // 骑行导航步骤详情（仅 riding 类型，结构与 WalkStep 相同）
   final List<DriveStep>? driveSteps; // 驾车导航步骤详情（仅 driving 类型）
@@ -125,8 +126,10 @@ class RouteOption {
             return '速度最快';
         }
       case RouteType.walking:
+        if (strategy.isNotEmpty) return strategy;
         return '步行路线';
       case RouteType.riding:
+        if (strategy.isNotEmpty) return strategy;
         return '骑行路线';
       case RouteType.transit:
         if (strategyMode != null) {
@@ -165,18 +168,20 @@ class RouteOption {
     }
 
     final parts = <String>[];
-    for (final segment in transitSegments!) {
-      if (segment.hasWalking) {
-        final walkDist = segment.walkingDistance >= 1000
-            ? '${(segment.walkingDistance / 1000).toStringAsFixed(1)}公里'
-            : '${segment.walkingDistance}米';
+    for (final seg in transitSegments!) {
+      if (seg.hasWalking) {
+        final walkDist = seg.distance >= 1000
+            ? '${(seg.distance / 1000).toStringAsFixed(1)}公里'
+            : '${seg.distance.toInt()}米';
         parts.add('步行$walkDist');
       }
-      for (final line in segment.lines) {
-        if (line.stationCount > 0) {
-          parts.add('${line.typeText}${line.name}(${line.stationCount}站)');
+      if (seg.hasTransit) {
+        final typeLabel = seg.type == TransitSegmentType.subway ? '地铁' : '公交';
+        final name = seg.lineName ?? '';
+        if (seg.stationCount != null && seg.stationCount! > 0) {
+          parts.add('$typeLabel$name(${seg.stationCount}站)');
         } else {
-          parts.add('${line.typeText}${line.name}');
+          parts.add('$typeLabel$name');
         }
       }
     }
@@ -191,11 +196,9 @@ class RouteOption {
     }
 
     final names = <String>[];
-    for (final segment in transitSegments!) {
-      for (final line in segment.lines) {
-        if (!names.contains(line.name)) {
-          names.add(line.name);
-        }
+    for (final seg in transitSegments!) {
+      if (seg.hasTransit && seg.lineName != null && !names.contains(seg.lineName)) {
+        names.add(seg.lineName!);
       }
     }
     return names;

@@ -3,26 +3,25 @@ import 'package:qintu/constants/app_colors.dart';
 import 'package:qintu/constants/app_radii.dart';
 import 'package:qintu/constants/app_spacings.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import '../../../models/bus_route_models.dart';
 
 /// 打车段展示组件
 class TaxiSegmentCard extends StatelessWidget {
-  final TaxiSegment taxi;
+  final BusTransitSegment segment;
   final bool isDark;
 
   const TaxiSegmentCard({
     super.key,
-    required this.taxi,
+    required this.segment,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final distanceText = taxi.distance != null
-        ? (taxi.distance! >= 1000
-            ? '${(taxi.distance! / 1000).toStringAsFixed(1)}km'
-            : '${taxi.distance!.toInt()}m')
-        : '';
-    final priceText = taxi.price != null ? '约¥${taxi.price!.toStringAsFixed(0)}' : '';
+    final distanceText = segment.distance >= 1000
+        ? '${(segment.distance / 1000).toStringAsFixed(1)}km'
+        : '${segment.distance.toInt()}m';
+    final priceText = segment.taxiPrice != null ? '约¥${segment.taxiPrice!.toStringAsFixed(0)}' : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacings.xs),

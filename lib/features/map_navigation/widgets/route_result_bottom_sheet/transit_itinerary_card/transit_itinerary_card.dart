@@ -3,6 +3,7 @@ import '../../../../../constants/app_colors.dart';
 import '../../../../../constants/app_radii.dart';
 import '../../../../../constants/app_spacings.dart';
 import '../../../models/amap_routing_models.dart';
+import '../../../models/bus_route_models.dart';
 import 'segment_timeline.dart';
 import 'walk_segment_card.dart';
 import 'transit_line_card.dart';
@@ -17,7 +18,7 @@ import 'shared/summary_chip.dart';
 /// ============================================
 
 class TransitItineraryCard extends StatelessWidget {
-  final List<TransitSegment> segments;
+  final List<BusTransitSegment> segments;
   final double totalDistance;
   final double totalDuration;
   final double tolls;
@@ -109,7 +110,7 @@ class TransitItineraryCard extends StatelessWidget {
   }
 
   Widget _buildSegmentRow(
-    TransitSegment segment, {
+    BusTransitSegment segment, {
     required bool isFirst,
     required bool isLast,
     required bool isDark,
@@ -141,9 +142,9 @@ class TransitItineraryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSegmentContent(TransitSegment seg, bool isDark) {
+  Widget _buildSegmentContent(BusTransitSegment seg, bool isDark) {
     if (seg.hasTaxi) {
-      return TaxiSegmentCard(taxi: seg.taxi!, isDark: isDark);
+      return TaxiSegmentCard(segment: seg, isDark: isDark);
     }
     if (seg.hasTransit) {
       return TransitSegmentContent(segment: seg, isDark: isDark);
@@ -155,7 +156,7 @@ class TransitItineraryCard extends StatelessWidget {
     );
   }
 
-  static Color _segmentThemeColor(TransitSegment seg) {
+  static Color _segmentThemeColor(BusTransitSegment seg) {
     switch (seg.segmentType) {
       case 0:
         return const Color(0xFF8C8C8C);
