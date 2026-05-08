@@ -41,8 +41,7 @@ class TransitLineCard extends StatelessWidget {
             _buildStationRoute(color),
           ],
           if ((segment.stationCount ?? 0) > 0 ||
-              segment.totalPrice != null ||
-              segment.firstBusTime != null)
+              segment.totalPrice != null)
             _buildInfoTags(),
           if (segment.passStations != null && segment.passStations!.isNotEmpty)
             _buildPassStations(),
@@ -51,9 +50,12 @@ class TransitLineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(Color color) {
+Widget _buildHeader(Color color) {
     final typeLabel = segment.type == TransitSegmentType.subway ? '地铁' : '公交';
-    return Row(
+    return Wrap(
+      spacing: AppSpacings.xs,
+      runSpacing: AppSpacings.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -70,7 +72,6 @@ class TransitLineCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppSpacings.xs),
         if (segment.lineType != null && segment.lineType!.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -95,7 +96,6 @@ class TransitLineCard extends StatelessWidget {
               style: const TextStyle(fontSize: 10, color: Colors.white),
             ),
           ),
-        const Spacer(),
         if (segment.duration != null)
           Text(
             '${(segment.duration! / 60).round()}分钟',
@@ -108,7 +108,7 @@ class TransitLineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStationRoute(Color color) {
+Widget _buildStationRoute(Color color) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,6 +135,7 @@ class TransitLineCard extends StatelessWidget {
                   fontSize: 12,
                   color: isDark ? AppColors.darkTextColor : AppColors.textColor,
                 ),
+                softWrap: true,
               ),
               const SizedBox(height: 10),
               Text(
@@ -143,6 +144,7 @@ class TransitLineCard extends StatelessWidget {
                   fontSize: 12,
                   color: isDark ? AppColors.darkTextColor : AppColors.textColor,
                 ),
+                softWrap: true,
               ),
             ],
           ),
@@ -170,12 +172,6 @@ class TransitLineCard extends StatelessWidget {
               icon: Icons.attach_money,
               isDark: isDark,
             ),
-          if (segment.firstBusTime != null && segment.lastBusTime != null)
-            InfoTag(
-              text: '${segment.firstBusTime}-${segment.lastBusTime}',
-              icon: Icons.schedule,
-              isDark: isDark,
-            ),
         ],
       ),
     );
@@ -190,8 +186,6 @@ class TransitLineCard extends StatelessWidget {
           fontSize: 10,
           color: isDark ? AppColors.darkLightTextColor : AppColors.grey500,
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }

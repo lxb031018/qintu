@@ -290,7 +290,6 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     if (segments == null || segments.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
         RouteDetailHeader(
           route: route,
@@ -301,7 +300,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
           },
         ),
         Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
-        Flexible(
+        Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: AppSpacings.sm),
             child: TransitItineraryCard(
@@ -310,7 +309,6 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
               totalDuration: route.duration,
               tolls: route.tolls ?? 0,
               walkDistance: route.walkDistance,
-              // transferCount: route.transferCount,
             ),
           ),
         ),
