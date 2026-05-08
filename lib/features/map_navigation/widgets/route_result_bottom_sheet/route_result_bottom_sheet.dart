@@ -44,9 +44,6 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 当前选中的出行方式
   final RouteType currentRouteType;
 
-  /// 出行方式切换回调
-  final ValueChanged<RouteType>? onRouteTypeChanged;
-
   /// 是否可见（用于控制显示/隐藏动画）
   final bool isVisible;
 
@@ -65,6 +62,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 驾车策略切换回调
   final ValueChanged<int>? onDrivingStrategyChanged;
 
+  /// 错误信息（空结果时显示）
+  final String? errorMessage;
+
   const RouteResultBottomSheet({
     super.key,
     this.routes = const [],
@@ -72,13 +72,13 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.onRouteSelected,
     this.onClose,
     this.currentRouteType = RouteType.driving,
-    this.onRouteTypeChanged,
     this.isVisible = true,
     this.onStartNavigation,
     this.onViewItinerary,
     this.onDetailExited,
     this.drivingStrategy = 10,
     this.onDrivingStrategyChanged,
+    this.errorMessage,
   });
 
   @override
@@ -188,7 +188,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
             ),
           ),
         if (widget.routes.isEmpty)
-          const RouteEmptyState()
+          RouteEmptyState(errorMessage: widget.errorMessage)
         else
           _buildRouteList(isDark),
         if (widget.routes.isNotEmpty) _buildActionButtons(isDark),

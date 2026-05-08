@@ -33,10 +33,10 @@ class AmapBusRouteBridge {
       return routes.map((r) => BusPath.fromMap(r as Map<String, dynamic>)).toList();
     } on PlatformException catch (e) {
       Logs.ui.warning('Bus route search failed: ${e.code} ${e.message}');
-      return [];
+      rethrow;
     } catch (e) {
       Logs.ui.warning('Bus route search unexpected error: $e');
-      return [];
+      rethrow;
     }
   }
 }

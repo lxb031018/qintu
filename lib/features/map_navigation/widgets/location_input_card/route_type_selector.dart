@@ -17,6 +17,15 @@ class RouteTypeSelector extends ConsumerWidget {
     required this.isDark,
   });
 
+  void _onRouteTypeTap(WidgetRef ref, LocationInputCardCallbacks? callbacks, RouteType type) {
+    if (callbacks != null) {
+      callbacks.onRouteTypeSelected?.call(type);
+    } else {
+      ref.read(mapNavigationProvider.notifier).switchRouteType(type);
+      ref.read(mapNavigationProvider.notifier).showRoutesSheet();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navState = ref.watch(mapNavigationProvider);
@@ -29,28 +38,28 @@ class RouteTypeSelector extends ConsumerWidget {
           RouteTypeButton(
             label: '步行',
             isSelected: navState.currentRouteType == RouteType.walking,
-            onTap: () => callbacks?.onRouteTypeSelected?.call(RouteType.walking),
+            onTap: () => _onRouteTypeTap(ref, callbacks, RouteType.walking),
             isDark: isDark,
           ),
           SizedBox(width: AppSpacings.sm),
           RouteTypeButton(
             label: '骑行',
             isSelected: navState.currentRouteType == RouteType.riding,
-            onTap: () => callbacks?.onRouteTypeSelected?.call(RouteType.riding),
+            onTap: () => _onRouteTypeTap(ref, callbacks, RouteType.riding),
             isDark: isDark,
           ),
           SizedBox(width: AppSpacings.sm),
           RouteTypeButton(
             label: '公共交通',
             isSelected: navState.currentRouteType == RouteType.transit,
-            onTap: () => callbacks?.onRouteTypeSelected?.call(RouteType.transit),
+            onTap: () => _onRouteTypeTap(ref, callbacks, RouteType.transit),
             isDark: isDark,
           ),
           SizedBox(width: AppSpacings.sm),
           RouteTypeButton(
             label: '驾车',
             isSelected: navState.currentRouteType == RouteType.driving,
-            onTap: () => callbacks?.onRouteTypeSelected?.call(RouteType.driving),
+            onTap: () => _onRouteTypeTap(ref, callbacks, RouteType.driving),
             isDark: isDark,
           ),
         ],

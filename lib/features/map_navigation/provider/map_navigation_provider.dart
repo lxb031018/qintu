@@ -368,9 +368,14 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
     }
 
     state = state.copyWith(
+      routes: const [],
       routesState: const AsyncState.loading(),
       errorMessage: null,
     );
+
+    // 清理旧路线渲染（切换出行方式时清除另一套渲染系统的残留）
+    ref.read(mapControllerNotifierProvider)?.clearRouteOverlays();
+    _mapDisplayCoordinator.clearRoutes();
 
     try {
       List<RouteOption> routes;
@@ -379,12 +384,14 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
         // 公共交通：使用 RouteSearchV2 API
         // 从起点坐标获取城市区号（用于 BusRouteQuery 的 city 参数）
         final cityCode = await _poiService.getCityCodeFromLocation(state.originLocation!);
+        Logs.navigation.info('公交路线搜索：起点(${state.originLocation!.latitude},${state.originLocation!.longitude}) 终点(${state.destinationLocation!.latitude},${state.destinationLocation!.longitude}) 城市码=$cityCode');
         final busService = BusRouteService();
         final busPaths = await busService.calculateBusRoute(
           from: state.originLocation!,
           to: state.destinationLocation!,
           city: cityCode ?? '010', // 默认为北京，null 时回退到 '010'
         );
+        Logs.navigation.info('公交路线搜索结果：${busPaths.length} 条路径');
         routes = busPaths.map((bp) => _busPathToRouteOption(bp)).toList();
       } else {
         final naviRoutes = await AmapNavigationBridge.calculateRoute(
@@ -399,10 +406,16 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       if (_disposed) return;
 
       if (routes.isEmpty) {
+        Logs.navigation.warning('未找到路线');
+        ref.read(mapControllerNotifierProvider)?.clearRouteOverlays();
+        _mapDisplayCoordinator.clearRoutes();
         state = state.copyWith(
+          routes: const [],
           routesState: const AsyncState.success([]),
           errorMessage: '未找到路线',
+          showRoutesSheet: true,
         );
+        debugPrint('[PLAN_ROUTE] 空结果状态已写入: routes=0, showRoutesSheet=true');
       } else {
         state = state.copyWith(
           routes: routes,
@@ -410,6 +423,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
           routesState: AsyncState.success(routes),
           showRoutesSheet: true,
         );
+        debugPrint('[PLAN_ROUTE] ${routes.length}条路线状态已写入: showRoutesSheet=true, routeType=${state.currentRouteType}');
 
         if (state.currentRouteType != RouteType.transit) {
           // 使用 RouteOverLay 渲染多路线
@@ -443,55 +457,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   /// 将 BusPath 转换为 RouteOption
   RouteOption _busPathToRouteOption(bus.BusPath bp) {
-    // 将 BusTransitSegment 转换为 TransitSegment 模型
-    final transitSegments = bp.segments.map((seg) {
-      final lines = <TransitLine>[];
-      if (seg.type == bus.TransitSegmentType.bus || seg.type == bus.TransitSegmentType.subway) {
-        lines.add(TransitLine(
-          name: seg.lineName ?? '',
-          type: seg.type == bus.TransitSegmentType.subway
-              ? TransitLineType.subway
-              : TransitLineType.bus,
-          stationCount: seg.stationCount ?? 0,
-          departureStation: seg.departureStation,
-          arrivalStation: seg.arrivalStation,
-          duration: seg.duration,
-          busLineId: seg.busLineId,
-          lineType: seg.lineType,
-          basicPrice: seg.basicPrice,
-          totalPrice: seg.totalPrice,
-          firstBusTime: seg.firstBusTime,
-          lastBusTime: seg.lastBusTime,
-          originatingStation: seg.originatingStation,
-          terminalStation: seg.terminalStation,
-          busCompany: seg.busCompany,
-          passStations: seg.passStations,
-        ));
-      }
-
-      TaxiSegment? taxi;
-      if (seg.type == bus.TransitSegmentType.taxi) {
-        taxi = TaxiSegment(
-          origin: seg.taxiOrigin,
-          destination: seg.taxiDestination,
-          distance: seg.distance,
-          duration: seg.taxiDuration,
-          price: seg.taxiPrice,
-          points: seg.points,
-        );
-      }
-
-      return TransitSegment(
-        lines: lines,
-        walkingDistance: seg.type == bus.TransitSegmentType.walk ? seg.distance.toInt() : 0,
-        points: seg.points,
-        entrance: seg.entrance,
-        exit: seg.exit,
-        walkSteps: seg.walkSteps,
-        taxi: taxi,
-      );
-    }).toList();
-
     return RouteOption(
       routeId: bp.routeId,
       distance: bp.distance,
@@ -500,7 +465,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
       tolls: bp.cost,
       points: bp.points,
       routeType: RouteType.transit,
-      transitSegments: transitSegments,
+      transitSegments: bp.segments,
       walkDistance: bp.walkDistance,
       busDistance: bp.busDistance,
       isNightBus: bp.nightBus,
@@ -560,8 +525,8 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
 
   /// 切换出行方式并重新规划路线
   Future<void> switchRouteType(RouteType type) async {
-    if (!state.canPlanRoute) return;
     state = state.copyWith(currentRouteType: type);
+    if (!state.canPlanRoute) return;
     await planRoute();
   }
 

@@ -169,7 +169,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 
           // 路线栏（非导航时）
           if (!navState.isNavigating && navState.showRoutesSheet &&
-              (navState.routes.isNotEmpty || navState.routesState.isLoading))
+              (navState.routes.isNotEmpty || navState.routesState.isLoading || navState.routesState.isSuccess))
             _RouteBottomSheetPositioner(
               navState: navState,
               tabBarHeight: ref.watch(tabBarHeightProvider),
@@ -225,8 +225,14 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final routes = navState.routes;
-    final selectedIdx = navState.selectedRouteIndex;
+    // 直接从 provider 读取最新状态，确保不因 prop 传递延迟导致数据过期
+    final currentState = ref.watch(mapNavigationProvider);
+    final routes = currentState.routes;
+    debugPrint('[BOTTOM_SHEET_BUILDER] routes.length=${routes.length}, '
+        'currentRouteType=${currentState.currentRouteType}, '
+        'routesState=${currentState.routesState}, '
+        'showRoutesSheet=${currentState.showRoutesSheet}');
+    final selectedIdx = currentState.selectedRouteIndex;
     final selectedRoute = selectedIdx < routes.length ? routes[selectedIdx] : null;
 
     return RouteResultBottomSheet(
@@ -264,24 +270,22 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         );
       }).toList(),
       selectedIndex: selectedIdx,
-      currentRouteType: navState.currentRouteType ?? RouteType.driving,
-      drivingStrategy: navState.drivingStrategy,
+      currentRouteType: currentState.currentRouteType ?? RouteType.driving,
+      drivingStrategy: currentState.drivingStrategy,
       onDrivingStrategyChanged: (strategy) {
         ref.read(mapNavigationProvider.notifier).setDrivingStrategy(strategy);
       },
       onRouteSelected: (index) {
         ref.read(mapNavigationProvider.notifier).selectRoute(index);
-        if (navState.currentRouteType == RouteType.transit) {
-          final route = navState.routes[index];
+        if (currentState.currentRouteType == RouteType.transit) {
+          final route = currentState.routes[index];
           ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
         }
-      },
-      onRouteTypeChanged: (type) {
-        ref.read(mapNavigationProvider.notifier).switchRouteType(type);
       },
       onClose: () {
         ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
       },
+      errorMessage: currentState.errorMessage,
       onStartNavigation: () {
         ref.read(mapNavigationProvider.notifier).startNavigation();
       },
