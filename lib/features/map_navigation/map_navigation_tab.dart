@@ -13,6 +13,7 @@ import 'widgets/location_input_card/location_input_card.dart';
 import 'widgets/location_category_list/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet/route_result_bottom_sheet.dart';
+import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
@@ -293,72 +294,79 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         'showRoutesSheet=${currentState.showRoutesSheet}');
     final selectedIdx = currentState.selectedRouteIndex;
     final selectedRoute = selectedIdx < routes.length ? routes[selectedIdx] : null;
+    final isTransit = currentState.currentRouteType == RouteType.transit;
 
-    // 计算公共交通的 maxHeight
-    double? maxHeight;
-    if (currentState.currentRouteType == RouteType.transit) {
-      final cardBox =
-          locationCardKey.currentContext?.findRenderObject() as RenderBox?;
-      final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
-      final cardHeight = cardBox?.size.height ?? 0;
-      final screenHeight = MediaQuery.of(context).size.height;
-      maxHeight = screenHeight - cardTop - cardHeight - AppSpacings.sm;
+    final routeItems = routes.asMap().entries.map((entry) {
+      final idx = entry.key;
+      final route = entry.value;
+      final isSelected = idx == selectedIdx;
+
+      int? timeDiff;
+      int? distanceDiff;
+      if (!isSelected && selectedRoute != null) {
+        final diffSec = (route.duration - selectedRoute.duration).round();
+        final diffM = (route.distance - selectedRoute.distance).round();
+        if (diffSec.abs() >= 60) timeDiff = diffSec;
+        if (diffM.abs() >= 100) distanceDiff = diffM;
+      }
+
+      return RouteResultItem(
+        distance: route.distance,
+        formattedDistance: route.distanceText,
+        duration: route.duration,
+        formattedDuration: route.durationText,
+        strategy: route.strategyText,
+        tolls: route.tolls,
+        trafficStatuses: route.trafficStatuses,
+        timeDiff: timeDiff,
+        distanceDiff: distanceDiff,
+        routeType: route.routeType,
+        transitSegments: route.transitSegments,
+        transitSummary: route.transitSummaryText,
+        transitLineNames: route.transitLineNames,
+        transferCount: route.transferCount,
+        walkDistance: route.walkDistance,
+        cityCode: route.cityCodes?.isNotEmpty == true ? route.cityCodes!.first : null,
+      );
+    }).toList();
+
+    if (isTransit) {
+      return TransitRouteSheet(
+        routes: routeItems,
+        selectedIndex: selectedIdx,
+        onRouteSelected: (index) {
+          ref.read(mapNavigationProvider.notifier).selectRoute(index);
+          final route = currentState.routes[index];
+          ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
+        },
+        onClose: () {
+          ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
+        },
+        onStartNavigation: () {
+          ref.read(mapNavigationProvider.notifier).startNavigation();
+        },
+        onDetailExited: () {
+          ref.read(mapDisplayCoordinatorProvider).clearRoutes();
+        },
+        errorMessage: currentState.errorMessage,
+        isLoading: currentState.routesState.isLoading,
+      );
     }
 
     return RouteResultBottomSheet(
-      maxHeight: maxHeight,
-      routes: routes.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final route = entry.value;
-        final isSelected = idx == selectedIdx;
-
-        int? timeDiff;
-        int? distanceDiff;
-        if (!isSelected && selectedRoute != null) {
-          final diffSec = (route.duration - selectedRoute.duration).round();
-          final diffM = (route.distance - selectedRoute.distance).round();
-          if (diffSec.abs() >= 60) timeDiff = diffSec;
-          if (diffM.abs() >= 100) distanceDiff = diffM;
-        }
-
-        return RouteResultItem(
-          distance: route.distance,
-          formattedDistance: route.distanceText,
-          duration: route.duration,
-          formattedDuration: route.durationText,
-          strategy: route.strategyText,
-          tolls: route.tolls,
-          trafficStatuses: route.trafficStatuses,
-          timeDiff: timeDiff,
-          distanceDiff: distanceDiff,
-          routeType: route.routeType,
-          transitSegments: route.transitSegments,
-          transitSummary: route.transitSummaryText,
-          transitLineNames: route.transitLineNames,
-          transferCount: route.transferCount,
-          walkDistance: route.walkDistance,
-          cityCode: route.cityCodes?.isNotEmpty == true ? route.cityCodes!.first : null,
-        );
-      }).toList(),
+      routes: routeItems,
       selectedIndex: selectedIdx,
       currentRouteType: currentState.currentRouteType ?? RouteType.driving,
       onRouteSelected: (index) {
         ref.read(mapNavigationProvider.notifier).selectRoute(index);
-        if (currentState.currentRouteType == RouteType.transit) {
-          final route = currentState.routes[index];
-          ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
-        }
       },
       onClose: () {
         ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
       },
-      errorMessage: currentState.errorMessage,
       onStartNavigation: () {
         ref.read(mapNavigationProvider.notifier).startNavigation();
       },
-      onDetailExited: () {
-        ref.read(mapDisplayCoordinatorProvider).clearRoutes();
-      },
+      errorMessage: currentState.errorMessage,
       isLoading: currentState.routesState.isLoading,
     );
   }
