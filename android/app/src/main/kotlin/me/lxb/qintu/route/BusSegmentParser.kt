@@ -1,5 +1,6 @@
 package me.lxb.qintu.route
 
+import android.util.Log
 import com.amap.api.services.route.BusStepV2
 import com.amap.api.services.route.Doorway
 import com.amap.api.services.route.RouteBusLineItem
@@ -75,11 +76,17 @@ object BusSegmentParser {
                         )
                     } ?: emptyList()
 
-                    // 构建坐标点：优先使用 directionsCoordinates，否则用站点坐标回退
+                    // 构建坐标点：RouteBusLineItem.polyline > directionsCoordinates > 站点坐标回退
+                    val segPolyline = busLine.polyline
                     val directionsCoords = busLine.directionsCoordinates
-                    val segPoints = if (directionsCoords != null && directionsCoords.isNotEmpty()) {
+                    val segPoints = if (segPolyline != null && segPolyline.isNotEmpty()) {
+                        Log.d(TAG, "✅ 段 [${busLine.busLineName}] 使用 RouteBusLineItem.polyline: ${segPolyline.size} 个坐标点")
+                        segPolyline.map { listOf(it.longitude, it.latitude) }
+                    } else if (directionsCoords != null && directionsCoords.isNotEmpty()) {
+                        Log.d(TAG, "⚠️ 段 [${busLine.busLineName}] 回退到 directionsCoordinates: ${directionsCoords.size} 个坐标点")
                         directionsCoords.map { listOf(it.longitude, it.latitude) }
                     } else {
+                        Log.w(TAG, "❌ 段 [${busLine.busLineName}] 无 polyline/directions，使用站点坐标回退")
                         val fallback = mutableListOf<List<Double>>()
                         busLine.departureBusStation?.latLonPoint?.let {
                             fallback.add(listOf(it.longitude, it.latitude))
