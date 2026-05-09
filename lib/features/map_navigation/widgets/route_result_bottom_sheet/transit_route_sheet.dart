@@ -19,7 +19,8 @@ import 'transit_itinerary_card/transit_itinerary_card.dart';
 /// - 空状态 / 加载状态
 /// - 暗黑模式适配
 ///
-/// 拖拽关闭由父级 [Positioned] 层处理，本组件不包含拖拽逻辑。
+/// 列表页使用 [DraggableScrollableSheet] 处理滚动与拖拽关闭手势，
+/// 详情页为静态布局，通过返回按钮回到列表。
 class TransitRouteSheet extends StatefulWidget {
   /// 路线选项数据模型列表
   final List<RouteResultItem> routes;
@@ -65,12 +66,15 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   /// 当前查看详情的路线（null = 列表页）
   RouteResultItem? _detailRoute;
 
+  /// 防止重复触发关闭
+  bool _dismissTriggered = false;
+
   @override
   void didUpdateWidget(TransitRouteSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 路线数据整体刷新时退出详情
     if (oldWidget.routes != widget.routes) {
       _detailRoute = null;
+      _dismissTriggered = false;
     }
   }
 
@@ -78,56 +82,94 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    return _detailRoute != null
+        ? _buildDetailPageWithDecoration(isDark)
+        : _buildDraggableListPage(isDark);
+  }
+
+  /// 详情页：无拖拽，纯静态布局
+  Widget _buildDetailPageWithDecoration(bool isDark) {
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
-        borderRadius: const BorderRadius.vertical(
-          top: AppRadii.large,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: _detailRoute != null
-          ? _buildDetailPage(isDark)
-          : _buildListPage(isDark),
+      decoration: _sheetDecoration(isDark),
+      child: _buildDetailPage(isDark),
     );
   }
 
-  Widget _buildListPage(bool isDark) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const RouteDragHandle(),
-        if (widget.isLoading)
-          _buildLoadingState(isDark)
-        else if (widget.routes.isEmpty)
-          RouteEmptyState(errorMessage: widget.errorMessage)
-        else ...[
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(AppSpacings.sm),
-              itemCount: widget.routes.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacings.sm),
-              itemBuilder: (context, index) {
-                return TransitRouteSummaryCard(
-                  route: widget.routes[index],
-                  isSelected: index == widget.selectedIndex,
-                  onTap: () {
-                    setState(() => _detailRoute = widget.routes[index]);
-                    widget.onRouteSelected?.call(index);
-                  },
-                  isDark: isDark,
-                );
-              },
+  /// 列表页：DraggableScrollableSheet 接管手势
+  Widget _buildDraggableListPage(bool isDark) {
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: (notification) {
+        if (notification.extent <= 0.02 && !_dismissTriggered) {
+          _dismissTriggered = true;
+          widget.onClose?.call();
+          return true;
+        }
+        return false;
+      },
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.0,
+        maxChildSize: 1.0,
+        snap: true,
+        snapSizes: const [0.0, 0.55],
+        builder: (context, scrollController) {
+          return Container(
+            decoration: _sheetDecoration(isDark),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: AppRadii.large),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const RouteDragHandle(),
+                  if (widget.isLoading)
+                    _buildLoadingState(isDark)
+                  else if (widget.routes.isEmpty)
+                    RouteEmptyState(errorMessage: widget.errorMessage)
+                  else ...[
+                    Expanded(
+                      child: ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(AppSpacings.sm),
+                        itemCount: widget.routes.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacings.sm),
+                        itemBuilder: (context, index) {
+                          return TransitRouteSummaryCard(
+                            route: widget.routes[index],
+                            isSelected: index == widget.selectedIndex,
+                            onTap: () {
+                              setState(
+                                  () => _detailRoute = widget.routes[index]);
+                              widget.onRouteSelected?.call(index);
+                            },
+                            isDark: isDark,
+                          );
+                        },
+                      ),
+                    ),
+                    _buildActionButtons(isDark),
+                  ],
+                ],
+              ),
             ),
-          ),
-          _buildActionButtons(isDark),
-        ],
+          );
+        },
+      ),
+    );
+  }
+
+  BoxDecoration _sheetDecoration(bool isDark) {
+    return BoxDecoration(
+      color: isDark ? AppColors.darkCardBackground : AppColors.backgroundColor,
+      borderRadius: const BorderRadius.vertical(
+        top: AppRadii.large,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 10,
+          offset: const Offset(0, -2),
+        ),
       ],
     );
   }

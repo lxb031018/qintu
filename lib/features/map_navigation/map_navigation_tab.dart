@@ -199,37 +199,7 @@ class _RouteBottomSheetPositioner extends ConsumerStatefulWidget {
 }
 
 class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPositioner> {
-  double _dragOffset = 0;
-  bool _isDragging = false;
-
-  static const double _maxDragOffset = 120;
-  static const double _dismissThreshold = 80;
-
   bool get _isTransit => widget.navState.currentRouteType == RouteType.transit;
-
-  void _onVerticalDragStart(DragStartDetails details) {
-    setState(() {
-      _isDragging = true;
-      _dragOffset = 0;
-    });
-  }
-
-  void _onVerticalDragUpdate(DragUpdateDetails details) {
-    if (!_isTransit) return;
-    setState(() {
-      _dragOffset = (_dragOffset + details.delta.dy).clamp(0, _maxDragOffset);
-    });
-  }
-
-  void _onVerticalDragEnd(DragEndDetails details) {
-    if (_dragOffset > _dismissThreshold) {
-      ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
-    }
-    setState(() {
-      _isDragging = false;
-      _dragOffset = 0;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -254,21 +224,14 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
     final cardBottom = cardTop + cardHeight;
     final sheetTop = cardBottom + AppSpacings.sm;
 
-    final top = _isDragging ? sheetTop + _dragOffset : sheetTop;
-
     return Positioned(
-      top: top,
+      top: sheetTop,
       bottom: 0,
       left: 0,
       right: 0,
-      child: GestureDetector(
-        onVerticalDragStart: _onVerticalDragStart,
-        onVerticalDragUpdate: _onVerticalDragUpdate,
-        onVerticalDragEnd: _onVerticalDragEnd,
-        child: _RouteBottomSheetBuilder(
-          navState: widget.navState,
-          locationCardKey: widget.locationCardKey,
-        ),
+      child: _RouteBottomSheetBuilder(
+        navState: widget.navState,
+        locationCardKey: widget.locationCardKey,
       ),
     );
   }
