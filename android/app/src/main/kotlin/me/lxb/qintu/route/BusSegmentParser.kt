@@ -1,7 +1,7 @@
 package me.lxb.qintu.route
 
-import com.amap.api.services.route.Doorway
 import com.amap.api.services.route.BusStepV2
+import com.amap.api.services.route.Doorway
 import com.amap.api.services.route.RouteBusLineItem
 import com.amap.api.services.route.*
 
@@ -75,6 +75,29 @@ object BusSegmentParser {
                         )
                     } ?: emptyList()
 
+                    // 构建坐标点：优先使用 directionsCoordinates，否则用站点坐标回退
+                    val directionsCoords = busLine.directionsCoordinates
+                    val segPoints = if (directionsCoords != null && directionsCoords.isNotEmpty()) {
+                        directionsCoords.map { listOf(it.longitude, it.latitude) }
+                    } else {
+                        val fallback = mutableListOf<List<Double>>()
+                        busLine.departureBusStation?.latLonPoint?.let {
+                            fallback.add(listOf(it.longitude, it.latitude))
+                        }
+                        busLine.passStations?.forEach { station ->
+                            station.latLonPoint?.let {
+                                fallback.add(listOf(it.longitude, it.latitude))
+                            }
+                        }
+                        busLine.arrivalBusStation?.latLonPoint?.let {
+                            if (fallback.isEmpty() || fallback.last()[0] != it.longitude || fallback.last()[1] != it.latitude) {
+                                fallback.add(listOf(it.longitude, it.latitude))
+                            }
+                        }
+                        fallback
+                    }
+                    if (segPoints.isEmpty()) continue
+
                     segments.add(mapOf(
                         "type" to lineType,
                         "lineName" to (busLine.busLineName ?: ""),
@@ -94,8 +117,7 @@ object BusSegmentParser {
                         "busCompany" to (busLine.busCompany ?: ""),
                         "passStations" to passStations,
                         "cityCode" to cityCode,
-                        "points" to (busLine.directionsCoordinates?.map { listOf(it.longitude, it.latitude) }
-                            ?: emptyList<List<Double>>())
+                        "points" to segPoints
                     ))
                 }
             }
@@ -112,7 +134,16 @@ object BusSegmentParser {
                     "origin" to taxi.origin?.let { listOf(it.longitude, it.latitude) },
                     "destination" to taxi.destination?.let { listOf(it.longitude, it.latitude) },
                     "points" to (taxi.polyline?.map { listOf(it.longitude, it.latitude) }
-                        ?: emptyList<List<Double>>())
+                        ?: run {
+                            val fallback = mutableListOf<List<Double>>()
+                            taxi.origin?.let { fallback.add(listOf(it.longitude, it.latitude)) }
+                            taxi.destination?.let {
+                                if (fallback.isEmpty() || fallback.last()[0] != it.longitude || fallback.last()[1] != it.latitude) {
+                                    fallback.add(listOf(it.longitude, it.latitude))
+                                }
+                            }
+                            fallback
+                        })
                 ))
             }
 
@@ -168,4 +199,5 @@ object BusSegmentParser {
             segments[lastTransitIndex] = seg
         }
     }
+
 }

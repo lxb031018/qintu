@@ -57,9 +57,6 @@ class RouteColors {
   /// 公交车段颜色
   static const int transitBus = 0xFF1890FF; // 蓝色
 
-  /// 地铁段颜色
-  static const int transitSubway = 0xFFFF4D4F; // 红色
-
   /// TMC路况颜色 - 畅通
   static const int trafficSmooth = 0xFF52C41A; // 绿色
 

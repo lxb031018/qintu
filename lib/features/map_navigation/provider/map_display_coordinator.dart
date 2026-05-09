@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
+import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
 import 'location_input_provider.dart';
@@ -278,7 +279,7 @@ class MapDisplayCoordinator {
       case 1:
         return RouteColors.transitBus;
       case 2:
-        return RouteColors.transitSubway;
+        return SubwayColorHelper.getSubwayColor(seg.lineName, seg.cityCode).toARGB32();
       default:
         return RouteColors.transitWalk;
     }

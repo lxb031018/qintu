@@ -20,7 +20,8 @@ import 'transit_itinerary_card/transit_itinerary_card.dart';
 /// - 暗黑模式适配
 ///
 /// 列表页使用 [DraggableScrollableSheet] 处理滚动与拖拽关闭手势，
-/// 详情页为静态布局，通过返回按钮回到列表。
+/// 详情页亦使用 [DraggableScrollableSheet]，支持下拉折叠为摘要卡片、
+/// 上拉或点击摘要卡片展开完整行程详情。
 class TransitRouteSheet extends StatefulWidget {
   /// 路线选项数据模型列表
   final List<RouteResultItem> routes;
@@ -69,12 +70,25 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   /// 防止重复触发关闭
   bool _dismissTriggered = false;
 
+  /// 详情页展开/折叠状态
+  bool _detailExpanded = true;
+
+  final DraggableScrollableController _detailSheetController =
+      DraggableScrollableController();
+
+  @override
+  void dispose() {
+    _detailSheetController.dispose();
+    super.dispose();
+  }
+
   @override
   void didUpdateWidget(TransitRouteSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.routes != widget.routes) {
+    if (oldWidget.routes.length != widget.routes.length) {
       _detailRoute = null;
       _dismissTriggered = false;
+      _detailExpanded = true;
     }
   }
 
@@ -83,15 +97,176 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return _detailRoute != null
-        ? _buildDetailPageWithDecoration(isDark)
+        ? _buildDraggableDetailPage(isDark)
         : _buildDraggableListPage(isDark);
   }
 
-  /// 详情页：无拖拽，纯静态布局
-  Widget _buildDetailPageWithDecoration(bool isDark) {
-    return Container(
-      decoration: _sheetDecoration(isDark),
-      child: _buildDetailPage(isDark),
+  /// 详情页：DraggableScrollableSheet，支持下拉折叠为摘要
+  Widget _buildDraggableDetailPage(bool isDark) {
+    final route = _detailRoute;
+    final segments = route?.transitSegments;
+    if (route == null || segments == null || segments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: (notification) {
+        final expanded = notification.extent >= 0.35;
+        if (expanded != _detailExpanded) {
+          setState(() => _detailExpanded = expanded);
+        }
+        if (notification.extent <= 0.02 && !_dismissTriggered) {
+          _dismissTriggered = true;
+          widget.onClose?.call();
+          return true;
+        }
+        return false;
+      },
+      child: DraggableScrollableSheet(
+        controller: _detailSheetController,
+        initialChildSize: 0.6,
+        minChildSize: 0.2,
+        maxChildSize: 1.0,
+        snap: true,
+        snapSizes: const [0.2, 0.6],
+        builder: (context, scrollController) {
+          return Container(
+            decoration: _sheetDecoration(isDark),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: AppRadii.large),
+              child: _detailExpanded
+                  ? _buildExpandedDetail(isDark, scrollController)
+                  : _buildCollapsedDetail(isDark),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 详情页展开态：全量内容
+  Widget _buildExpandedDetail(bool isDark, ScrollController scrollController) {
+    final route = _detailRoute!;
+    final segments = route.transitSegments!;
+
+    return Column(
+      children: [
+        RouteDetailHeader(
+          route: route,
+          isDark: isDark,
+          onBack: () {
+            _detailSheetController.animateTo(
+              0.6,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+            );
+            setState(() {
+              _detailRoute = null;
+              _detailExpanded = true;
+            });
+            widget.onDetailExited?.call();
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(
+            left: AppSpacings.sm,
+            right: AppSpacings.sm,
+            bottom: AppSpacings.sm,
+          ),
+          child: TransitRouteSummaryCard(
+            route: route,
+            isSelected: true,
+            onTap: null,
+            isDark: isDark,
+          ),
+        ),
+        Container(
+            height: 1,
+            color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
+        Expanded(
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.only(bottom: AppSpacings.sm),
+            child: TransitItineraryCard(
+              segments: segments,
+              totalDistance: route.distance,
+              totalDuration: route.duration,
+              tolls: route.tolls ?? 0,
+              walkDistance: route.walkDistance,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              QintuActionButton(
+                label: '查看路线图',
+                icon: Icons.map,
+                onTap: widget.onStartNavigation,
+                backgroundColor: AppColors.grey600,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 详情页折叠态：仅头部 + 摘要 + 按钮
+  Widget _buildCollapsedDetail(bool isDark) {
+    final route = _detailRoute!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RouteDetailHeader(
+          route: route,
+          isDark: isDark,
+          onBack: () {
+            setState(() {
+              _detailRoute = null;
+              _detailExpanded = true;
+            });
+            widget.onDetailExited?.call();
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(
+            left: AppSpacings.sm,
+            right: AppSpacings.sm,
+            bottom: AppSpacings.sm,
+          ),
+          child: TransitRouteSummaryCard(
+            route: route,
+            isSelected: true,
+            // 点击折叠态摘要 → 展开
+            onTap: () {
+              _detailSheetController.animateTo(
+                0.6,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            },
+            isDark: isDark,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(AppSpacings.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              QintuActionButton(
+                label: '查看路线图',
+                icon: Icons.map,
+                onTap: widget.onStartNavigation,
+                backgroundColor: AppColors.grey600,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -138,8 +313,10 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
                             route: widget.routes[index],
                             isSelected: index == widget.selectedIndex,
                             onTap: () {
-                              setState(
-                                  () => _detailRoute = widget.routes[index]);
+                              setState(() {
+                                _detailRoute = widget.routes[index];
+                                _detailExpanded = true;
+                              });
                               widget.onRouteSelected?.call(index);
                             },
                             isDark: isDark,
@@ -203,81 +380,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
     );
   }
 
-  Widget _buildDetailPage(bool isDark) {
-    final route = _detailRoute;
-    if (route == null) return const SizedBox.shrink();
-
-    final segments = route.transitSegments;
-    if (segments == null || segments.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: [
-        RouteDetailHeader(
-          route: route,
-          isDark: isDark,
-          onBack: () {
-            setState(() => _detailRoute = null);
-            widget.onDetailExited?.call();
-          },
-        ),
-        Container(
-          padding: const EdgeInsets.only(
-            left: AppSpacings.sm,
-            right: AppSpacings.sm,
-            bottom: AppSpacings.sm,
-          ),
-          child: TransitRouteSummaryCard(
-            route: route,
-            isSelected: true,
-            onTap: null,
-            isDark: isDark,
-          ),
-        ),
-        Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: AppSpacings.sm),
-            child: TransitItineraryCard(
-              segments: segments,
-              totalDistance: route.distance,
-              totalDuration: route.duration,
-              tolls: route.tolls ?? 0,
-              walkDistance: route.walkDistance,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacings.sm),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              QintuActionButton(
-                label: '查看路线图',
-                icon: Icons.map,
-                onTap: widget.onStartNavigation,
-                backgroundColor: AppColors.grey600,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildActionButtons(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacings.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          QintuActionButton(
-            label: '查看路线图',
-            icon: Icons.map,
-            onTap: widget.onStartNavigation,
-            backgroundColor: AppColors.grey600,
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
