@@ -27,7 +27,6 @@ class TransitItineraryCard extends StatelessWidget {
   final RouteResultItem? summaryRoute;
   final GlobalKey? summaryKey;
   final bool isDark;
-  final bool isCollapsed;
   final VoidCallback? onSummaryTap;
 
   const TransitItineraryCard({
@@ -40,7 +39,6 @@ class TransitItineraryCard extends StatelessWidget {
     this.summaryRoute,
     this.summaryKey,
     this.isDark = false,
-    this.isCollapsed = false,
     this.onSummaryTap,
   });
 
@@ -58,18 +56,16 @@ class TransitItineraryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (summaryRoute != null) _buildSummaryRow(),
-            if (!isCollapsed) ...[
-              ...List.generate(segments.length, (i) {
-                final isFirst = i == 0;
-                final isLast = i == segments.length - 1;
-                return _buildSegmentRow(
-                  segments[i],
-                  isFirst: isFirst,
-                  isLast: isLast,
-                  isDark: isDark,
-                );
-              }),
-            ],
+            ...List.generate(segments.length, (i) {
+              final isFirst = i == 0;
+              final isLast = i == segments.length - 1;
+              return _buildSegmentRow(
+                segments[i],
+                isFirst: isFirst,
+                isLast: isLast,
+                isDark: isDark,
+              );
+            }),
           ],
         ),
       ),

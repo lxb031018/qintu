@@ -18,6 +18,7 @@ import 'models/map_overlay_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
 import 'provider/map_display_coordinator.dart';
+import 'utils/sheet_layout_calculator.dart';
 
 /// 由 UnifiedHomePage 在首次布局后写入 Tab Bar 实际高度
 final tabBarHeightProvider =
@@ -205,6 +206,13 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
   Widget build(BuildContext context) {
     final isTransit = _isTransit;
 
+    final cardBox =
+        widget.locationCardKey.currentContext?.findRenderObject() as RenderBox?;
+    final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
+    final cardHeight = cardBox?.size.height ?? 0;
+    final cardBottom = cardTop + cardHeight;
+    final sheetTop = cardBottom + AppSpacings.sm;
+
     if (!isTransit) {
       return Positioned(
         left: 0,
@@ -213,16 +221,10 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
         child: _RouteBottomSheetBuilder(
           navState: widget.navState,
           locationCardKey: widget.locationCardKey,
+          cardHeight: cardHeight,
         ),
       );
     }
-
-    final cardBox =
-        widget.locationCardKey.currentContext?.findRenderObject() as RenderBox?;
-    final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
-    final cardHeight = cardBox?.size.height ?? 0;
-    final cardBottom = cardTop + cardHeight;
-    final sheetTop = cardBottom + AppSpacings.sm;
 
     return Positioned(
       top: sheetTop,
@@ -232,6 +234,7 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
       child: _RouteBottomSheetBuilder(
         navState: widget.navState,
         locationCardKey: widget.locationCardKey,
+        cardHeight: cardHeight,
       ),
     );
   }
@@ -240,10 +243,12 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
 class _RouteBottomSheetBuilder extends ConsumerWidget {
   final MapNavigationState navState;
   final GlobalKey locationCardKey;
+  final double cardHeight;
 
   const _RouteBottomSheetBuilder({
     required this.navState,
     required this.locationCardKey,
+    required this.cardHeight,
   });
 
   @override
@@ -294,6 +299,14 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
     }).toList();
 
     if (isTransit) {
+      final screenHeight = MediaQuery.of(context).size.height;
+      final statusBarHeight = MediaQuery.of(context).padding.top;
+      final maxHeight = calculateTransitSheetMaxHeight(
+        screenHeight: screenHeight,
+        statusBarHeight: statusBarHeight,
+        inputCardHeight: cardHeight,
+      );
+
       return TransitRouteSheet(
         routes: routeItems,
         selectedIndex: selectedIdx,
@@ -321,6 +334,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         },
         errorMessage: currentState.errorMessage,
         isLoading: currentState.routesState.isLoading,
+        maxHeight: maxHeight,
       );
     }
 

@@ -3,6 +3,7 @@ import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/map_overlay_models.dart';
+import '../../utils/sheet_layout_calculator.dart';
 import 'detail_page_header.dart';
 import 'drag_handle.dart';
 import 'empty_state.dart';
@@ -46,6 +47,9 @@ class TransitRouteSheet extends StatefulWidget {
   /// 是否正在加载路线数据
   final bool isLoading;
 
+  /// sheet 最大高度，用于计算 snapSizes 中间点
+  final double maxHeight;
+
   const TransitRouteSheet({
     super.key,
     this.routes = const [],
@@ -56,6 +60,7 @@ class TransitRouteSheet extends StatefulWidget {
     this.onDetailExited,
     this.errorMessage,
     this.isLoading = false,
+    this.maxHeight = 0,
   });
 
   @override
@@ -69,15 +74,15 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   /// 防止重复触发关闭
   bool _dismissTriggered = false;
 
-  /// 详情页展开/折叠状态
-  bool _detailExpanded = true;
-
   final DraggableScrollableController _detailSheetController =
       DraggableScrollableController();
 
   /// 测量摘要卡片实际高度，动态计算 DSS 折叠/初始尺寸
   final GlobalKey _summaryKey = GlobalKey();
   bool _detailSizesMeasured = false;
+
+  /// 收起状态的比例（summaryHeight / maxHeight）
+  double? _detailCollapsedRatio;
 
   @override
   void dispose() {
@@ -91,7 +96,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
     if (oldWidget.routes.length != widget.routes.length) {
       _detailRoute = null;
       _dismissTriggered = false;
-      _detailExpanded = true;
       _detailSizesMeasured = false;
     }
   }
@@ -105,7 +109,14 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
       final ctx = _summaryKey.currentContext;
       if (ctx == null) return;
 
+      final box = ctx.findRenderObject() as RenderBox;
+      final summaryHeight = box.size.height;
+
       setState(() {
+        _detailCollapsedRatio = calculateCollapsedRatio(
+          summaryHeight: summaryHeight,
+          maxHeight: widget.maxHeight,
+        );
         _detailSizesMeasured = true;
       });
     });
@@ -134,10 +145,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
 
     return NotificationListener<DraggableScrollableNotification>(
       onNotification: (notification) {
-        final expanded = notification.extent >= 0.35;
-        if (expanded != _detailExpanded) {
-          setState(() => _detailExpanded = expanded);
-        }
         if (notification.extent <= 0.02 && !_dismissTriggered) {
           _dismissTriggered = true;
           widget.onClose?.call();
@@ -153,6 +160,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
         snap: true,
         snapSizes: [
           0.0,
+          _detailCollapsedRatio ?? 0.3,
           1.0,
         ],
         builder: (context, scrollController) {
@@ -160,9 +168,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             decoration: _sheetDecoration(isDark),
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: AppRadii.large),
-              child: _detailExpanded
-                  ? _buildExpandedDetail(isDark, scrollController)
-                  : _buildCollapsedDetail(isDark),
+              child: _buildDetailPage(isDark, scrollController),
             ),
           );
         },
@@ -170,10 +176,13 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
     );
   }
 
-  /// 详情页展开态：全量内容
-  Widget _buildExpandedDetail(bool isDark, ScrollController scrollController) {
-    final route = _detailRoute!;
-    final segments = route.transitSegments!;
+  /// 详情页：包含 Header + 完整分段详情（始终显示所有 segments）
+  Widget _buildDetailPage(bool isDark, ScrollController scrollController) {
+    final route = _detailRoute;
+    final segments = route?.transitSegments;
+    if (route == null || segments == null || segments.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       children: [
@@ -181,14 +190,8 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
           route: route,
           isDark: isDark,
           onBack: () {
-            _detailSheetController.animateTo(
-              1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-            );
             setState(() {
               _detailRoute = null;
-              _detailExpanded = true;
               _detailSizesMeasured = false;
             });
             widget.onDetailExited?.call();
@@ -207,51 +210,8 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
               summaryRoute: route,
               summaryKey: _summaryKey,
               isDark: isDark,
-              isCollapsed: false,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  /// 详情页折叠态：仅头部 + 摘要
-  Widget _buildCollapsedDetail(bool isDark) {
-    final route = _detailRoute!;
-    final segments = route.transitSegments ?? [];
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RouteDetailHeader(
-          route: route,
-          isDark: isDark,
-          onBack: () {
-            setState(() {
-              _detailRoute = null;
-              _detailExpanded = true;
-              _detailSizesMeasured = false;
-            });
-            widget.onDetailExited?.call();
-          },
-        ),
-        TransitItineraryCard(
-          segments: segments,
-          totalDistance: route.distance,
-          totalDuration: route.duration,
-          tolls: route.tolls ?? 0,
-          walkDistance: route.walkDistance,
-          summaryRoute: route,
-          summaryKey: _summaryKey,
-          isDark: isDark,
-          isCollapsed: true,
-          onSummaryTap: () {
-            _detailSheetController.animateTo(
-              1.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          },
         ),
       ],
     );
@@ -302,7 +262,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
                             onTap: () {
                               setState(() {
                                 _detailRoute = widget.routes[index];
-                                _detailExpanded = true;
                                 _detailSizesMeasured = false;
                               });
                               widget.onRouteSelected?.call(index);
