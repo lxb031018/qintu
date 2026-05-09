@@ -278,6 +278,19 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
             widget.onDetailExited?.call();
           },
         ),
+        Container(
+          padding: const EdgeInsets.only(
+            left: AppSpacings.sm,
+            right: AppSpacings.sm,
+            bottom: AppSpacings.sm,
+          ),
+          child: TransitRouteSummaryCard(
+            route: route,
+            isSelected: true,
+            onTap: null,
+            isDark: isDark,
+          ),
+        ),
         Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
         Expanded(
           child: SingleChildScrollView(
