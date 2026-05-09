@@ -470,50 +470,18 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> {
   void _animateCameraToShowAllRoutes(List<RouteOption> routes) {
     if (routes.isEmpty) return;
 
-    double minLat = double.infinity;
-    double maxLat = -double.infinity;
-    double minLng = double.infinity;
-    double maxLng = -double.infinity;
-
+    final allPoints = <Map<String, double>>[];
     for (final route in routes) {
       for (final point in route.points) {
-        if (point.latitude < minLat) minLat = point.latitude;
-        if (point.latitude > maxLat) maxLat = point.latitude;
-        if (point.longitude < minLng) minLng = point.longitude;
-        if (point.longitude > maxLng) maxLng = point.longitude;
+        allPoints.add({'latitude': point.latitude, 'longitude': point.longitude});
       }
     }
 
-    if (minLat == double.infinity) return;
+    if (allPoints.isEmpty) return;
 
-    final centerLat = (minLat + maxLat) / 2;
-    final centerLng = (minLng + maxLng) / 2;
-
-    final latDiff = maxLat - minLat;
-    final lngDiff = maxLng - minLng;
-    final maxDiff = latDiff > lngDiff ? latDiff : lngDiff;
-
-    double zoom = 10;
-    if (maxDiff > 0) {
-      if (maxDiff > 1) {
-        zoom = 6;
-      } else if (maxDiff > 0.5) {
-        zoom = 8;
-      } else if (maxDiff > 0.1) {
-        zoom = 10;
-      } else if (maxDiff > 0.05) {
-        zoom = 12;
-      } else if (maxDiff > 0.01) {
-        zoom = 14;
-      } else {
-        zoom = 16;
-      }
-    }
-
-    ref.read(mapControllerNotifierProvider)?.animateCameraToCenter(
-      lat: centerLat,
-      lng: centerLng,
-      zoom: zoom,
+    ref.read(mapControllerNotifierProvider)?.animateCameraToBounds(
+      allPoints,
+      padding: 100,
       duration: 800,
     );
   }

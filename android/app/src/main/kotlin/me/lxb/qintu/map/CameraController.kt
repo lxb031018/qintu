@@ -4,6 +4,7 @@ import android.util.Log
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.CameraPosition
 import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
 
 /**
  * 相机控制器
@@ -107,6 +108,32 @@ class CameraController(private val aMap: AMap) {
         } else {
             com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, zoom)
         }
+        if (durationMs > 0) {
+            aMap.animateCamera(update, durationMs.toLong(), null)
+        } else {
+            aMap.animateCamera(update)
+        }
+    }
+
+    /**
+     * 自动计算缩放级别，平滑动画移动相机以显示所有坐标点
+     *
+     * @param points 坐标点列表
+     * @param padding 边缘留白（像素）
+     * @param durationMs 动画时长（毫秒）
+     */
+    fun animateCameraToBounds(points: List<LatLng>, padding: Int = 100, durationMs: Int = 500) {
+        if (points.isEmpty()) {
+            Log.w(TAG, "⚠️ animateCameraToBounds: 坐标列表为空")
+            return
+        }
+        val boundsBuilder = LatLngBounds.Builder()
+        for (point in points) {
+            boundsBuilder.include(point)
+        }
+        val bounds = boundsBuilder.build()
+        Log.d(TAG, "🎥 animateCameraToBounds: ${points.size} 个点, padding=$padding, duration=$durationMs")
+        val update = com.amap.api.maps.CameraUpdateFactory.newLatLngBounds(bounds, padding)
         if (durationMs > 0) {
             aMap.animateCamera(update, durationMs.toLong(), null)
         } else {

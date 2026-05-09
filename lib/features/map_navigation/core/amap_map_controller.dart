@@ -530,6 +530,19 @@ class AmapMapController {
     });
   }
 
+  /// 自动计算缩放级别，平滑动画移动相机以显示所有坐标点
+  Future<void> animateCameraToBounds(
+    List<Map<String, double>> points, {
+    int padding = 100,
+    int duration = 800,
+  }) async {
+    await _channel.invokeMethod('animateCameraToBounds', {
+      'points': points,
+      'padding': padding,
+      'duration': duration,
+    });
+  }
+
   // ==================== 地图图层 ====================
 
   /// 设置地图类型

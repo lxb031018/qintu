@@ -309,6 +309,31 @@ class MapController(
                 }
             }
 
+            "animateCameraToBounds" -> {
+                val pointsData = call.argument<List<*>>("points")
+                val padding = call.argument<Int>("padding") ?: 100
+                val duration = call.argument<Int>("duration") ?: 800
+                if (pointsData == null || pointsData.isEmpty()) {
+                    result.error("INVALID_PARAMS", "points 不能为空", null)
+                    return@handleMethodCall
+                }
+                val points = mutableListOf<LatLng>()
+                for (item in pointsData) {
+                    @Suppress("UNCHECKED_CAST")
+                    val map = item as? Map<String, Any> ?: continue
+                    val lat = (map["latitude"] as? Number)?.toDouble() ?: continue
+                    val lng = (map["longitude"] as? Number)?.toDouble() ?: continue
+                    points.add(LatLng(lat, lng))
+                }
+                if (points.isEmpty()) {
+                    result.error("INVALID_PARAMS", "points 格式无效", null)
+                    return@handleMethodCall
+                }
+                Log.d(TAG, "📍 animateCameraToBounds: ${points.size} 个点, padding=$padding, duration=$duration")
+                cameraController.animateCameraToBounds(points, padding, duration)
+                result.success(true)
+            }
+
             "zoomIn" -> { cameraController.zoomIn(); result.success(true) }
             "zoomOut" -> { cameraController.zoomOut(); result.success(true) }
 

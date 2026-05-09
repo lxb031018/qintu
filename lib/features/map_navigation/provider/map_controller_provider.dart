@@ -104,6 +104,14 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
   Future<void> animateCameraToCenter({required double lat, required double lng, double zoom = 15.0, int duration = 500}) async {
     await state?.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
   }
+
+  Future<void> animateCameraToBounds(
+    List<Map<String, double>> points, {
+    int padding = 100,
+    int duration = 800,
+  }) async {
+    await state?.animateCameraToBounds(points, padding: padding, duration: duration);
+  }
 }
 
 final mapControllerNotifierProvider = NotifierProvider<MapControllerNotifier, MapControllerService?>(() {

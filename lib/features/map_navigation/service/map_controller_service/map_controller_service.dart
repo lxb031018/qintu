@@ -163,6 +163,12 @@ class MapControllerService {
     int duration = 500,
   }) => _controller.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
 
+  Future<void> animateCameraToBounds(
+    List<Map<String, double>> points, {
+    int padding = 100,
+    int duration = 800,
+  }) => _controller.animateCameraToBounds(points, padding: padding, duration: duration);
+
   // ==================== 地图图层 ====================
 
   Future<bool> setMapType(int type) => _controller.setMapType(type);
