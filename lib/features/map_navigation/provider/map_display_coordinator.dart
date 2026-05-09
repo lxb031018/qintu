@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
@@ -275,14 +276,17 @@ class MapDisplayCoordinator {
   static const double _subwayWidth = 14.0;
 
   static int _segmentColor(BusTransitSegment seg) {
-    switch (seg.segmentType) {
-      case 1:
-        return RouteColors.transitBus;
-      case 2:
-        return SubwayColorHelper.getSubwayColor(seg.lineName, seg.cityCode).toARGB32();
-      default:
-        return RouteColors.transitWalk;
+    if (seg.type == TransitSegmentType.subway) {
+      return SubwayColorHelper.getSubwayColor(
+        seg.lineName,
+        seg.cityCode,
+        defaultColor: const Color(0xFFFF4D4F),
+      ).toARGB32();
     }
+    if (seg.type == TransitSegmentType.bus) {
+      return RouteColors.transitBus;
+    }
+    return RouteColors.transitWalk;
   }
 
   static double _segmentWidth(BusTransitSegment seg) {

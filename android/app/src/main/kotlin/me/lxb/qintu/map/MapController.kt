@@ -134,8 +134,11 @@ class MapController(
             "showRoutes" -> {
                 val routesData = call.argument<List<*>>("routes")
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
+                val colors = call.argument<List<*>>("colors")?.map { (it as Number).toInt() }
+                val widths = call.argument<List<Double>>("widths")
+                val dashedFlags = call.argument<List<Boolean>>("dashedFlags")
                 Log.d(TAG, "📍 showRoutes: 自定义渲染 ${routesData?.size ?: 0} 条路线, 选中: $selectIndex")
-                val count = routeRenderer.showRoutes(routesData, selectIndex)
+                val count = routeRenderer.showRoutes(routesData, selectIndex, colors, widths, dashedFlags)
                 result.success(count)
             }
 
@@ -154,7 +157,7 @@ class MapController(
 
             // ======== 路线渲染（SDK RouteOverLay） ========
             "showRoutesWithOverlay" -> {
-                val routeIds = call.argument<List<Int>>("routeIds") ?: emptyList()
+                val routeIds = call.argument<List<*>>("routeIds")?.map { (it as Number).toInt() } ?: emptyList()
                 val selectIndex = call.argument<Int>("selectIndex") ?: 0
                 Log.d(TAG, "📍 showRoutesWithOverlay: routeIds=${routeIds.size}, selectIndex=$selectIndex")
                 val count = routeRenderer.showRoutesWithOverlay(routeIds, selectIndex)
@@ -162,7 +165,7 @@ class MapController(
             }
 
             "highlightRouteOverlay" -> {
-                val routeId = call.argument<Int>("routeId") ?: -1
+                val routeId = (call.argument<Number>("routeId")?.toInt()) ?: -1
                 Log.d(TAG, "📍 highlightRouteOverlay: routeId=$routeId")
                 routeRenderer.highlightRoute(routeId)
                 result.success(true)

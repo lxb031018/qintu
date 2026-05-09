@@ -156,6 +156,9 @@ class AmapMapController {
         'routes': routes,
         'selectIndex': selectIndex,
       };
+      if (colors != null) params['colors'] = colors;
+      if (widths != null) params['widths'] = widths;
+      if (dashedFlags != null) params['dashedFlags'] = dashedFlags;
 
       final result = await _channel.invokeMethod<int>('showRoutes', params);
       debugPrint('🗺️ [Flutter] showRoutes 结果: $result 条路线');

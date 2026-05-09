@@ -62,7 +62,13 @@ class RouteRenderer(
 
     // ========== Polyline 渲染（自定义路线）==========
 
-    fun showRoutes(routesData: List<*>?, selectIndex: Int): Int {
+    fun showRoutes(
+        routesData: List<*>?,
+        selectIndex: Int,
+        colors: List<Int>? = null,
+        widths: List<Double>? = null,
+        dashedFlags: List<Boolean>? = null
+    ): Int {
         clearRoutePolylinesInternal()
 
         if (routesData.isNullOrEmpty()) {
@@ -83,13 +89,16 @@ class RouteRenderer(
                         if (lat != null && lng != null) LatLng(lat, lng) else null
                     }
                     if (latLngs.isNotEmpty()) {
-                        val color = if (index == selectIndex) routeColors[0] else routeColors.getOrElse(index % routeColors.size) { routeColors[1] }
-                        val lineWidth = if (index == selectIndex) 14f else 10f
+                        val color = colors?.getOrNull(index)
+                            ?: if (index == selectIndex) routeColors[0] else routeColors.getOrElse(index % routeColors.size) { routeColors[1] }
+                        val lineWidth = (widths?.getOrNull(index)?.toFloat())
+                            ?: if (index == selectIndex) 14f else 10f
+                        val dashed = dashedFlags?.getOrNull(index) ?: false
                         val polyline = aMap.addPolyline(PolylineOptions()
                             .addAll(latLngs)
                             .color(color)
                             .width(lineWidth)
-                            .setDottedLine(false))
+                            .setDottedLine(dashed))
                         routePolylines.add(polyline)
                     }
                 }
