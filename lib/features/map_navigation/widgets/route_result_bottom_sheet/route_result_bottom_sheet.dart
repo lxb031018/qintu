@@ -94,6 +94,15 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   /// 最大拖动距离
   static const double _maxDragOffset = 120;
 
+  /// 加载状态容器高度
+  static const double _loadingHeight = 80;
+
+  /// 非公交路线列表高度
+  static const double _routeListHeight = 120;
+
+  /// 详情页分割线高度
+  static const double _detailDividerHeight = 1;
+
   /// 当前查看详情的路线（仅公交模式，null = 列表页）
   RouteResultItem? _detailRoute;
 
@@ -170,6 +179,8 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
   }
 
   Widget _buildListPage(bool isDark) {
+    final isTransit = widget.currentRouteType == RouteType.transit;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -179,15 +190,15 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
         else if (widget.routes.isEmpty)
           RouteEmptyState(errorMessage: widget.errorMessage)
         else
-          _buildRouteList(isDark),
-        if (!widget.isLoading && widget.routes.isNotEmpty) _buildActionButtons(isDark),
+          _buildRouteList(isDark, isTransit),
+        if (!widget.isLoading && widget.routes.isNotEmpty) _buildActionButtons(isDark, isTransit),
       ],
     );
   }
 
   Widget _buildLoadingState(bool isDark) {
     return SizedBox(
-      height: 80,
+      height: _loadingHeight,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -214,13 +225,10 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     );
   }
 
-  Widget _buildRouteList(bool isDark) {
-    final isTransit = widget.currentRouteType == RouteType.transit;
-
+  Widget _buildRouteList(bool isDark, bool isTransit) {
     if (isTransit) {
       return Expanded(
         child: ListView.separated(
-          shrinkWrap: true,
           padding: const EdgeInsets.all(AppSpacings.sm),
           itemCount: widget.routes.length,
           separatorBuilder: (context, index) => const SizedBox(height: AppSpacings.sm),
@@ -240,7 +248,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     }
 
     return SizedBox(
-      height: 120,
+      height: _routeListHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(AppSpacings.sm),
@@ -291,7 +299,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
             isDark: isDark,
           ),
         ),
-        Container(height: 1, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
+        Container(height: _detailDividerHeight, color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: AppSpacings.sm),
@@ -322,9 +330,7 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
     );
   }
 
-  Widget _buildActionButtons(bool isDark) {
-    final isTransit = widget.currentRouteType == RouteType.transit;
-
+  Widget _buildActionButtons(bool isDark, bool isTransit) {
     return Padding(
       padding: const EdgeInsets.all(AppSpacings.sm),
       child: Row(
