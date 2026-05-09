@@ -81,8 +81,11 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   final GlobalKey _summaryKey = GlobalKey();
   bool _detailSizesMeasured = false;
 
-  /// 收起状态的比例（summaryHeight / maxHeight）
+  /// 收起状态的比例（(headerHeight + summaryHeight + sm*2) / maxHeight）
   double? _detailCollapsedRatio;
+
+  /// RouteDetailHeader 高度（固定值）
+  static const double _detailHeaderHeight = 36.0;
 
   @override
   void dispose() {
@@ -97,6 +100,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
       _detailRoute = null;
       _dismissTriggered = false;
       _detailSizesMeasured = false;
+      _detailCollapsedRatio = null;
     }
   }
 
@@ -106,15 +110,15 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _detailRoute == null) return;
 
-      final ctx = _summaryKey.currentContext;
-      if (ctx == null) return;
+      final summaryCtx = _summaryKey.currentContext;
+      if (summaryCtx == null) return;
 
-      final box = ctx.findRenderObject() as RenderBox;
-      final summaryHeight = box.size.height;
+      final summaryHeight = (summaryCtx.findRenderObject() as RenderBox).size.height;
+      final collapsedHeight = _detailHeaderHeight + summaryHeight + AppSpacings.sm * 2;
 
       setState(() {
         _detailCollapsedRatio = calculateCollapsedRatio(
-          summaryHeight: summaryHeight,
+          summaryHeight: collapsedHeight,
           maxHeight: widget.maxHeight,
         );
         _detailSizesMeasured = true;
