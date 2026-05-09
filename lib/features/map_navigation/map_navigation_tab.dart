@@ -301,6 +301,14 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
           ref.read(mapNavigationProvider.notifier).selectRoute(index);
           final route = currentState.routes[index];
           ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
+          final segments = route.transitSegments;
+          if (segments != null && segments.isNotEmpty) {
+            ref.read(mapControllerNotifierProvider.notifier).animateCameraToBoundsWithSegments(
+              segments,
+              padding: 50,
+              duration: 800,
+            );
+          }
         },
         onClose: () {
           ref.read(mapNavigationProvider.notifier).hideRoutesSheet();

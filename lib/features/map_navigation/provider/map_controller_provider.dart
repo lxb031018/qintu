@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/bus_route_models.dart';
 import '../service/map_controller_service/map_controller_service.dart';
 
 final mapControllerProvider = Provider<MapControllerService?>((ref) {
@@ -111,6 +112,22 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     int duration = 800,
   }) async {
     await state?.animateCameraToBounds(points, padding: padding, duration: duration);
+  }
+
+  Future<void> animateCameraToBoundsWithSegments(
+    List<BusTransitSegment> segments, {
+    int padding = 100,
+    int duration = 800,
+  }) async {
+    final points = <Map<String, double>>[];
+    for (final seg in segments) {
+      for (final p in seg.points) {
+        points.add({'latitude': p.latitude, 'longitude': p.longitude});
+      }
+    }
+    if (points.isNotEmpty) {
+      await animateCameraToBounds(points, padding: padding, duration: duration);
+    }
   }
 }
 
