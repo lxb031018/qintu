@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../../../widgets/common/qintu_action_button.dart';
 import '../../models/map_overlay_models.dart';
 import 'detail_page_header.dart';
 import 'drag_handle.dart';
@@ -76,6 +75,12 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   final DraggableScrollableController _detailSheetController =
       DraggableScrollableController();
 
+  /// 测量摘要卡片实际高度，动态计算 DSS 折叠/初始尺寸
+  final GlobalKey _summaryKey = GlobalKey();
+  double? _detailMinSize;
+  double? _detailInitSize;
+  bool _detailSizesMeasured = false;
+
   @override
   void dispose() {
     _detailSheetController.dispose();
@@ -89,12 +94,46 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
       _detailRoute = null;
       _dismissTriggered = false;
       _detailExpanded = true;
+      _detailSizesMeasured = false;
+      _detailMinSize = null;
+      _detailInitSize = null;
     }
+  }
+
+  void _measureDetailSizes() {
+    if (_detailSizesMeasured) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _detailRoute == null) return;
+
+      final ctx = _summaryKey.currentContext;
+      if (ctx == null) return;
+
+      final RenderBox box = ctx.findRenderObject() as RenderBox;
+      final summaryHeight = box.size.height;
+      final sheetHeight = context.size?.height;
+      if (sheetHeight == null || sheetHeight <= 0) return;
+
+      // 折叠态固定内容：RouteDetailHeader + 卡片 bottom padding + 缓冲
+      final collapsedH = summaryHeight + 36 + AppSpacings.sm + 8;
+      final minSize = (collapsedH / sheetHeight).clamp(0.2, 0.45);
+      final initSize = (minSize * 2.5).clamp(minSize + 0.15, 0.8);
+
+      setState(() {
+        _detailMinSize = minSize;
+        _detailInitSize = initSize;
+        _detailSizesMeasured = true;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_detailRoute != null) {
+      _measureDetailSizes();
+    }
 
     return _detailRoute != null
         ? _buildDraggableDetailPage(isDark)
@@ -124,11 +163,14 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
       },
       child: DraggableScrollableSheet(
         controller: _detailSheetController,
-        initialChildSize: 0.6,
-        minChildSize: 0.2,
+        initialChildSize: _detailInitSize ?? 0.6,
+        minChildSize: _detailMinSize ?? 0.2,
         maxChildSize: 1.0,
         snap: true,
-        snapSizes: const [0.2, 0.6],
+        snapSizes: [
+          _detailMinSize ?? 0.2,
+          _detailInitSize ?? 0.6,
+        ],
         builder: (context, scrollController) {
           return Container(
             decoration: _sheetDecoration(isDark),
@@ -156,13 +198,14 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
           isDark: isDark,
           onBack: () {
             _detailSheetController.animateTo(
-              0.6,
+              _detailInitSize ?? 0.6,
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
             );
             setState(() {
               _detailRoute = null;
               _detailExpanded = true;
+              _detailSizesMeasured = false;
             });
             widget.onDetailExited?.call();
           },
@@ -174,6 +217,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             bottom: AppSpacings.sm,
           ),
           child: TransitRouteSummaryCard(
+            key: _summaryKey,
             route: route,
             isSelected: true,
             onTap: null,
@@ -196,12 +240,11 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             ),
           ),
         ),
-
       ],
     );
   }
 
-  /// 详情页折叠态：仅头部 + 摘要 + 按钮
+  /// 详情页折叠态：仅头部 + 摘要
   Widget _buildCollapsedDetail(bool isDark) {
     final route = _detailRoute!;
 
@@ -215,6 +258,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             setState(() {
               _detailRoute = null;
               _detailExpanded = true;
+              _detailSizesMeasured = false;
             });
             widget.onDetailExited?.call();
           },
@@ -226,12 +270,13 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             bottom: AppSpacings.sm,
           ),
           child: TransitRouteSummaryCard(
+            key: _summaryKey,
             route: route,
             isSelected: true,
             // 点击折叠态摘要 → 展开
             onTap: () {
               _detailSheetController.animateTo(
-                0.6,
+                _detailInitSize ?? 0.6,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
@@ -289,6 +334,9 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
                               setState(() {
                                 _detailRoute = widget.routes[index];
                                 _detailExpanded = true;
+                                _detailSizesMeasured = false;
+                                _detailMinSize = null;
+                                _detailInitSize = null;
                               });
                               widget.onRouteSelected?.call(index);
                             },
