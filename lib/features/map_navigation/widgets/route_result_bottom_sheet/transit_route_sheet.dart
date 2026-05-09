@@ -210,23 +210,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             widget.onDetailExited?.call();
           },
         ),
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppSpacings.sm,
-            right: AppSpacings.sm,
-            bottom: AppSpacings.sm,
-          ),
-          child: TransitRouteSummaryCard(
-            key: _summaryKey,
-            route: route,
-            isSelected: true,
-            onTap: null,
-            isDark: isDark,
-          ),
-        ),
-        Container(
-            height: 1,
-            color: isDark ? AppColors.darkDividerColor : AppColors.grey200),
         Expanded(
           child: SingleChildScrollView(
             controller: scrollController,
@@ -237,6 +220,10 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
               totalDuration: route.duration,
               tolls: route.tolls ?? 0,
               walkDistance: route.walkDistance,
+              summaryRoute: route,
+              summaryKey: _summaryKey,
+              isDark: isDark,
+              isCollapsed: false,
             ),
           ),
         ),
@@ -247,6 +234,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   /// 详情页折叠态：仅头部 + 摘要
   Widget _buildCollapsedDetail(bool isDark) {
     final route = _detailRoute!;
+    final segments = route.transitSegments ?? [];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -263,26 +251,23 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             widget.onDetailExited?.call();
           },
         ),
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppSpacings.sm,
-            right: AppSpacings.sm,
-            bottom: AppSpacings.sm,
-          ),
-          child: TransitRouteSummaryCard(
-            key: _summaryKey,
-            route: route,
-            isSelected: true,
-            // 点击折叠态摘要 → 展开
-            onTap: () {
-              _detailSheetController.animateTo(
-                _detailInitSize ?? 0.6,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-            isDark: isDark,
-          ),
+        TransitItineraryCard(
+          segments: segments,
+          totalDistance: route.distance,
+          totalDuration: route.duration,
+          tolls: route.tolls ?? 0,
+          walkDistance: route.walkDistance,
+          summaryRoute: route,
+          summaryKey: _summaryKey,
+          isDark: isDark,
+          isCollapsed: true,
+          onSummaryTap: () {
+            _detailSheetController.animateTo(
+              _detailInitSize ?? 0.6,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
         ),
       ],
     );

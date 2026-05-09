@@ -4,10 +4,12 @@ import '../../../../../constants/app_radii.dart';
 import '../../../../../constants/app_spacings.dart';
 import '../../../models/amap_routing_models.dart';
 import '../../../models/bus_route_models.dart';
+import '../../../models/map_overlay_models.dart';
 import 'segment_timeline.dart';
 import 'walk_segment_card.dart';
 import 'transit_line_card.dart';
 import 'taxi_segment_card.dart';
+import '../transit_route_summary_card.dart';
 
 /// ============================================
 /// 公共交通行程详情卡片
@@ -22,6 +24,11 @@ class TransitItineraryCard extends StatelessWidget {
   final double totalDuration;
   final double tolls;
   final double? walkDistance;
+  final RouteResultItem? summaryRoute;
+  final GlobalKey? summaryKey;
+  final bool isDark;
+  final bool isCollapsed;
+  final VoidCallback? onSummaryTap;
 
   const TransitItineraryCard({
     super.key,
@@ -30,12 +37,15 @@ class TransitItineraryCard extends StatelessWidget {
     required this.totalDuration,
     required this.tolls,
     this.walkDistance,
+    this.summaryRoute,
+    this.summaryKey,
+    this.isDark = false,
+    this.isCollapsed = false,
+    this.onSummaryTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBackgroundColor : AppColors.grey50,
@@ -47,16 +57,52 @@ class TransitItineraryCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...List.generate(segments.length, (i) {
-              final isFirst = i == 0;
-              final isLast = i == segments.length - 1;
-              return _buildSegmentRow(
-                segments[i],
-                isFirst: isFirst,
-                isLast: isLast,
-                isDark: isDark,
-              );
-            }),
+            if (summaryRoute != null) _buildSummaryRow(),
+            if (!isCollapsed) ...[
+              if (summaryRoute != null)
+                Container(
+                  height: 1,
+                  margin: const EdgeInsets.only(top: AppSpacings.sm),
+                  color: isDark ? AppColors.darkDividerColor : AppColors.grey200,
+                ),
+              ...List.generate(segments.length, (i) {
+                final isFirst = i == 0;
+                final isLast = i == segments.length - 1;
+                return _buildSegmentRow(
+                  segments[i],
+                  isFirst: isFirst,
+                  isLast: isLast,
+                  isDark: isDark,
+                );
+              }),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacings.sm),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SummaryTimeline(isDark: isDark),
+            const SizedBox(width: AppSpacings.sm),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacings.sm),
+                child: TransitRouteSummaryCard(
+                  key: summaryKey,
+                  route: summaryRoute!,
+                  isSelected: true,
+                  onTap: onSummaryTap,
+                  isDark: isDark,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -123,5 +169,40 @@ class TransitItineraryCard extends StatelessWidget {
       default:
         return const Color(0xFF8C8C8C);
     }
+  }
+
+  static Color _summaryTimelineColor(bool isDark) {
+    return isDark ? AppColors.darkDividerColor : AppColors.grey300;
+  }
+}
+
+class _SummaryTimeline extends StatelessWidget {
+  final bool isDark;
+
+  const _SummaryTimeline({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 32,
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: TransitItineraryCard._summaryTimelineColor(isDark),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isDark ? AppColors.darkBackgroundColor : Colors.white,
+                width: 2,
+              ),
+            ),
+          ),
+          const Expanded(child: SizedBox()),
+        ],
+      ),
+    );
   }
 }
