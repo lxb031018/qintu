@@ -196,20 +196,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacings.sm),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              QintuActionButton(
-                label: '查看路线图',
-                icon: Icons.map,
-                onTap: widget.onStartNavigation,
-                backgroundColor: AppColors.grey600,
-              ),
-            ],
-          ),
-        ),
+
       ],
     );
   }
@@ -250,20 +237,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
               );
             },
             isDark: isDark,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacings.sm),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              QintuActionButton(
-                label: '查看路线图',
-                icon: Icons.map,
-                onTap: widget.onStartNavigation,
-                backgroundColor: AppColors.grey600,
-              ),
-            ],
           ),
         ),
       ],
