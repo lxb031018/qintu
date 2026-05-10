@@ -1,26 +1,18 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
-import '../models/poi_models.dart';
-import '../service/poi_service.dart';
-import '../service/location_category_service.dart';
-import '../service/binding_location_service.dart';
-import '../service/map_controller_service/map_controller_service.dart';
-import 'location_input_state.dart';
-import 'location_input_callbacks.dart';
-import 'location_category.dart';
-import 'map_navigation_service.dart';
-import 'map_navigation_service_provider.dart';
-import 'map_controller_provider.dart';
-import '../../../models/location/lat_lng.dart';
+import '../../models/poi_models.dart';
+import '../../service/location_category_service.dart';
+import '../location_input_state.dart';
+import '../location_input_callbacks.dart';
+import '../location_category.dart';
+import '../map_navigation_service.dart';
+import '../map_navigation_service_provider.dart';
+import 'location_search_notifier.dart';
 
 class LocationInputNotifier extends Notifier<LocationInputState> {
-  Timer? _debounceTimer;
-  late final PoiService _poiService = ref.read(poiServiceProvider);
-  late final LocationCategoryService _categoryService = ref.read(locationCategoryServiceProvider);
-  late final BindingLocationService _bindingLocationService = ref.read(bindingLocationServiceProvider);
-  MapControllerService? get _mapController => ref.read(mapControllerProvider);
   bool _hasShownList = false;
+
+  late final LocationCategoryService _categoryService = ref.read(locationCategoryServiceProvider);
 
   MapNavigationService get _mapNavigation => ref.read(mapNavigationServiceProvider);
 
@@ -30,11 +22,11 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
       callbacks: LocationInputCardCallbacks(
         onOriginTextChanged: (value) {
           updateText(true, value);
-          updateSearchKeyword(value);
+          ref.read(locationSearchProvider.notifier).updateKeyword(value);
         },
         onDestinationTextChanged: (value) {
           updateText(false, value);
-          updateSearchKeyword(value);
+          ref.read(locationSearchProvider.notifier).updateKeyword(value);
         },
         onSwapRequested: () {
           swapOriginAndDestination();
@@ -60,8 +52,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
           showList(isOrigin: isOrigin);
         },
         onHideList: hideList,
-        onLoadHistoryLocations: loadHistoryLocations,
-        onLoadBinderLocations: loadBinderLocations,
         onSelectPoi: (poi) {
           selectPoi(poi);
         },
@@ -118,46 +108,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
     Logs.location.info('fillMyLocation: 已填充位置 ${poi.name}');
     return poi;
-  }
-
-  Future<void> loadHistoryLocations() async {
-    state = state.copyWith(
-      items: state.items.copyWith(isLoadingHistory: true),
-    );
-
-    final items = await _categoryService.getHistoryLocations();
-
-    state = state.copyWith(
-      items: state.items.copyWith(
-        historyItems: items,
-        isLoadingHistory: false,
-      ),
-    );
-  }
-
-  Future<void> loadBinderLocations() async {
-    state = state.copyWith(
-      items: state.items.copyWith(isLoadingBinderItems: true),
-    );
-
-    try {
-      final binderDataList = await _bindingLocationService.fetchBinderDataList();
-      final items = _categoryService.getBinderLocations(binderDataList);
-
-      state = state.copyWith(
-        items: state.items.copyWith(
-          binderItems: items,
-          isLoadingBinderItems: false,
-        ),
-      );
-    } catch (e) {
-      state = state.copyWith(
-        items: state.items.copyWith(
-          binderItems: [],
-          isLoadingBinderItems: false,
-        ),
-      );
-    }
   }
 
   void selectCategory(LocationCategory category) {
@@ -286,20 +236,11 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
   void hideList() {
     Logs.ui.debug('PROVIDER hideList');
+    ref.read(locationSearchProvider.notifier).clearSearch();
     state = state.copyWith(
       list: state.list.copyWith(
         listVisible: false,
-        searchKeyword: '',
-        searchResults: [],
-        isSearching: false,
-        clearSearchError: true,
       ),
-    );
-  }
-
-  void setFocused(bool isOrigin) {
-    state = state.copyWith(
-      fields: state.fields.copyWith(isOriginFocused: isOrigin),
     );
   }
 
@@ -325,10 +266,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     }
   }
 
-  bool canSwapOriginAndDestination() {
-    return state.origin.poi != null || state.destination.poi != null;
-  }
-
   void swapOriginAndDestination() {
     final newFields = state.fields.copyWith(
       origin: state.fields.destination,
@@ -341,112 +278,9 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
   }
 
   void clearAll() {
+    _hasShownList = false;
+    ref.read(locationSearchProvider.notifier).clearSearch();
     state = const LocationInputState();
-  }
-
-  void updateSearchKeyword(String keyword) {
-    state = state.copyWith(
-      list: state.list.copyWith(searchKeyword: keyword),
-    );
-
-    _debounceTimer?.cancel();
-
-    if (keyword.length < 2) {
-      state = state.copyWith(
-        list: state.list.copyWith(
-          searchResults: [],
-          isSearching: false,
-          clearSearchError: true,
-        ),
-      );
-      return;
-    }
-
-    state = state.copyWith(
-      list: state.list.copyWith(
-        selectedCategory: LocationCategory.none,
-        isSearching: true,
-        clearSearchError: true,
-      ),
-    );
-
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      _performSearch(keyword);
-    });
-  }
-
-  Future<void> _performSearch(String keyword) async {
-    if (keyword != state.searchKeyword) return;
-
-    try {
-      final context = await _buildSearchContext();
-
-      final result = await _poiService.searchPoiWithLocation(
-        keyword: keyword,
-        context: context,
-      );
-
-      if (keyword != state.searchKeyword) return;
-
-      if (result.isSuccess) {
-        Logs.ui.info('✅ 搜索到 ${result.suggestions.length} 条结果');
-        state = state.copyWith(
-          list: state.list.copyWith(
-            searchResults: result.suggestions,
-            isSearching: false,
-          ),
-        );
-      } else {
-        Logs.ui.info('🔍 未找到匹配的 POI 结果');
-        state = state.copyWith(
-          list: state.list.copyWith(
-            searchResults: [],
-            isSearching: false,
-            searchError: result.error,
-          ),
-        );
-      }
-    } catch (e) {
-      Logs.ui.error('❌ 搜索异常: $e');
-      state = state.copyWith(
-        list: state.list.copyWith(
-          searchResults: [],
-          isSearching: false,
-          searchError: '搜索异常',
-        ),
-      );
-    }
-  }
-
-  Future<LocationSearchContext> _buildSearchContext() async {
-    final fixedCenter = state.searchCenter;
-    String? cachedCity = _mapController?.lastKnownCity;
-    LatLng? gpsCenter;
-
-    final gpsResult = await _mapController?.getCurrentLocation();
-    if (gpsResult != null) {
-      gpsCenter = LatLng(
-        gpsResult['latitude'] as double,
-        gpsResult['longitude'] as double,
-      );
-      if (cachedCity == null) {
-        cachedCity = gpsResult['city'] as String?;
-      }
-    } else {
-      final lastLoc = await _mapController?.getLastKnownLocation();
-      if (lastLoc != null) {
-        gpsCenter = LatLng(
-          lastLoc['latitude'] as double,
-          lastLoc['longitude'] as double,
-        );
-      }
-    }
-
-    return LocationSearchContext(
-      fixedCenter: fixedCenter,
-      gpsCenter: gpsCenter,
-      cachedCity: cachedCity,
-    );
   }
 }
 

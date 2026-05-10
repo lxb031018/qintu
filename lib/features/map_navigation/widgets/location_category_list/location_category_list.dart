@@ -49,8 +49,8 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(locationInputProvider).callbacks?.onLoadHistoryLocations?.call();
-      ref.read(locationInputProvider).callbacks?.onLoadBinderLocations?.call();
+      ref.read(locationHistoryProvider.notifier).loadHistory();
+      ref.read(locationBinderProvider.notifier).loadBinderLocations();
     });
   }
 
@@ -206,7 +206,9 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   Widget _buildBinderContent(LocationInputState state) {
-    if (state.isLoadingBinderItems) {
+    final binderState = ref.watch(locationBinderProvider);
+
+    if (binderState.isLoading) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -215,7 +217,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       );
     }
 
-    if (state.binderItems.isEmpty) {
+    if (binderState.items.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -232,7 +234,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: state.binderItems.map((poi) => LocationListItem(
+      children: binderState.items.map((poi) => LocationListItem(
         icon: Icons.people,
         iconColor: AppColors.primaryColor,
         title: poi.name,
@@ -243,7 +245,9 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   Widget _buildHistoryContent(LocationInputState state) {
-    if (state.isLoadingHistory) {
+    final historyState = ref.watch(locationHistoryProvider);
+
+    if (historyState.isLoading) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -255,7 +259,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       );
     }
 
-    if (state.historyItems.isEmpty) {
+    if (historyState.items.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -269,10 +273,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: state.historyItems.map((poi) => HistoryListItem(
+      children: historyState.items.map((poi) => HistoryListItem(
         poi: poi,
-        isSelected: state.selectedHistoryIds.contains(poi.id),
-        isSelectionMode: state.isHistorySelectionMode,
+        isSelected: historyState.selectedIds.contains(poi.id),
+        isSelectionMode: historyState.isSelectionMode,
         onTap: () => _onHistoryTap(poi),
         onLongPress: () => _onHistoryLongPress(poi),
       )).toList(),

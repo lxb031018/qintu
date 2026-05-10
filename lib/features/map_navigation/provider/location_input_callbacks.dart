@@ -12,8 +12,6 @@ class LocationInputCardCallbacks {
   final void Function(RouteType type)? onRouteTypeSelected;
   final void Function(bool isOrigin)? onInputTap;
   final void Function()? onHideList;
-  final void Function()? onLoadHistoryLocations;
-  final void Function()? onLoadBinderLocations;
   final void Function(PoiSuggestion poi)? onSelectPoi;
   final void Function()? onExitHistorySelectionMode;
   final void Function(String poiId)? onToggleHistorySelection;
@@ -33,8 +31,6 @@ class LocationInputCardCallbacks {
     this.onRouteTypeSelected,
     this.onInputTap,
     this.onHideList,
-    this.onLoadHistoryLocations,
-    this.onLoadBinderLocations,
     this.onSelectPoi,
     this.onExitHistorySelectionMode,
     this.onToggleHistorySelection,
