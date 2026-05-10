@@ -5,7 +5,6 @@ import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/poi_models.dart';
 import '../../provider/location_input_provider.dart';
-import '../../provider/map_navigation_provider.dart';
 import 'location_list_item.dart';
 import 'category_tab_bar.dart';
 import 'history_selection_bar.dart';
@@ -32,6 +31,10 @@ import 'history_list_item.dart';
 /// 依赖：
 /// - locationInputProvider：管理位置输入状态
 /// - mapNavigationProvider：管理地图导航状态
+///
+/// 架构原则：单向数据流
+/// - Widget 通过 callback 与 Provider 交互
+/// - 不直接调用 notifier 方法
 /// ============================================
 
 class LocationCategoryList extends ConsumerStatefulWidget {
@@ -46,54 +49,51 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(locationInputProvider.notifier).loadHistoryLocations();
-      ref.read(locationInputProvider.notifier).loadBinderLocations();
+      ref.read(locationInputProvider).callbacks?.onLoadHistoryLocations?.call();
+      ref.read(locationInputProvider).callbacks?.onLoadBinderLocations?.call();
     });
   }
 
   void _selectLocationAndUnfocus(PoiSuggestion poi) {
-    ref.read(locationInputProvider.notifier).selectPoi(
-      poi,
-      ref.read(mapNavigationProvider.notifier),
-    );
+    ref.read(locationInputProvider).callbacks?.onSelectPoi?.call(poi);
     FocusScope.of(context).unfocus();
   }
 
   void _hideListAndUnfocus() {
-    ref.read(locationInputProvider.notifier).hideList();
-    ref.read(locationInputProvider.notifier).exitHistorySelectionMode();
+    ref.read(locationInputProvider).callbacks?.onHideList?.call();
+    ref.read(locationInputProvider).callbacks?.onExitHistorySelectionMode?.call();
     FocusScope.of(context).unfocus();
   }
 
   void _onHistoryLongPress(PoiSuggestion poi) {
-    final notifier = ref.read(locationInputProvider.notifier);
+    final callbacks = ref.read(locationInputProvider).callbacks;
     final currentState = ref.read(locationInputProvider);
     if (!currentState.isHistorySelectionMode) {
-      notifier.enterHistorySelectionMode();
+      callbacks?.onEnterHistorySelectionMode?.call();
     }
-    notifier.toggleHistorySelection(poi.id);
+    callbacks?.onToggleHistorySelection?.call(poi.id);
   }
 
   void _onHistoryTap(PoiSuggestion poi) {
-    final notifier = ref.read(locationInputProvider.notifier);
+    final callbacks = ref.read(locationInputProvider).callbacks;
     final currentState = ref.read(locationInputProvider);
     if (currentState.isHistorySelectionMode) {
-      notifier.toggleHistorySelection(poi.id);
+      callbacks?.onToggleHistorySelection?.call(poi.id);
     } else {
       _selectLocationAndUnfocus(poi);
     }
   }
 
   void _onSelectAll() {
-    ref.read(locationInputProvider.notifier).selectAllHistory();
+    ref.read(locationInputProvider).callbacks?.onSelectAllHistory?.call();
   }
 
   void _onDeleteSelected() {
-    ref.read(locationInputProvider.notifier).deleteSelectedHistory();
+    ref.read(locationInputProvider).callbacks?.onDeleteSelectedHistory?.call();
   }
 
   void _onExitSelectionMode() {
-    ref.read(locationInputProvider.notifier).exitHistorySelectionMode();
+    ref.read(locationInputProvider).callbacks?.onExitHistorySelectionMode?.call();
   }
 
   @override

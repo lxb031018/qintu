@@ -95,6 +95,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             onClear: (isOrigin) {
               callbacks?.onClearField?.call(isOrigin);
             },
+            onSwapRequested: callbacks?.onSwapRequested,
           ),
           const SizedBox(height: AppSpacings.sm),
           // 终点输入框
@@ -117,6 +118,7 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
             onClear: (isOrigin) {
               callbacks?.onClearField?.call(isOrigin);
             },
+            onSwapRequested: callbacks?.onSwapRequested,
           ),
           // 当起点和终点都有真实 POI 时，显示出行方式按钮
           if (state.origin.poi != null && state.destination.poi != null) ...[

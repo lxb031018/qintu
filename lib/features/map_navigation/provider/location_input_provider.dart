@@ -189,6 +189,17 @@ class LocationInputCardCallbacks {
   final void Function(bool hasFocus)? onDestinationFocusChanged;
   final void Function(RouteType type)? onRouteTypeSelected;
   final void Function(bool isOrigin)? onInputTap;
+  final void Function()? onHideList;
+  final void Function()? onLoadHistoryLocations;
+  final void Function()? onLoadBinderLocations;
+  final void Function(PoiSuggestion poi)? onSelectPoi;
+  final void Function()? onExitHistorySelectionMode;
+  final void Function(String poiId)? onToggleHistorySelection;
+  final void Function()? onSelectAllHistory;
+  final void Function()? onDeleteSelectedHistory;
+  final void Function()? onEnterHistorySelectionMode;
+  final void Function(Future<Map<String, dynamic>?> Function() getCurrentLocationFn)? onFillMyLocation;
+  final void Function(LocationCategory category)? onSelectCategory;
 
   const LocationInputCardCallbacks({
     this.onOriginTextChanged,
@@ -199,6 +210,17 @@ class LocationInputCardCallbacks {
     this.onDestinationFocusChanged,
     this.onRouteTypeSelected,
     this.onInputTap,
+    this.onHideList,
+    this.onLoadHistoryLocations,
+    this.onLoadBinderLocations,
+    this.onSelectPoi,
+    this.onExitHistorySelectionMode,
+    this.onToggleHistorySelection,
+    this.onSelectAllHistory,
+    this.onDeleteSelectedHistory,
+    this.onEnterHistorySelectionMode,
+    this.onFillMyLocation,
+    this.onSelectCategory,
   });
 }
 
@@ -251,6 +273,22 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         onInputTap: (isOrigin) {
           showList(isOrigin: isOrigin);
         },
+        onHideList: hideList,
+        onLoadHistoryLocations: loadHistoryLocations,
+        onLoadBinderLocations: loadBinderLocations,
+        onSelectPoi: (poi) {
+          final mapNotifier = ref.read(mapNavigationProvider.notifier);
+          selectPoi(poi, mapNotifier);
+        },
+        onExitHistorySelectionMode: exitHistorySelectionMode,
+        onToggleHistorySelection: toggleHistorySelection,
+        onSelectAllHistory: selectAllHistory,
+        onDeleteSelectedHistory: deleteSelectedHistory,
+        onEnterHistorySelectionMode: enterHistorySelectionMode,
+        onFillMyLocation: (getCurrentLocationFn) {
+          fillMyLocation(getCurrentLocationFn, ref.read(mapNavigationProvider.notifier));
+        },
+        onSelectCategory: selectCategory,
       ),
     );
   }

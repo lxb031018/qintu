@@ -18,6 +18,7 @@ class SwappableLocationRow extends ConsumerStatefulWidget {
   final ValueChanged<bool>? onTap;
   final ValueChanged<String>? onChanged;
   final ValueChanged<bool>? onClear;
+  final VoidCallback? onSwapRequested;
 
   const SwappableLocationRow({
     super.key,
@@ -31,6 +32,7 @@ class SwappableLocationRow extends ConsumerStatefulWidget {
     this.onTap,
     this.onChanged,
     this.onClear,
+    this.onSwapRequested,
   });
 
   @override
@@ -53,7 +55,7 @@ class _SwappableLocationRowState extends ConsumerState<SwappableLocationRow> {
         _dragStartY = null;
 
         if (deltaY.abs() > 50) {
-          ref.read(locationInputProvider).callbacks?.onSwapRequested?.call();
+          widget.onSwapRequested?.call();
         }
       },
       child: LocationInputRow(

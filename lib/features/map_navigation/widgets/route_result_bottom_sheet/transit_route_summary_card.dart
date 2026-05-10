@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../models/amap_routing_models.dart';
 import '../../models/map_overlay_models.dart';
 import '../../models/bus_route_models.dart';
-import 'transit_itinerary_card/color/subway_color_helper.dart';
+import 'transit_itinerary_card/shared/segment_tag_flow_builder.dart';
 
 class TransitRouteSummaryCard extends StatelessWidget {
   final RouteResultItem route;
@@ -114,37 +113,10 @@ class TransitRouteSummaryCard extends StatelessWidget {
   }
 
   Widget _buildSegmentTagFlow(List<BusTransitSegment> segments) {
-    final tags = <Widget>[];
-
-    for (int i = 0; i < segments.length; i++) {
-      final seg = segments[i];
-
-      if (seg.hasWalking) {
-        tags.add(_WalkTag(distance: seg.distance, isDark: isDark));
-        if (i < segments.length - 1) {
-          tags.add(const _ArrowSeparator());
-        }
-      }
-
-      if (seg.hasTransit) {
-        tags.add(_TransitTag(
-          name: seg.lineName ?? '',
-          stationCount: seg.stationCount ?? 0,
-          type: seg.type,
-          cityCode: route.cityCode,
-        ));
-        if (i < segments.length - 1) {
-          tags.add(const _ArrowSeparator());
-        }
-      }
-
-      if (seg.hasTaxi) {
-        tags.add(_TaxiTag(isDark: isDark));
-        if (i < segments.length - 1) {
-          tags.add(const _ArrowSeparator());
-        }
-      }
-    }
+    final tags = SegmentTagFlowBuilder(
+      segments: segments,
+      isDark: isDark,
+    ).build();
 
     if (tags.isEmpty) {
       return const SizedBox.shrink();
@@ -155,164 +127,6 @@ class TransitRouteSummaryCard extends StatelessWidget {
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: tags,
-    );
-  }
-}
-
-class _WalkTag extends StatelessWidget {
-  final double distance;
-  final bool isDark;
-
-  const _WalkTag({required this.distance, required this.isDark});
-
-  String get _distanceText {
-    if (distance >= 1000) {
-      return '${(distance / 1000).toStringAsFixed(1)}公里';
-    }
-    return '${distance.toInt()}米';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkDividerColor : AppColors.grey200,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.directions_walk,
-            size: 12,
-            color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-          ),
-          const SizedBox(width: 2),
-          Text(
-            _distanceText,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? AppColors.darkLightTextColor : AppColors.grey600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TransitTag extends StatelessWidget {
-  final String name;
-  final int stationCount;
-  final TransitSegmentType type;
-  final String? cityCode;
-
-  const _TransitTag({
-    required this.name,
-    required this.stationCount,
-    required this.type,
-    this.cityCode,
-  });
-
-  Color get _color {
-    if (type == TransitSegmentType.subway) {
-      return SubwayColorHelper.getSubwayColor(
-        name,
-        cityCode,
-        defaultColor: const Color(0xFFFF4D4F),
-      );
-    }
-    return const Color(0xFF1890FF);
-  }
-
-  IconData get _icon {
-    switch (type) {
-      case TransitSegmentType.subway:
-        return Icons.subway;
-      case TransitSegmentType.bus:
-        return Icons.directions_bus;
-      default:
-        return Icons.directions_bus;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: _color,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_icon, size: 12, color: Colors.white),
-          const SizedBox(width: 2),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            '·$stationCount站',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TaxiTag extends StatelessWidget {
-  final bool isDark;
-
-  const _TaxiTag({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFF722ED1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.local_taxi, size: 12, color: Colors.white),
-          SizedBox(width: 2),
-          Text(
-            '打车',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ArrowSeparator extends StatelessWidget {
-  const _ArrowSeparator();
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      Icons.arrow_forward,
-      size: 12,
-      color: AppColors.grey400,
     );
   }
 }

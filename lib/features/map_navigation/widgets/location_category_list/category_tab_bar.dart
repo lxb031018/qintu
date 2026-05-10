@@ -3,17 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../provider/location_input_provider.dart';
 import '../../provider/map_controller_provider.dart';
-import '../../provider/map_navigation_provider.dart';
 import 'category_button.dart';
 import 'close_button.dart';
 import '../my_location_button.dart';
-
-/// ============================================
-/// 分类标签栏组件
-///
-/// 显示"我的位置"、"绑定者"、"历史"三个标签按钮
-/// 右侧包含关闭按钮
-/// ============================================
 
 class CategoryTabBar extends ConsumerWidget {
   final LocationInputState state;
@@ -28,6 +20,7 @@ class CategoryTabBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mapController = ref.watch(mapControllerNotifierProvider);
+    final callbacks = ref.read(locationInputProvider).callbacks;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -42,12 +35,13 @@ class CategoryTabBar extends ConsumerWidget {
               child: Row(
                 children: [
                   MyLocationButton(
-                    onTap: () => ref.read(locationInputProvider.notifier).fillMyLocation(
-                      () async => mapController != null
-                          ? await mapController.getCurrentLocation()
-                          : null,
-                      ref.read(mapNavigationProvider.notifier),
-                    ),
+                    onTap: () {
+                      if (mapController != null) {
+                        callbacks?.onFillMyLocation?.call(
+                          () async => await mapController.getCurrentLocation(),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(width: AppSpacings.sm),
                   LocationCategoryButton(
@@ -55,7 +49,7 @@ class CategoryTabBar extends ConsumerWidget {
                     icon: Icons.people,
                     isSelected: state.selectedCategory != LocationCategory.none &&
                         state.selectedCategory == LocationCategory.binder,
-                    onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.binder),
+                    onTap: () => callbacks?.onSelectCategory?.call(LocationCategory.binder),
                   ),
                   const SizedBox(width: AppSpacings.sm),
                   LocationCategoryButton(
@@ -63,7 +57,7 @@ class CategoryTabBar extends ConsumerWidget {
                     icon: Icons.history,
                     isSelected: state.selectedCategory != LocationCategory.none &&
                         state.selectedCategory == LocationCategory.history,
-                    onTap: () => ref.read(locationInputProvider.notifier).selectCategory(LocationCategory.history),
+                    onTap: () => callbacks?.onSelectCategory?.call(LocationCategory.history),
                   ),
                 ],
               ),
