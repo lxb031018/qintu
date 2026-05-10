@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import '../color/subway_color_helper.dart';
 import '../../../../../../features/map_navigation/models/bus_route_models.dart';
 
+/// ============================================
+/// 公交/地铁标签组件
+///
+/// 显示公交或地铁线路标签，包含线路名称和站点数量
+/// 根据类型自动选择颜色（地铁使用各地铁城市配色）
+/// ============================================
 class TransitTag extends StatelessWidget {
   final String name;
   final int stationCount;

@@ -62,6 +62,11 @@ class LocationInputFieldState {
   }
 }
 
+/// ============================================
+/// 位置列表状态
+///
+/// 管理搜索列表的显示和搜索结果
+/// ============================================
 class LocationListState {
   final bool listVisible;
   final String searchKeyword;
@@ -147,6 +152,11 @@ class LocationSelectionState {
   }
 }
 
+/// ============================================
+/// 导航触发状态
+///
+/// 管理待导航 POI 的状态
+/// ============================================
 class LocationNaviTriggerState {
   final PoiSuggestion? pendingNaviPoi;
 
@@ -164,6 +174,17 @@ class LocationNaviTriggerState {
   }
 }
 
+/// ============================================
+/// 位置输入完整状态
+///
+/// 聚合所有位置输入相关的状态：
+/// - fields: 起点/终点输入状态
+/// - list: 列表显示和搜索状态
+/// - items: 历史/绑定者位置列表
+/// - selection: 历史位置多选状态
+/// - naviTrigger: 导航触发状态
+/// - callbacks: UI 回调函数
+/// ============================================
 class LocationInputState {
   final LocationInputFieldState fields;
   final LocationListState list;

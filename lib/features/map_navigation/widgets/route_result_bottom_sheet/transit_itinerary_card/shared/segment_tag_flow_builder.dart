@@ -5,6 +5,12 @@ import 'transit_tag.dart';
 import 'taxi_tag.dart';
 import 'arrow_separator.dart';
 
+/// ============================================
+/// 行程段标签流构建器
+///
+/// 将 BusTransitSegment 列表转换为对应的标签组件流
+/// 自动在相邻标签之间添加箭头分隔符
+/// ============================================
 class SegmentTagFlowBuilder {
   final List<BusTransitSegment> segments;
   final bool isDark;

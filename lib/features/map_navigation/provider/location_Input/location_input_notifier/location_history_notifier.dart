@@ -31,6 +31,13 @@ class LocationHistoryState {
   }
 }
 
+/// ============================================
+/// 历史位置 Notifier
+///
+/// 管理历史位置的加载和选择：
+/// - 从 LocationCategoryService 获取历史位置
+/// - 支持多选模式和批量操作
+/// ============================================
 class LocationHistoryNotifier extends Notifier<LocationHistoryState> {
   late final LocationCategoryService _categoryService = ref.read(locationCategoryServiceProvider);
 

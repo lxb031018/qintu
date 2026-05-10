@@ -15,6 +15,17 @@ import '../map_display/map_controller_provider.dart';
 import 'map_navigation_state.dart';
 import 'map_navigation_service.dart';
 
+/// ============================================
+/// 地图导航 Notifier
+///
+/// 管理路线规划、导航状态和导航事件：
+/// - 起点/终点设置和交换
+/// - 路线搜索和规划（驾车/步行/骑行/公交）
+/// - 导航启动/暂停/恢复/停止
+/// - 导航状态变化监听和重算处理
+///
+/// 实现 MapNavigationService 接口
+/// ============================================
 class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapNavigationService {
   late final PoiService _poiService = ref.read(poiServiceProvider);
   late final MapDisplayCoordinator _mapDisplayCoordinator = ref.read(mapDisplayCoordinatorProvider);

@@ -7,6 +7,19 @@ import 'category_button.dart';
 import 'close_button.dart';
 import '../my_location_button.dart';
 
+/// ============================================
+/// 位置分类 Tab 栏组件
+///
+/// 显示在地图顶部的分类按钮栏，包含：
+/// - 我的位置按钮
+/// - 绑定者分类按钮
+/// - 历史分类按钮
+/// - 关闭按钮
+///
+/// 架构原则：单向数据流
+/// - Widget 通过 callback 与 Provider 交互
+/// - 不直接调用 notifier 方法
+/// ============================================
 class CategoryTabBar extends ConsumerWidget {
   final LocationInputState state;
   final VoidCallback onClose;

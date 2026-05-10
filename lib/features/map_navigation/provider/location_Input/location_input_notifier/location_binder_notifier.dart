@@ -24,6 +24,14 @@ class LocationBinderState {
   }
 }
 
+/// ============================================
+/// 绑定者位置 Notifier
+///
+/// 管理绑定者位置列表的加载：
+/// - 从 BindingService 获取绑定关系
+/// - 调用 BindingLocationService 获取各绑定者位置
+/// - 转换为 POI 列表供 UI 显示
+/// ============================================
 class LocationBinderNotifier extends Notifier<LocationBinderState> {
   late final BindingLocationService _bindingService = ref.read(bindingLocationServiceProvider);
   late final LocationCategoryService _categoryService = ref.read(locationCategoryServiceProvider);

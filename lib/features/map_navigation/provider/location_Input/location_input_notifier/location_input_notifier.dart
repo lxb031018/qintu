@@ -9,6 +9,16 @@ import '../../map_navigation/map_navigation_service.dart';
 import '../../map_navigation/map_navigation_service_provider.dart';
 import 'location_search_notifier.dart';
 
+/// ============================================
+/// 位置输入 Notifier
+///
+/// 管理位置输入卡片的状态和业务逻辑：
+/// - 起点/终点文本和 POI 选择状态
+/// - 列表显示/隐藏控制
+/// - 历史选择模式管理
+///
+/// 通过 LocationInputCardCallbacks 与 UI 解耦
+/// ============================================
 class LocationInputNotifier extends Notifier<LocationInputState> {
   bool _hasShownList = false;
 

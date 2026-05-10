@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../../../constants/app_colors.dart';
 
-/// 时间线组件（连接线 + 圆点）
+/// ============================================
+/// 行程段连接线组件
+///
+/// 公交行程详情的垂直时间线，用于连接相邻的行程段
+/// 包含上下连接线和中部的彩色圆点
+/// ============================================
 class SegmentTimeline extends StatelessWidget {
   final Color color;
   final bool showTopLine;

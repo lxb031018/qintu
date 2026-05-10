@@ -8,6 +8,11 @@ import '../location_category.dart';
 import '../../map_display/map_controller_provider.dart';
 import '../../../../../models/location/lat_lng.dart';
 
+/// ============================================
+/// POI 搜索状态
+///
+/// 包含搜索关键词、结果列表、加载状态等
+/// ============================================
 class LocationSearchState {
   final String keyword;
   final List<PoiSuggestion> results;
@@ -41,6 +46,14 @@ class LocationSearchState {
   }
 }
 
+/// ============================================
+/// POI 搜索 Notifier
+///
+/// 管理 POI 搜索的输入和结果：
+/// - 关键词防抖处理（300ms）
+/// - 调用 PoiService 进行搜索
+/// - 搜索结果缓存
+/// ============================================
 class LocationSearchNotifier extends Notifier<LocationSearchState> {
   Timer? _debounceTimer;
 

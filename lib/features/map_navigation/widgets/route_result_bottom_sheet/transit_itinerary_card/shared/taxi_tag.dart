@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// ============================================
+/// 打车标签组件
+///
+/// 显示紫色的"打车"标签
+/// ============================================
 class TaxiTag extends StatelessWidget {
   final bool isDark;
 

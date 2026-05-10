@@ -3,6 +3,12 @@ import '../../models/bus_route_models.dart';
 import '../../service/map_controller_service/map_controller_service.dart';
 import 'map_display_service.dart';
 
+/// ============================================
+/// 地图控制器 Provider
+///
+/// 负责管理 AmapMapController 的生命周期
+/// dispose 时自动释放控制器资源
+/// ============================================
 final mapControllerProvider = Provider<MapControllerService?>((ref) {
   final controller = MapControllerService();
   ref.onDispose(() {

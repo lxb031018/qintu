@@ -6,6 +6,16 @@ import '../../provider/location_Input/location_input_provider.dart';
 import '../../provider/map_navigation/map_navigation_provider.dart';
 import 'route_type_button.dart';
 
+/// ============================================
+/// 出行方式选择器
+///
+/// 横向滚动选择出行方式：步行、骑行、公共交通、打车
+/// 通过 mapNavigationProvider 同步当前选中的路线类型
+///
+/// 架构原则：单向数据流
+/// - Widget 通过 callback 与 Provider 交互
+/// - 不直接调用 notifier 方法
+/// ============================================
 class RouteTypeSelector extends ConsumerWidget {
   final bool isDark;
 

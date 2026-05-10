@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../../../constants/app_colors.dart';
 
+/// ============================================
+/// 步行标签组件
+///
+/// 显示灰色的步行距离标签
+/// ============================================
 class WalkTag extends StatelessWidget {
   final double distance;
   final bool isDark;

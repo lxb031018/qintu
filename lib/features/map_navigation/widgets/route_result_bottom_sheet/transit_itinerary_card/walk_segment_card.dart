@@ -4,7 +4,11 @@ import '../../../../../../constants/app_radii.dart';
 import '../../../../../../constants/app_spacings.dart';
 import '../../../models/amap_routing_models.dart';
 
+/// ============================================
 /// 步行段展示组件
+///
+/// 公交行程中的步行段，显示步行距离和起止指示
+/// ============================================
 class WalkSegmentCard extends StatelessWidget {
   final BusTransitSegment segment;
   final Color themeColor;

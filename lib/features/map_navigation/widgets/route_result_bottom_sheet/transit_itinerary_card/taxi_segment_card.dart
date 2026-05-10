@@ -5,7 +5,11 @@ import 'package:qintu/constants/app_spacings.dart';
 import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
 import '../../../models/bus_route_models.dart';
 
+/// ============================================
 /// 打车段展示组件
+///
+/// 公交行程中的打车段，显示打车信息和预估价格
+/// ============================================
 class TaxiSegmentCard extends StatelessWidget {
   final BusTransitSegment segment;
   final bool isDark;

@@ -2,6 +2,12 @@ import '../../models/poi_models.dart';
 import '../../models/amap_routing_models.dart';
 import 'location_category.dart';
 
+/// ============================================
+/// 位置输入卡片回调函数集合
+///
+/// 定义位置输入卡片的各类交互回调
+/// 供 Widget 层与 Provider 层解耦使用
+/// ============================================
 class LocationInputCardCallbacks {
   final void Function(String value)? onOriginTextChanged;
   final void Function(String value)? onDestinationTextChanged;

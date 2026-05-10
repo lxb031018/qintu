@@ -1,3 +1,12 @@
+/// ============================================
+/// 地图导航状态
+///
+/// 管理路线规划相关的所有状态：
+/// - 起点/终点 POI 和坐标
+/// - 路线方案列表和选中索引
+/// - 异步加载状态
+/// - 导航导航状态
+/// ============================================
 import 'package:qintu/models/async_state.dart';
 import '../../models/poi_models.dart';
 import '../../models/amap_routing_models.dart';
