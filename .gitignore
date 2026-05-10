@@ -1,3 +1,28 @@
+# AI Tools Configuration
+.claude/
+.codebuddy/
+.opencode/
+.rules/
+.trae/
+
+# CodeBuddy Plugin
+codebuddy-plugin/
+
+# Examples and Rules
+rules/
+examples/
+
+# Project Configuration
+cloudbaserc.json
+.mcp.json
+CODEBUDDY.md
+
+# Development Scripts
+fix_hardcoding.py
+test_cloud_base.js
+test_db_connection.js
+test_mysql_api.js
+
 # Miscellaneous
 *.class
 *.log
