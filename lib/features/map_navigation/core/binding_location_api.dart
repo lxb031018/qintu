@@ -30,16 +30,16 @@ class BindingLocationApi {
         final data = response.data!['data'] as Map<String, dynamic>?;
         if (data != null) {
           return BindingLocationResult.success(
+            partnerOpenid,
             BindingLocation.fromJson(data),
           );
         }
       }
 
-      // 未共享或无位置
-      return BindingLocationResult.notSharing();
+      return BindingLocationResult.notSharing(partnerOpenid);
     } catch (e) {
       Logs.map.warning('获取绑定者位置失败: $e');
-      return BindingLocationResult.error(e.toString());
+      return BindingLocationResult.error(partnerOpenid, e.toString());
     }
   }
 
@@ -66,31 +66,37 @@ class BindingLocationApi {
 
 /// 绑定者位置查询结果
 class BindingLocationResult {
+  final String openid;
   final BindingLocation? location;
   final BindingLocationStatus status;
   final String? errorMessage;
 
   const BindingLocationResult._({
+    required this.openid,
     this.location,
     required this.status,
     this.errorMessage,
   });
 
-  factory BindingLocationResult.success(BindingLocation location) =>
+  factory BindingLocationResult.success(String openid, BindingLocation location) =>
       BindingLocationResult._(
+        openid: openid,
         location: location,
         status: BindingLocationStatus.success,
       );
 
-  factory BindingLocationResult.notSharing() => BindingLocationResult._(
+  factory BindingLocationResult.notSharing(String openid) => BindingLocationResult._(
+        openid: openid,
         status: BindingLocationStatus.notSharing,
       );
 
-  factory BindingLocationResult.notFound() => BindingLocationResult._(
+  factory BindingLocationResult.notFound(String openid) => BindingLocationResult._(
+        openid: openid,
         status: BindingLocationStatus.notFound,
       );
 
-  factory BindingLocationResult.error(String message) => BindingLocationResult._(
+  factory BindingLocationResult.error(String openid, String message) => BindingLocationResult._(
+        openid: openid,
         status: BindingLocationStatus.error,
         errorMessage: message,
       );

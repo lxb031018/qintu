@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/poi_models.dart';
 import '../../../service/binding_location_service.dart';
 import '../../../service/location_category_service.dart';
+import '../../../../relationship_binding/service/binding_service.dart';
 
 class LocationBinderState {
   final List<PoiSuggestion> items;
@@ -36,7 +37,20 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      final binderDataList = await _bindingService.fetchBinderDataList();
+      final bindingService = BindingService();
+      final bindings = await bindingService.getBindingsList();
+
+      final openidToNickname = <String, String>{};
+      final openids = <String>[];
+      for (final binding in bindings) {
+        final openid = binding.partnerOpenid;
+        if (openid == null) continue;
+        openidToNickname[openid] = binding.partnerNickname ?? '绑定者';
+        openids.add(openid);
+      }
+
+      final locationResults = await _bindingService.getBinderLocations(openids);
+      final binderDataList = _bindingService.convertToBinderDataList(openidToNickname, locationResults);
       final items = _categoryService.getBinderLocations(binderDataList);
 
       state = state.copyWith(
