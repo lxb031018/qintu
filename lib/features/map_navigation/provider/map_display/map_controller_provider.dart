@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/bus_route_models.dart';
-import '../service/map_controller_service/map_controller_service.dart';
+import '../../models/bus_route_models.dart';
+import '../../service/map_controller_service/map_controller_service.dart';
 import 'map_display_service.dart';
 
 final mapControllerProvider = Provider<MapControllerService?>((ref) {

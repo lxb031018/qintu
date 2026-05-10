@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/amap_routing_models.dart';
-import '../../provider/location_input_provider.dart';
-import '../../provider/map_navigation_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
+import '../../provider/map_navigation/map_navigation_provider.dart';
 import 'route_type_button.dart';
 
 class RouteTypeSelector extends ConsumerWidget {

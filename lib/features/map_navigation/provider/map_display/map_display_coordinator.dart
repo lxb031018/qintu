@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
-import '../models/amap_routing_models.dart';
-import '../models/map_overlay_models.dart';
-import '../models/poi_models.dart';
-import 'location_input_state.dart';
+import '../../models/amap_routing_models.dart';
+import '../../models/map_overlay_models.dart';
+import '../../models/poi_models.dart';
+import '../location_Input/location_input_state.dart';
 import 'map_controller_provider.dart';
-import 'map_navigation_provider.dart';
+import '../map_navigation/map_navigation_provider.dart';
 
 class MapDisplayCoordinator {
   MapControllerNotifier get _notifier => _ref.read(mapControllerNotifierProvider.notifier);

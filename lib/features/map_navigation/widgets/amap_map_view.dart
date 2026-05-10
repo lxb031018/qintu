@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/platform_channels.dart';
 import '../service/map_controller_service/map_controller_service.dart';
-import '../provider/map_controller_provider.dart';
+import '../provider/map_display/map_controller_provider.dart';
 
 /// ============================================
 /// 高德地图显示组件

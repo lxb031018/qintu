@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../provider/location_input_provider.dart';
-import '../../provider/map_controller_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
+import '../../provider/map_display/map_controller_provider.dart';
 import 'category_button.dart';
 import 'close_button.dart';
 import '../my_location_button.dart';

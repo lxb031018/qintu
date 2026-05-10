@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../provider/location_input_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
 
 /// 输入行组件
 ///

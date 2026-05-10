@@ -4,7 +4,7 @@ import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/poi_models.dart';
-import '../../provider/location_input_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
 import 'location_list_item.dart';
 import 'category_tab_bar.dart';
 import 'history_selection_bar.dart';

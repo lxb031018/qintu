@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
-import '../../models/poi_models.dart';
-import '../../service/location_category_service.dart';
+import '../../../models/poi_models.dart';
+import '../../../service/location_category_service.dart';
 
 class LocationHistoryState {
   final List<PoiSuggestion> items;

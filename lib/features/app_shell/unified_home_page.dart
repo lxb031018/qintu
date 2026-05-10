@@ -6,7 +6,7 @@ import '../../constants/app_durations.dart';
 import '../../constants/app_strings.dart';
 import '../../providers/settings_manager.dart';
 import '../map_navigation/map_navigation_tab.dart';
-import '../map_navigation/provider/map_navigation_provider.dart';
+import '../map_navigation/provider/map_navigation/map_navigation_provider.dart';
 import '../relationship_binding/relationship_binding_tab.dart';
 import '../settings/settings_page.dart';
 

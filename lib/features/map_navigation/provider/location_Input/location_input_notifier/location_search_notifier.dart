@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
-import '../../models/poi_models.dart';
-import '../../service/poi_service.dart';
-import '../../service/map_controller_service/map_controller_service.dart';
+import '../../../models/poi_models.dart';
+import '../../../service/poi_service.dart';
+import '../../../service/map_controller_service/map_controller_service.dart';
 import '../location_category.dart';
-import '../map_controller_provider.dart';
-import '../../../../models/location/lat_lng.dart';
+import '../../map_display/map_controller_provider.dart';
+import '../../../../../models/location/lat_lng.dart';
 
 class LocationSearchState {
   final String keyword;

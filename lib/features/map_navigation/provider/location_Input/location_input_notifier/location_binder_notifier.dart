@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/poi_models.dart';
-import '../../service/binding_location_service.dart';
-import '../../service/location_category_service.dart';
+import '../../../models/poi_models.dart';
+import '../../../service/binding_location_service.dart';
+import '../../../service/location_category_service.dart';
 
 class LocationBinderState {
   final List<PoiSuggestion> items;

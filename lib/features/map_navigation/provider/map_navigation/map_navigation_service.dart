@@ -1,5 +1,5 @@
-import '../models/poi_models.dart';
-import '../models/amap_routing_models.dart';
+import '../../models/poi_models.dart';
+import '../../models/amap_routing_models.dart';
 
 abstract class MapNavigationService {
   void setOrigin(PoiSuggestion poi);

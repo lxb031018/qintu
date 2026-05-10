@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../provider/location_input_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
 import 'location_input_row.dart';
 
 /// 可滑动交换的输入行

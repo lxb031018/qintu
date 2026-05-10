@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../provider/location_input_provider.dart';
+import '../../provider/location_Input/location_input_provider.dart';
 import 'route_type_selector.dart';
 import 'swappable_location_row.dart';
 

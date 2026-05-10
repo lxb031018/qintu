@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/utils/logger.dart';
-import '../../models/poi_models.dart';
-import '../../service/location_category_service.dart';
+import '../../../models/poi_models.dart';
+import '../../../service/location_category_service.dart';
 import '../location_input_state.dart';
 import '../location_input_callbacks.dart';
 import '../location_category.dart';
-import '../map_navigation_service.dart';
-import '../map_navigation_service_provider.dart';
+import '../../map_navigation/map_navigation_service.dart';
+import '../../map_navigation/map_navigation_service_provider.dart';
 import 'location_search_notifier.dart';
 
 class LocationInputNotifier extends Notifier<LocationInputState> {

@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qintu/utils/logger.dart';
-import 'package:qintu/features/map_navigation/provider/location_sharing_provider.dart';
+import 'package:qintu/features/map_navigation/provider/location_sharing/location_sharing_provider.dart';
 
 /// ============================================
 /// 定位状态枚举

@@ -4,10 +4,10 @@ import 'package:qintu/providers/location_status_provider.dart';
 import 'widgets/amap_map_view.dart';
 import 'service/map_controller_service/map_controller_service.dart';
 import 'models/amap_routing_models.dart';
-import 'provider/location_input_provider.dart';
-import 'provider/map_navigation_provider.dart';
-import 'provider/location_sharing_provider.dart';
-import 'provider/map_controller_provider.dart';
+import 'provider/location_Input/location_input_provider.dart';
+import 'provider/map_navigation/map_navigation_provider.dart';
+import 'provider/location_sharing/location_sharing_provider.dart';
+import 'provider/map_display/map_controller_provider.dart';
 import 'package:qintu/providers/settings_manager.dart';
 import 'widgets/location_input_card/location_input_card.dart';
 import 'widgets/location_category_list/location_category_list.dart';
@@ -17,7 +17,7 @@ import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
 import 'models/map_overlay_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
-import 'provider/map_display_coordinator.dart';
+import 'provider/map_display/map_display_coordinator.dart';
 import 'utils/sheet_layout_calculator.dart';
 
 /// 由 UnifiedHomePage 在首次布局后写入 Tab Bar 实际高度

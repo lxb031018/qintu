@@ -1,6 +1,6 @@
 import 'package:qintu/models/async_state.dart';
-import '../models/poi_models.dart';
-import '../models/amap_routing_models.dart';
+import '../../models/poi_models.dart';
+import '../../models/amap_routing_models.dart';
 
 class MapNavigationState {
   final String searchKeyword;
