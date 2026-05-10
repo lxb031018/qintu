@@ -4,7 +4,7 @@ import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
-import 'location_input_provider.dart';
+import 'location_input_state.dart';
 import 'map_controller_provider.dart';
 
 class MapDisplayCoordinator {

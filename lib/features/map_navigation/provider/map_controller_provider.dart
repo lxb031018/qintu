@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bus_route_models.dart';
 import '../service/map_controller_service/map_controller_service.dart';
+import 'map_display_service.dart';
 
 final mapControllerProvider = Provider<MapControllerService?>((ref) {
   final controller = MapControllerService();
@@ -10,7 +11,7 @@ final mapControllerProvider = Provider<MapControllerService?>((ref) {
   return controller;
 });
 
-class MapControllerNotifier extends Notifier<MapControllerService?> {
+class MapControllerNotifier extends Notifier<MapControllerService?> implements MapDisplayService {
   @override
   MapControllerService? build() => null;
 
@@ -18,8 +19,19 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     state = controller;
   }
 
+  @override
   Future<void> moveCamera({required double lat, required double lng, double zoom = 15.0}) async {
     await state?.moveCamera(lat: lat, lng: lng, zoom: zoom);
+  }
+
+  @override
+  Future<void> setNaviShowMode(int mode) async {
+    await state?.setNaviShowMode(mode);
+  }
+
+  @override
+  Future<void> moveCameraToCenter({required double lat, required double lng, double zoom = 15.0}) async {
+    await state?.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
   }
 
   Future<int?> showRoutes(
@@ -86,20 +98,12 @@ class MapControllerNotifier extends Notifier<MapControllerService?> {
     return await state?.clearStationMarkers() ?? false;
   }
 
-  Future<void> setNaviShowMode(int mode) async {
-    await state?.setNaviShowMode(mode);
-  }
-
   Future<void> setPointToCenter({required int x, required int y}) async {
     await state?.setPointToCenter(x: x, y: y);
   }
 
   Future<void> changeLatLng({required double lat, required double lng}) async {
     await state?.changeLatLng(lat: lat, lng: lng);
-  }
-
-  Future<void> moveCameraToCenter({required double lat, required double lng, double zoom = 15.0}) async {
-    await state?.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
   }
 
   Future<void> animateCameraToCenter({required double lat, required double lng, double zoom = 15.0, int duration = 500}) async {
