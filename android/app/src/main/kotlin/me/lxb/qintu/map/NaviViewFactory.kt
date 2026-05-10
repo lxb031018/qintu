@@ -2,12 +2,17 @@ package me.lxb.qintu.map
 
 import android.content.Context
 import android.util.Log
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewTreeObserver
 import com.amap.api.maps.model.MyLocationStyle
 import com.amap.api.navi.AMapNaviView
 import com.amap.api.navi.AMapNaviViewListener
 import com.amap.api.navi.AMapNaviViewOptions
 import com.amap.api.navi.AmapPageType
+import io.flutter.plugin.platform.PlatformView
 import me.lxb.qintu.location.LocationClientImpl
+import me.lxb.qintu.overlay.CarOverlay
 
 /**
  * 导航视图工厂
@@ -24,6 +29,19 @@ class NaviViewFactory(
         private const val TAG = "NaviViewFactory"
     }
 
+    data class MapComponents(
+        val cameraController: CameraController,
+        val routeRenderer: RouteRenderer,
+        val markerManager: MarkerManager,
+        val gestureHandler: GestureHandler
+    )
+
+    data class PlatformViewCreatedResult(
+        val platformView: PlatformView,
+        val naviView: AMapNaviView,
+        val mapComponents: MapComponents
+    )
+
     private var locationListener: com.amap.api.maps.LocationSource.OnLocationChangedListener? = null
 
     /**
@@ -35,6 +53,14 @@ class NaviViewFactory(
      * 导航视图加载完成回调（由外部注入，用于通知 RouteRenderer）
      */
     var onNaviViewLoadedCallback: (() -> Unit)? = null
+
+    /**
+     * 首次定位就绪回调（由外部注入，携带定位数据）
+     */
+    var onFirstLocationReady: ((Double, Double, Double, String) -> Unit)? = null
+
+    private var firstLocationPending: com.amap.api.location.AMapLocation? = null
+    private var myLocationEnabled = false
 
     /**
      * 创建原生 AMapNaviView
@@ -223,5 +249,102 @@ class NaviViewFactory(
         // 首次布局时会修正地图中心（AMapNaviView 内部预留空间会导致偏移）
 
         Log.d(TAG, "🔍 地图配置完成（UiSettings/定位源/图层/缩放范围，蓝点待启用）")
+    }
+
+    /**
+     * 创建地图组件（CameraController, RouteRenderer, MarkerManager, GestureHandler）
+     */
+    fun createMapComponents(
+        aMap: com.amap.api.maps.AMap,
+        carOverlayRef: () -> CarOverlay?,
+        currentNaviViewRef: () -> AMapNaviView?
+    ): MapComponents {
+        val cameraController = CameraController(aMap)
+        val routeRenderer = RouteRenderer(aMapHolder, currentNaviViewRef)
+        val markerManager = MarkerManager(aMapHolder)
+        val gestureHandler = GestureHandler(
+            cameraController,
+            carOverlayRef,
+            aMapHolder,
+            { }
+        )
+        return MapComponents(cameraController, routeRenderer, markerManager, gestureHandler)
+    }
+
+    /**
+     * 创建 PlatformView，包含完整的视图初始化逻辑
+     */
+    fun createPlatformView(
+        viewId: Int,
+        carOverlayRef: () -> CarOverlay?,
+        currentNaviViewRef: () -> AMapNaviView?,
+        onMapTouched: () -> Unit
+    ): PlatformViewCreatedResult {
+        val naviView = createNativeView().apply {
+            onCreate(null)
+            onResume()
+        }
+
+        val aMap = naviView.map
+        aMapHolder.setMap(aMap)
+        configureMap(naviView)
+
+        val mapComponents = createMapComponents(aMap, carOverlayRef, currentNaviViewRef)
+
+        naviView.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (naviView.width > 0 && naviView.height > 0) {
+                        val centerX = naviView.width / 2
+                        val centerY = naviView.height / 2
+                        mapComponents.cameraController.setViewSize(naviView.width, naviView.height)
+                        naviView.map.setPointToCenter(centerX, centerY)
+
+                        if (!myLocationEnabled) {
+                            myLocationEnabled = true
+                            naviView.map.isMyLocationEnabled = true
+                            Log.d(TAG, "🔵 首次布局完成，中心已修正，启用定位蓝点")
+                        }
+
+                        firstLocationPending?.let { location ->
+                            onFirstLocationReady?.invoke(
+                                location.latitude,
+                                location.longitude,
+                                location.accuracy.toDouble(),
+                                location.city ?: ""
+                            )
+                            firstLocationPending = null
+                            Log.d(TAG, "🚀 暂存的首次定位事件已发送")
+                        }
+                    }
+                }
+            }
+        )
+
+        aMap.setOnMapTouchListener { motionEvent ->
+            if (motionEvent.action == MotionEvent.ACTION_UP) {
+                onMapTouched()
+            }
+        }
+
+        Log.d(TAG, "🗺️ AMapNaviView #$viewId 初始化完成")
+
+        val platformView = object : PlatformView {
+            override fun getView(): View = naviView
+
+            override fun dispose() {
+                naviView.onPause()
+                naviView.onDestroy()
+            }
+        }
+
+        return PlatformViewCreatedResult(platformView, naviView, mapComponents)
+    }
+
+    /**
+     * 设置待发送的首次定位数据（视图未就绪时暂存）
+     */
+    fun setPendingFirstLocation(location: com.amap.api.location.AMapLocation) {
+        firstLocationPending = location
     }
 }
