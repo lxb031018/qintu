@@ -51,10 +51,10 @@ class _AmapMapViewState extends State<AmapMapView> with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        _controller!.map.pauseNaviView();
+        _controller!.pauseNaviView();
         break;
       case AppLifecycleState.resumed:
-        _controller!.map.resumeNaviView();
+        _controller!.resumeNaviView();
         break;
       default:
         break;

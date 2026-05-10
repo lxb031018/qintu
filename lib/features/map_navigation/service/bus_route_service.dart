@@ -1,4 +1,4 @@
-import 'package:qintu/features/map_navigation/core/amap_bus_route_bridge.dart';
+import 'package:qintu/features/map_navigation/core/bridge/amap_bus_route_bridge.dart';
 import 'package:qintu/features/map_navigation/models/bus_route_models.dart';
 import 'package:qintu/models/location/lat_lng.dart';
 

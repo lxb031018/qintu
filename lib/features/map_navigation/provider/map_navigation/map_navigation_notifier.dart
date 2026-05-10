@@ -8,7 +8,7 @@ import '../../models/amap_routing_models.dart';
 import '../../models/bus_route_models.dart' as bus;
 import '../../service/poi_service.dart';
 import '../../service/bus_route_service.dart';
-import '../../core/amap_navigation_bridge.dart';
+import '../../core/bridge/amap_navigation_bridge.dart';
 import '../map_display/map_display_coordinator.dart';
 import '../../models/navigation_models.dart';
 import '../map_display/map_controller_provider.dart';

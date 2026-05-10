@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
-import '../models/navigation_models.dart';
-import '../models/amap_routing_models.dart';
+import '../../models/navigation_models.dart';
+import '../../models/amap_routing_models.dart';
 
 /// 高德导航桥接层
 ///
@@ -44,26 +44,6 @@ class AmapNavigationBridge {
     } catch (e) {
       Logs.navigation.error('❌ 选择路线失败：$e');
       return false;
-    }
-  }
-
-  static Future<List<int>> getAllRouteIds() async {
-    try {
-      final result = await _methodChannel.invokeMethod<List<dynamic>>('getAllRouteIds');
-      return result?.map((e) => (e as num).toInt()).toList() ?? [];
-    } catch (e) {
-      Logs.navigation.error('❌ getAllRouteIds failed: $e');
-      return [];
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getRouteInfoList() async {
-    try {
-      final result = await _methodChannel.invokeMethod<List<dynamic>>('getRouteInfoList');
-      return result?.map((e) => Map<String, dynamic>.from(e as Map)).toList() ?? [];
-    } catch (e) {
-      Logs.navigation.error('❌ getRouteInfoList failed: $e');
-      return [];
     }
   }
 

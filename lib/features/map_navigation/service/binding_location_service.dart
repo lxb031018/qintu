@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/binding_location_api.dart';
+import '../core/api/binding_location_api.dart';
 import 'location_category_service.dart';
 
 /// ============================================

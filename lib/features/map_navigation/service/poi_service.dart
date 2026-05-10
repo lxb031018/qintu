@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/poi_api.dart';
-import '../core/geocode_bridge.dart';
+import '../core/bridge/poi_search_bridge.dart';
+import '../core/bridge/geocode_bridge.dart';
+import '../models/poi_models.dart';
 import '../../../models/location/lat_lng.dart';
 
 /// ============================================
@@ -45,8 +46,6 @@ class LocationSearchResult {
 }
 
 class PoiService {
-  final PoiApi _api = PoiApi();
-
   /// 搜索结果缓存
   final Map<String, _CachedSearch> _searchCache = {};
   static const _cacheExpirySeconds = 60;
@@ -61,10 +60,11 @@ class PoiService {
     LatLng? location,
   }) async {
     if (keywords.length < 2) return [];
-    return await _api.inputTips(
-      keywords: keywords,
+    return await PoiSearchBridge.inputTips(
+      keyword: keywords,
       city: city,
-      location: location,
+      lat: location?.latitude,
+      lng: location?.longitude,
     );
   }
 
@@ -91,11 +91,13 @@ class PoiService {
     }
 
     // 执行请求
-    final future = _api.searchPoi(
-      keywords: keywords,
+    final future = PoiSearchBridge.searchPoi(
+      keyword: keywords,
       city: city,
-      location: location,
+      lat: location?.latitude,
+      lng: location?.longitude,
       radius: radius,
+      cityLimit: city != null && city.isNotEmpty,
     );
     _pendingRequests[cacheKey] = future;
 
@@ -113,17 +115,19 @@ class PoiService {
 
   /// 逆地理编码：坐标转城市
   Future<String?> getCityFromLocation(LatLng location) async {
-    return await _api.getCityFromLocation(location);
+    final result = await GeocodeBridge.regeocode(location.latitude, location.longitude);
+    return result?.city;
   }
 
   /// 从坐标获取城市区号（电话区号，如 "0771"）
   Future<String?> getCityCodeFromLocation(LatLng location) async {
-    return await _api.getCityCodeFromLocation(location);
+    final result = await GeocodeBridge.regeocode(location.latitude, location.longitude);
+    return result?.cityCode;
   }
 
   /// 从坐标获取完整的逆地理编码结果
   Future<RegeocodeResult?> getRegeocodeFromLocation(LatLng location) async {
-    return await _api.getRegeocodeFromLocation(location);
+    return await GeocodeBridge.regeocode(location.latitude, location.longitude);
   }
 
   /// 带位置上下文的 POI 搜索

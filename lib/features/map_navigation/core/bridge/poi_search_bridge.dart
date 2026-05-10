@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
 import 'package:qintu/utils/logger.dart';
-import '../models/poi_models.dart';
+import '../../models/poi_models.dart';
 
 /// 高德 POI 搜索桥接层
 ///
