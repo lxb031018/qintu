@@ -12,6 +12,38 @@ import '../../../models/location/lat_lng.dart';
 /// 提供缓存和请求去重能力
 /// ============================================
 
+/// 位置搜索上下文
+class LocationSearchContext {
+  final LatLng? fixedCenter;
+  final LatLng? gpsCenter;
+  final String? cachedCity;
+  final String? cachedCityCode;
+
+  const LocationSearchContext({
+    this.fixedCenter,
+    this.gpsCenter,
+    this.cachedCity,
+    this.cachedCityCode,
+  });
+}
+
+/// 位置搜索结果
+class LocationSearchResult {
+  final List<PoiSuggestion> suggestions;
+  final LatLng? searchCenter;
+  final String? searchCity;
+  final String? error;
+
+  const LocationSearchResult({
+    this.suggestions = const [],
+    this.searchCenter,
+    this.searchCity,
+    this.error,
+  });
+
+  bool get isSuccess => error == null && suggestions.isNotEmpty;
+}
+
 class PoiService {
   final PoiApi _api = PoiApi();
 
@@ -92,6 +124,63 @@ class PoiService {
   /// 从坐标获取完整的逆地理编码结果
   Future<RegeocodeResult?> getRegeocodeFromLocation(LatLng location) async {
     return await _api.getRegeocodeFromLocation(location);
+  }
+
+  /// 带位置上下文的 POI 搜索
+  ///
+  /// 整合：城市获取 → POI 搜索 → 距离排序
+  Future<LocationSearchResult> searchPoiWithLocation({
+    required String keyword,
+    required LocationSearchContext context,
+  }) async {
+    if (keyword.length < 2) {
+      return const LocationSearchResult(error: '关键词长度不足');
+    }
+
+    LatLng? searchCenter = context.fixedCenter;
+    String? searchCity = context.cachedCity;
+    String? cityCode = context.cachedCityCode;
+
+    if (searchCenter == null && context.gpsCenter != null) {
+      searchCenter = context.gpsCenter;
+      if (context.cachedCity == null) {
+        searchCity = await getCityFromLocation(searchCenter!);
+      }
+      if (context.cachedCityCode == null) {
+        cityCode = await getCityCodeFromLocation(searchCenter!);
+      }
+    }
+
+    final suggestions = await inputTips(
+      keywords: keyword,
+      city: cityCode ?? searchCity,
+      location: searchCenter,
+    );
+
+    if (searchCenter != null && suggestions.isNotEmpty) {
+      for (final poi in suggestions) {
+        final poiLatLng = poi.distanceLatLng;
+        if (poiLatLng != null) {
+          poi.distance = searchCenter.distanceTo(poiLatLng).toInt();
+        }
+      }
+      suggestions.sort((a, b) => (a.distance ?? 999999999).compareTo(b.distance ?? 999999999));
+    }
+
+    if (suggestions.isNotEmpty) {
+      return LocationSearchResult(
+        suggestions: suggestions,
+        searchCenter: searchCenter,
+        searchCity: searchCity,
+      );
+    } else {
+      return LocationSearchResult(
+        suggestions: [],
+        searchCenter: searchCenter,
+        searchCity: searchCity,
+        error: '未找到匹配的结果',
+      );
+    }
   }
 }
 

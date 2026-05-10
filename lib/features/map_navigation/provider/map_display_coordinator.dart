@@ -4,8 +4,10 @@ import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
 import '../models/amap_routing_models.dart';
 import '../models/map_overlay_models.dart';
+import '../models/poi_models.dart';
 import 'location_input_state.dart';
 import 'map_controller_provider.dart';
+import 'map_navigation_provider.dart';
 
 class MapDisplayCoordinator {
   MapControllerNotifier get _notifier => _ref.read(mapControllerNotifierProvider.notifier);
@@ -32,6 +34,7 @@ class MapDisplayCoordinator {
             lng: latlng.longitude,
             zoom: 17,
           );
+          _ref.read(mapNavigationProvider.notifier).setOrigin(next.origin.poi!);
         }
       } else {
         _notifier.clearSingleMarker(true);
@@ -54,10 +57,17 @@ class MapDisplayCoordinator {
             lng: latlng.longitude,
             zoom: 17,
           );
+          _ref.read(mapNavigationProvider.notifier).setDestination(next.destination.poi!);
         }
       } else {
         _notifier.clearSingleMarker(false);
         _notifier.clearRoutes();
+      }
+    }
+
+    if (next.pendingNaviPoi != previous?.pendingNaviPoi && next.pendingNaviPoi != null) {
+      if (next.pendingNaviPoi!.source == PoiSource.myLocation) {
+        _notifier.setNaviShowMode(3);
       }
     }
   }
