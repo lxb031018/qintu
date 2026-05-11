@@ -71,7 +71,7 @@ class NaviViewFactory(
     fun createNativeView(): AMapNaviView {
         val options = AMapNaviViewOptions().apply {
             setLayoutVisible(false)
-            setAutoDrawRoute(true)
+            setAutoDrawRoute(false)
             setAfterRouteAutoGray(true)
             setTrafficLine(true)
             setEagleMapVisible(true)
