@@ -45,6 +45,9 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 开始导航按钮点击回调
   final VoidCallback? onStartNavigation;
 
+  /// 分享按钮点击回调
+  final VoidCallback? onShare;
+
   /// 错误信息（空结果时显示）
   final String? errorMessage;
 
@@ -60,6 +63,7 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.currentRouteType = RouteType.driving,
     this.isVisible = true,
     this.onStartNavigation,
+    this.onShare,
     this.errorMessage,
     this.isLoading = false,
   });
@@ -216,6 +220,13 @@ class _RouteResultBottomSheetState extends State<RouteResultBottomSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          QintuActionButton(
+            label: '分享',
+            icon: Icons.share,
+            onTap: widget.onShare,
+            backgroundColor: AppColors.grey400,
+          ),
+          const SizedBox(width: AppSpacings.sm),
           QintuActionButton(
             label: '开始导航',
             icon: Icons.navigation,
