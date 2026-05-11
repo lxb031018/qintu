@@ -1,3 +1,7 @@
+import 'package:qintu/models/async_state.dart';
+import '../../models/poi_models.dart';
+import '../../models/amap_routing_models.dart';
+
 /// ============================================
 /// 地图导航状态
 ///
@@ -7,10 +11,6 @@
 /// - 异步加载状态
 /// - 导航导航状态
 /// ============================================
-import 'package:qintu/models/async_state.dart';
-import '../../models/poi_models.dart';
-import '../../models/amap_routing_models.dart';
-
 class MapNavigationState {
   final String searchKeyword;
   final PoiSuggestion? originPoi;
