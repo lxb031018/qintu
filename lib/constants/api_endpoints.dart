@@ -135,4 +135,12 @@ class ApiEndpoints {
   /// CloudBase 官方 Auth API: POST /auth/v1/signout
   /// 注意：实际路由为 /auth/api/auth/sign-out (通过 requireAuth 中间件保护)
   static const String signOut = '/auth/api/auth/sign-out';
+
+  // ==================== 路由分享 ====================
+
+  /// 发送路由分享
+  static const String routeShareSend = '/api/route-share/send';
+
+  /// 获取待接收的路由分享
+  static const String routeSharePending = '/api/route-share/pending';
 }

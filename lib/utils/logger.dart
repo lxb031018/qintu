@@ -227,4 +227,7 @@ class Logs {
 
   /// 导航任务日志
   static const Logger navigation = Logger('NAVIGATION');
+
+  /// 路由分享日志
+  static const Logger routeShare = Logger('ROUTE_SHARE');
 }

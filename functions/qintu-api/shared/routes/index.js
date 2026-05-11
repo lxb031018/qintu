@@ -11,6 +11,7 @@ const bindingRoutes = require('./binding.routes');
 const userRoutes = require('./user.routes');
 const taskRoutes = require('./task.routes');
 const locationRoutes = require('./location.routes');
+const routeShareRoutes = require('./route_share.routes');
 
 /**
  * 配置路由
@@ -26,6 +27,7 @@ function configureRoutes(services) {
   router.use('/api/users', userRoutes(services.userService));
   router.use('/api/tasks', taskRoutes(services.taskService));
   router.use('/api/locations', locationRoutes(services.locationService));
+  router.use('/api/route-share', routeShareRoutes(services.routeShareService));
 
   // 简单测试路由
   router.get('/test', (req, res) => {

@@ -6,6 +6,7 @@ import 'service/map_controller_service/map_controller_service.dart';
 import 'models/amap_routing_models.dart';
 import 'provider/location_Input/location_input_provider.dart';
 import 'provider/map_navigation/map_navigation_provider.dart';
+import 'provider/map_navigation/route_share_notifier.dart';
 import 'provider/location_sharing/location_sharing_provider.dart';
 import 'provider/map_display/map_controller_provider.dart';
 import 'package:qintu/providers/settings_manager.dart';
@@ -15,6 +16,7 @@ import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet/route_result_bottom_sheet.dart';
 import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
 import 'models/map_overlay_models.dart';
+import 'models/poi_models.dart';
 import '../../../constants/app_durations.dart';
 import '../../../constants/app_spacings.dart';
 import 'provider/map_display/map_display_coordinator.dart';
@@ -170,7 +172,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
             ),
           ],
 
-          // 路线栏（非导航时）
           if (!navState.isNavigating && navState.showRoutesSheet &&
               (navState.routes.isNotEmpty || navState.routesState.isLoading || navState.routesState.isSuccess))
             _RouteBottomSheetPositioner(
@@ -350,6 +351,56 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
       },
       onStartNavigation: () {
         ref.read(mapNavigationProvider.notifier).startNavigation();
+      },
+      onShare: () {
+        final notifier = ref.read(routeShareNotifierProvider.notifier);
+        final inputState = ref.read(locationInputProvider);
+
+        // 找到选中的绑定者POI（source == PoiSource.binder）
+        final binderPoi = inputState.origin.poi?.source == PoiSource.binder
+            ? inputState.origin.poi
+            : (inputState.destination.poi?.source == PoiSource.binder
+                ? inputState.destination.poi
+                : null);
+
+        if (binderPoi == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('请先选择一个绑定者作为分享目标'), duration: Duration(seconds: 2)),
+          );
+          return;
+        }
+
+        if (currentState.originPoi == null || currentState.destinationPoi == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('请先选择起点和终点'), duration: Duration(seconds: 2)),
+          );
+          return;
+        }
+
+        if (currentState.currentRouteType == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('请先选择出行方式'), duration: Duration(seconds: 2)),
+          );
+          return;
+        }
+
+        notifier.shareRoute(
+          binderOpenid: binderPoi.id,
+          origin: currentState.originPoi!,
+          destination: currentState.destinationPoi!,
+          routeType: currentState.currentRouteType!,
+        ).then((success) {
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('分享成功'), duration: Duration(seconds: 2)),
+            );
+          } else {
+            final error = ref.read(routeShareNotifierProvider).errorMessage;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('分享失败: ${error ?? "未知错误"}'), duration: const Duration(seconds: 2)),
+            );
+          }
+        });
       },
       errorMessage: currentState.errorMessage,
       isLoading: currentState.routesState.isLoading,

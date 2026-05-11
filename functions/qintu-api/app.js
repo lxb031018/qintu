@@ -29,14 +29,21 @@ const UserService = require('./user/services/user.service');
 
 // 创建 Service 实例
 const authService = new AuthService(userRepo);
-
-// 挂载到全局供中间件访问（避免循环依赖）
-global._authService = authService;
-
 const bindingService = new BindingService(bindingRepo, userRepo);
 const taskService = new TaskService(bindingRepo, taskRepo);
 const locationService = new LocationService(bindingRepo, locationRepo, userRepo);
 const userService = new UserService(userRepo);
+
+// 导入 RouteShare 相关模块
+const RouteShareRepository = require('./route-share/repositories/route_share.memory.repository');
+const RouteShareService = require('./route-share/services/route_share.service');
+
+// 创建 RouteShare Service 实例
+const routeShareRepo = new RouteShareRepository();
+const routeShareService = new RouteShareService(routeShareRepo, bindingService);
+
+// 挂载到全局供中间件访问（避免循环依赖）
+global._authService = authService;
 
 // 导出 services 供路由使用
 const services = {
@@ -44,7 +51,8 @@ const services = {
   bindingService,
   taskService,
   locationService,
-  userService
+  userService,
+  routeShareService
 };
 
 const app = express();
