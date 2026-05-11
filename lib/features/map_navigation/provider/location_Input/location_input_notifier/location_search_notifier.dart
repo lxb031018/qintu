@@ -148,9 +148,7 @@ class LocationSearchNotifier extends Notifier<LocationSearchState> {
         gpsResult['latitude'] as double,
         gpsResult['longitude'] as double,
       );
-      if (cachedCity == null) {
-        cachedCity = gpsResult['city'] as String?;
-      }
+      cachedCity ??= gpsResult['city'] as String?;
     } else {
       final lastLoc = await _mapController?.getLastKnownLocation();
       if (lastLoc != null) {

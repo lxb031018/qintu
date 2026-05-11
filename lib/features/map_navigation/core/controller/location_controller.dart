@@ -96,7 +96,9 @@ class LocationController {
           'city': _lastKnownCity,
         };
       }
-    } catch (e) {}
+    } catch (e) {
+      Logs.location.warning('getLastKnownLocation: Platform Channel异常 $e');
+    }
     return null;
   }
 

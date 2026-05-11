@@ -243,26 +243,6 @@ class MapDisplayCoordinator {
   /// 默认距离阈值：约 1 米（1e-5 度）
   static const double _defaultEpsilon = 1e-5;
 
-  /// 步行到公交/地铁连接的阈值：约 50 米
-  static const double _walkToTransitEpsilon = 5e-4;
-
-  /// 检查步行段终点与下一公交段起点是否连接
-  static bool _walkToTransitConnected(LatLng walkEnd, LatLng transitStart) {
-    // 步行段终点到公交段起点的检查使用更大的阈值
-    return _pointsNear(walkEnd, transitStart, epsilon: _walkToTransitEpsilon);
-  }
-
-  /// 检查公交段终点与下一步行段起点是否连接
-  static bool _transitToWalkConnected(LatLng transitEnd, LatLng walkStart) {
-    return _pointsNear(transitEnd, walkStart, epsilon: _walkToTransitEpsilon);
-  }
-
-  /// 检查两个连续公交段是否直接连接（换乘）
-  static bool _transitToTransitConnected(LatLng firstEnd, LatLng secondStart) {
-    // 公交到公交的换乘使用更小的阈值，因为公交站点是精确的
-    return _pointsNear(firstEnd, secondStart, epsilon: _defaultEpsilon);
-  }
-
   Future<void> _drawFlatRoutes(
     List<RouteOption> routes,
     int selectedIndex,
