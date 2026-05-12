@@ -412,6 +412,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
           origin: currentState.originPoi!,
           destination: currentState.destinationPoi!,
           routeType: currentState.currentRouteType!,
+          routeId: currentState.selectedRoute?.routeId ?? -1,
         ).then((success) {
           if (!context.mounted) return;
           if (success) {

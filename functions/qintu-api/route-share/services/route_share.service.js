@@ -19,7 +19,7 @@ class RouteShareService {
    * @param {Object} params.destination - 终点信息 { latitude, longitude, name, address }
    * @param {string} params.routeType - 出行方式 (driving/walking/riding)
    */
-  async sendRouteShare({ senderOpenid, receiverOpenid, origin, destination, routeType }) {
+  async sendRouteShare({ senderOpenid, receiverOpenid, origin, destination, routeType, routeId }) {
     // 校验必填参数
     if (!senderOpenid || !receiverOpenid) {
       throw new Error('发送者和接收者openid不能为空');
@@ -49,6 +49,7 @@ class RouteShareService {
       origin,
       destination,
       routeType,
+      routeId,
       status: 'pending'
     };
 

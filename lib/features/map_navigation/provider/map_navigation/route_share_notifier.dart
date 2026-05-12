@@ -66,6 +66,7 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     required PoiSuggestion origin,
     required PoiSuggestion destination,
     required RouteType routeType,
+    required int routeId,
   }) async {
     if (state.isSharing) {
       return false;
@@ -79,6 +80,7 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
         origin: origin,
         destination: destination,
         routeType: routeType,
+        routeId: routeId,
       );
       state = state.copyWith(isSharing: false);
       return true;
@@ -155,9 +157,23 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     );
 
     final routeType = _service.stringToRouteType(share.routeType);
+    final targetRouteId = share.routeId;
 
     ref.read(mapNavigationProvider.notifier).setOrigin(origin);
     ref.read(mapNavigationProvider.notifier).setDestination(dest);
+
+    // 如果有 routeId，监听 routes 变化后在算路完成后自动选中
+    if (targetRouteId >= 0) {
+      ref.listen(mapNavigationProvider.select((s) => s.routes), (previous, next) {
+        if (next.isNotEmpty) {
+          final index = next.indexWhere((r) => r.routeId == targetRouteId);
+          if (index >= 0) {
+            ref.read(mapNavigationProvider.notifier).selectRoute(index);
+          }
+        }
+      });
+    }
+
     ref.read(mapNavigationProvider.notifier).switchRouteType(routeType);
   }
 

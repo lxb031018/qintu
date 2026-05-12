@@ -15,7 +15,7 @@ class RouteShareController {
    */
   async sendRouteShare(req, res) {
     try {
-      const { receiverOpenid, origin, destination, routeType } = req.body;
+      const { receiverOpenid, origin, destination, routeType, routeId } = req.body;
       const senderOpenid = req.user.openid;
 
       console.log('[RouteShare] ===== 收到路由分享请求 =====');
@@ -24,6 +24,7 @@ class RouteShareController {
       console.log('[RouteShare] 起点:', JSON.stringify(origin));
       console.log('[RouteShare] 终点:', JSON.stringify(destination));
       console.log('[RouteShare] 出行方式:', routeType);
+      console.log('[RouteShare] routeId:', routeId);
       console.log('[RouteShare] ==============================');
 
       const result = await this._service.sendRouteShare({
@@ -31,7 +32,8 @@ class RouteShareController {
         receiverOpenid,
         origin,
         destination,
-        routeType
+        routeType,
+        routeId
       });
 
       res.json({

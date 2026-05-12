@@ -20,11 +20,13 @@ class RouteShareService {
   /// [origin] - 起点POI
   /// [destination] - 终点POI
   /// [routeType] - 出行方式
+  /// [routeId] - 路线ID（用于多路线选择）
   Future<void> shareRoute({
     required String binderOpenid,
     required PoiSuggestion origin,
     required PoiSuggestion destination,
     required RouteType routeType,
+    required int routeId,
   }) async {
     if (binderOpenid.isEmpty) {
       throw Exception('请选择要分享的绑定者');
@@ -56,6 +58,7 @@ class RouteShareService {
       destName: destination.name,
       destAddress: destination.address,
       routeType: _routeTypeToString(routeType),
+      routeId: routeId,
     );
   }
 

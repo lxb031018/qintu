@@ -36,8 +36,10 @@ class RouteShareApi {
     required String destName,
     required String destAddress,
     required String routeType,
+    required int routeId,
   }) async {
     Logs.routeShare.info('API请求: POST ${ApiEndpoints.routeShareSend}');
+    Logs.routeShare.info('routeId: $routeId');
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.routeShareSend,
@@ -56,6 +58,7 @@ class RouteShareApi {
           'address': destAddress,
         },
         'routeType': routeType,
+        'routeId': routeId,
       },
     );
 
@@ -99,6 +102,7 @@ class PendingRouteShare {
   final String destName;
   final String destAddress;
   final String routeType;
+  final int routeId;
   final String createdAt;
 
   PendingRouteShare({
@@ -114,6 +118,7 @@ class PendingRouteShare {
     required this.destName,
     required this.destAddress,
     required this.routeType,
+    this.routeId = -1,
     required this.createdAt,
   });
 
@@ -134,6 +139,7 @@ class PendingRouteShare {
       destName: destination['name']?.toString() ?? '',
       destAddress: destination['address']?.toString() ?? '',
       routeType: json['routeType']?.toString() ?? 'driving',
+      routeId: (json['routeId'] as num?)?.toInt() ?? -1,
       createdAt: json['createdAt']?.toString() ?? '',
     );
   }
