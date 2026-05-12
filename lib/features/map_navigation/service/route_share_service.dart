@@ -72,6 +72,22 @@ class RouteShareService {
     }
   }
 
+  /// 将 routeType 字符串转换为 RouteType 枚举
+  RouteType stringToRouteType(String type) {
+    switch (type) {
+      case 'driving':
+        return RouteType.driving;
+      case 'walking':
+        return RouteType.walking;
+      case 'riding':
+        return RouteType.riding;
+      case 'transit':
+        return RouteType.transit;
+      default:
+        return RouteType.driving;
+    }
+  }
+
   /// 获取待接收的路由分享
   Future<List<PendingRouteShare>> getPendingShares() async {
     return await _api.getPendingShares();

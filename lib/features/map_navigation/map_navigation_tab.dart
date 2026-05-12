@@ -14,6 +14,7 @@ import 'widgets/location_category_list/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet/route_result_bottom_sheet.dart';
 import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
+import 'widgets/route_share_card/route_share_card.dart';
 import 'models/map_overlay_models.dart';
 import 'models/poi_models.dart';
 import '../../../constants/app_durations.dart';
@@ -64,6 +65,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).checkStatus();
+      ref.read(routeShareNotifierProvider.notifier).startPolling();
     });
   }
 
@@ -72,12 +74,16 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       ref.read(locationProvider.notifier).checkStatus();
+      ref.read(routeShareNotifierProvider.notifier).startPolling();
+    } else if (state == AppLifecycleState.paused) {
+      ref.read(routeShareNotifierProvider.notifier).stopPolling();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ref.read(routeShareNotifierProvider.notifier).stopPolling();
     super.dispose();
   }
 
@@ -104,6 +110,25 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 
     ref.listen(locationInputProvider, (previous, next) {
       _handleLocationInputChange(previous, next);
+    });
+
+    ref.listen(routeShareNotifierProvider.select((s) => s.latestShare), (previous, next) {
+      if (next != null) {
+        showDialog(
+          context: context,
+          builder: (_) => RouteShareCard(
+            share: next,
+            onNavigate: () {
+              Navigator.of(context).pop();
+              ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+            },
+            onCancel: () {
+              Navigator.of(context).pop();
+              ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+            },
+          ),
+        );
+      }
     });
 
     ref.listen(mapNavigationProvider.select((s) => (
