@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
@@ -26,19 +25,12 @@ class RouteShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: const BorderRadius.all(AppRadii.large),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blackOpacity10,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return AlertDialog(
+      contentPadding: const EdgeInsets.all(AppSpacings.smd),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(),
@@ -185,36 +177,4 @@ class RouteShareCard extends StatelessWidget {
       ),
     );
   }
-}
-
-@Preview(name: '路由分享卡片', group: 'route_share')
-Widget previewRouteShareCard() {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacings.lg),
-        child: RouteShareCard(
-          share: PendingRouteShare(
-            id: '1',
-            senderOpenid: 'sender_123',
-            receiverOpenid: 'receiver_456',
-            originLat: 39.9042,
-            originLng: 116.4074,
-            originName: '起点',
-            originAddress: '北京市朝阳区',
-            destLat: 39.9142,
-            destLng: 116.4174,
-            destName: '终点',
-            destAddress: '北京市海淀区',
-            routeType: 'driving',
-            createdAt: DateTime.now().toIso8601String(),
-          ),
-          senderNickname: '小明',
-          onCancel: () {},
-          onNavigate: () {},
-        ),
-      ),
-    ),
-  );
 }

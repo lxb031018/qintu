@@ -116,16 +116,28 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
       if (next != null) {
         showDialog(
           context: context,
-          builder: (_) => RouteShareCard(
-            share: next,
-            onNavigate: () {
-              Navigator.of(context).pop();
-              ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
-            },
-            onCancel: () {
-              Navigator.of(context).pop();
-              ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
-            },
+          barrierDismissible: false,
+          builder: (_) => Stack(
+            children: [
+              Positioned(
+                top: MediaQuery.of(context).padding.top + AppSpacings.smd,
+                left: AppSpacings.smd,
+                right: AppSpacings.smd,
+                child: RouteShareCard(
+                  share: next,
+                  onNavigate: () {
+                    Navigator.of(context).pop();
+                    // 路线已在收到分享时自动选中，直接开始导航
+                    ref.read(mapNavigationProvider.notifier).startNavigation();
+                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+                  },
+                  onCancel: () {
+                    Navigator.of(context).pop();
+                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+                  },
+                ),
+              ),
+            ],
           ),
         );
       }
