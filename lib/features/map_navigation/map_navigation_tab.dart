@@ -388,6 +388,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
           destination: currentState.destinationPoi!,
           routeType: currentState.currentRouteType!,
         ).then((success) {
+          if (!context.mounted) return;
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('分享成功'), duration: Duration(seconds: 2)),
