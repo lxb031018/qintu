@@ -145,6 +145,10 @@ class NaviViewFactory(
      * 在 startNavi 前调用
      */
     fun enableNaviMode(naviView: AMapNaviView) {
+        val aMap = naviView.map ?: run {
+            Log.w(TAG, "⚠️ naviView.map is null in enableNaviMode")
+            return
+        }
         val options = naviView.viewOptions
         options.setLayoutVisible(true)
         options.setAutoDrawRoute(true)
@@ -156,7 +160,6 @@ class NaviViewFactory(
 
         // 导航模式：隐藏定位蓝点，由 CarOverlay 替代显示
         // 同时使用 isMyLocationEnabled 和 showMyLocation(false) 确保蓝点完全消失
-        val aMap = naviView.map
         aMap.isMyLocationEnabled = false
         val myLocationStyle = MyLocationStyle()
         myLocationStyle.showMyLocation(false)
@@ -173,6 +176,10 @@ class NaviViewFactory(
      * 切换回预览模式：隐藏导航 UI，仅保留地图
      */
     fun disableNaviMode(naviView: AMapNaviView) {
+        val aMap = naviView.map ?: run {
+            Log.w(TAG, "⚠️ naviView.map is null in disableNaviMode")
+            return
+        }
         val options = naviView.viewOptions
         options.setLayoutVisible(false)
         options.setAutoDisplayOverview(false)
@@ -180,7 +187,6 @@ class NaviViewFactory(
 
         // 预览模式：恢复定位蓝点
         // 同时使用 isMyLocationEnabled 和 showMyLocation(true) 确保蓝点正常显示
-        val aMap = naviView.map
         aMap.isMyLocationEnabled = true
         val myLocationStyle = MyLocationStyle()
         myLocationStyle.showMyLocation(true)
@@ -197,7 +203,10 @@ class NaviViewFactory(
      * 配置地图（适配 AMapNaviView）
      */
     fun configureMap(naviView: AMapNaviView) {
-        val aMap = naviView.map
+        val aMap = naviView.map ?: run {
+            Log.w(TAG, "⚠️ naviView.map is null in configureMap")
+            return
+        }
 
         // ======== 定位蓝点样式 ========
         val myLocationStyle = MyLocationStyle()
@@ -295,14 +304,19 @@ class NaviViewFactory(
             object : ViewTreeObserver.OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
                     if (naviView.width > 0 && naviView.height > 0) {
+                        val aMap = naviView.map
+                        if (aMap == null) {
+                            Log.w(TAG, "⚠️ naviView.map is null in OnGlobalLayoutListener，跳过布局修正")
+                            return
+                        }
                         val centerX = naviView.width / 2
                         val centerY = naviView.height / 2
                         mapComponents.cameraController.setViewSize(naviView.width, naviView.height)
-                        naviView.map.setPointToCenter(centerX, centerY)
+                        aMap.setPointToCenter(centerX, centerY)
 
                         if (!myLocationEnabled) {
                             myLocationEnabled = true
-                            naviView.map.isMyLocationEnabled = true
+                            aMap.isMyLocationEnabled = true
                             Log.d(TAG, "🔵 首次布局完成，中心已修正，启用定位蓝点")
                         }
 
