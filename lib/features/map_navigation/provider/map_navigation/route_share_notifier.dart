@@ -162,17 +162,21 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     ref.read(mapNavigationProvider.notifier).setOrigin(origin);
     ref.read(mapNavigationProvider.notifier).setDestination(dest);
 
-    // 如果有 routeId，监听 routes 变化后在算路完成后自动选中
-    if (targetRouteId >= 0) {
-      ref.listen(mapNavigationProvider.select((s) => s.routes), (previous, next) {
-        if (next.isNotEmpty) {
-          final index = next.indexWhere((r) => r.routeId == targetRouteId);
-          if (index >= 0) {
-            ref.read(mapNavigationProvider.notifier).selectRoute(index);
-          }
-        }
-      });
-    }
+    // 监听 routes 变化，算路完成后自动开始导航
+    ref.listen(mapNavigationProvider.select((s) => s.routes), (previous, next) {
+      if (next.isEmpty) return;
+
+      // 找到匹配的路线
+      final index = targetRouteId >= 0
+          ? next.indexWhere((r) => r.routeId == targetRouteId)
+          : 0;
+      if (index >= 0) {
+        ref.read(mapNavigationProvider.notifier).selectRoute(index);
+      }
+
+      // 直接开始导航，不显示预览路线 sheet
+      ref.read(mapNavigationProvider.notifier).startNavigation();
+    });
 
     ref.read(mapNavigationProvider.notifier).switchRouteType(routeType);
   }
