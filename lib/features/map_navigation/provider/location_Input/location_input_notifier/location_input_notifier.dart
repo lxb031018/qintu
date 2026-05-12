@@ -28,6 +28,17 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
   @override
   LocationInputState build() {
+    // 监听搜索结果并同步到 LocationInputState
+    ref.listen<LocationSearchState>(locationSearchProvider, (previous, next) {
+      state = state.copyWith(
+        list: state.list.copyWith(
+          searchResults: next.results,
+          isSearching: next.isSearching,
+          searchError: next.error,
+        ),
+      );
+    });
+
     return LocationInputState(
       callbacks: LocationInputCardCallbacks(
         onOriginTextChanged: (value) {
