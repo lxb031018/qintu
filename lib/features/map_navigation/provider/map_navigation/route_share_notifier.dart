@@ -50,8 +50,10 @@ class RouteShareState {
 class RouteShareNotifier extends Notifier<RouteShareState> {
   late final RouteShareService _service = ref.read(routeShareServiceProvider);
   Timer? _pollingTimer;
+  bool _isFetching = false;
 
   static const _pollingIntervalSeconds = 2;
+  static const _debounceMs = 500;
 
   @override
   RouteShareState build() {
@@ -113,10 +115,14 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     state = state.copyWith(isPolling: false);
   }
 
-  /// 执行一次获取
+  /// 执行一次获取（带防抖）
   Future<void> _fetchOnce() async {
+    if (_isFetching) return;
+    _isFetching = true;
+
     try {
       final newShares = await _service.getPendingShares();
+      await Future.delayed(const Duration(milliseconds: _debounceMs));
 
       if (newShares.isNotEmpty) {
         final existingIds = state.pendingShares.map((s) => s.id).toSet();
@@ -137,6 +143,8 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
       }
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
+    } finally {
+      _isFetching = false;
     }
   }
 

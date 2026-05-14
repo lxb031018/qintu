@@ -42,3 +42,4 @@ qintu/
 | docs/guides/API_CONTRACT.md | 接口规范 |
 | docs/guides/AMAP_GUIDE.md | 高德地图集成 |
 | docs/operations/DEPLOY_GUIDE.md | 部署指南 |
+| docs/features/map_navigation/ | 地图导航功能文档 |

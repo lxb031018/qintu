@@ -96,24 +96,24 @@ app.use(requestIdMiddleware);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// 全局 Rate Limiting
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { code: 'RATE_LIMITED', message: '请求过于频繁，请稍后再试' }
-});
-app.use(globalLimiter);
+// 全局 Rate Limiting - 本地开发环境禁用
+// const globalLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 200,
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   message: { code: 'RATE_LIMITED', message: '请求过于频繁，请稍后再试' }
+// });
+// app.use(globalLimiter);
 
-// 认证接口更严格的限流
-const authLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 10,
-  skipSuccessfulRequests: true,
-  message: { code: 'AUTH_RATE_LIMITED', message: '认证请求过于频繁，请 5 分钟后再试' }
-});
-app.use('/auth', authLimiter);
+// 认证接口更严格的限流 - 本地开发环境禁用
+// const authLimiter = rateLimit({
+//   windowMs: 5 * 60 * 1000,
+//   max: 10,
+//   skipSuccessfulRequests: true,
+//   message: { code: 'AUTH_RATE_LIMITED', message: '认证请求过于频繁，请 5 分钟后再试' }
+// });
+// app.use('/auth', authLimiter);
 
 // 身份认证中间件
 app.use(authMiddleware);
