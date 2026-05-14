@@ -2,10 +2,6 @@
 
 一款帮助不便使用传统导航软件的人群轻松使用导航功能的 Flutter 应用。
 
-[![Powered by CloudBase](https://7463-tcb-advanced-a656fc-1257967285.tcb.qcloud.la/mcp/powered-by-cloudbase-badge.svg)](https://github.com/TencentCloudBase/CloudBase-AI-ToolKit)
-
-> 本项目基于 [**CloudBase AI ToolKit**](https://github.com/TencentCloudBase/CloudBase-AI-ToolKit) 开发，通过AI提示词和 MCP 协议+云开发，让开发更智能、更高效，支持AI生成全栈代码、一键部署至腾讯云开发（免服务器）、智能日志修复。
-
 ## 功能特性
 
 - **路线规划**：支持驾车、步行、骑行、公交（Bus + 地铁）四种出行方式
