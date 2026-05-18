@@ -165,7 +165,8 @@ class BindingService {
         partner_phone: isSender ? binding.receiver_phone : binding.sender_phone,
         partner_type: isSender ? binding.receiver_type : binding.sender_type,
         sender_openid: binding.sender_openid,
-        receiver_openid: binding.receiver_openid
+        receiver_openid: binding.receiver_openid,
+        sender_nickname: binding.sender_nickname
       };
     });
 
