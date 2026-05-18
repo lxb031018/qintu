@@ -15,8 +15,8 @@ class BindingMemoryRepository {
    * 创建待确认绑定
    */
   async createPending({
-    senderOpenid,
-    receiverOpenid,
+    senderUserID,
+    receiverUserID,
     senderName,
     receiverName,
     senderPhone,
@@ -28,8 +28,8 @@ class BindingMemoryRepository {
 
     const binding = {
       id,
-      sender_user_ID: senderOpenid,
-      receiver_user_ID: receiverOpenid,
+      sender_user_ID: senderUserID,
+      receiver_user_ID: receiverUserID,
       sender_nickname: senderName || '发送者',
       receiver_nickname: receiverName || '接收者',
       sender_phone: senderPhone || null,

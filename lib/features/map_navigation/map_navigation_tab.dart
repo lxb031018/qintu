@@ -421,7 +421,7 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         }
 
         notifier.shareRoute(
-          binderOpenid: binderPoi.id,
+          binderUserID: binderPoi.id,
           origin: currentState.originPoi!,
           destination: currentState.destinationPoi!,
           routeType: currentState.currentRouteType!,

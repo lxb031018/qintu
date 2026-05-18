@@ -52,7 +52,7 @@ module.exports = {
 
   // 数据格式前缀 (方便统一管理)
   PREFIX: {
-    OPENID: 'oid_',
+    USERID: 'oid_',
     MOCK_CODE_VID: 'mock_vid_',
     TOKEN: 'mock_token_',
     V_TOKEN: 'mock_vtoken_',

@@ -15,12 +15,12 @@ class RouteShareController {
    */
   async sendRouteShare(req, res) {
     try {
-      const { receiverOpenid, origin, destination, routeType, routeId } = req.body;
-      const senderOpenid = req.user.user_ID;
+      const { receiverUserID, origin, destination, routeType, routeId } = req.body;
+      const senderUserID = req.user.user_ID;
 
       console.log('[RouteShare] ===== 收到路由分享请求 =====');
-      console.log('[RouteShare] 发送者user_ID:', senderOpenid);
-      console.log('[RouteShare] 接收者user_ID:', receiverOpenid);
+      console.log('[RouteShare] 发送者user_ID:', senderUserID);
+      console.log('[RouteShare] 接收者user_ID:', receiverUserID);
       console.log('[RouteShare] 起点:', JSON.stringify(origin));
       console.log('[RouteShare] 终点:', JSON.stringify(destination));
       console.log('[RouteShare] 出行方式:', routeType);
@@ -28,8 +28,8 @@ class RouteShareController {
       console.log('[RouteShare] ==============================');
 
       const result = await this._service.sendRouteShare({
-        senderOpenid,
-        receiverOpenid,
+        senderUserID,
+        receiverUserID,
         origin,
         destination,
         routeType,
@@ -56,8 +56,8 @@ class RouteShareController {
    */
   getPendingShares(req, res) {
     try {
-      const receiverOpenid = req.user.user_ID;
-      const shares = this._service.getPendingShares(receiverOpenid);
+      const receiverUserID = req.user.user_ID;
+      const shares = this._service.getPendingShares(receiverUserID);
 
       res.json({
         code: 0,
@@ -79,10 +79,10 @@ class RouteShareController {
    */
   markAsRead(req, res) {
     try {
-      const receiverOpenid = req.user.user_ID;
+      const receiverUserID = req.user.user_ID;
       const { shareId } = req.params;
 
-      const success = this._service.markAsRead(receiverOpenid, shareId);
+      const success = this._service.markAsRead(receiverUserID, shareId);
 
       res.json({
         code: 0,

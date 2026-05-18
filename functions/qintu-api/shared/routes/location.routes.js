@@ -21,7 +21,7 @@ function createLocationRoutes(locationService) {
   router.post('/update', (req, res) => locationController.updateLocation(req, res));
 
   // 查询位置
-  router.get('/:receiverOpenid', (req, res) => locationController.getLocation(req, res));
+  router.get('/:receiverUserID', (req, res) => locationController.getLocation(req, res));
 
   // 共享开关（兼容旧逻辑）
   router.post('/sharing/toggle', (req, res) => locationController.toggleSharing(req, res));

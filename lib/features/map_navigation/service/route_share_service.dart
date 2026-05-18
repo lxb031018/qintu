@@ -16,19 +16,19 @@ class RouteShareService {
 
   /// 发送路由分享
   ///
-  /// [binderOpenid] - 绑定者user_ID（接收者）
+  /// [binderUserID] - 绑定者user_ID（接收者）
   /// [origin] - 起点POI
   /// [destination] - 终点POI
   /// [routeType] - 出行方式
   /// [routeId] - 路线ID（用于多路线选择）
   Future<void> shareRoute({
-    required String binderOpenid,
+    required String binderUserID,
     required PoiSuggestion origin,
     required PoiSuggestion destination,
     required RouteType routeType,
     required int routeId,
   }) async {
-    if (binderOpenid.isEmpty) {
+    if (binderUserID.isEmpty) {
       throw Exception('请选择要分享的绑定者');
     }
 
@@ -48,7 +48,7 @@ class RouteShareService {
     }
 
     await _api.sendRouteShare(
-      receiverOpenid: binderOpenid,
+      receiverUserID: binderUserID,
       originLat: originLatLng.latitude,
       originLng: originLatLng.longitude,
       originName: origin.name,

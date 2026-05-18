@@ -51,7 +51,7 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
       final user_IDToNickname = <String, String>{};
       final user_IDs = <String>[];
       for (final binding in bindings) {
-        final user_ID = binding.partnerOpenid;
+        final user_ID = binding.partnerUserID;
         if (user_ID == null) continue;
         user_IDToNickname[user_ID] = binding.partnerNickname ?? '绑定者';
         user_IDs.add(user_ID);

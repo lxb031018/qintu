@@ -9,7 +9,7 @@
  * 记录操作日志
  *
  * @param {Object} options - 日志选项
- * @param {string} options.userOpenid - 操作用户的 user_ID
+ * @param {string} options.userUserID - 操作用户的 user_ID
  * @param {string} options.action - 操作类型（如：CREATE_BINDING, CONFIRM_BINDING 等）
  * @param {string} [options.targetType] - 目标类型（如：'binding', 'task', 'location'）
  * @param {string} [options.targetId] - 目标 ID
@@ -19,7 +19,7 @@
  */
 async function logOperation(options) {
   const {
-    userOpenid,
+    userUserID,
     action,
     targetType = null,
     targetId = null,
@@ -28,14 +28,14 @@ async function logOperation(options) {
     userAgent = null
   } = options;
 
-  if (!userOpenid || !action) {
-    console.error('[OperationLog] userOpenid 和 action 是必填参数');
+  if (!userUserID || !action) {
+    console.error('[OperationLog] userUserID 和 action 是必填参数');
     return;
   }
 
   // 内存版降级到 console.log
   console.log('[OperationLog]', JSON.stringify({
-    userOpenid,
+    userUserID,
     action,
     targetType,
     targetId,

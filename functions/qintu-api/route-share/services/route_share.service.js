@@ -13,15 +13,15 @@ class RouteShareService {
   /**
    * 发送路由分享
    * @param {Object} params
-   * @param {string} params.senderOpenid - 发送者user_ID
-   * @param {string} params.receiverOpenid - 接收者user_ID
+   * @param {string} params.senderUserID - 发送者user_ID
+   * @param {string} params.receiverUserID - 接收者user_ID
    * @param {Object} params.origin - 起点信息 { latitude, longitude, name, address }
    * @param {Object} params.destination - 终点信息 { latitude, longitude, name, address }
    * @param {string} params.routeType - 出行方式 (driving/walking/riding)
    */
-  async sendRouteShare({ senderOpenid, receiverOpenid, origin, destination, routeType, routeId }) {
+  async sendRouteShare({ senderUserID, receiverUserID, origin, destination, routeType, routeId }) {
     // 校验必填参数
-    if (!senderOpenid || !receiverOpenid) {
+    if (!senderUserID || !receiverUserID) {
       throw new Error('发送者和接收者user_ID不能为空');
     }
     if (!origin || !origin.latitude || !origin.longitude) {
@@ -35,9 +35,9 @@ class RouteShareService {
     }
 
     // 校验接收者是否是有效的绑定关系，并获取发送者昵称
-    const bindingsData = await this._bindingService.getMyBindings(senderOpenid);
+    const bindingsData = await this._bindingService.getMyBindings(senderUserID);
     const bindings = bindingsData.bindings || [];
-    const binding = bindings.find(b => b.partner_user_ID === receiverOpenid);
+    const binding = bindings.find(b => b.partner_user_ID === receiverUserID);
     if (!binding) {
       throw new Error('接收者不是有效的绑定对象');
     }
@@ -45,9 +45,9 @@ class RouteShareService {
 
     // 存储路由分享
     const share = {
-      senderOpenid,
+      senderUserID,
       senderNickname,
-      receiverOpenid,
+      receiverUserID,
       origin,
       destination,
       routeType,
@@ -55,26 +55,26 @@ class RouteShareService {
       status: 'pending'
     };
 
-    this._repo.addShare(receiverOpenid, share);
+    this._repo.addShare(receiverUserID, share);
 
     return { success: true, message: '路由分享已发送' };
   }
 
   /**
    * 获取待接收的路由分享
-   * @param {string} receiverOpenid - 接收者user_ID
+   * @param {string} receiverUserID - 接收者user_ID
    */
-  getPendingShares(receiverOpenid) {
-    return this._repo.getShares(receiverOpenid);
+  getPendingShares(receiverUserID) {
+    return this._repo.getShares(receiverUserID);
   }
 
   /**
    * 标记路由分享已处理
-   * @param {string} receiverOpenid - 接收者user_ID
+   * @param {string} receiverUserID - 接收者user_ID
    * @param {string} shareId - 分享ID
    */
-  markAsRead(receiverOpenid, shareId) {
-    return this._repo.removeShare(receiverOpenid, shareId);
+  markAsRead(receiverUserID, shareId) {
+    return this._repo.removeShare(receiverUserID, shareId);
   }
 }
 

@@ -15,7 +15,7 @@ class TaskController {
    */
   async createTask(req, res) {
     try {
-      const senderOpenid = req.user.user_ID;
+      const senderUserID = req.user.user_ID;
       const {
         receiver_user_ID,
         start_name,
@@ -42,7 +42,7 @@ class TaskController {
         return validationError(res, 'route_data 是必需参数（高德地图路线数据）');
       }
 
-      const result = await this.taskService.createTask(senderOpenid, {
+      const result = await this.taskService.createTask(senderUserID, {
         receiver_user_ID,
         start_name,
         start_latitude,

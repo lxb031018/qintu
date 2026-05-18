@@ -16,8 +16,8 @@ class UserService {
    * @param {string} user_ID
    * @returns {Object|null}
    */
-  async getUserByOpenid(user_ID) {
-    return this.userRepo.findByOpenid(user_ID);
+  async getUserByUserID(user_ID) {
+    return this.userRepo.findByUserID(user_ID);
   }
 
   /**
@@ -28,7 +28,7 @@ class UserService {
    */
   async upsertUser(user_ID, userData) {
     await this.userRepo.upsert(user_ID, userData);
-    return this.userRepo.findByOpenid(user_ID);
+    return this.userRepo.findByUserID(user_ID);
   }
 
   /**

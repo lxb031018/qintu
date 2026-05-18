@@ -658,7 +658,7 @@ X-User-OpenID: <receiver_user_ID>
 
 #### 4.2 查询位置
 
-**接口**：`GET /api/locations/:receiverOpenid`
+**接口**：`GET /api/locations/:receiverUserID`
 
 **说明**：发送者查看接收者实时位置
 

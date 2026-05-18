@@ -41,18 +41,18 @@ class LocationController {
 
   /**
    * 查询位置
-   * GET /api/locations/:receiverOpenid
+   * GET /api/locations/:receiverUserID
    */
   async getLocation(req, res) {
     try {
-      const senderOpenid = req.user.user_ID;
-      const receiverOpenid = req.params.receiverOpenid;
+      const senderUserID = req.user.user_ID;
+      const receiverUserID = req.params.receiverUserID;
 
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[Locations] 查询位置: sender=${senderOpenid}, receiver=${receiverOpenid}`);
+        console.log(`[Locations] 查询位置: sender=${senderUserID}, receiver=${receiverUserID}`);
       }
 
-      const result = await this.locationService.getLocation(senderOpenid, receiverOpenid);
+      const result = await this.locationService.getLocation(senderUserID, receiverUserID);
 
       return success(res, result);
     } catch (err) {

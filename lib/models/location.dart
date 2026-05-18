@@ -7,7 +7,7 @@ part 'location.g.dart';
 class Location {
   /// 接收者 user_ID
   @JsonKey(name: 'receiver_user_ID')
-  final String receiverOpenid;
+  final String receiverUserID;
   
   /// 当前导航任务 ID
   @JsonKey(name: 'task_id')
@@ -64,7 +64,7 @@ class Location {
   final int? distanceToDestination;
 
   const Location({
-    required this.receiverOpenid,
+    required this.receiverUserID,
     this.taskId,
     required this.latitude,
     required this.longitude,

@@ -127,7 +127,7 @@ endpoint: '/api/tasks/my?status=$status&page=$page&page_size=$pageSize'
 | 功能 | 前端方法 | 后端路由 | 状态 |
 |------|---------|---------|------|
 | 上传位置 | `uploadLocation()` | `POST /api/locations/update` | ✅ 已对齐 |
-| 获取位置 | `getReceiverLocation()` | `GET /api/locations/:receiverOpenid` | ✅ 已对齐 |
+| 获取位置 | `getReceiverLocation()` | `GET /api/locations/:receiverUserID` | ✅ 已对齐 |
 | 切换共享 | `toggleLocationSharing()` | `POST /api/locations/sharing/toggle` | ✅ 已对齐 |
 
 ---

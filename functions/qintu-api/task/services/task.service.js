@@ -17,11 +17,11 @@ class TaskService {
 
   /**
    * 创建导航任务
-   * @param {string} senderOpenid - 发送者 user_ID
+   * @param {string} senderUserID - 发送者 user_ID
    * @param {Object} taskData
    * @returns {Object}
    */
-  async createTask(senderOpenid, taskData) {
+  async createTask(senderUserID, taskData) {
     const {
       receiver_user_ID,
       start_name,
@@ -40,7 +40,7 @@ class TaskService {
     } = taskData;
 
     // 验证绑定关系
-    const binding = await this.bindingRepo.findActiveBetween(senderOpenid, receiver_user_ID);
+    const binding = await this.bindingRepo.findActiveBetween(senderUserID, receiver_user_ID);
     if (!binding) {
       throw Object.assign(new Error('与该接收者没有绑定关系'), { code: 'NO_BINDING', status: 403 });
     }
@@ -60,7 +60,7 @@ class TaskService {
 
     const task = await this.taskRepo.create({
       task_id: taskId,
-      sender_user_ID: senderOpenid,
+      sender_user_ID: senderUserID,
       receiver_user_ID,
       status: 'waiting',
       start_name: start_name || null,

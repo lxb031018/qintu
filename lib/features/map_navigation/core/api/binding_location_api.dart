@@ -16,41 +16,41 @@ class BindingLocationApi {
 
   /// 获取绑定者的位置
   ///
-  /// [partnerOpenid] 绑定者的 user_ID
+  /// [partnerUserID] 绑定者的 user_ID
   /// 返回位置信息，如果未共享或无位置返回 null
-  Future<BindingLocationResult> getBinderLocation(String partnerOpenid) async {
+  Future<BindingLocationResult> getBinderLocation(String partnerUserID) async {
     try {
-      Logs.map.info('获取绑定者位置: $partnerOpenid');
+      Logs.map.info('获取绑定者位置: $partnerUserID');
 
       final response = await _apiClient.get<Map<String, dynamic>>(
-        '/api/locations/$partnerOpenid',
+        '/api/locations/$partnerUserID',
       );
 
       if (response.isSuccessful && response.data != null) {
         final data = response.data!['data'] as Map<String, dynamic>?;
         if (data != null) {
           return BindingLocationResult.success(
-            partnerOpenid,
+            partnerUserID,
             BindingLocation.fromJson(data),
           );
         }
       }
 
-      return BindingLocationResult.notSharing(partnerOpenid);
+      return BindingLocationResult.notSharing(partnerUserID);
     } catch (e) {
       Logs.map.warning('获取绑定者位置失败: $e');
-      return BindingLocationResult.error(partnerOpenid, e.toString());
+      return BindingLocationResult.error(partnerUserID, e.toString());
     }
   }
 
   /// 批量获取多个绑定者的位置
   Future<Map<String, BindingLocationResult>> getBinderLocations(
-    List<String> partnerOpenids,
+    List<String> partnerUserIDs,
   ) async {
     final results = <String, BindingLocationResult>{};
 
     // 并发请求所有绑定者位置
-    final futures = partnerOpenids.map((user_ID) async {
+    final futures = partnerUserIDs.map((user_ID) async {
       final result = await getBinderLocation(user_ID);
       return MapEntry(user_ID, result);
     });

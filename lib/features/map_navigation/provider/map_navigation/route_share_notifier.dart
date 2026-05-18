@@ -64,7 +64,7 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
   }
 
   Future<bool> shareRoute({
-    required String binderOpenid,
+    required String binderUserID,
     required PoiSuggestion origin,
     required PoiSuggestion destination,
     required RouteType routeType,
@@ -78,7 +78,7 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
 
     try {
       await _service.shareRoute(
-        binderOpenid: binderOpenid,
+        binderUserID: binderUserID,
         origin: origin,
         destination: destination,
         routeType: routeType,

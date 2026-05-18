@@ -23,13 +23,13 @@ class AuthService {
   /**
    * 从 accessToken 反推 user_ID
    */
-  _extractOpenidFromToken(accessToken) {
-    if (!accessToken || !accessToken.includes(config.PREFIX.OPENID)) {
+  _extractUserIDFromToken(accessToken) {
+    if (!accessToken || !accessToken.includes(config.PREFIX.USERID)) {
       return null;
     }
-    const parts = accessToken.split(config.PREFIX.OPENID);
+    const parts = accessToken.split(config.PREFIX.USERID);
     if (parts.length < 2) return null;
-    return config.PREFIX.OPENID + parts[1].split(/[\s"]/)[0];
+    return config.PREFIX.USERID + parts[1].split(/[\s"]/)[0];
   }
 
   /**
@@ -119,7 +119,7 @@ class AuthService {
     this.mockCodes.delete(verificationId);
 
     // 生成 user_ID
-    const user_ID = config.PREFIX.OPENID + crypto.createHash('md5').update(data.phone).digest('hex').substring(0, 16);
+    const user_ID = config.PREFIX.USERID + crypto.createHash('md5').update(data.phone).digest('hex').substring(0, 16);
 
     // 注册用户（存入电话本）
     await this.userRepo.registerByPhone(data.phone, user_ID);
@@ -222,11 +222,11 @@ class AuthService {
     let user_ID = 'unknown_user';
     let deviceId = null;
 
-    if (refreshToken && refreshToken.includes(config.PREFIX.OPENID)) {
-      const parts = refreshToken.split(config.PREFIX.OPENID);
+    if (refreshToken && refreshToken.includes(config.PREFIX.USERID)) {
+      const parts = refreshToken.split(config.PREFIX.USERID);
       if (parts.length > 1) {
         const user_IDPart = parts[1].split(/[\s"_]/)[0];
-        user_ID = config.PREFIX.OPENID + user_IDPart;
+        user_ID = config.PREFIX.USERID + user_IDPart;
         deviceId = parts[1].split(/[\s"_]/)[1] || null;
       }
     }

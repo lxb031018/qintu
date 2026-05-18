@@ -14,15 +14,15 @@ class BindingLocationService {
   BindingLocationService({BindingLocationApi? api}) : _api = api ?? BindingLocationApi();
 
   /// 获取单个绑定者的位置信息
-  Future<BindingLocationResult> getBinderLocation(String partnerOpenid) async {
-    return await _api.getBinderLocation(partnerOpenid);
+  Future<BindingLocationResult> getBinderLocation(String partnerUserID) async {
+    return await _api.getBinderLocation(partnerUserID);
   }
 
   /// 批量获取多个绑定者的位置信息
   Future<Map<String, BindingLocationResult>> getBinderLocations(
-    List<String> partnerOpenids,
+    List<String> partnerUserIDs,
   ) async {
-    return await _api.getBinderLocations(partnerOpenids);
+    return await _api.getBinderLocations(partnerUserIDs);
   }
 
   /// 将 API 返回的位置结果转换为前端使用的 BinderLocationData 列表

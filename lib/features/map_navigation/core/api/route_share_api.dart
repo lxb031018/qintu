@@ -15,7 +15,7 @@ class RouteShareApi {
 
   /// 发送路由分享
   ///
-  /// [receiverOpenid] - 接收者user_ID
+  /// [receiverUserID] - 接收者user_ID
   /// [originLat] - 起点纬度
   /// [originLng] - 起点经度
   /// [originName] - 起点名称
@@ -26,7 +26,7 @@ class RouteShareApi {
   /// [destAddress] - 终点地址
   /// [routeType] - 出行方式 (driving/walking/riding/transit)
   Future<void> sendRouteShare({
-    required String receiverOpenid,
+    required String receiverUserID,
     required double originLat,
     required double originLng,
     required String originName,
@@ -44,7 +44,7 @@ class RouteShareApi {
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.routeShareSend,
       data: {
-        'receiverOpenid': receiverOpenid,
+        'receiverUserID': receiverUserID,
         'origin': {
           'latitude': originLat,
           'longitude': originLng,
@@ -91,9 +91,9 @@ class RouteShareApi {
 /// 待接收的路由分享数据模型
 class PendingRouteShare {
   final String id;
-  final String senderOpenid;
+  final String senderUserID;
   final String? senderNickname;
-  final String receiverOpenid;
+  final String receiverUserID;
   final double originLat;
   final double originLng;
   final String originName;
@@ -108,9 +108,9 @@ class PendingRouteShare {
 
   PendingRouteShare({
     required this.id,
-    required this.senderOpenid,
+    required this.senderUserID,
     this.senderNickname,
-    required this.receiverOpenid,
+    required this.receiverUserID,
     required this.originLat,
     required this.originLng,
     required this.originName,
@@ -130,9 +130,9 @@ class PendingRouteShare {
 
     return PendingRouteShare(
       id: json['id']?.toString() ?? '',
-      senderOpenid: json['senderOpenid']?.toString() ?? '',
+      senderUserID: json['senderUserID']?.toString() ?? '',
       senderNickname: json['senderNickname']?.toString(),
-      receiverOpenid: json['receiverOpenid']?.toString() ?? '',
+      receiverUserID: json['receiverUserID']?.toString() ?? '',
       originLat: (origin['latitude'] as num?)?.toDouble() ?? 0,
       originLng: (origin['longitude'] as num?)?.toDouble() ?? 0,
       originName: origin['name']?.toString() ?? '',

@@ -21,7 +21,7 @@ class UserController {
         return error(res, '缺少用户身份', 'UNAUTHORIZED', 401);
       }
 
-      const user = await this.userService.getUserByOpenid(user_ID);
+      const user = await this.userService.getUserByUserID(user_ID);
 
       if (!user) {
         return notFound(res, '用户不存在');
@@ -86,7 +86,7 @@ class UserController {
     try {
       const user_ID = req.params.user_ID;
 
-      const user = await this.userService.getUserByOpenid(user_ID);
+      const user = await this.userService.getUserByUserID(user_ID);
 
       if (!user) {
         return notFound(res, '用户不存在');

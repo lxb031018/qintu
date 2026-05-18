@@ -31,7 +31,7 @@ class LocationService {
     // 调试模式：获取脱敏手机号用于日志
     let maskedPhone = null;
     if (process.env.NODE_ENV !== 'production') {
-      maskedPhone = await this.userRepo.findPhoneByOpenid(user_ID);
+      maskedPhone = await this.userRepo.findPhoneByUserID(user_ID);
     }
 
     await this.locationRepo.upsertLocation(user_ID, {
@@ -64,30 +64,30 @@ class LocationService {
 
   /**
    * 查询位置（发送者调用，查询接收者位置）
-   * @param {string} senderOpenid - 发送者 user_ID
-   * @param {string} receiverOpenid - 接收者 user_ID
+   * @param {string} senderUserID - 发送者 user_ID
+   * @param {string} receiverUserID - 接收者 user_ID
    * @returns {Object}
    */
-  async getLocation(senderOpenid, receiverOpenid) {
+  async getLocation(senderUserID, receiverUserID) {
     // 验证绑定关系（双向：发送者查接收者，接收者也可以查发送者）
-    const binding = await this.bindingRepo.findActiveBetween(senderOpenid, receiverOpenid);
+    const binding = await this.bindingRepo.findActiveBetween(senderUserID, receiverUserID);
 
     if (!binding) {
       throw Object.assign(new Error('与该用户没有绑定关系'), { code: 'NO_BINDING', status: 403 });
     }
 
     // 查询位置
-    const location = await this.locationRepo.getLocation(receiverOpenid);
+    const location = await this.locationRepo.getLocation(receiverUserID);
 
     if (!location) {
       throw Object.assign(new Error('该用户暂无位置信息'), { code: 'LOCATION_NOT_FOUND', status: 404 });
     }
 
     // 获取定位状态
-    const isLocationEnabled = this.locationRepo.isLocationEnabled(receiverOpenid);
+    const isLocationEnabled = this.locationRepo.isLocationEnabled(receiverUserID);
 
     return {
-      receiver_user_ID: receiverOpenid,
+      receiver_user_ID: receiverUserID,
       latitude: location.latitude,
       longitude: location.longitude,
       accuracy: location.accuracy,
@@ -121,7 +121,7 @@ class LocationService {
     this.locationRepo.setLocationStatus(user_ID, 'disabled');
 
     if (process.env.NODE_ENV !== 'production') {
-      const maskedPhone = await this.userRepo.findPhoneByOpenid(user_ID);
+      const maskedPhone = await this.userRepo.findPhoneByUserID(user_ID);
       console.log(`[Locations] 删除位置: ${maskedPhone || user_ID}, 定位状态: disabled`);
     }
 

@@ -17,7 +17,7 @@ class UserMemoryRepository {
    * @param {string} phone - 11位手机号
    * @returns {string|null}
    */
-  async findOpenidByPhone(phone) {
+  async findUserIDByPhone(phone) {
     return this.userPhoneMap.get(phone) || null;
   }
 
@@ -35,7 +35,7 @@ class UserMemoryRepository {
    * @param {string} user_ID
    * @returns {Object|null}
    */
-  async findByOpenid(user_ID) {
+  async findByUserID(user_ID) {
     return this.users.get(user_ID) || null;
   }
 
@@ -44,7 +44,7 @@ class UserMemoryRepository {
    * @param {string} user_ID
    * @returns {string|null} - 脱敏手机号或 null
    */
-  async findPhoneByOpenid(user_ID) {
+  async findPhoneByUserID(user_ID) {
     // 遍历 userPhoneMap 找到该 user_ID 对应的手机号
     for (const [phone, oid] of this.userPhoneMap.entries()) {
       if (oid === user_ID) {

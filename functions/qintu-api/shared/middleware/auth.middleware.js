@@ -10,17 +10,17 @@
 
 const config = require('../../config');
 
-function extractOpenid(req) {
+function extractUserID(req) {
   // 1. 优先读取标准 Header
-  const headerOpenid = req.headers['x-user-user_ID'];
-  if (headerOpenid) return headerOpenid;
+  const headerUserID = req.headers['x-user-user_ID'];
+  if (headerUserID) return headerUserID;
 
   // 2. 兼容模式：从 Mock Token 中提取 (格式: mock_access_oid_xxx_xxx 或 mock_token_oid_xxx_xxx)
   const authHeader = req.headers['authorization'];
-  if (authHeader && authHeader.includes(config.PREFIX.OPENID)) {
-    const parts = authHeader.split(config.PREFIX.OPENID);
+  if (authHeader && authHeader.includes(config.PREFIX.USERID)) {
+    const parts = authHeader.split(config.PREFIX.USERID);
     if (parts.length > 1) {
-      return config.PREFIX.OPENID + parts[1].split(/[\s"_]/)[0];
+      return config.PREFIX.USERID + parts[1].split(/[\s"_]/)[0];
     }
   }
 
@@ -32,7 +32,7 @@ function extractOpenid(req) {
  * 即使没有身份验证通过，也会向下执行，但在 req.user 中标记
  */
 function authMiddleware(req, res, next) {
-  const user_ID = extractOpenid(req);
+  const user_ID = extractUserID(req);
 
   if (user_ID) {
     req.user = { user_ID, isAuthenticated: true };
@@ -50,7 +50,7 @@ function authMiddleware(req, res, next) {
  */
 function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const user_ID = extractOpenid(req);
+  const user_ID = extractUserID(req);
 
   if (!user_ID) {
     return res.status(401).json({

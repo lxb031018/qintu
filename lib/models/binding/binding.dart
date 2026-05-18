@@ -44,7 +44,7 @@ class Binding {
 
   /// 对方 user_ID
   @JsonKey(name: 'partner_user_ID')
-  final String? partnerOpenid;
+  final String? partnerUserID;
 
   /// 对方昵称
   @JsonKey(name: 'partner_nickname')
@@ -60,7 +60,7 @@ class Binding {
 
   /// 发送者 user_ID（完整信息时包含）
   @JsonKey(name: 'sender_user_ID')
-  final String? senderOpenid;
+  final String? senderUserID;
 
   /// 发送者昵称（完整信息时包含）
   @JsonKey(name: 'sender_nickname')
@@ -72,7 +72,7 @@ class Binding {
 
   /// 接收者 user_ID（完整信息时包含）
   @JsonKey(name: 'receiver_user_ID')
-  final String? receiverOpenid;
+  final String? receiverUserID;
 
   /// 接收者昵称（完整信息时包含）
   @JsonKey(name: 'receiver_nickname')
@@ -100,14 +100,14 @@ class Binding {
     required this.status,
     this.remark,
     this.myRole,
-    this.partnerOpenid,
+    this.partnerUserID,
     this.partnerNickname,
     this.partnerPhone,
     this.partnerType,
-    this.senderOpenid,
+    this.senderUserID,
     this.senderNickname,
     this.senderPhone,
-    this.receiverOpenid,
+    this.receiverUserID,
     this.receiverNickname,
     this.receiverPhone,
     required this.createdAt,
