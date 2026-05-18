@@ -125,6 +125,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 right: AppSpacings.smd,
                 child: RouteReceiveCard(
                   share: next,
+                  senderNickname: next.senderNickname,
                   onNavigate: () {
                     Navigator.of(context).pop();
                     // 路线已在收到分享时自动选中，直接开始导航

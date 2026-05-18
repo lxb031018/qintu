@@ -92,6 +92,7 @@ class RouteShareApi {
 class PendingRouteShare {
   final String id;
   final String senderOpenid;
+  final String? senderNickname;
   final String receiverOpenid;
   final double originLat;
   final double originLng;
@@ -108,6 +109,7 @@ class PendingRouteShare {
   PendingRouteShare({
     required this.id,
     required this.senderOpenid,
+    this.senderNickname,
     required this.receiverOpenid,
     required this.originLat,
     required this.originLng,
@@ -129,6 +131,7 @@ class PendingRouteShare {
     return PendingRouteShare(
       id: json['id']?.toString() ?? '',
       senderOpenid: json['senderOpenid']?.toString() ?? '',
+      senderNickname: json['senderNickname']?.toString(),
       receiverOpenid: json['receiverOpenid']?.toString() ?? '',
       originLat: (origin['latitude'] as num?)?.toDouble() ?? 0,
       originLng: (origin['longitude'] as num?)?.toDouble() ?? 0,

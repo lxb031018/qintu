@@ -34,17 +34,19 @@ class RouteShareService {
       throw new Error('出行方式不正确');
     }
 
-    // 校验接收者是否是有效的绑定关系
+    // 校验接收者是否是有效的绑定关系，并获取发送者昵称
     const bindingsData = await this._bindingService.getMyBindings(senderOpenid);
     const bindings = bindingsData.bindings || [];
-    const isBinder = bindings.some(b => b.partner_openid === receiverOpenid);
-    if (!isBinder) {
+    const binding = bindings.find(b => b.partner_openid === receiverOpenid);
+    if (!binding) {
       throw new Error('接收者不是有效的绑定对象');
     }
+    const senderNickname = binding.sender_nickname || '好友';
 
     // 存储路由分享
     const share = {
       senderOpenid,
+      senderNickname,
       receiverOpenid,
       origin,
       destination,

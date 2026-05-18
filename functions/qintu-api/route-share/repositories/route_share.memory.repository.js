@@ -15,6 +15,8 @@ class RouteShareRepository {
    * 添加路由分享
    * @param {string} receiverOpenid - 接收者openid
    * @param {Object} share - 路由分享数据
+   * @param {string} share.senderOpenid - 发送者openid
+   * @param {string} share.senderNickname - 发送者昵称
    */
   addShare(receiverOpenid, share) {
     if (!this._shares.has(receiverOpenid)) {
