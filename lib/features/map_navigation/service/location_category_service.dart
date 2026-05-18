@@ -44,14 +44,14 @@ class HistoryLocationItem {
 
 /// 绑定者位置数据（由 provider 层从 relationship_binding 获取后传入）
 class BinderLocationData {
-  final String openid;
+  final String user_ID;
   final String nickname;
   final String? address;
   final double? lat;
   final double? lng;
 
   const BinderLocationData({
-    required this.openid,
+    required this.user_ID,
     required this.nickname,
     this.address,
     this.lat,
@@ -165,7 +165,7 @@ class LocationCategoryService {
   List<PoiSuggestion> getBinderLocations(List<BinderLocationData> binders) {
     return binders.where((b) => b.lat != null && b.lng != null).map((b) {
       return PoiSuggestion(
-        id: b.openid,
+        id: b.user_ID,
         name: b.nickname,
         district: '',
         address: b.address ?? 'GPS定位',

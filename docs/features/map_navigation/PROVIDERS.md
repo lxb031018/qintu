@@ -238,7 +238,7 @@ class RouteShareState {
 ```dart
 /// 分享路线
 Future<bool> shareRoute({
-  required String binderOpenid,        // 绑定者 openid
+  required String binderOpenid,        // 绑定者 user_ID
   required PoiSuggestion origin,       // 起点
   required PoiSuggestion destination,  // 终点
   required RouteType routeType,        // 出行方式

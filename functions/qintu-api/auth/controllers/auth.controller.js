@@ -52,7 +52,7 @@ class AuthController {
       return res.json({
         code: 0,
         access_token: result.access_token,
-        openid: result.openid,
+        user_ID: result.user_ID,
         verification_token: result.verification_token
       });
     } catch (err) {
@@ -80,7 +80,7 @@ class AuthController {
         code: 0,
         access_token: result.access_token,
         refresh_token: result.refresh_token,
-        openid: result.openid,
+        user_ID: result.user_ID,
         user_type: result.user_type
       });
     } catch (err) {
@@ -103,7 +103,7 @@ class AuthController {
         code: 0,
         access_token: result.access_token,
         refresh_token: result.refresh_token,
-        openid: result.openid,
+        user_ID: result.user_ID,
         user_type: result.user_type
       });
     } catch (err) {
@@ -119,13 +119,13 @@ class AuthController {
   async signout(req, res) {
     try {
       const { device_id } = req.body;
-      const openid = req.user && req.user.openid;
+      const user_ID = req.user && req.user.user_ID;
 
-      if (!openid) {
+      if (!user_ID) {
         return res.status(401).json({ code: 401, message: 'Unauthorized' });
       }
 
-      await this.authService.signout(openid, device_id);
+      await this.authService.signout(user_ID, device_id);
 
       return res.json({ code: 0, message: 'OK' });
     } catch (err) {
@@ -150,7 +150,7 @@ class AuthController {
         access_token: result.access_token,
         refresh_token: result.refresh_token,
         expires_in: result.expires_in,
-        openid: result.openid,
+        user_ID: result.user_ID,
         user_type: result.user_type,
         token_type: result.token_type
       });

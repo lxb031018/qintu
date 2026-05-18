@@ -27,7 +27,7 @@ function createUserRoutes(userService) {
   router.post('/sync', (req, res) => userController.syncUser(req, res));
 
   // 获取指定用户信息
-  router.get('/:openid', (req, res) => userController.getUser(req, res));
+  router.get('/:user_ID', (req, res) => userController.getUser(req, res));
 
   return router;
 }

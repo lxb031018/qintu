@@ -16,11 +16,11 @@ class LocationService {
 
   /**
    * 更新位置（接收者调用）
-   * @param {string} openid - 接收者 openid
+   * @param {string} user_ID - 接收者 user_ID
    * @param {Object} locationData
    * @returns {Object}
    */
-  async updateLocation(openid, locationData) {
+  async updateLocation(user_ID, locationData) {
     const { latitude, longitude, accuracy, speed, bearing, altitude } = locationData;
 
     // 坐标范围验证
@@ -31,10 +31,10 @@ class LocationService {
     // 调试模式：获取脱敏手机号用于日志
     let maskedPhone = null;
     if (process.env.NODE_ENV !== 'production') {
-      maskedPhone = await this.userRepo.findPhoneByOpenid(openid);
+      maskedPhone = await this.userRepo.findPhoneByOpenid(user_ID);
     }
 
-    await this.locationRepo.upsertLocation(openid, {
+    await this.locationRepo.upsertLocation(user_ID, {
       latitude,
       longitude,
       accuracy,
@@ -44,7 +44,7 @@ class LocationService {
     });
 
     // 更新定位状态为 enabled
-    this.locationRepo.setLocationStatus(openid, 'enabled');
+    this.locationRepo.setLocationStatus(user_ID, 'enabled');
 
     // 调试模式：输出详细日志
     if (process.env.NODE_ENV !== 'production') {
@@ -64,8 +64,8 @@ class LocationService {
 
   /**
    * 查询位置（发送者调用，查询接收者位置）
-   * @param {string} senderOpenid - 发送者 openid
-   * @param {string} receiverOpenid - 接收者 openid
+   * @param {string} senderOpenid - 发送者 user_ID
+   * @param {string} receiverOpenid - 接收者 user_ID
    * @returns {Object}
    */
   async getLocation(senderOpenid, receiverOpenid) {
@@ -87,7 +87,7 @@ class LocationService {
     const isLocationEnabled = this.locationRepo.isLocationEnabled(receiverOpenid);
 
     return {
-      receiver_openid: receiverOpenid,
+      receiver_user_ID: receiverOpenid,
       latitude: location.latitude,
       longitude: location.longitude,
       accuracy: location.accuracy,
@@ -112,17 +112,17 @@ class LocationService {
 
   /**
    * 删除用户位置（定位关闭时调用）
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async deleteLocation(openid) {
-    await this.locationRepo.deleteLocation(openid);
+  async deleteLocation(user_ID) {
+    await this.locationRepo.deleteLocation(user_ID);
     // 更新定位状态为 disabled
-    this.locationRepo.setLocationStatus(openid, 'disabled');
+    this.locationRepo.setLocationStatus(user_ID, 'disabled');
 
     if (process.env.NODE_ENV !== 'production') {
-      const maskedPhone = await this.userRepo.findPhoneByOpenid(openid);
-      console.log(`[Locations] 删除位置: ${maskedPhone || openid}, 定位状态: disabled`);
+      const maskedPhone = await this.userRepo.findPhoneByOpenid(user_ID);
+      console.log(`[Locations] 删除位置: ${maskedPhone || user_ID}, 定位状态: disabled`);
     }
 
     return { message: '位置已删除' };

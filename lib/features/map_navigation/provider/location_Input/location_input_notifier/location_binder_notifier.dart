@@ -48,17 +48,17 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
       final bindingService = BindingService();
       final bindings = await bindingService.getBindingsList();
 
-      final openidToNickname = <String, String>{};
-      final openids = <String>[];
+      final user_IDToNickname = <String, String>{};
+      final user_IDs = <String>[];
       for (final binding in bindings) {
-        final openid = binding.partnerOpenid;
-        if (openid == null) continue;
-        openidToNickname[openid] = binding.partnerNickname ?? '绑定者';
-        openids.add(openid);
+        final user_ID = binding.partnerOpenid;
+        if (user_ID == null) continue;
+        user_IDToNickname[user_ID] = binding.partnerNickname ?? '绑定者';
+        user_IDs.add(user_ID);
       }
 
-      final locationResults = await _bindingService.getBinderLocations(openids);
-      final binderDataList = _bindingService.convertToBinderDataList(openidToNickname, locationResults);
+      final locationResults = await _bindingService.getBinderLocations(user_IDs);
+      final binderDataList = _bindingService.convertToBinderDataList(user_IDToNickname, locationResults);
       final items = _categoryService.getBinderLocations(binderDataList);
 
       state = state.copyWith(

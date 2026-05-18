@@ -133,9 +133,9 @@ curl https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/h
 ```bash
 curl -X POST https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/api/users/register \
   -H "Content-Type: application/json" \
-  -H "X-User-OpenID: test_openid_123" \
+  -H "X-User-OpenID: test_user_ID_123" \
   -d '{
-    "openid": "test_openid_123",
+    "user_ID": "test_user_ID_123",
     "phone": "+86 13800138000",
     "user_type": "both"
   }'

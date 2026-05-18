@@ -86,7 +86,7 @@ class TaskMemoryRepository {
    * @returns {Array}
    */
   async findByFilters(filters, options = {}) {
-    const { status, sender_openid, receiver_openid } = filters;
+    const { status, sender_user_ID, receiver_user_ID } = filters;
     const { order, limit, offset } = options;
 
     let result = [];
@@ -95,8 +95,8 @@ class TaskMemoryRepository {
       let match = true;
 
       if (status && task.status !== status) match = false;
-      if (sender_openid && task.sender_openid !== sender_openid) match = false;
-      if (receiver_openid && task.receiver_openid !== receiver_openid) match = false;
+      if (sender_user_ID && task.sender_user_ID !== sender_user_ID) match = false;
+      if (receiver_user_ID && task.receiver_user_ID !== receiver_user_ID) match = false;
 
       if (match) {
         // 反序列化后再加入结果
@@ -129,15 +129,15 @@ class TaskMemoryRepository {
    * @returns {number}
    */
   async countByFilters(filters) {
-    const { status, sender_openid, receiver_openid } = filters;
+    const { status, sender_user_ID, receiver_user_ID } = filters;
 
     let count = 0;
     for (const task of this.tasks.values()) {
       let match = true;
 
       if (status && task.status !== status) match = false;
-      if (sender_openid && task.sender_openid !== sender_openid) match = false;
-      if (receiver_openid && task.receiver_openid !== receiver_openid) match = false;
+      if (sender_user_ID && task.sender_user_ID !== sender_user_ID) match = false;
+      if (receiver_user_ID && task.receiver_user_ID !== receiver_user_ID) match = false;
 
       if (match) count++;
     }
@@ -146,17 +146,17 @@ class TaskMemoryRepository {
 
   /**
    * 获取用户作为发送者或接收者的所有进行中任务
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Array}
    */
-  async findInProgressForUser(openid) {
+  async findInProgressForUser(user_ID) {
     const result = [];
     const inProgressStatuses = ['waiting', 'accepted', 'navigating'];
 
     for (const task of this.tasks.values()) {
       if (
         inProgressStatuses.includes(task.status) &&
-        (task.sender_openid === openid || task.receiver_openid === openid)
+        (task.sender_user_ID === user_ID || task.receiver_user_ID === user_ID)
       ) {
         result.push(task);
       }

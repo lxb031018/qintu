@@ -21,7 +21,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-    `openid` VARCHAR(64) NOT NULL COMMENT 'CloudBase Auth 用户唯一标识',
+    `user_ID` VARCHAR(64) NOT NULL COMMENT 'CloudBase Auth 用户唯一标识',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号（带国家码：+86 13800138000）',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '用户昵称',
     `user_type` ENUM('sender', 'receiver', 'both') NOT NULL DEFAULT 'both' 
@@ -33,7 +33,7 @@ CREATE TABLE `users` (
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
-    PRIMARY KEY (`openid`),
+    PRIMARY KEY (`user_ID`),
     UNIQUE KEY `uk_phone` (`phone`),
     KEY `idx_user_type` (`user_type`),
     KEY `idx_status` (`status`),
@@ -49,8 +49,8 @@ COMMENT='用户表 - 存储所有用户的基本信息和角色';
 DROP TABLE IF EXISTS `user_bindings`;
 CREATE TABLE `user_bindings` (
     `id` INT NOT NULL AUTO_INCREMENT COMMENT '绑定关系自增 ID',
-    `sender_openid` VARCHAR(64) NOT NULL COMMENT '发送者 openid（外键关联 users 表）',
-    `receiver_openid` VARCHAR(64) NOT NULL COMMENT '接收者 openid（外键关联 users 表）',
+    `sender_user_ID` VARCHAR(64) NOT NULL COMMENT '发送者 user_ID（外键关联 users 表）',
+    `receiver_user_ID` VARCHAR(64) NOT NULL COMMENT '接收者 user_ID（外键关联 users 表）',
     `bind_code` VARCHAR(8) DEFAULT NULL COMMENT '绑定码（已废弃，仅历史数据使用）',
     `status` ENUM('pending', 'active', 'expired', 'revoked') NOT NULL DEFAULT 'active'
         COMMENT '绑定状态：pending=待确认, active=生效中, expired=已过期, revoked=已撤销',
@@ -60,20 +60,20 @@ CREATE TABLE `user_bindings` (
     `expired_at` TIMESTAMP NULL DEFAULT NULL COMMENT '过期时间（可选）',
 
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_sender_receiver` (`sender_openid`, `receiver_openid`)
+    UNIQUE KEY `uk_sender_receiver` (`sender_user_ID`, `receiver_user_ID`)
         COMMENT '同一对发送者-接收者只能有一条绑定',
-    KEY `idx_receiver_openid` (`receiver_openid`)
+    KEY `idx_receiver_user_ID` (`receiver_user_ID`)
         COMMENT '用于查询某人被谁绑定为接收者',
-    KEY `idx_sender_openid` (`sender_openid`)
+    KEY `idx_sender_user_ID` (`sender_user_ID`)
         COMMENT '用于查询某人绑定了哪些接收者',
     KEY `idx_status` (`status`),
     KEY `idx_created_at` (`created_at`),
 
     -- 外键约束（可选，如果 CloudBase MySQL 支持）
-    CONSTRAINT `fk_binding_sender` FOREIGN KEY (`sender_openid`)
-        REFERENCES `users` (`openid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_binding_receiver` FOREIGN KEY (`receiver_openid`)
-        REFERENCES `users` (`openid`) ON DELETE CASCADE
+    CONSTRAINT `fk_binding_sender` FOREIGN KEY (`sender_user_ID`)
+        REFERENCES `users` (`user_ID`) ON DELETE CASCADE,
+    CONSTRAINT `fk_binding_receiver` FOREIGN KEY (`receiver_user_ID`)
+        REFERENCES `users` (`user_ID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='用户绑定关系表 - 建立发送者与接收者的配对关系';
 
@@ -84,8 +84,8 @@ COMMENT='用户绑定关系表 - 建立发送者与接收者的配对关系';
 DROP TABLE IF EXISTS `navigation_tasks`;
 CREATE TABLE `navigation_tasks` (
     `task_id` VARCHAR(64) NOT NULL COMMENT '导航任务 ID（UUID 或雪花算法生成）',
-    `sender_openid` VARCHAR(64) NOT NULL COMMENT '发送者 openid',
-    `receiver_openid` VARCHAR(64) NOT NULL COMMENT '接收者 openid',
+    `sender_user_ID` VARCHAR(64) NOT NULL COMMENT '发送者 user_ID',
+    `receiver_user_ID` VARCHAR(64) NOT NULL COMMENT '接收者 user_ID',
     
     -- 任务状态
     `status` ENUM('waiting', 'accepted', 'navigating', 'finished', 'cancelled', 'expired') 
@@ -127,18 +127,18 @@ CREATE TABLE `navigation_tasks` (
     `duration_seconds` INT DEFAULT NULL COMMENT '预计耗时（秒）',
     
     PRIMARY KEY (`task_id`),
-    KEY `idx_receiver_status` (`receiver_openid`, `status`) 
+    KEY `idx_receiver_status` (`receiver_user_ID`, `status`) 
         COMMENT '查询接收者的待处理/进行中任务',
-    KEY `idx_sender_status` (`sender_openid`, `status`) 
+    KEY `idx_sender_status` (`sender_user_ID`, `status`) 
         COMMENT '查询发送者发出的任务',
     KEY `idx_status` (`status`),
     KEY `idx_created_at` (`created_at`),
     
     -- 外键约束
-    CONSTRAINT `fk_task_sender` FOREIGN KEY (`sender_openid`) 
-        REFERENCES `users` (`openid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_task_receiver` FOREIGN KEY (`receiver_openid`) 
-        REFERENCES `users` (`openid`) ON DELETE CASCADE
+    CONSTRAINT `fk_task_sender` FOREIGN KEY (`sender_user_ID`) 
+        REFERENCES `users` (`user_ID`) ON DELETE CASCADE,
+    CONSTRAINT `fk_task_receiver` FOREIGN KEY (`receiver_user_ID`) 
+        REFERENCES `users` (`user_ID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
 COMMENT='导航任务表 - 存储发送者下发的导航指令和路线';
 
@@ -149,7 +149,7 @@ COMMENT='导航任务表 - 存储发送者下发的导航指令和路线';
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `real_time_locations`;
 CREATE TABLE `real_time_locations` (
-    `receiver_openid` VARCHAR(64) NOT NULL COMMENT '接收者 openid（主键）',
+    `receiver_user_ID` VARCHAR(64) NOT NULL COMMENT '接收者 user_ID（主键）',
     `task_id` VARCHAR(64) DEFAULT NULL COMMENT '当前导航任务 ID',
     
     -- 位置信息
@@ -170,14 +170,14 @@ CREATE TABLE `real_time_locations` (
     `is_sharing` TINYINT(1) NOT NULL DEFAULT 0 
         COMMENT '是否正在共享位置：0=否, 1=是',
     
-    PRIMARY KEY (`receiver_openid`),
+    PRIMARY KEY (`receiver_user_ID`),
     KEY `idx_task_id` (`task_id`),
     KEY `idx_updated_at` (`updated_at`),
     KEY `idx_is_sharing` (`is_sharing`),
     
     -- 外键约束
-    CONSTRAINT `fk_location_receiver` FOREIGN KEY (`receiver_openid`) 
-        REFERENCES `users` (`openid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_location_receiver` FOREIGN KEY (`receiver_user_ID`) 
+        REFERENCES `users` (`user_ID`) ON DELETE CASCADE,
     CONSTRAINT `fk_location_task` FOREIGN KEY (`task_id`) 
         REFERENCES `navigation_tasks` (`task_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
@@ -189,7 +189,7 @@ COMMENT='实时位置表 - 存储接收者导航时的实时位置（仅共享�
 DROP TABLE IF EXISTS `operation_logs`;
 CREATE TABLE `operation_logs` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志 ID',
-    `user_openid` VARCHAR(64) NOT NULL COMMENT '操作用户 openid',
+    `user_user_ID` VARCHAR(64) NOT NULL COMMENT '操作用户 user_ID',
     `action` VARCHAR(100) NOT NULL COMMENT '操作类型',
     `target_type` VARCHAR(50) DEFAULT NULL COMMENT '目标类型（binding/task等）',
     `target_id` VARCHAR(64) DEFAULT NULL COMMENT '目标 ID',
@@ -199,7 +199,7 @@ CREATE TABLE `operation_logs` (
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
     
     PRIMARY KEY (`id`),
-    KEY `idx_user_action` (`user_openid`, `action`),
+    KEY `idx_user_action` (`user_user_ID`, `action`),
     KEY `idx_target` (`target_type`, `target_id`),
     KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
@@ -215,17 +215,17 @@ SELECT
     b.bind_code,
     b.status,
     b.remark,
-    s.openid AS sender_openid,
+    s.user_ID AS sender_user_ID,
     s.nickname AS sender_nickname,
     s.phone AS sender_phone,
-    r.openid AS receiver_openid,
+    r.user_ID AS receiver_user_ID,
     r.nickname AS receiver_nickname,
     r.phone AS receiver_phone,
     b.created_at,
     b.updated_at
 FROM `user_bindings` b
-INNER JOIN `users` s ON b.sender_openid = s.openid
-INNER JOIN `users` r ON b.receiver_openid = r.openid
+INNER JOIN `users` s ON b.sender_user_ID = s.user_ID
+INNER JOIN `users` r ON b.receiver_user_ID = r.user_ID
 WHERE b.status = 'active'
 ORDER BY b.created_at DESC;
 
@@ -236,9 +236,9 @@ DROP VIEW IF EXISTS `v_pending_tasks`;
 CREATE VIEW `v_pending_tasks` AS
 SELECT 
     t.task_id,
-    t.sender_openid,
+    t.sender_user_ID,
     s.nickname AS sender_nickname,
-    t.receiver_openid,
+    t.receiver_user_ID,
     t.status,
     t.start_name,
     t.end_name,
@@ -250,7 +250,7 @@ SELECT
     t.created_at,
     TIMESTAMPDIFF(MINUTE, t.created_at, NOW()) AS minutes_waiting
 FROM `navigation_tasks` t
-INNER JOIN `users` s ON t.sender_openid = s.openid
+INNER JOIN `users` s ON t.sender_user_ID = s.user_ID
 WHERE t.status = 'waiting'
 ORDER BY t.created_at DESC;
 

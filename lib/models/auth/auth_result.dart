@@ -30,7 +30,7 @@ abstract class AuthResult with _$AuthResult {
       refreshToken: json['refresh_token'] ?? '',
       accessTokenExpiresIn: json['expires_in'] ?? 0,
       refreshTokenExpiresIn: 0, // CloudBase 不返回此字段，使用 0 表示需要使用默认值
-      uid: json['openid'] ?? json['sub'] ?? json['uid'] ?? '',
+      uid: json['user_ID'] ?? json['sub'] ?? json['uid'] ?? '',
       pendingCount: json['pending_count'] ?? 0,
     );
   }

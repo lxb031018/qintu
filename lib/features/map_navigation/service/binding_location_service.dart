@@ -27,21 +27,21 @@ class BindingLocationService {
 
   /// 将 API 返回的位置结果转换为前端使用的 BinderLocationData 列表
   ///
-  /// [openidToNickname] - openid 到昵称的映射
-  /// [locationResults] - openid 到位置结果的映射
+  /// [user_IDToNickname] - user_ID 到昵称的映射
+  /// [locationResults] - user_ID 到位置结果的映射
   /// 仅保留成功获取到位置的数据，失败或无位置的数据会被过滤
   List<BinderLocationData> convertToBinderDataList(
-    Map<String, String> openidToNickname,
+    Map<String, String> user_IDToNickname,
     Map<String, BindingLocationResult> locationResults,
   ) {
     final results = <BinderLocationData>[];
     for (final entry in locationResults.entries) {
-      final openid = entry.key;
+      final user_ID = entry.key;
       final result = entry.value;
-      final nickname = openidToNickname[openid] ?? '绑定者';
+      final nickname = user_IDToNickname[user_ID] ?? '绑定者';
       if (result.isSuccess && result.location != null) {
         results.add(BinderLocationData(
-          openid: openid,
+          user_ID: user_ID,
           nickname: nickname,
           address: result.location!.address,
           lat: result.location!.latitude,

@@ -15,13 +15,13 @@ class UserController {
    */
   async getMe(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
 
-      if (!openid) {
+      if (!user_ID) {
         return error(res, '缺少用户身份', 'UNAUTHORIZED', 401);
       }
 
-      const user = await this.userService.getUserByOpenid(openid);
+      const user = await this.userService.getUserByOpenid(user_ID);
 
       if (!user) {
         return notFound(res, '用户不存在');
@@ -40,14 +40,14 @@ class UserController {
    */
   async updateMe(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const userData = req.body;
 
-      if (!openid) {
+      if (!user_ID) {
         return error(res, '缺少用户身份', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.userService.upsertUser(openid, userData);
+      const result = await this.userService.upsertUser(user_ID, userData);
 
       return success(res, result);
     } catch (err) {
@@ -62,14 +62,14 @@ class UserController {
    */
   async syncUser(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const userData = req.body;
 
-      if (!openid) {
+      if (!user_ID) {
         return error(res, '缺少用户身份', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.userService.upsertUser(openid, userData);
+      const result = await this.userService.upsertUser(user_ID, userData);
 
       return success(res, result);
     } catch (err) {
@@ -80,13 +80,13 @@ class UserController {
 
   /**
    * 获取指定用户信息
-   * GET /api/users/:openid
+   * GET /api/users/:user_ID
    */
   async getUser(req, res) {
     try {
-      const openid = req.params.openid;
+      const user_ID = req.params.user_ID;
 
-      const user = await this.userService.getUserByOpenid(openid);
+      const user = await this.userService.getUserByOpenid(user_ID);
 
       if (!user) {
         return notFound(res, '用户不存在');

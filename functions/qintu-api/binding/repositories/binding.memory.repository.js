@@ -28,8 +28,8 @@ class BindingMemoryRepository {
 
     const binding = {
       id,
-      sender_openid: senderOpenid,
-      receiver_openid: receiverOpenid,
+      sender_user_ID: senderOpenid,
+      receiver_user_ID: receiverOpenid,
       sender_nickname: senderName || '发送者',
       receiver_nickname: receiverName || '接收者',
       sender_phone: senderPhone || null,
@@ -55,12 +55,12 @@ class BindingMemoryRepository {
   /**
    * 查找双方之间的 active 绑定
    */
-  async findActiveBetween(openidA, openidB) {
+  async findActiveBetween(user_IDA, user_IDB) {
     for (const binding of this.bindings.values()) {
       if (
         binding.status === 'active' &&
-        ((binding.sender_openid === openidA && binding.receiver_openid === openidB) ||
-         (binding.sender_openid === openidB && binding.receiver_openid === openidA))
+        ((binding.sender_user_ID === user_IDA && binding.receiver_user_ID === user_IDB) ||
+         (binding.sender_user_ID === user_IDB && binding.receiver_user_ID === user_IDA))
       ) {
         return binding;
       }
@@ -86,10 +86,10 @@ class BindingMemoryRepository {
   /**
    * 获取用户作为发送者的 active 绑定数量
    */
-  async countActiveAsSender(openid) {
+  async countActiveAsSender(user_ID) {
     let count = 0;
     for (const binding of this.bindings.values()) {
-      if (binding.sender_openid === openid && binding.status === 'active') {
+      if (binding.sender_user_ID === user_ID && binding.status === 'active') {
         count++;
       }
     }
@@ -99,11 +99,11 @@ class BindingMemoryRepository {
   /**
    * 获取用户作为接收者的 pending + active 绑定数量
    */
-  async countPendingAsReceiver(openid) {
+  async countPendingAsReceiver(user_ID) {
     let count = 0;
     for (const binding of this.bindings.values()) {
       if (
-        binding.receiver_openid === openid &&
+        binding.receiver_user_ID === user_ID &&
         (binding.status === 'active' || binding.status === 'pending')
       ) {
         count++;
@@ -115,12 +115,12 @@ class BindingMemoryRepository {
   /**
    * 获取用户作为发送者或接收者的所有 active 绑定
    */
-  async findAllActiveForUser(openid) {
+  async findAllActiveForUser(user_ID) {
     const result = [];
     for (const binding of this.bindings.values()) {
       if (
         binding.status === 'active' &&
-        (binding.sender_openid === openid || binding.receiver_openid === openid)
+        (binding.sender_user_ID === user_ID || binding.receiver_user_ID === user_ID)
       ) {
         result.push(binding);
       }
@@ -131,12 +131,12 @@ class BindingMemoryRepository {
   /**
    * 获取用户收到的所有 pending 绑定请求
    */
-  async findPendingForReceiver(openid) {
+  async findPendingForReceiver(user_ID) {
     const result = [];
     const now = new Date();
 
     for (const binding of this.bindings.values()) {
-      if (binding.receiver_openid === openid && binding.status === 'pending') {
+      if (binding.receiver_user_ID === user_ID && binding.status === 'pending') {
         // 检查是否过期
         const expiredAt = new Date(binding.expired_at);
         if (expiredAt < now) {
@@ -152,13 +152,13 @@ class BindingMemoryRepository {
   /**
    * 获取用户发出的所有绑定请求（包括各种状态）
    */
-  async findAllBySender(openid) {
+  async findAllBySender(user_ID) {
     const result = [];
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     for (const binding of this.bindings.values()) {
-      if (binding.sender_openid === openid) {
+      if (binding.sender_user_ID === user_ID) {
         const createdAt = new Date(binding.created_at);
         // 只返回7天内的
         if (createdAt >= sevenDaysAgo) {

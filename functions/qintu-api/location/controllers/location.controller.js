@@ -15,7 +15,7 @@ class LocationController {
    */
   async updateLocation(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const { latitude, longitude, accuracy, speed, bearing, altitude } = req.body;
 
       // 参数验证
@@ -23,7 +23,7 @@ class LocationController {
         return validationError(res, 'latitude 和 longitude 是必需参数');
       }
 
-      const result = await this.locationService.updateLocation(openid, {
+      const result = await this.locationService.updateLocation(user_ID, {
         latitude,
         longitude,
         accuracy,
@@ -45,7 +45,7 @@ class LocationController {
    */
   async getLocation(req, res) {
     try {
-      const senderOpenid = req.user.openid;
+      const senderOpenid = req.user.user_ID;
       const receiverOpenid = req.params.receiverOpenid;
 
       if (process.env.NODE_ENV !== 'production') {
@@ -87,8 +87,8 @@ class LocationController {
    */
   async deleteLocation(req, res) {
     try {
-      const openid = req.user.openid;
-      const result = await this.locationService.deleteLocation(openid);
+      const user_ID = req.user.user_ID;
+      const result = await this.locationService.deleteLocation(user_ID);
       return success(res, result);
     } catch (err) {
       console.error('删除位置失败:', err);

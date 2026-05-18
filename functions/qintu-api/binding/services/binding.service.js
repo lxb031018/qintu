@@ -40,7 +40,7 @@ class BindingService {
     const allUsers = await this.userRepo.findAll();
     let senderPhone = null;
     for (const user of allUsers) {
-      if (user.openid === senderOpenid) {
+      if (user.user_ID === senderOpenid) {
         senderPhone = user.phone;
         break;
       }
@@ -65,7 +65,7 @@ class BindingService {
 
     // 检查是否有 pending 请求
     const pendingForReceiver = await this.bindingRepo.findPendingForReceiver(receiverOpenid);
-    const hasPending = pendingForReceiver.some(b => b.sender_openid === senderOpenid);
+    const hasPending = pendingForReceiver.some(b => b.sender_user_ID === senderOpenid);
     if (hasPending) {
       throw Object.assign(new Error('已发送过绑定请求，请等待对方确认'), { code: 'PENDING_EXISTS', status: 409 });
     }
@@ -88,7 +88,7 @@ class BindingService {
       action: 'REQUEST_BINDING',
       targetType: 'binding',
       targetId: String(binding.id),
-      details: { receiver_openid: receiverOpenid, sender_name: senderName || '未命名发送者' },
+      details: { receiver_user_ID: receiverOpenid, sender_name: senderName || '未命名发送者' },
       ipAddress: extra.ipAddress
     }).catch(() => {});
 
@@ -101,7 +101,7 @@ class BindingService {
   async confirmRequest(requestId, receiverOpenid, extra = {}) {
     const binding = await this.bindingRepo.findById(requestId);
 
-    if (!binding || binding.receiver_openid !== receiverOpenid || binding.status !== 'pending') {
+    if (!binding || binding.receiver_user_ID !== receiverOpenid || binding.status !== 'pending') {
       throw Object.assign(new Error('请求不存在或状态异常'), { code: 'REQUEST_INVALID', status: 404 });
     }
 
@@ -112,7 +112,7 @@ class BindingService {
       action: 'CONFIRM_BINDING',
       targetType: 'binding',
       targetId: String(requestId),
-      details: { sender_openid: binding.sender_openid },
+      details: { sender_user_ID: binding.sender_user_ID },
       ipAddress: extra.ipAddress
     }).catch(() => {});
 
@@ -125,7 +125,7 @@ class BindingService {
   async rejectRequest(requestId, receiverOpenid, extra = {}) {
     const binding = await this.bindingRepo.findById(requestId);
 
-    if (!binding || binding.receiver_openid !== receiverOpenid || binding.status !== 'pending') {
+    if (!binding || binding.receiver_user_ID !== receiverOpenid || binding.status !== 'pending') {
       throw Object.assign(new Error('请求不存在'), { code: 'REQUEST_INVALID', status: 404 });
     }
 
@@ -138,7 +138,7 @@ class BindingService {
       action: 'REJECT_BINDING',
       targetType: 'binding',
       targetId: String(requestId),
-      details: { sender_openid: binding.sender_openid },
+      details: { sender_user_ID: binding.sender_user_ID },
       ipAddress: extra.ipAddress
     }).catch(() => {});
 
@@ -148,11 +148,11 @@ class BindingService {
   /**
    * 获取我的所有有效绑定
    */
-  async getMyBindings(openid) {
-    const bindings = await this.bindingRepo.findAllActiveForUser(openid);
+  async getMyBindings(user_ID) {
+    const bindings = await this.bindingRepo.findAllActiveForUser(user_ID);
 
     const result = bindings.map(binding => {
-      const isSender = binding.sender_openid === openid;
+      const isSender = binding.sender_user_ID === user_ID;
       return {
         id: binding.id,
         status: binding.status,
@@ -160,12 +160,12 @@ class BindingService {
         created_at: binding.created_at,
         updated_at: binding.updated_at,
         my_role: isSender ? 'sender' : 'receiver',
-        partner_openid: isSender ? binding.receiver_openid : binding.sender_openid,
+        partner_user_ID: isSender ? binding.receiver_user_ID : binding.sender_user_ID,
         partner_nickname: isSender ? binding.receiver_nickname : binding.sender_nickname,
         partner_phone: isSender ? binding.receiver_phone : binding.sender_phone,
         partner_type: isSender ? binding.receiver_type : binding.sender_type,
-        sender_openid: binding.sender_openid,
-        receiver_openid: binding.receiver_openid,
+        sender_user_ID: binding.sender_user_ID,
+        receiver_user_ID: binding.receiver_user_ID,
         sender_nickname: binding.sender_nickname
       };
     });
@@ -184,11 +184,11 @@ class BindingService {
   /**
    * 获取待确认的绑定请求（作为接收者）
    */
-  async getPendingRequests(openid) {
+  async getPendingRequests(user_ID) {
     // 先清理过期记录
     await this.bindingRepo.cleanupOldRecords();
 
-    const pending = await this.bindingRepo.findPendingForReceiver(openid);
+    const pending = await this.bindingRepo.findPendingForReceiver(user_ID);
 
     return pending.map(binding => ({
       id: binding.id,
@@ -204,11 +204,11 @@ class BindingService {
   /**
    * 获取我发出的绑定请求
    */
-  async getSentRequests(openid) {
+  async getSentRequests(user_ID) {
     // 先清理过期记录
     await this.bindingRepo.cleanupOldRecords();
 
-    const sent = await this.bindingRepo.findAllBySender(openid);
+    const sent = await this.bindingRepo.findAllBySender(user_ID);
 
     return sent.map(binding => ({
       id: binding.id,
@@ -226,14 +226,14 @@ class BindingService {
   /**
    * 解除绑定 / 取消请求
    */
-  async revoke(bindingId, openid, extra = {}) {
+  async revoke(bindingId, user_ID, extra = {}) {
     const binding = await this.bindingRepo.findById(bindingId);
 
     if (!binding) {
       throw Object.assign(new Error('绑定关系不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (binding.sender_openid !== openid && binding.receiver_openid !== openid) {
+    if (binding.sender_user_ID !== user_ID && binding.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此绑定关系'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -242,11 +242,11 @@ class BindingService {
       await this.bindingRepo.delete(bindingId);
 
       logOperation({
-        userOpenid: openid,
+        userOpenid: user_ID,
         action: 'CANCEL_BINDING_REQUEST',
         targetType: 'binding',
         targetId: String(bindingId),
-        details: { receiver_openid: binding.receiver_openid },
+        details: { receiver_user_ID: binding.receiver_user_ID },
         ipAddress: extra.ipAddress
       }).catch(() => {});
 
@@ -257,13 +257,13 @@ class BindingService {
     await this.bindingRepo.updateStatus(bindingId, 'revoked');
 
     logOperation({
-      userOpenid: openid,
+      userOpenid: user_ID,
       action: 'REVOKE_BINDING',
       targetType: 'binding',
       targetId: String(bindingId),
       details: {
-        role: binding.sender_openid === openid ? 'sender' : 'receiver',
-        partner_openid: binding.sender_openid === openid ? binding.receiver_openid : binding.sender_openid
+        role: binding.sender_user_ID === user_ID ? 'sender' : 'receiver',
+        partner_user_ID: binding.sender_user_ID === user_ID ? binding.receiver_user_ID : binding.sender_user_ID
       },
       ipAddress: extra.ipAddress
     }).catch(() => {});

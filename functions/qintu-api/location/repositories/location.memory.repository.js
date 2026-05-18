@@ -6,19 +6,19 @@
 
 class LocationMemoryRepository {
   constructor() {
-    // openid -> locationData
+    // user_ID -> locationData
     this.locations = new Map();
-    // openid -> 'enabled' | 'disabled'（定位开关状态）
+    // user_ID -> 'enabled' | 'disabled'（定位开关状态）
     this.locationStatusMap = new Map();
   }
 
   /**
    * 更新用户位置
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {Object} locationData
    * @returns {Object}
    */
-  async upsertLocation(openid, locationData) {
+  async upsertLocation(user_ID, locationData) {
     const data = {
       latitude: locationData.latitude,
       longitude: locationData.longitude,
@@ -28,45 +28,45 @@ class LocationMemoryRepository {
       altitude: locationData.altitude || null,
       updatedAt: new Date().toISOString()
     };
-    this.locations.set(openid, data);
+    this.locations.set(user_ID, data);
     return data;
   }
 
   /**
    * 获取用户位置
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object|null}
    */
-  async getLocation(openid) {
-    return this.locations.get(openid) || null;
+  async getLocation(user_ID) {
+    return this.locations.get(user_ID) || null;
   }
 
   /**
    * 删除用户位置
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {boolean}
    */
-  async deleteLocation(openid) {
-    this.locationStatusMap.delete(openid);
-    return this.locations.delete(openid);
+  async deleteLocation(user_ID) {
+    this.locationStatusMap.delete(user_ID);
+    return this.locations.delete(user_ID);
   }
 
   /**
    * 设置用户定位状态
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {string} status - 'enabled' | 'disabled'
    */
-  setLocationStatus(openid, status) {
-    this.locationStatusMap.set(openid, status);
+  setLocationStatus(user_ID, status) {
+    this.locationStatusMap.set(user_ID, status);
   }
 
   /**
    * 获取用户定位状态
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {boolean} - true: enabled, false: disabled/null
    */
-  isLocationEnabled(openid) {
-    return this.locationStatusMap.get(openid) === 'enabled';
+  isLocationEnabled(user_ID) {
+    return this.locationStatusMap.get(user_ID) === 'enabled';
   }
 
   /**

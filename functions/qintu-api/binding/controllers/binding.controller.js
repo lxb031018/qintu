@@ -15,8 +15,8 @@ class BindingController {
    */
   async getMyBindings(req, res) {
     try {
-      const openid = req.user.openid;
-      const result = await this.bindingService.getMyBindings(openid);
+      const user_ID = req.user.user_ID;
+      const result = await this.bindingService.getMyBindings(user_ID);
       return success(res, result);
     } catch (err) {
       console.error('获取绑定关系失败:', err);
@@ -30,13 +30,13 @@ class BindingController {
    */
   async getPending(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
 
-      if (openid === 'unknown_user') {
+      if (user_ID === 'unknown_user') {
         return success(res, []);
       }
 
-      const result = await this.bindingService.getPendingRequests(openid);
+      const result = await this.bindingService.getPendingRequests(user_ID);
       return success(res, result);
     } catch (err) {
       console.error('获取待确认请求失败:', err);
@@ -50,13 +50,13 @@ class BindingController {
    */
   async getSent(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
 
-      if (openid === 'unknown_user') {
+      if (user_ID === 'unknown_user') {
         return success(res, []);
       }
 
-      const result = await this.bindingService.getSentRequests(openid);
+      const result = await this.bindingService.getSentRequests(user_ID);
       return success(res, result);
     } catch (err) {
       console.error('获取已发出请求失败:', err);
@@ -70,19 +70,19 @@ class BindingController {
    */
   async requestByPhone(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const { receiver_phone, sender_name, receiver_name } = req.body;
 
       if (!receiver_phone) {
         return validationError(res, 'receiver_phone 是必填参数');
       }
 
-      if (!openid) {
+      if (!user_ID) {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
       const result = await this.bindingService.requestByPhone(
-        openid,
+        user_ID,
         receiver_phone,
         sender_name,
         receiver_name,
@@ -102,7 +102,7 @@ class BindingController {
    */
   async confirmRequest(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const { request_id } = req.body;
 
       if (!request_id) {
@@ -111,7 +111,7 @@ class BindingController {
 
       const result = await this.bindingService.confirmRequest(
         request_id,
-        openid,
+        user_ID,
         { ipAddress: req.ip }
       );
 
@@ -128,7 +128,7 @@ class BindingController {
    */
   async rejectRequest(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const { request_id } = req.body;
 
       if (!request_id) {
@@ -137,7 +137,7 @@ class BindingController {
 
       const result = await this.bindingService.rejectRequest(
         request_id,
-        openid,
+        user_ID,
         { ipAddress: req.ip }
       );
 
@@ -154,12 +154,12 @@ class BindingController {
    */
   async revoke(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const bindingId = req.params.id;
 
       const result = await this.bindingService.revoke(
         bindingId,
-        openid,
+        user_ID,
         { ipAddress: req.ip }
       );
 

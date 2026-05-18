@@ -6,14 +6,14 @@
 
 class UserMemoryRepository {
   constructor() {
-    // 手机号 -> openid 的映射
+    // 手机号 -> user_ID 的映射
     this.userPhoneMap = new Map();
-    // openid -> 用户信息
+    // user_ID -> 用户信息
     this.users = new Map();
   }
 
   /**
-   * 根据手机号查找 openid
+   * 根据手机号查找 user_ID
    * @param {string} phone - 11位手机号
    * @returns {string|null}
    */
@@ -22,32 +22,32 @@ class UserMemoryRepository {
   }
 
   /**
-   * 注册用户（手机号 -> openid 映射）
+   * 注册用户（手机号 -> user_ID 映射）
    * @param {string} phone - 11位手机号
-   * @param {string} openid - 用户 openid
+   * @param {string} user_ID - 用户 user_ID
    */
-  async registerByPhone(phone, openid) {
-    this.userPhoneMap.set(phone, openid);
+  async registerByPhone(phone, user_ID) {
+    this.userPhoneMap.set(phone, user_ID);
   }
 
   /**
-   * 根据 openid 查找用户
-   * @param {string} openid
+   * 根据 user_ID 查找用户
+   * @param {string} user_ID
    * @returns {Object|null}
    */
-  async findByOpenid(openid) {
-    return this.users.get(openid) || null;
+  async findByOpenid(user_ID) {
+    return this.users.get(user_ID) || null;
   }
 
   /**
-   * 根据 openid 反查手机号（用于日志脱敏显示）
-   * @param {string} openid
+   * 根据 user_ID 反查手机号（用于日志脱敏显示）
+   * @param {string} user_ID
    * @returns {string|null} - 脱敏手机号或 null
    */
-  async findPhoneByOpenid(openid) {
-    // 遍历 userPhoneMap 找到该 openid 对应的手机号
+  async findPhoneByOpenid(user_ID) {
+    // 遍历 userPhoneMap 找到该 user_ID 对应的手机号
     for (const [phone, oid] of this.userPhoneMap.entries()) {
-      if (oid === openid) {
+      if (oid === user_ID) {
         return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
       }
     }
@@ -56,12 +56,12 @@ class UserMemoryRepository {
 
   /**
    * 创建或更新用户
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {Object} userData
    */
-  async upsert(openid, userData) {
-    const existing = this.users.get(openid) || {};
-    this.users.set(openid, { ...existing, ...userData, openid });
+  async upsert(user_ID, userData) {
+    const existing = this.users.get(user_ID) || {};
+    this.users.set(user_ID, { ...existing, ...userData, user_ID });
   }
 
   /**

@@ -42,8 +42,8 @@ class Binding {
   @JsonKey(name: 'my_role')
   final MyRole? myRole;
 
-  /// 对方 openid
-  @JsonKey(name: 'partner_openid')
+  /// 对方 user_ID
+  @JsonKey(name: 'partner_user_ID')
   final String? partnerOpenid;
 
   /// 对方昵称
@@ -58,8 +58,8 @@ class Binding {
   @JsonKey(name: 'partner_type')
   final String? partnerType;
 
-  /// 发送者 openid（完整信息时包含）
-  @JsonKey(name: 'sender_openid')
+  /// 发送者 user_ID（完整信息时包含）
+  @JsonKey(name: 'sender_user_ID')
   final String? senderOpenid;
 
   /// 发送者昵称（完整信息时包含）
@@ -70,8 +70,8 @@ class Binding {
   @JsonKey(name: 'sender_phone')
   final String? senderPhone;
 
-  /// 接收者 openid（完整信息时包含）
-  @JsonKey(name: 'receiver_openid')
+  /// 接收者 user_ID（完整信息时包含）
+  @JsonKey(name: 'receiver_user_ID')
   final String? receiverOpenid;
 
   /// 接收者昵称（完整信息时包含）

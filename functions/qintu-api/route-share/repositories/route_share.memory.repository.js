@@ -13,9 +13,9 @@ class RouteShareRepository {
 
   /**
    * 添加路由分享
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    * @param {Object} share - 路由分享数据
-   * @param {string} share.senderOpenid - 发送者openid
+   * @param {string} share.senderOpenid - 发送者user_ID
    * @param {string} share.senderNickname - 发送者昵称
    */
   addShare(receiverOpenid, share) {
@@ -31,7 +31,7 @@ class RouteShareRepository {
 
   /**
    * 获取接收者的所有待处理路由分享
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    * @returns {RouteShareItem[]}
    */
   getShares(receiverOpenid) {
@@ -40,7 +40,7 @@ class RouteShareRepository {
 
   /**
    * 移除路由分享
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    * @param {string} shareId - 分享ID
    */
   removeShare(receiverOpenid, shareId) {
@@ -56,7 +56,7 @@ class RouteShareRepository {
 
   /**
    * 清除接收者的所有路由分享
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    */
   clearShares(receiverOpenid) {
     this._shares.delete(receiverOpenid);

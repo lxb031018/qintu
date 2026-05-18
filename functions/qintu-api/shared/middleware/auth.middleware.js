@@ -2,7 +2,7 @@
  * 统一身份认证中间件
  *
  * 职责：
- * 1. 从请求头 x-user-openid 获取身份。
+ * 1. 从请求头 x-user-user_ID 获取身份。
  * 2. 如果没有，则从 Authorization Token (mock_token_oid_xxx) 中智能提取。
  * 3. 将解析后的用户信息挂载到 req.user 上，供后续路由使用。
  * 4. 校验 Token 是否已被后登录的设备废弃（会话有效性检查）。
@@ -12,7 +12,7 @@ const config = require('../../config');
 
 function extractOpenid(req) {
   // 1. 优先读取标准 Header
-  const headerOpenid = req.headers['x-user-openid'];
+  const headerOpenid = req.headers['x-user-user_ID'];
   if (headerOpenid) return headerOpenid;
 
   // 2. 兼容模式：从 Mock Token 中提取 (格式: mock_access_oid_xxx_xxx 或 mock_token_oid_xxx_xxx)
@@ -32,12 +32,12 @@ function extractOpenid(req) {
  * 即使没有身份验证通过，也会向下执行，但在 req.user 中标记
  */
 function authMiddleware(req, res, next) {
-  const openid = extractOpenid(req);
+  const user_ID = extractOpenid(req);
 
-  if (openid) {
-    req.user = { openid, isAuthenticated: true };
+  if (user_ID) {
+    req.user = { user_ID, isAuthenticated: true };
   } else {
-    req.user = { openid: null, isAuthenticated: false };
+    req.user = { user_ID: null, isAuthenticated: false };
   }
 
   next();
@@ -50,9 +50,9 @@ function authMiddleware(req, res, next) {
  */
 function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const openid = extractOpenid(req);
+  const user_ID = extractOpenid(req);
 
-  if (!openid) {
+  if (!user_ID) {
     return res.status(401).json({
       code: 'UNAUTHORIZED',
       message: '缺少有效的用户身份信息'
@@ -63,7 +63,7 @@ function requireAuth(req, res, next) {
   const authService = global._authService;
   if (authService) {
     const accessToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null;
-    if (accessToken && !authService.isTokenValidForSession(openid, accessToken)) {
+    if (accessToken && !authService.isTokenValidForSession(user_ID, accessToken)) {
       return res.status(401).json({
         code: 'SESSION_REVOKED',
         message: '您的账号已在另一设备登录，请重新登录'
@@ -71,7 +71,7 @@ function requireAuth(req, res, next) {
     }
   }
 
-  req.user = { openid, isAuthenticated: true };
+  req.user = { user_ID, isAuthenticated: true };
   next();
 }
 

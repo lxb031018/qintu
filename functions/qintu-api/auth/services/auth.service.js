@@ -16,12 +16,12 @@ class AuthService {
     this.userRepo = userRepository;
     // 验证码存储：verification_id -> { code, phone, expiresAt }
     this.mockCodes = new Map();
-    // 会话存储：openid -> Map<deviceId, { accessToken, refreshToken, expiresAt }>
+    // 会话存储：user_ID -> Map<deviceId, { accessToken, refreshToken, expiresAt }>
     this.userSessions = new Map();
   }
 
   /**
-   * 从 accessToken 反推 openid
+   * 从 accessToken 反推 user_ID
    */
   _extractOpenidFromToken(accessToken) {
     if (!accessToken || !accessToken.includes(config.PREFIX.OPENID)) {
@@ -33,11 +33,11 @@ class AuthService {
   }
 
   /**
-   * 校验 accessToken 是否属于指定 openid 的有效会话
+   * 校验 accessToken 是否属于指定 user_ID 的有效会话
    */
-  isTokenValidForSession(openid, accessToken) {
-    if (!this.userSessions.has(openid)) return false;
-    const sessions = this.userSessions.get(openid);
+  isTokenValidForSession(user_ID, accessToken) {
+    if (!this.userSessions.has(user_ID)) return false;
+    const sessions = this.userSessions.get(user_ID);
     for (const session of sessions.values()) {
       if (session.accessToken === accessToken) {
         if (Date.now() < session.expiresAt) return true;
@@ -49,18 +49,18 @@ class AuthService {
   /**
    * 清除用户所有旧会话（同一手机号新设备登录时调用）
    */
-  _revokeAllSessionsForUser(openid) {
-    this.userSessions.delete(openid);
+  _revokeAllSessionsForUser(user_ID) {
+    this.userSessions.delete(user_ID);
   }
 
   /**
    * 注册或更新会话（绑定 deviceId -> Token 映射）
    */
-  _upsertSession(openid, deviceId, accessToken, refreshToken) {
-    if (!this.userSessions.has(openid)) {
-      this.userSessions.set(openid, new Map());
+  _upsertSession(user_ID, deviceId, accessToken, refreshToken) {
+    if (!this.userSessions.has(user_ID)) {
+      this.userSessions.set(user_ID, new Map());
     }
-    const sessions = this.userSessions.get(openid);
+    const sessions = this.userSessions.get(user_ID);
     sessions.set(deviceId, {
       accessToken,
       refreshToken,
@@ -97,7 +97,7 @@ class AuthService {
    * 验证验证码
    * @param {string} verificationId
    * @param {string} verificationCode
-   * @returns {Object} - { openid, access_token, refresh_token, verification_token }
+   * @returns {Object} - { user_ID, access_token, refresh_token, verification_token }
    */
   async verifyCode(verificationId, verificationCode) {
     const data = this.mockCodes.get(verificationId);
@@ -118,19 +118,19 @@ class AuthService {
     // 验证成功，删除验证码
     this.mockCodes.delete(verificationId);
 
-    // 生成 openid
-    const openid = config.PREFIX.OPENID + crypto.createHash('md5').update(data.phone).digest('hex').substring(0, 16);
+    // 生成 user_ID
+    const user_ID = config.PREFIX.OPENID + crypto.createHash('md5').update(data.phone).digest('hex').substring(0, 16);
 
     // 注册用户（存入电话本）
-    await this.userRepo.registerByPhone(data.phone, openid);
+    await this.userRepo.registerByPhone(data.phone, user_ID);
 
     // 生成 token
-    const accessToken = config.PREFIX.ACCESS_TOKEN + openid;
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + openid;
-    const verificationToken = config.PREFIX.V_TOKEN + openid;
+    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID;
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID;
+    const verificationToken = config.PREFIX.V_TOKEN + user_ID;
 
     return {
-      openid,
+      user_ID,
       access_token: accessToken,
       refresh_token: refreshToken,
       verification_token: verificationToken
@@ -141,27 +141,27 @@ class AuthService {
    * 登录（通过 verification_token）
    * @param {string} verificationToken
    * @param {string} deviceId - 设备唯一标识，用于多设备互斥
-   * @returns {Object} - { openid, access_token, refresh_token, user_type }
+   * @returns {Object} - { user_ID, access_token, refresh_token, user_type }
    */
   async signin(verificationToken, deviceId) {
-    const openid = verificationToken
+    const user_ID = verificationToken
       ? verificationToken.replace(config.PREFIX.V_TOKEN, '')
       : 'mock_user';
 
     // 新设备登录时，废弃旧会话，实现互斥登录
     if (deviceId) {
-      this._revokeAllSessionsForUser(openid);
+      this._revokeAllSessionsForUser(user_ID);
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + openid + '_' + (deviceId || 'default');
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + openid + '_' + (deviceId || 'default');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + '_' + (deviceId || 'default');
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID + '_' + (deviceId || 'default');
 
     if (deviceId) {
-      this._upsertSession(openid, deviceId, accessToken, refreshToken);
+      this._upsertSession(user_ID, deviceId, accessToken, refreshToken);
     }
 
     return {
-      openid,
+      user_ID,
       access_token: accessToken,
       refresh_token: refreshToken,
       user_type: 'sender'
@@ -176,23 +176,23 @@ class AuthService {
    * @returns {Object}
    */
   async signup(verificationToken, phoneNumber, deviceId) {
-    const openid = verificationToken
+    const user_ID = verificationToken
       ? verificationToken.replace(config.PREFIX.V_TOKEN, '')
       : 'mock_user';
 
     if (deviceId) {
-      this._revokeAllSessionsForUser(openid);
+      this._revokeAllSessionsForUser(user_ID);
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + openid + '_' + (deviceId || 'default');
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + openid + '_' + (deviceId || 'default');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + '_' + (deviceId || 'default');
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID + '_' + (deviceId || 'default');
 
     if (deviceId) {
-      this._upsertSession(openid, deviceId, accessToken, refreshToken);
+      this._upsertSession(user_ID, deviceId, accessToken, refreshToken);
     }
 
     return {
-      openid,
+      user_ID,
       access_token: accessToken,
       refresh_token: refreshToken,
       user_type: 'sender'
@@ -201,15 +201,15 @@ class AuthService {
 
   /**
    * 登出
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {string} deviceId
    */
-  async signout(openid, deviceId) {
-    if (!this.userSessions.has(openid)) return;
-    const sessions = this.userSessions.get(openid);
+  async signout(user_ID, deviceId) {
+    if (!this.userSessions.has(user_ID)) return;
+    const sessions = this.userSessions.get(user_ID);
     sessions.delete(deviceId);
     if (sessions.size === 0) {
-      this.userSessions.delete(openid);
+      this.userSessions.delete(user_ID);
     }
   }
 
@@ -219,27 +219,27 @@ class AuthService {
    * @returns {Object}
    */
   async refreshToken(refreshToken) {
-    let openid = 'unknown_user';
+    let user_ID = 'unknown_user';
     let deviceId = null;
 
     if (refreshToken && refreshToken.includes(config.PREFIX.OPENID)) {
       const parts = refreshToken.split(config.PREFIX.OPENID);
       if (parts.length > 1) {
-        const openidPart = parts[1].split(/[\s"_]/)[0];
-        openid = config.PREFIX.OPENID + openidPart;
+        const user_IDPart = parts[1].split(/[\s"_]/)[0];
+        user_ID = config.PREFIX.OPENID + user_IDPart;
         deviceId = parts[1].split(/[\s"_]/)[1] || null;
       }
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + openid + (deviceId ? '_' + deviceId : '');
-    const refreshTokenNew = config.PREFIX.REFRESH_TOKEN + openid + (deviceId ? '_' + deviceId : '');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + (deviceId ? '_' + deviceId : '');
+    const refreshTokenNew = config.PREFIX.REFRESH_TOKEN + user_ID + (deviceId ? '_' + deviceId : '');
 
-    if (openid && deviceId) {
-      this._upsertSession(openid, deviceId, accessToken, refreshTokenNew);
+    if (user_ID && deviceId) {
+      this._upsertSession(user_ID, deviceId, accessToken, refreshTokenNew);
     }
 
     return {
-      openid,
+      user_ID,
       access_token: accessToken,
       refresh_token: refreshTokenNew,
       expires_in: config.AUTH.TOKEN_EXPIRES_S,

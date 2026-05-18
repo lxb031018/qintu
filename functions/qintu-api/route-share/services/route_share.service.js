@@ -13,8 +13,8 @@ class RouteShareService {
   /**
    * 发送路由分享
    * @param {Object} params
-   * @param {string} params.senderOpenid - 发送者openid
-   * @param {string} params.receiverOpenid - 接收者openid
+   * @param {string} params.senderOpenid - 发送者user_ID
+   * @param {string} params.receiverOpenid - 接收者user_ID
    * @param {Object} params.origin - 起点信息 { latitude, longitude, name, address }
    * @param {Object} params.destination - 终点信息 { latitude, longitude, name, address }
    * @param {string} params.routeType - 出行方式 (driving/walking/riding)
@@ -22,7 +22,7 @@ class RouteShareService {
   async sendRouteShare({ senderOpenid, receiverOpenid, origin, destination, routeType, routeId }) {
     // 校验必填参数
     if (!senderOpenid || !receiverOpenid) {
-      throw new Error('发送者和接收者openid不能为空');
+      throw new Error('发送者和接收者user_ID不能为空');
     }
     if (!origin || !origin.latitude || !origin.longitude) {
       throw new Error('起点坐标不能为空');
@@ -37,7 +37,7 @@ class RouteShareService {
     // 校验接收者是否是有效的绑定关系，并获取发送者昵称
     const bindingsData = await this._bindingService.getMyBindings(senderOpenid);
     const bindings = bindingsData.bindings || [];
-    const binding = bindings.find(b => b.partner_openid === receiverOpenid);
+    const binding = bindings.find(b => b.partner_user_ID === receiverOpenid);
     if (!binding) {
       throw new Error('接收者不是有效的绑定对象');
     }
@@ -62,7 +62,7 @@ class RouteShareService {
 
   /**
    * 获取待接收的路由分享
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    */
   getPendingShares(receiverOpenid) {
     return this._repo.getShares(receiverOpenid);
@@ -70,7 +70,7 @@ class RouteShareService {
 
   /**
    * 标记路由分享已处理
-   * @param {string} receiverOpenid - 接收者openid
+   * @param {string} receiverOpenid - 接收者user_ID
    * @param {string} shareId - 分享ID
    */
   markAsRead(receiverOpenid, shareId) {

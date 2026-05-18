@@ -8,7 +8,7 @@
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
-| `users` | 用户信息 | openid（主键）、手机号、角色类型 |
+| `users` | 用户信息 | user_ID（主键）、手机号、角色类型 |
 | `user_bindings` | 绑定关系 | 发送者-接收者配对、绑定状态 |
 | `navigation_tasks` | 导航任务 | 路线数据、任务状态、高德路线 JSON |
 | `real_time_locations` | 实时位置 | 接收者当前位置、共享状态 |
@@ -116,7 +116,7 @@ SHOW FULL TABLES WHERE Table_type = 'VIEW';
 **用途**：存储所有登录用户的基本信息和角色
 
 **关键字段**：
-- `openid`：CloudBase Auth 返回的用户唯一标识（主键）
+- `user_ID`：CloudBase Auth 返回的用户唯一标识（主键）
 - `phone`：手机号（带国家码，如 `+86 13800138000`）
 - `user_type`：角色类型
   - `sender`：只能作为发送者
@@ -125,8 +125,8 @@ SHOW FULL TABLES WHERE Table_type = 'VIEW';
 
 **示例数据**：
 ```sql
-INSERT INTO users (openid, phone, nickname, user_type) VALUES (
-    'openid_from_cloudbase_auth',
+INSERT INTO users (user_ID, phone, nickname, user_type) VALUES (
+    'user_ID_from_cloudbase_auth',
     '+86 13800138000',
     '张三',
     'both'
@@ -145,8 +145,8 @@ INSERT INTO users (openid, phone, nickname, user_type) VALUES (
 - 支持一个发送者绑定多个接收者，反之亦然
 
 **关键字段**：
-- `sender_openid`：发送者的 openid
-- `receiver_openid`：接收者的 openid
+- `sender_user_ID`：发送者的 user_ID
+- `receiver_user_ID`：接收者的 user_ID
 - `bind_code`：绑定码字段（已废弃，可为空，向后兼容）
 - `status`：绑定状态
   - `pending`：待确认（发送者已发请求，接收者未确认）
@@ -158,9 +158,9 @@ INSERT INTO users (openid, phone, nickname, user_type) VALUES (
 **示例数据**：
 ```sql
 -- 子女（发送者）绑定父母（接收者）
-INSERT INTO user_bindings (sender_openid, receiver_openid, status, remark) VALUES (
-    'openid_child',
-    'openid_parent',
+INSERT INTO user_bindings (sender_user_ID, receiver_user_ID, status, remark) VALUES (
+    'user_ID_child',
+    'user_ID_parent',
     'active',
     '给父亲的绑定关系'
 );
@@ -200,8 +200,8 @@ INSERT INTO user_bindings (sender_openid, receiver_openid, status, remark) VALUE
 ```sql
 INSERT INTO navigation_tasks (
     task_id,
-    sender_openid,
-    receiver_openid,
+    sender_user_ID,
+    receiver_user_ID,
     status,
     start_name,
     end_name,
@@ -215,8 +215,8 @@ INSERT INTO navigation_tasks (
     duration_seconds
 ) VALUES (
     'task_uuid_here',
-    'openid_sender',
-    'openid_receiver',
+    'user_ID_sender',
+    'user_ID_receiver',
     'waiting',
     '当前位置',
     '北京站',
@@ -243,7 +243,7 @@ INSERT INTO navigation_tasks (
 - 支持位置共享开关
 
 **关键字段**：
-- `receiver_openid`：接收者 openid（主键）
+- `receiver_user_ID`：接收者 user_ID（主键）
 - `is_navigating`：是否正在导航
 - `is_sharing`：是否正在共享位置
 - `updated_at`：最后更新时间
@@ -251,7 +251,7 @@ INSERT INTO navigation_tasks (
 **示例数据**：
 ```sql
 INSERT INTO real_time_locations (
-    receiver_openid,
+    receiver_user_ID,
     task_id,
     latitude,
     longitude,
@@ -260,7 +260,7 @@ INSERT INTO real_time_locations (
     is_navigating,
     is_sharing
 ) VALUES (
-    'openid_receiver',
+    'user_ID_receiver',
     'task_uuid',
     39.9080,
     116.3970,
@@ -285,21 +285,21 @@ INSERT INTO real_time_locations (
 ### 查询某用户的所有绑定关系
 ```sql
 SELECT * FROM v_active_bindings 
-WHERE sender_openid = 'openid_here' 
-   OR receiver_openid = 'openid_here';
+WHERE sender_user_ID = 'user_ID_here' 
+   OR receiver_user_ID = 'user_ID_here';
 ```
 
 ### 查询接收者待处理的导航任务
 ```sql
 SELECT * FROM v_pending_tasks 
-WHERE receiver_openid = 'openid_here';
+WHERE receiver_user_ID = 'user_ID_here';
 ```
 
 ### 查询某发送者发出的所有任务
 ```sql
 SELECT task_id, status, end_name, created_at 
 FROM navigation_tasks 
-WHERE sender_openid = 'openid_here' 
+WHERE sender_user_ID = 'user_ID_here' 
 ORDER BY created_at DESC;
 ```
 
@@ -307,7 +307,7 @@ ORDER BY created_at DESC;
 ```sql
 SELECT task_id, status, end_name, created_at, finished_at 
 FROM navigation_tasks 
-WHERE receiver_openid = 'openid_here' 
+WHERE receiver_user_ID = 'user_ID_here' 
 ORDER BY created_at DESC 
 LIMIT 20;
 ```
@@ -318,7 +318,7 @@ SELECT
     COUNT(*) as total_bindings,
     SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_bindings
 FROM user_bindings 
-WHERE sender_openid = 'openid_here';
+WHERE sender_user_ID = 'user_ID_here';
 ```
 
 ---
@@ -379,8 +379,8 @@ WHERE sender_openid = 'openid_here';
 - 确认基础表已创建成功
 
 ### 问题 3：插入数据时外键约束失败
-- 确保 `users` 表中已存在对应的 openid
-- 检查 openid 是否与 CloudBase Auth 返回的一致
+- 确保 `users` 表中已存在对应的 user_ID
+- 检查 user_ID 是否与 CloudBase Auth 返回的一致
 
 ---
 

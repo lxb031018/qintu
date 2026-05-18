@@ -15,9 +15,9 @@ class TaskController {
    */
   async createTask(req, res) {
     try {
-      const senderOpenid = req.user.openid;
+      const senderOpenid = req.user.user_ID;
       const {
-        receiver_openid,
+        receiver_user_ID,
         start_name,
         start_latitude,
         start_longitude,
@@ -34,8 +34,8 @@ class TaskController {
       } = req.body;
 
       // 参数验证
-      if (!receiver_openid || !end_name || end_latitude === undefined || end_longitude === undefined) {
-        return validationError(res, '缺少必需参数：receiver_openid, end_name, end_latitude, end_longitude');
+      if (!receiver_user_ID || !end_name || end_latitude === undefined || end_longitude === undefined) {
+        return validationError(res, '缺少必需参数：receiver_user_ID, end_name, end_latitude, end_longitude');
       }
 
       if (!route_data) {
@@ -43,7 +43,7 @@ class TaskController {
       }
 
       const result = await this.taskService.createTask(senderOpenid, {
-        receiver_openid,
+        receiver_user_ID,
         start_name,
         start_latitude,
         start_longitude,
@@ -72,10 +72,10 @@ class TaskController {
    */
   async getMyTasks(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const { role, status, page, limit } = req.query;
 
-      const result = await this.taskService.getMyTasks(openid, { role, status, page, limit });
+      const result = await this.taskService.getMyTasks(user_ID, { role, status, page, limit });
 
       return success(res, result);
     } catch (err) {
@@ -90,9 +90,9 @@ class TaskController {
    */
   async getPendingTasks(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
 
-      const result = await this.taskService.getPendingTasks(openid);
+      const result = await this.taskService.getPendingTasks(user_ID);
 
       return success(res, result);
     } catch (err) {
@@ -107,10 +107,10 @@ class TaskController {
    */
   async getTaskDetail(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
 
-      const result = await this.taskService.getTaskDetail(taskId, openid);
+      const result = await this.taskService.getTaskDetail(taskId, user_ID);
 
       return success(res, result);
     } catch (err) {
@@ -131,10 +131,10 @@ class TaskController {
    */
   async acceptTask(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
 
-      const result = await this.taskService.acceptTask(taskId, openid);
+      const result = await this.taskService.acceptTask(taskId, user_ID);
 
       return success(res, result);
     } catch (err) {
@@ -158,10 +158,10 @@ class TaskController {
    */
   async startNavigation(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
 
-      const result = await this.taskService.startNavigation(taskId, openid);
+      const result = await this.taskService.startNavigation(taskId, user_ID);
 
       return success(res, result);
     } catch (err) {
@@ -185,10 +185,10 @@ class TaskController {
    */
   async finishTask(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
 
-      const result = await this.taskService.finishTask(taskId, openid);
+      const result = await this.taskService.finishTask(taskId, user_ID);
 
       return success(res, result);
     } catch (err) {
@@ -212,11 +212,11 @@ class TaskController {
    */
   async cancelTask(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
       const { reason } = req.body;
 
-      const result = await this.taskService.cancelTask(taskId, openid, reason);
+      const result = await this.taskService.cancelTask(taskId, user_ID, reason);
 
       return success(res, result);
     } catch (err) {
@@ -240,7 +240,7 @@ class TaskController {
    */
   async updateRoute(req, res) {
     try {
-      const openid = req.user.openid;
+      const user_ID = req.user.user_ID;
       const taskId = req.params.taskId;
       const { route_data, route_summary, distance_meters, duration_seconds } = req.body;
 
@@ -248,7 +248,7 @@ class TaskController {
         return validationError(res, 'route_data 是必需参数');
       }
 
-      const result = await this.taskService.updateRoute(taskId, openid, {
+      const result = await this.taskService.updateRoute(taskId, user_ID, {
         route_data,
         route_summary,
         distance_meters,

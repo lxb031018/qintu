@@ -17,13 +17,13 @@ class TaskService {
 
   /**
    * 创建导航任务
-   * @param {string} senderOpenid - 发送者 openid
+   * @param {string} senderOpenid - 发送者 user_ID
    * @param {Object} taskData
    * @returns {Object}
    */
   async createTask(senderOpenid, taskData) {
     const {
-      receiver_openid,
+      receiver_user_ID,
       start_name,
       start_latitude,
       start_longitude,
@@ -40,13 +40,13 @@ class TaskService {
     } = taskData;
 
     // 验证绑定关系
-    const binding = await this.bindingRepo.findActiveBetween(senderOpenid, receiver_openid);
+    const binding = await this.bindingRepo.findActiveBetween(senderOpenid, receiver_user_ID);
     if (!binding) {
       throw Object.assign(new Error('与该接收者没有绑定关系'), { code: 'NO_BINDING', status: 403 });
     }
 
     // 检查接收者是否有进行中的任务
-    const inProgressTasks = await this.taskRepo.findInProgressForUser(receiver_openid);
+    const inProgressTasks = await this.taskRepo.findInProgressForUser(receiver_user_ID);
     if (inProgressTasks.length > 0) {
       throw Object.assign(
         new Error(`该接收者有进行中的任务（${inProgressTasks[0].status}）`),
@@ -60,8 +60,8 @@ class TaskService {
 
     const task = await this.taskRepo.create({
       task_id: taskId,
-      sender_openid: senderOpenid,
-      receiver_openid,
+      sender_user_ID: senderOpenid,
+      receiver_user_ID,
       status: 'waiting',
       start_name: start_name || null,
       start_latitude: start_latitude || null,
@@ -91,18 +91,18 @@ class TaskService {
 
   /**
    * 获取我的任务列表
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {Object} query - { role, status, page, limit }
    * @returns {Object}
    */
-  async getMyTasks(openid, query = {}) {
+  async getMyTasks(user_ID, query = {}) {
     const { role, status, page = 1, limit = 20 } = query;
 
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
-    const filterKey = role === 'receiver' ? 'receiver_openid' : 'sender_openid';
-    const filters = { [filterKey]: openid };
+    const filterKey = role === 'receiver' ? 'receiver_user_ID' : 'sender_user_ID';
+    const filters = { [filterKey]: user_ID };
     if (status) filters.status = status;
 
     const tasks = await this.taskRepo.findByFilters(filters, {
@@ -118,12 +118,12 @@ class TaskService {
 
   /**
    * 获取待处理任务（接收者的 waiting 任务）
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async getPendingTasks(openid) {
+  async getPendingTasks(user_ID) {
     const tasks = await this.taskRepo.findByFilters({
-      receiver_openid: openid,
+      receiver_user_ID: user_ID,
       status: 'waiting'
     }, { order: 'created_at:desc' });
 
@@ -133,17 +133,17 @@ class TaskService {
   /**
    * 获取任务详情
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async getTaskDetail(taskId, openid) {
+  async getTaskDetail(taskId, user_ID) {
     const task = await this.taskRepo.findByTaskId(taskId);
 
     if (!task) {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.sender_openid !== openid && task.receiver_openid !== openid) {
+    if (task.sender_user_ID !== user_ID && task.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权查看此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -153,17 +153,17 @@ class TaskService {
   /**
    * 接受任务（接收者）
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async acceptTask(taskId, openid) {
+  async acceptTask(taskId, user_ID) {
     const task = await this.taskRepo.findByTaskId(taskId);
 
     if (!task) {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.receiver_openid !== openid) {
+    if (task.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -182,17 +182,17 @@ class TaskService {
   /**
    * 开始导航（接收者）
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async startNavigation(taskId, openid) {
+  async startNavigation(taskId, user_ID) {
     const task = await this.taskRepo.findByTaskId(taskId);
 
     if (!task) {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.receiver_openid !== openid) {
+    if (task.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -211,17 +211,17 @@ class TaskService {
   /**
    * 完成任务（接收者）
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @returns {Object}
    */
-  async finishTask(taskId, openid) {
+  async finishTask(taskId, user_ID) {
     const task = await this.taskRepo.findByTaskId(taskId);
 
     if (!task) {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.receiver_openid !== openid) {
+    if (task.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -240,18 +240,18 @@ class TaskService {
   /**
    * 取消任务（发送者或接收者）
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {string} reason - 取消原因
    * @returns {Object}
    */
-  async cancelTask(taskId, openid, reason) {
+  async cancelTask(taskId, user_ID, reason) {
     const task = await this.taskRepo.findByTaskId(taskId);
 
     if (!task) {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.sender_openid !== openid && task.receiver_openid !== openid) {
+    if (task.sender_user_ID !== user_ID && task.receiver_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 
@@ -259,7 +259,7 @@ class TaskService {
       throw Object.assign(new Error(`任务状态为 ${task.status}，无法取消`), { code: 'INVALID_STATUS', status: 400 });
     }
 
-    const cancelledBy = task.sender_openid === openid ? 'sender' : 'receiver';
+    const cancelledBy = task.sender_user_ID === user_ID ? 'sender' : 'receiver';
 
     await this.taskRepo.update(taskId, {
       status: 'cancelled',
@@ -274,11 +274,11 @@ class TaskService {
   /**
    * 更新路线（发送者，中途干预）
    * @param {string} taskId
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {Object} updateData - { route_data, route_summary, distance_meters, duration_seconds }
    * @returns {Object}
    */
-  async updateRoute(taskId, openid, updateData) {
+  async updateRoute(taskId, user_ID, updateData) {
     const { route_data, route_summary, distance_meters, duration_seconds } = updateData;
 
     if (!route_data) {
@@ -291,7 +291,7 @@ class TaskService {
       throw Object.assign(new Error('任务不存在'), { code: 'NOT_FOUND', status: 404 });
     }
 
-    if (task.sender_openid !== openid) {
+    if (task.sender_user_ID !== user_ID) {
       throw Object.assign(new Error('无权操作此任务'), { code: 'PERMISSION_DENIED', status: 403 });
     }
 

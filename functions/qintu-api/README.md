@@ -180,7 +180,7 @@ curl https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/h
 ### 基础信息
 
 - **Base URL**：`https://<你的访问地址>/qintu-api/api`
-- **认证方式**：请求头 `X-User-OpenID: <openid>`
+- **认证方式**：请求头 `X-User-OpenID: <user_ID>`
 - **响应格式**：
   ```json
   {
@@ -201,7 +201,7 @@ curl https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/h
 **请求体**：
 ```json
 {
-  "openid": "cloudbase_auth_openid",
+  "user_ID": "cloudbase_auth_user_ID",
   "phone": "+86 13800138000",
   "nickname": "张三",
   "user_type": "both"
@@ -214,7 +214,7 @@ curl https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/h
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "openid": "cloudbase_auth_openid",
+    "user_ID": "cloudbase_auth_user_ID",
     "phone": "+86 13800138000",
     "nickname": "张三",
     "user_type": "both",
@@ -229,7 +229,7 @@ curl https://qintu-cloudebase-5f5bpuj13bc6467.service.tcloudbase.com/qintu-api/h
 
 **请求头**：
 ```
-X-User-OpenID: <openid>
+X-User-OpenID: <user_ID>
 ```
 
 **响应**：
@@ -238,7 +238,7 @@ X-User-OpenID: <openid>
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "openid": "...",
+    "user_ID": "...",
     "phone": "+86 13800138000",
     "nickname": "张三",
     "user_type": "both",
@@ -255,7 +255,7 @@ X-User-OpenID: <openid>
 
 **请求头**：
 ```
-X-User-OpenID: <openid>
+X-User-OpenID: <user_ID>
 ```
 
 **请求体**：
@@ -281,7 +281,7 @@ X-User-OpenID: <openid>
 
 **请求头**：
 ```
-X-User-OpenID: <sender_openid>
+X-User-OpenID: <sender_user_ID>
 ```
 
 **请求体**：
@@ -328,7 +328,7 @@ X-User-OpenID: <sender_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **响应**：
@@ -356,7 +356,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **请求体**：
@@ -385,7 +385,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **请求体**：
@@ -412,7 +412,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <openid>
+X-User-OpenID: <user_ID>
 ```
 
 **响应**：
@@ -445,7 +445,7 @@ X-User-OpenID: <openid>
 
 **请求头**：
 ```
-X-User-OpenID: <openid>
+X-User-OpenID: <user_ID>
 ```
 
 **响应**：
@@ -471,13 +471,13 @@ X-User-OpenID: <openid>
 
 **请求头**：
 ```
-X-User-OpenID: <sender_openid>
+X-User-OpenID: <sender_user_ID>
 ```
 
 **请求体**：
 ```json
 {
-  "receiver_openid": "receiver_openid_here",
+  "receiver_user_ID": "receiver_user_ID_here",
   "start_name": "当前位置",
   "start_latitude": 39.9042,
   "start_longitude": 116.4074,
@@ -521,7 +521,7 @@ X-User-OpenID: <sender_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **响应**：
@@ -552,7 +552,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 #### 3.4 开始导航
@@ -563,7 +563,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 #### 3.5 完成任务
@@ -574,7 +574,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 #### 3.6 取消任务
@@ -585,7 +585,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <openid>
+X-User-OpenID: <user_ID>
 ```
 
 **请求体**：
@@ -603,7 +603,7 @@ X-User-OpenID: <openid>
 
 **请求头**：
 ```
-X-User-OpenID: <sender_openid>
+X-User-OpenID: <sender_user_ID>
 ```
 
 **请求体**：
@@ -628,7 +628,7 @@ X-User-OpenID: <sender_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **请求体**：
@@ -664,7 +664,7 @@ X-User-OpenID: <receiver_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <sender_openid>
+X-User-OpenID: <sender_user_ID>
 ```
 
 **响应**：
@@ -673,7 +673,7 @@ X-User-OpenID: <sender_openid>
   "code": "SUCCESS",
   "message": "操作成功",
   "data": {
-    "receiver_openid": "...",
+    "receiver_user_ID": "...",
     "latitude": 39.9042,
     "longitude": 116.4074,
     "speed": 45.5,
@@ -696,7 +696,7 @@ X-User-OpenID: <sender_openid>
 
 **请求头**：
 ```
-X-User-OpenID: <receiver_openid>
+X-User-OpenID: <receiver_user_ID>
 ```
 
 **请求体**：
@@ -721,23 +721,23 @@ X-User-OpenID: <receiver_openid>
 
 ### Flutter 端集成
 
-在 Flutter 中，每次登录 CloudBase Auth 后会获得 `openid`，将其传递到云函数：
+在 Flutter 中，每次登录 CloudBase Auth 后会获得 `user_ID`，将其传递到云函数：
 
 ```dart
 import 'package:http/http.dart' as http;
 
 class ApiService {
   final String baseUrl = 'https://<你的云函数访问地址>/qintu-api/api';
-  final String openid; // 从 CloudBase Auth 获取
+  final String user_ID; // 从 CloudBase Auth 获取
 
-  ApiService(this.openid);
+  ApiService(this.user_ID);
 
   Future<Map<String, dynamic>> get(String path) async {
     final response = await http.get(
       Uri.parse('$baseUrl$path'),
       headers: {
         'Content-Type': 'application/json',
-        'X-User-OpenID': openid,
+        'X-User-OpenID': user_ID,
       },
     );
     return json.decode(response.body);
@@ -748,7 +748,7 @@ class ApiService {
       Uri.parse('$baseUrl$path'),
       headers: {
         'Content-Type': 'application/json',
-        'X-User-OpenID': openid,
+        'X-User-OpenID': user_ID,
       },
       body: json.encode(body),
     );
@@ -784,7 +784,7 @@ class ApiService {
 
 ### 5. 安全规则
 
-- 所有接口都通过 `openid` 验证用户身份
+- 所有接口都通过 `user_ID` 验证用户身份
 - 绑定关系验证确保用户只能操作已绑定的对象
 - 建议在 API 网关层配置 IP 白名单或限流规则
 
@@ -820,7 +820,7 @@ curl http://localhost:9000/health
 # 用户注册
 curl -X POST http://localhost:9000/api/users/register \
   -H "Content-Type: application/json" \
-  -d '{"openid":"test123","phone":"+86 13800138000","nickname":"测试用户"}'
+  -d '{"user_ID":"test123","phone":"+86 13800138000","nickname":"测试用户"}'
 ```
 
 ---

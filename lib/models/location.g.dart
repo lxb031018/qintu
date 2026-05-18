@@ -7,7 +7,7 @@ part of 'location.dart';
 // **************************************************************************
 
 Location _$LocationFromJson(Map<String, dynamic> json) => Location(
-  receiverOpenid: json['receiver_openid'] as String,
+  receiverOpenid: json['receiver_user_ID'] as String,
   taskId: json['task_id'] as String?,
   latitude: (json['latitude'] as num).toDouble(),
   longitude: (json['longitude'] as num).toDouble(),
@@ -26,7 +26,7 @@ Location _$LocationFromJson(Map<String, dynamic> json) => Location(
 );
 
 Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
-  'receiver_openid': instance.receiverOpenid,
+  'receiver_user_ID': instance.receiverOpenid,
   'task_id': instance.taskId,
   'latitude': instance.latitude,
   'longitude': instance.longitude,

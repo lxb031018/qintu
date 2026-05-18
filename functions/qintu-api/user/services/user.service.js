@@ -12,23 +12,23 @@ class UserService {
   }
 
   /**
-   * 根据 openid 获取用户信息
-   * @param {string} openid
+   * 根据 user_ID 获取用户信息
+   * @param {string} user_ID
    * @returns {Object|null}
    */
-  async getUserByOpenid(openid) {
-    return this.userRepo.findByOpenid(openid);
+  async getUserByOpenid(user_ID) {
+    return this.userRepo.findByOpenid(user_ID);
   }
 
   /**
    * 创建或更新用户
-   * @param {string} openid
+   * @param {string} user_ID
    * @param {Object} userData
    * @returns {Object}
    */
-  async upsertUser(openid, userData) {
-    await this.userRepo.upsert(openid, userData);
-    return this.userRepo.findByOpenid(openid);
+  async upsertUser(user_ID, userData) {
+    await this.userRepo.upsert(user_ID, userData);
+    return this.userRepo.findByOpenid(user_ID);
   }
 
   /**
