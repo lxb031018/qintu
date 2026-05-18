@@ -13,7 +13,7 @@
 | `RouteResultBottomSheet` | `widgets/route_result_bottom_sheet/` | 路线结果底部面板 |
 | `LocationStatusButton` | `widgets/location_status_button.dart` | GPS 状态按钮 |
 | `MyLocationButton` | `widgets/my_location_button.dart` | 我的位置按钮 |
-| `RouteShareCard` | `widgets/route_share_card/` | 路线分享卡片 |
+| `RouteReceiveCard` | `widgets/route_receive_card/` | 路线分享卡片 |
 
 ---
 
@@ -226,16 +226,16 @@ MyLocationButton(
 
 ---
 
-## RouteShareCard
+## RouteReceiveCard
 
-**目录**：`lib/features/map_navigation/widgets/route_share_card/`
+**目录**：`lib/features/map_navigation/widgets/route_receive_card/`
 
 **职责**：显示被分享的路线，提供导航或取消选项。
 
 ### 使用方式
 
 ```dart
-RouteShareCard(
+RouteReceiveCard(
   share: sharedRoute,
   onNavigate: () {
     // 开始导航

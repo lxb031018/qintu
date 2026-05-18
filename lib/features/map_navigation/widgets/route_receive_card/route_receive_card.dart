@@ -9,13 +9,13 @@ import '../../core/api/route_share_api.dart';
 ///
 /// 显示来自好友的路线分享，提供取消和开始导航操作
 /// ============================================
-class RouteShareCard extends StatelessWidget {
+class RouteReceiveCard extends StatelessWidget {
   final PendingRouteShare share;
   final String? senderNickname;
   final VoidCallback? onCancel;
   final VoidCallback? onNavigate;
 
-  const RouteShareCard({
+  const RouteReceiveCard({
     super.key,
     required this.share,
     this.senderNickname,

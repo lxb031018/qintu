@@ -14,7 +14,7 @@ import 'widgets/location_category_list/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet/route_result_bottom_sheet.dart';
 import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
-import 'widgets/route_share_card/route_share_card.dart';
+import 'widgets/route_receive_card/route_receive_card.dart';
 import 'models/map_overlay_models.dart';
 import 'models/poi_models.dart';
 import '../../../constants/app_durations.dart';
@@ -123,7 +123,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 top: MediaQuery.of(context).padding.top + AppSpacings.smd,
                 left: AppSpacings.smd,
                 right: AppSpacings.smd,
-                child: RouteShareCard(
+                child: RouteReceiveCard(
                   share: next,
                   onNavigate: () {
                     Navigator.of(context).pop();
