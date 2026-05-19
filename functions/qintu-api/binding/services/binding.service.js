@@ -89,7 +89,7 @@ class BindingService {
         partner_user_ID: binding.partner_user_ID,
         partner_nickname: partner?.nickname || '未命名用户',
         partner_phone: partner?.phone
-          ? partner.phone.replace(/(\+\d{1,3}\s)?(\d{3})\d{4}(\d{4})/, '$2****$3')
+          ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
           : '未知'
       });
     }

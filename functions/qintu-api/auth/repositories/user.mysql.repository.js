@@ -9,7 +9,7 @@ const { query, transaction } = require('../../../db/mysql');
 class UserMysqlRepository {
   /**
    * 根据手机号查找 user_ID
-   * @param {string} phone - 11位手机号（带国家码格式：+86 13800138000）
+   * @param {string} phone - 11位手机号
    * @returns {Promise<string|null>}
    */
   async findUserIDByPhone(phone) {
@@ -119,7 +119,7 @@ class UserMysqlRepository {
     if (rows.length === 0) return null;
     const phone = rows[0].phone;
     // 脱敏手机号：138****8000
-    return phone.replace(/(\+\d{1,3}\s)?(\d{3})\d{4}(\d{4})/, '$2****$3');
+    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
   }
 
   /**

@@ -13,11 +13,11 @@ SET NAMES utf8mb4;
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-    `user_ID` VARCHAR(64) NOT NULL COMMENT '用户唯一标识（UUID）',
-    `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号（带国家码：+86 13800138000）',
-    `nickname` VARCHAR(50) DEFAULT NULL COMMENT '用户昵称',
-    `avatar_url` VARCHAR(500) DEFAULT NULL COMMENT '头像 URL',
-    `last_login_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后登录时间',
+    `user_ID` CHAR(36) NOT NULL COMMENT '用户唯一标识（UUID）',
+    `phone` CHAR(11) NOT NULL COMMENT '手机号（11位数字）',
+    `nickname` VARCHAR(16) NOT NULL DEFAULT '' COMMENT '用户昵称',
+    `avatar_url` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '头像 URL',
+    `last_login_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后登录时间',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`user_ID`),
@@ -33,15 +33,11 @@ COMMENT='用户表';
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `user_bindings`;
 CREATE TABLE `user_bindings` (
-    `user_A` VARCHAR(64) NOT NULL COMMENT '用户A的 user_ID（较小者）',
-    `user_B` VARCHAR(64) NOT NULL COMMENT '用户B的 user_ID（较大者）',
+    `user_A` CHAR(36) NOT NULL COMMENT '用户A的 user_ID（较小者）',
+    `user_B` CHAR(36) NOT NULL COMMENT '用户B的 user_ID（较大者）',
 
     PRIMARY KEY (`user_A`, `user_B`),
     KEY `idx_user_A` (`user_A`),
     KEY `idx_user_B` (`user_B`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='用户绑定关系表 - 关系平等，解除绑定即删除记录';
-
--- ============================================================
--- 脚本执行完成！
--- ============================================================
