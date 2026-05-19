@@ -2,17 +2,14 @@
 
 ## 📋 数据库概览
 
-本项目使用 **CloudBase MySQL 数据库**存储所有用户数据和导航任务数据。
+本项目使用 **CloudBase MySQL 数据库**存储用户数据和绑定关系。
 
 ### 核心数据表
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
-| `users` | 用户信息 | user_ID（主键）、手机号、角色类型 |
-| `user_bindings` | 绑定关系 | 发送者-接收者配对、绑定状态 |
-| `navigation_tasks` | 导航任务 | 路线数据、任务状态、高德路线 JSON |
-| `real_time_locations` | 实时位置 | 接收者当前位置、共享状态 |
-| `operation_logs` | 操作日志 | 审计和调试 |
+| `users` | 用户信息 | user_ID（主键）、手机号、昵称、头像 |
+| `user_bindings` | 绑定关系 | user_A、user_B（关系平等，双向可发导航任务） |
 
 ### 数据流动示意
 
@@ -21,19 +18,11 @@
     ↓
 创建 users 记录（自动）
     ↓
-用户选择角色（发送者/接收者）
+用户 A 输入用户 B 的手机号 → 发起绑定请求
     ↓
-发送者输入接收者手机号 → 发送绑定请求
+用户 B 确认绑定 → 创建 user_bindings 记录
     ↓
-接收者确认绑定 → 创建 user_bindings 记录（status = 'active'）
-    ↓
-发送者规划路线 → 创建 navigation_tasks 记录
-    ↓
-接收者收到通知 → 更新 task status = 'accepted'
-    ↓
-开始导航 → 更新 real_time_locations
-    ↓
-发送者可查看实时位置
+绑定成功，双方均可向对方发送导航任务
 ```
 
 ---
@@ -86,25 +75,9 @@ mysql -h <MySQL_HOST> -u <USERNAME> -p<PASSWORD> qintu_cloudbase < database/init
 -- 查看所有表
 SHOW TABLES;
 
--- 应该看到以下 5 个表：
--- operation_logs
--- real_time_locations
--- navigation_tasks
+-- 应该看到以下 2 个表：
 -- user_bindings
 -- users
-
--- 查看 users 表结构
-DESC users;
-
--- 查看绑定关系表结构
-DESC user_bindings;
-
--- 查看视图
-SHOW FULL TABLES WHERE Table_type = 'VIEW';
-
--- 应该看到：
--- v_active_bindings
--- v_pending_tasks
 ```
 
 ---
@@ -113,23 +86,33 @@ SHOW FULL TABLES WHERE Table_type = 'VIEW';
 
 ### 1. users（用户表）
 
-**用途**：存储所有登录用户的基本信息和角色
+**用途**：存储所有登录用户的基本信息
 
-**关键字段**：
-- `user_ID`：CloudBase Auth 返回的用户唯一标识（主键）
-- `phone`：手机号（带国家码，如 `+86 13800138000`）
-- `user_type`：角色类型
-  - `sender`：只能作为发送者
-  - `receiver`：只能作为接收者
-  - `both`：两者皆可（**推荐默认值**）
+**字段说明**：
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `user_ID` | VARCHAR(64) | 用户唯一标识（UUID），主键 |
+| `phone` | VARCHAR(20) | 手机号（带国家码，如 `+86 13800138000`），唯一 |
+| `nickname` | VARCHAR(50) | 用户昵称 |
+| `avatar_url` | VARCHAR(500) | 头像 URL |
+| `last_login_at` | TIMESTAMP | 最后登录时间 |
+| `created_at` | TIMESTAMP | 创建时间 |
+
+**索引**：
+
+| 索引类型 | 索引名 | 作用 |
+|----------|--------|------|
+| 主键 | `PRIMARY KEY` | 基于 `user_ID` |
+| 唯一索引 | `uk_phone` | 手机号唯一 |
+| 普通索引 | `idx_created_at` | 按创建时间排序 |
 
 **示例数据**：
 ```sql
-INSERT INTO users (user_ID, phone, nickname, user_type) VALUES (
-    'user_ID_from_cloudbase_auth',
+INSERT INTO users (user_ID, phone, nickname) VALUES (
+    '550e8400-e29b-41d4-a716-446655440000',
     '+86 13800138000',
-    '张三',
-    'both'
+    '张三'
 );
 ```
 
@@ -137,146 +120,43 @@ INSERT INTO users (user_ID, phone, nickname, user_type) VALUES (
 
 ### 2. user_bindings（绑定关系表）
 
-**用途**：建立发送者与接收者之间的配对关系
+**用途**：记录用户之间的绑定关系，关系平等，双向可发导航任务
 
 **核心逻辑**：
-- 只有互相绑定的用户才能发送/接收导航指令
-- 通过手机号建立绑定关系，需要接收者确认
-- 支持一个发送者绑定多个接收者，反之亦然
+- 绑定关系平等，双方均可向对方发送导航任务
+- 存储规则：`user_A < user_B`（字符串比较，较小的 user_ID 在前）
+- 解除绑定即删除记录，无状态标识
 
-**关键字段**：
-- `sender_user_ID`：发送者的 user_ID
-- `receiver_user_ID`：接收者的 user_ID
-- `bind_code`：绑定码字段（已废弃，可为空，向后兼容）
-- `status`：绑定状态
-  - `pending`：待确认（发送者已发请求，接收者未确认）
-  - `active`：生效中
-  - `expired`：已过期
-  - `revoked`：已撤销
-- `remark`：备注信息（存储发送者名称等）
+**字段说明**：
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `user_A` | VARCHAR(64) | 用户A的 user_ID（较小者） |
+| `user_B` | VARCHAR(64) | 用户B的 user_ID（较大者） |
+
+**索引**：
+
+| 索引类型 | 索引名 | 作用 |
+|----------|--------|------|
+| 主键 | `PRIMARY KEY` | 基于 (`user_A`, `user_B`) |
+| 普通索引 | `idx_user_A` | 查询某用户的绑定关系 |
+| 普通索引 | `idx_user_B` | 查询某用户的绑定关系 |
 
 **示例数据**：
 ```sql
--- 子女（发送者）绑定父母（接收者）
-INSERT INTO user_bindings (sender_user_ID, receiver_user_ID, status, remark) VALUES (
-    'user_ID_child',
-    'user_ID_parent',
-    'active',
-    '给父亲的绑定关系'
+-- 用户 A 和用户 B 建立绑定关系
+INSERT INTO user_bindings (user_A, user_B) VALUES (
+    '550e8400-e29b-41d4-a716-446655440000',
+    '660e8400-e29b-41d4-a716-446655440001'
 );
 ```
 
 **绑定流程**：
-1. 发送者输入接收者手机号，发送绑定请求
-2. 系统创建 `user_bindings` 记录，状态为 `pending`
-3. 接收者查看待确认请求列表
-4. 接收者确认绑定，状态更新为 `active`
-5. 绑定关系生效
-
----
-
-### 3. navigation_tasks（导航任务表）
-
-**用途**：存储发送者下发给接收者的导航任务和路线数据
-
-**核心逻辑**：
-- 发送者规划路线后创建任务
-- 接收者收到通知后点击"接受"
-- 开始导航后更新状态和实时位置
-- 支持中途修改路线和远程结束
-
-**关键字段**：
-- `task_id`：任务唯一 ID（UUID）
-- `status`：任务状态流转
-  ```
-  waiting → accepted → navigating → finished
-                      ↓
-                  cancelled
-  ```
-- `route_data`：高德地图返回的完整路线 JSON（重要！）
-- `route_summary`：路线摘要（总距离、预计时间等）
-
-**示例数据**：
-```sql
-INSERT INTO navigation_tasks (
-    task_id,
-    sender_user_ID,
-    receiver_user_ID,
-    status,
-    start_name,
-    end_name,
-    end_latitude,
-    end_longitude,
-    end_address,
-    route_data,
-    route_summary,
-    transport_mode,
-    distance_meters,
-    duration_seconds
-) VALUES (
-    'task_uuid_here',
-    'user_ID_sender',
-    'user_ID_receiver',
-    'waiting',
-    '当前位置',
-    '北京站',
-    39.9042,
-    116.4074,
-    '北京市东城区毛家湾1号',
-    '{"paths": [...]}',  -- 高德地图返回的路线 JSON
-    '{"distance": "15.3km", "duration": "32分钟"}',
-    'drive',
-    15300,
-    1920
-);
-```
-
----
-
-### 4. real_time_locations（实时位置表）
-
-**用途**：存储接收者在导航过程中的实时位置
-
-**核心逻辑**：
-- 仅当发送者点击"查看位置"时更新
-- 节省资源，避免持续高频写入
-- 支持位置共享开关
-
-**关键字段**：
-- `receiver_user_ID`：接收者 user_ID（主键）
-- `is_navigating`：是否正在导航
-- `is_sharing`：是否正在共享位置
-- `updated_at`：最后更新时间
-
-**示例数据**：
-```sql
-INSERT INTO real_time_locations (
-    receiver_user_ID,
-    task_id,
-    latitude,
-    longitude,
-    speed,
-    bearing,
-    is_navigating,
-    is_sharing
-) VALUES (
-    'user_ID_receiver',
-    'task_uuid',
-    39.9080,
-    116.3970,
-    45.5,
-    180.0,
-    1,
-    1
-) ON DUPLICATE KEY UPDATE
-    latitude = VALUES(latitude),
-    longitude = VALUES(longitude),
-    speed = VALUES(speed),
-    bearing = VALUES(bearing),
-    is_navigating = VALUES(is_navigating),
-    is_sharing = VALUES(is_sharing),
-    updated_at = NOW();
-```
+1. 用户 A 输入用户 B 的手机号，发送绑定请求
+2. 用户 B 确认绑定请求
+3. 系统自动比较两个 user_ID，将较小的存入 `user_A`
+4. 创建 `user_bindings` 记录
+5. 绑定关系生效，双方均可向对方发送导航任务
 
 ---
 
@@ -284,67 +164,39 @@ INSERT INTO real_time_locations (
 
 ### 查询某用户的所有绑定关系
 ```sql
-SELECT * FROM v_active_bindings 
-WHERE sender_user_ID = 'user_ID_here' 
-   OR receiver_user_ID = 'user_ID_here';
+SELECT * FROM user_bindings
+WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
 ```
 
-### 查询接收者待处理的导航任务
+### 查询两个用户之间是否存在绑定关系
 ```sql
-SELECT * FROM v_pending_tasks 
-WHERE receiver_user_ID = 'user_ID_here';
+SELECT * FROM user_bindings
+WHERE (user_A = 'user_ID_A' AND user_B = 'user_ID_B')
+   OR (user_A = 'user_ID_B' AND user_B = 'user_ID_A');
 ```
 
-### 查询某发送者发出的所有任务
+### 统计某用户的绑定数量
 ```sql
-SELECT task_id, status, end_name, created_at 
-FROM navigation_tasks 
-WHERE sender_user_ID = 'user_ID_here' 
-ORDER BY created_at DESC;
-```
-
-### 查询某接收者的导航历史
-```sql
-SELECT task_id, status, end_name, created_at, finished_at 
-FROM navigation_tasks 
-WHERE receiver_user_ID = 'user_ID_here' 
-ORDER BY created_at DESC 
-LIMIT 20;
-```
-
-### 统计某发送者的绑定数量
-```sql
-SELECT 
-    COUNT(*) as total_bindings,
-    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_bindings
-FROM user_bindings 
-WHERE sender_user_ID = 'user_ID_here';
+SELECT COUNT(*) as binding_count
+FROM user_bindings
+WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
 ```
 
 ---
 
 ## ⚠️ 注意事项
 
-### 1. 外键约束
-- 删除用户时，会自动删除相关的绑定关系和导航任务
-- 如果 CloudBase MySQL 不支持外键，可以移除 `CONSTRAINT` 语句，改用应用层保证数据一致性
+### 1. 关系平等设计
+- 两个用户绑定后，双方均可向对方发送导航任务
+- 无发送者/接收者角色区分
+- 解除绑定即删除记录
 
-### 2. 坐标系统
-- 高德地图使用 **GCJ-02** 坐标系（火星坐标系）
-- 存储的经纬度坐标应与高德地图返回的一致
-- 如需转换为 WGS-84 或其他坐标系，需在应用层处理
+### 2. user_ID 排序规则
+- `user_A` 始终是 user_ID 字符串比较较小的一方
+- `user_B` 是 user_ID 字符串比较较大的一方
+- 应用层需确保插入时正确排序
 
-### 3. 路线数据存储
-- `route_data` 字段存储高德地图返回的完整 JSON（可能较大）
-- `route_summary` 字段存储摘要信息，便于快速查询列表
-- 建议定期清理已完成的过期任务数据
-
-### 4. 实时位置更新频率
-- 建议：仅在发送者查看时更新，间隔 5-10 秒
-- 发送者退出查看后，停止更新位置
-- 可使用 `is_sharing` 字段控制是否更新位置
-
-### 5. 权限控制
+### 3. 权限控制
 - 数据库层面：通过 CloudBase 安全规则限制访问
 - 应用层面：云函数/HTTP API 中验证用户身份和操作权限
 - 确保用户只能访问自己的数据和已绑定的关系
@@ -357,7 +209,7 @@ WHERE sender_user_ID = 'user_ID_here';
 2. ⏳ **创建云函数**：处理用户绑定、导航指令下发等业务逻辑
 3. ⏳ **Flutter 端开发**：
    - 用户登录（手机验证码）
-   - 绑定关系管理（生成/输入绑定码）
+   - 绑定关系管理
    - 路线规划与下发
    - 导航执行与实时位置共享
 4. ⏳ **高德地图集成**：
@@ -371,19 +223,19 @@ WHERE sender_user_ID = 'user_ID_here';
 ## 📞 问题排查
 
 ### 问题 1：执行 SQL 脚本报错
-- 检查 CloudBase MySQL 版本是否支持外键约束
-- 如果不支持，移除 `CONSTRAINT` 语句后重新执行
+- 检查 CloudBase MySQL 版本是否支持 UTF-8 字符集
+- 确认 SQL 语句语法正确
 
-### 问题 2：无法创建视图
-- 检查是否有足够的权限
-- 确认基础表已创建成功
+### 问题 2：绑定关系查询不到
+- 确认 user_ID 排序正确（user_A < user_B）
+- 检查索引是否创建成功
 
-### 问题 3：插入数据时外键约束失败
+### 问题 3：插入数据时唯一键冲突
 - 确保 `users` 表中已存在对应的 user_ID
-- 检查 user_ID 是否与 CloudBase Auth 返回的一致
+- 检查手机号是否已被其他用户使用
 
 ---
 
-**文档更新日期**：2026-04-04  
-**数据库版本**：MySQL 5.7+  
+**文档更新日期**：2026-05-19
+**数据库版本**：MySQL 5.7+
 **CloudBase 环境**：`qintu-cloudebase-5f5bpuj13bc6467`
