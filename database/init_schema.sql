@@ -17,29 +17,22 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- ------------------------------------------------------------
 -- 1. 用户表 (users)
--- 存储所有登录用户，支持灵活角色（发送者/接收者/两者皆可）
+-- 存储所有登录用户
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-    `user_ID` VARCHAR(64) NOT NULL COMMENT 'CloudBase Auth 用户唯一标识',
+    `user_ID` VARCHAR(64) NOT NULL COMMENT '用户唯一标识（UUID）',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号（带国家码：+86 13800138000）',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '用户昵称',
-    `user_type` ENUM('sender', 'receiver', 'both') NOT NULL DEFAULT 'both' 
-        COMMENT '用户角色类型：sender=发送者, receiver=接收者, both=两者皆可',
     `avatar_url` VARCHAR(500) DEFAULT NULL COMMENT '头像 URL',
-    `status` ENUM('active', 'disabled') NOT NULL DEFAULT 'active' 
-        COMMENT '账号状态：active=正常, disabled=禁用',
     `last_login_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后登录时间',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    
+
     PRIMARY KEY (`user_ID`),
     UNIQUE KEY `uk_phone` (`phone`),
-    KEY `idx_user_type` (`user_type`),
-    KEY `idx_status` (`status`),
     KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
-COMMENT='用户表 - 存储所有用户的基本信息和角色';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='用户表';
 
 -- ------------------------------------------------------------
 -- 2. 绑定关系表 (user_bindings)

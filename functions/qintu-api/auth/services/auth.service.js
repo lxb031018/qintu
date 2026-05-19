@@ -3,11 +3,12 @@
  *
  * 职责：
  * 1. 管理验证码（mockCodes）
- * 2. 管理用户电话本映射（userPhoneMap）
+ * 2. 管理用户映射（userRepo）
  * 3. 生成 token
  */
 
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const config = require('../../config');
 const { normalizePhone, isValidChinesePhone } = require('../../shared/lib/phone');
 
@@ -118,8 +119,8 @@ class AuthService {
     // 验证成功，删除验证码
     this.mockCodes.delete(verificationId);
 
-    // 生成 user_ID
-    const user_ID = config.PREFIX.USERID + crypto.createHash('md5').update(data.phone).digest('hex').substring(0, 16);
+    // 生成 user_ID（使用 UUID，与手机号解耦，支持换号不丢账户）
+    const user_ID = config.PREFIX.USERID + uuidv4().replace(/-/g, '');
 
     // 注册用户（存入电话本）
     await this.userRepo.registerByPhone(data.phone, user_ID);

@@ -26,6 +26,15 @@ module.exports = {
     NODE_ENV: process.env.NODE_ENV || 'development',
   },
 
+  // MySQL 数据库配置
+  DB: {
+    HOST: process.env.DB_HOST || 'localhost',
+    PORT: parseInt(process.env.DB_PORT || '3306'),
+    USER: process.env.DB_USER || 'root',
+    PASSWORD: process.env.DB_PASSWORD || '',
+    NAME: process.env.DB_NAME || 'qintu',
+  },
+
   // CORS 配置
   CORS: {
     origins: CORS_ORIGINS,
