@@ -36,39 +36,19 @@ COMMENT='用户表';
 
 -- ------------------------------------------------------------
 -- 2. 绑定关系表 (user_bindings)
--- 核心表：建立发送者与接收者之间的绑定关系
--- 只有通过绑定，发送者才能向接收者发送导航指令
+-- 记录用户之间的绑定关系，关系平等，双向可发导航任务
+-- 存储规则：user_A < user_B（字符串比较）
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `user_bindings`;
 CREATE TABLE `user_bindings` (
-    `id` INT NOT NULL AUTO_INCREMENT COMMENT '绑定关系自增 ID',
-    `sender_user_ID` VARCHAR(64) NOT NULL COMMENT '发送者 user_ID（外键关联 users 表）',
-    `receiver_user_ID` VARCHAR(64) NOT NULL COMMENT '接收者 user_ID（外键关联 users 表）',
-    `bind_code` VARCHAR(8) DEFAULT NULL COMMENT '绑定码（已废弃，仅历史数据使用）',
-    `status` ENUM('pending', 'active', 'expired', 'revoked') NOT NULL DEFAULT 'active'
-        COMMENT '绑定状态：pending=待确认, active=生效中, expired=已过期, revoked=已撤销',
-    `remark` VARCHAR(200) DEFAULT NULL COMMENT '备注（如：给父亲的绑定关系）',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `expired_at` TIMESTAMP NULL DEFAULT NULL COMMENT '过期时间（可选）',
+    `user_A` VARCHAR(64) NOT NULL COMMENT '用户A的 user_ID（较小者）',
+    `user_B` VARCHAR(64) NOT NULL COMMENT '用户B的 user_ID（较大者）',
 
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_sender_receiver` (`sender_user_ID`, `receiver_user_ID`)
-        COMMENT '同一对发送者-接收者只能有一条绑定',
-    KEY `idx_receiver_user_ID` (`receiver_user_ID`)
-        COMMENT '用于查询某人被谁绑定为接收者',
-    KEY `idx_sender_user_ID` (`sender_user_ID`)
-        COMMENT '用于查询某人绑定了哪些接收者',
-    KEY `idx_status` (`status`),
-    KEY `idx_created_at` (`created_at`),
-
-    -- 外键约束（可选，如果 CloudBase MySQL 支持）
-    CONSTRAINT `fk_binding_sender` FOREIGN KEY (`sender_user_ID`)
-        REFERENCES `users` (`user_ID`) ON DELETE CASCADE,
-    CONSTRAINT `fk_binding_receiver` FOREIGN KEY (`receiver_user_ID`)
-        REFERENCES `users` (`user_ID`) ON DELETE CASCADE
+    PRIMARY KEY (`user_A`, `user_B`),
+    KEY `idx_user_A` (`user_A`),
+    KEY `idx_user_B` (`user_B`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='用户绑定关系表 - 建立发送者与接收者的配对关系';
+COMMENT='用户绑定关系表 - 关系平等，解除绑定即删除记录';
 
 -- ------------------------------------------------------------
 -- 3. 导航任务表 (navigation_tasks)

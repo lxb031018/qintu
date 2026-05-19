@@ -1,9 +1,5 @@
 /**
- * 亲途 (qintu) - 后端 API 云函数入口
- *
- * 架构说明：
- * - index.js 仅负责服务启动
- * - 业务逻辑已迁移至 src/ 目录
+ * 亲途 (qintu) - 后端 API 入口
  */
 
 // 全局未捕获异常处理
@@ -33,6 +29,3 @@ process.on('SIGTERM', () => {
   console.log('收到 SIGTERM 信号，正在关闭服务器...');
   server.close(() => console.log('服务器已关闭'));
 });
-
-// 导出云函数入口
-exports.main = app;
