@@ -1,5 +1,5 @@
 /**
- * 绑定路由
+ * 绑定路由（简化版）
  */
 
 const express = require('express');
@@ -20,23 +20,11 @@ function createBindingRoutes(bindingService) {
   // 获取我的所有绑定
   router.get('/my', (req, res) => bindingController.getMyBindings(req, res));
 
-  // 获取待确认的绑定请求
-  router.get('/pending', (req, res) => bindingController.getPending(req, res));
+  // 绑定用户（通过手机号）
+  router.post('/', (req, res) => bindingController.bindByPhone(req, res));
 
-  // 获取我发出的绑定请求
-  router.get('/sent', (req, res) => bindingController.getSent(req, res));
-
-  // 发送绑定请求（通过手机号）
-  router.post('/request-phone', (req, res) => bindingController.requestByPhone(req, res));
-
-  // 确认绑定请求
-  router.post('/confirm-request', (req, res) => bindingController.confirmRequest(req, res));
-
-  // 拒绝绑定请求
-  router.post('/reject-request', (req, res) => bindingController.rejectRequest(req, res));
-
-  // 解除绑定 / 取消请求
-  router.delete('/:id', (req, res) => bindingController.revoke(req, res));
+  // 解绑用户
+  router.delete('/:partner_user_id', (req, res) => bindingController.unbind(req, res));
 
   return router;
 }

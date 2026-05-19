@@ -1,12 +1,10 @@
 /**
- * 绑定服务
+ * 绑定服务（简化版）
  *
- * 单向+确认模式：sender发请求，receiver确认后绑定生效
+ * 直接绑定，关系平等，解绑即删除记录
  */
 
 const config = require('../../config');
-const { normalizePhone, isValidChinesePhone } = require('../../shared/lib/phone');
-const { logOperation } = require('../../shared/lib/logger');
 
 class BindingService {
   constructor(bindingRepository, userRepository) {
@@ -15,260 +13,100 @@ class BindingService {
   }
 
   /**
-   * 发送绑定请求（通过手机号）
+   * 绑定用户（通过手机号）
+   * @param {string} myUserID - 我的 user_ID
+   * @param {string} partnerPhone - 对方的手机号
    */
-  async requestByPhone(senderUserID, receiverPhone, senderName, receiverName, extra = {}) {
-    // 1. 规范化手机号
-    const cleanPhone = normalizePhone(receiverPhone);
-
-    if (!isValidChinesePhone(cleanPhone)) {
-      throw Object.assign(new Error('手机号格式不正确（应为 11 位中国手机号）'), { code: 'INVALID_PHONE', status: 400 });
-    }
-
-    // 2. 查找接收者
-    const receiverUserID = await this.userRepo.findUserIDByPhone(cleanPhone);
-    if (!receiverUserID) {
+  async bindByPhone(myUserID, partnerPhone) {
+    // 1. 查找对方用户
+    const partnerUser = await this.userRepo.findByPhone(partnerPhone);
+    if (!partnerUser) {
       throw Object.assign(new Error('该手机号尚未注册亲途'), { code: 'USER_NOT_FOUND', status: 404 });
     }
 
-    // 3. 检查自环
-    if (senderUserID === receiverUserID) {
+    const partnerUserID = partnerUser.user_ID;
+
+    // 2. 检查自环
+    if (myUserID === partnerUserID) {
       throw Object.assign(new Error('不能绑定自己'), { code: 'SELF_BINDING', status: 400 });
     }
 
-    // 4. 获取发送者手机号
-    const allUsers = await this.userRepo.findAll();
-    let senderPhone = null;
-    for (const user of allUsers) {
-      if (user.user_ID === senderUserID) {
-        senderPhone = user.phone;
-        break;
-      }
-    }
-
-    // 5. 检查绑定上限
-    const senderActiveCount = await this.bindingRepo.countActiveAsSender(senderUserID);
-    if (senderActiveCount >= config.LIMITS.MAX_BINDINGS_PER_USER) {
+    // 3. 检查绑定数量上限
+    const myCount = await this.bindingRepo.countForUser(myUserID);
+    if (myCount >= config.LIMITS.MAX_BINDINGS_PER_USER) {
       throw Object.assign(new Error('您的绑定人数已达上限'), { code: 'BINDING_LIMIT_EXCEEDED', status: 409 });
     }
 
-    const receiverPendingCount = await this.bindingRepo.countPendingAsReceiver(receiverUserID);
-    if (receiverPendingCount >= config.LIMITS.MAX_BINDINGS_PER_USER) {
-      throw Object.assign(new Error('对方绑定人数已达上限'), { code: 'RECEIVER_BINDING_FULL', status: 409 });
+    const partnerCount = await this.bindingRepo.countForUser(partnerUserID);
+    if (partnerCount >= config.LIMITS.MAX_BINDINGS_PER_USER) {
+      throw Object.assign(new Error('对方绑定人数已达上限'), { code: 'PARTNER_BINDING_FULL', status: 409 });
     }
 
-    // 6. 检查是否已存在绑定
-    const existing = await this.bindingRepo.findActiveBetween(senderUserID, receiverUserID);
-    if (existing) {
-      throw Object.assign(new Error('与该用户的绑定关系已生效'), { code: 'BINDING_EXISTS', status: 409 });
+    // 4. 创建绑定
+    const result = await this.bindingRepo.create(myUserID, partnerUserID);
+
+    if (result.alreadyExists) {
+      throw Object.assign(new Error('你们已经是绑定关系'), { code: 'ALREADY_BINDING', status: 409 });
     }
 
-    // 检查是否有 pending 请求
-    const pendingForReceiver = await this.bindingRepo.findPendingForReceiver(receiverUserID);
-    const hasPending = pendingForReceiver.some(b => b.sender_user_ID === senderUserID);
-    if (hasPending) {
-      throw Object.assign(new Error('已发送过绑定请求，请等待对方确认'), { code: 'PENDING_EXISTS', status: 409 });
-    }
-
-    // 7. 创建 pending 绑定
-    const expiredAt = new Date(Date.now() + config.BINDING.EXPIRES_MS);
-    const binding = await this.bindingRepo.createPending({
-      senderUserID,
-      receiverUserID,
-      senderName,
-      receiverName,
-      senderPhone,
-      receiverPhone: cleanPhone,
-      expiredAt
-    });
-
-    // 8. 记录日志
-    logOperation({
-      userUserID: senderUserID,
-      action: 'REQUEST_BINDING',
-      targetType: 'binding',
-      targetId: String(binding.id),
-      details: { receiver_user_ID: receiverUserID, sender_name: senderName || '未命名发送者' },
-      ipAddress: extra.ipAddress
-    }).catch(() => {});
-
-    return { binding_id: binding.id, message: '绑定请求已发送' };
+    return {
+      message: '绑定成功',
+      partner_user_ID: partnerUserID,
+      partner_nickname: partnerUser.nickname || '未命名用户'
+    };
   }
 
   /**
-   * 确认绑定请求
+   * 解绑用户
+   * @param {string} myUserID - 我的 user_ID
+   * @param {string} partnerUserID - 对方的 user_ID
    */
-  async confirmRequest(requestId, receiverUserID, extra = {}) {
-    const binding = await this.bindingRepo.findById(requestId);
-
-    if (!binding || binding.receiver_user_ID !== receiverUserID || binding.status !== 'pending') {
-      throw Object.assign(new Error('请求不存在或状态异常'), { code: 'REQUEST_INVALID', status: 404 });
+  async unbind(myUserID, partnerUserID) {
+    // 1. 检查绑定关系是否存在
+    const exists = await this.bindingRepo.exists(myUserID, partnerUserID);
+    if (!exists) {
+      throw Object.assign(new Error('绑定关系不存在'), { code: 'BINDING_NOT_FOUND', status: 404 });
     }
 
-    await this.bindingRepo.updateStatus(requestId, 'active');
+    // 2. 删除绑定
+    await this.bindingRepo.delete(myUserID, partnerUserID);
 
-    logOperation({
-      userUserID: receiverUserID,
-      action: 'CONFIRM_BINDING',
-      targetType: 'binding',
-      targetId: String(requestId),
-      details: { sender_user_ID: binding.sender_user_ID },
-      ipAddress: extra.ipAddress
-    }).catch(() => {});
-
-    return { message: '绑定成功' };
+    return { message: '已解除绑定' };
   }
 
   /**
-   * 拒绝绑定请求
+   * 获取我的所有绑定
+   * @param {string} myUserID - 我的 user_ID
    */
-  async rejectRequest(requestId, receiverUserID, extra = {}) {
-    const binding = await this.bindingRepo.findById(requestId);
+  async getMyBindings(myUserID) {
+    const bindings = await this.bindingRepo.findAllForUser(myUserID);
 
-    if (!binding || binding.receiver_user_ID !== receiverUserID || binding.status !== 'pending') {
-      throw Object.assign(new Error('请求不存在'), { code: 'REQUEST_INVALID', status: 404 });
+    // 补充对方用户信息
+    const result = [];
+    for (const binding of bindings) {
+      const partner = await this.userRepo.findByUserID(binding.partner_user_ID);
+      result.push({
+        partner_user_ID: binding.partner_user_ID,
+        partner_nickname: partner?.nickname || '未命名用户',
+        partner_phone: partner?.phone
+          ? partner.phone.replace(/(\+\d{1,3}\s)?(\d{3})\d{4}(\d{4})/, '$2****$3')
+          : '未知'
+      });
     }
-
-    await this.bindingRepo.updateStatus(requestId, 'revoked', {
-      rejected_at: new Date().toISOString()
-    });
-
-    logOperation({
-      userUserID: receiverUserID,
-      action: 'REJECT_BINDING',
-      targetType: 'binding',
-      targetId: String(requestId),
-      details: { sender_user_ID: binding.sender_user_ID },
-      ipAddress: extra.ipAddress
-    }).catch(() => {});
-
-    return { message: '已拒绝' };
-  }
-
-  /**
-   * 获取我的所有有效绑定
-   */
-  async getMyBindings(user_ID) {
-    const bindings = await this.bindingRepo.findAllActiveForUser(user_ID);
-
-    const result = bindings.map(binding => {
-      const isSender = binding.sender_user_ID === user_ID;
-      return {
-        id: binding.id,
-        status: binding.status,
-        remark: binding.remark,
-        created_at: binding.created_at,
-        updated_at: binding.updated_at,
-        my_role: isSender ? 'sender' : 'receiver',
-        partner_user_ID: isSender ? binding.receiver_user_ID : binding.sender_user_ID,
-        partner_nickname: isSender ? binding.receiver_nickname : binding.sender_nickname,
-        partner_phone: isSender ? binding.receiver_phone : binding.sender_phone,
-        partner_type: isSender ? binding.receiver_type : binding.sender_type,
-        sender_user_ID: binding.sender_user_ID,
-        receiver_user_ID: binding.receiver_user_ID,
-        sender_nickname: binding.sender_nickname
-      };
-    });
-
-    const asSender = result.filter(b => b.my_role === 'sender').length;
-    const asReceiver = result.filter(b => b.my_role === 'receiver').length;
 
     return {
       total: result.length,
-      as_sender: asSender,
-      as_receiver: asReceiver,
       bindings: result
     };
   }
 
   /**
-   * 获取待确认的绑定请求（作为接收者）
+   * 检查是否已绑定
+   * @param {string} user_ID_1 - 用户1
+   * @param {string} user_ID_2 - 用户2
    */
-  async getPendingRequests(user_ID) {
-    // 先清理过期记录
-    await this.bindingRepo.cleanupOldRecords();
-
-    const pending = await this.bindingRepo.findPendingForReceiver(user_ID);
-
-    return pending.map(binding => ({
-      id: binding.id,
-      sender_name: binding.sender_nickname,
-      sender_phone: binding.sender_phone
-        ? binding.sender_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-        : '未知',
-      created_at: binding.created_at,
-      expired_at: binding.expired_at
-    }));
-  }
-
-  /**
-   * 获取我发出的绑定请求
-   */
-  async getSentRequests(user_ID) {
-    // 先清理过期记录
-    await this.bindingRepo.cleanupOldRecords();
-
-    const sent = await this.bindingRepo.findAllBySender(user_ID);
-
-    return sent.map(binding => ({
-      id: binding.id,
-      status: binding.status,
-      receiver_nickname: binding.receiver_nickname,
-      created_at: binding.created_at,
-      expired_at: binding.expired_at,
-      rejected_at: binding.rejected_at || null,
-      receiver_phone: binding.receiver_phone
-        ? binding.receiver_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-        : '未知'
-    }));
-  }
-
-  /**
-   * 解除绑定 / 取消请求
-   */
-  async revoke(bindingId, user_ID, extra = {}) {
-    const binding = await this.bindingRepo.findById(bindingId);
-
-    if (!binding) {
-      throw Object.assign(new Error('绑定关系不存在'), { code: 'NOT_FOUND', status: 404 });
-    }
-
-    if (binding.sender_user_ID !== user_ID && binding.receiver_user_ID !== user_ID) {
-      throw Object.assign(new Error('无权操作此绑定关系'), { code: 'PERMISSION_DENIED', status: 403 });
-    }
-
-    // pending 状态：直接删除
-    if (binding.status === 'pending') {
-      await this.bindingRepo.delete(bindingId);
-
-      logOperation({
-        userUserID: user_ID,
-        action: 'CANCEL_BINDING_REQUEST',
-        targetType: 'binding',
-        targetId: String(bindingId),
-        details: { receiver_user_ID: binding.receiver_user_ID },
-        ipAddress: extra.ipAddress
-      }).catch(() => {});
-
-      return { message: '绑定请求已取消' };
-    }
-
-    // 其他状态：更新为 revoked
-    await this.bindingRepo.updateStatus(bindingId, 'revoked');
-
-    logOperation({
-      userUserID: user_ID,
-      action: 'REVOKE_BINDING',
-      targetType: 'binding',
-      targetId: String(bindingId),
-      details: {
-        role: binding.sender_user_ID === user_ID ? 'sender' : 'receiver',
-        partner_user_ID: binding.sender_user_ID === user_ID ? binding.receiver_user_ID : binding.sender_user_ID
-      },
-      ipAddress: extra.ipAddress
-    }).catch(() => {});
-
-    return { message: '绑定关系已解除' };
+  async isBound(user_ID_1, user_ID_2) {
+    return await this.bindingRepo.exists(user_ID_1, user_ID_2);
   }
 }
 

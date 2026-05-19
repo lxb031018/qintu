@@ -1,5 +1,5 @@
 /**
- * 绑定控制器
+ * 绑定控制器（简化版）
  */
 
 const { success, validationError, error } = require('../../shared/lib/response');
@@ -16,6 +16,9 @@ class BindingController {
   async getMyBindings(req, res) {
     try {
       const user_ID = req.user.user_ID;
+      if (!user_ID || user_ID === 'unknown_user') {
+        return success(res, { total: 0, bindings: [] });
+      }
       const result = await this.bindingService.getMyBindings(user_ID);
       return success(res, result);
     } catch (err) {
@@ -25,148 +28,52 @@ class BindingController {
   }
 
   /**
-   * 获取待确认的绑定请求
-   * GET /api/bindings/pending
+   * 绑定用户（通过手机号）
+   * POST /api/bindings
    */
-  async getPending(req, res) {
+  async bindByPhone(req, res) {
     try {
       const user_ID = req.user.user_ID;
-
-      if (user_ID === 'unknown_user') {
-        return success(res, []);
-      }
-
-      const result = await this.bindingService.getPendingRequests(user_ID);
-      return success(res, result);
-    } catch (err) {
-      console.error('获取待确认请求失败:', err);
-      return error(res, err.message, err.code || 'GET_PENDING_FAILED', err.status || 500);
-    }
-  }
-
-  /**
-   * 获取我发出的绑定请求
-   * GET /api/bindings/sent
-   */
-  async getSent(req, res) {
-    try {
-      const user_ID = req.user.user_ID;
-
-      if (user_ID === 'unknown_user') {
-        return success(res, []);
-      }
-
-      const result = await this.bindingService.getSentRequests(user_ID);
-      return success(res, result);
-    } catch (err) {
-      console.error('获取已发出请求失败:', err);
-      return error(res, err.message, err.code || 'GET_SENT_FAILED', err.status || 500);
-    }
-  }
-
-  /**
-   * 发送绑定请求（通过手机号）
-   * POST /api/bindings/request-phone
-   */
-  async requestByPhone(req, res) {
-    try {
-      const user_ID = req.user.user_ID;
-      const { receiver_phone, sender_name, receiver_name } = req.body;
+      const { receiver_phone } = req.body;
 
       if (!receiver_phone) {
         return validationError(res, 'receiver_phone 是必填参数');
       }
 
-      if (!user_ID) {
+      if (!user_ID || user_ID === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.requestByPhone(
-        user_ID,
-        receiver_phone,
-        sender_name,
-        receiver_name,
-        { ipAddress: req.ip }
-      );
-
+      const result = await this.bindingService.bindByPhone(user_ID, receiver_phone);
       return success(res, result, 201);
     } catch (err) {
-      console.error('发送绑定请求失败:', err);
-      return error(res, err.message, err.code || 'REQUEST_BINDING_FAILED', err.status || 500);
+      console.error('绑定失败:', err);
+      return error(res, err.message, err.code || 'BIND_FAILED', err.status || 500);
     }
   }
 
   /**
-   * 确认绑定请求
-   * POST /api/bindings/confirm-request
+   * 解绑用户
+   * DELETE /api/bindings/:partner_user_id
    */
-  async confirmRequest(req, res) {
+  async unbind(req, res) {
     try {
       const user_ID = req.user.user_ID;
-      const { request_id } = req.body;
+      const { partner_user_id } = req.params;
 
-      if (!request_id) {
-        return validationError(res, 'request_id 是必填参数');
+      if (!partner_user_id) {
+        return validationError(res, 'partner_user_id 是必填参数');
       }
 
-      const result = await this.bindingService.confirmRequest(
-        request_id,
-        user_ID,
-        { ipAddress: req.ip }
-      );
-
-      return success(res, result);
-    } catch (err) {
-      console.error('确认绑定失败:', err);
-      return error(res, err.message, err.code || 'CONFIRM_REQUEST_FAILED', err.status || 500);
-    }
-  }
-
-  /**
-   * 拒绝绑定请求
-   * POST /api/bindings/reject-request
-   */
-  async rejectRequest(req, res) {
-    try {
-      const user_ID = req.user.user_ID;
-      const { request_id } = req.body;
-
-      if (!request_id) {
-        return validationError(res, 'request_id 是必填参数');
+      if (!user_ID || user_ID === 'unknown_user') {
+        return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.rejectRequest(
-        request_id,
-        user_ID,
-        { ipAddress: req.ip }
-      );
-
+      const result = await this.bindingService.unbind(user_ID, partner_user_id);
       return success(res, result);
     } catch (err) {
-      console.error('拒绝绑定失败:', err);
-      return error(res, err.message, err.code || 'REJECT_REQUEST_FAILED', err.status || 500);
-    }
-  }
-
-  /**
-   * 解除绑定 / 取消请求
-   * DELETE /api/bindings/:id
-   */
-  async revoke(req, res) {
-    try {
-      const user_ID = req.user.user_ID;
-      const bindingId = req.params.id;
-
-      const result = await this.bindingService.revoke(
-        bindingId,
-        user_ID,
-        { ipAddress: req.ip }
-      );
-
-      return success(res, result);
-    } catch (err) {
-      console.error('解除绑定失败:', err);
-      return error(res, err.message, err.code || 'REVOKE_BINDING_FAILED', err.status || 500);
+      console.error('解绑失败:', err);
+      return error(res, err.message, err.code || 'UNBIND_FAILED', err.status || 500);
     }
   }
 }

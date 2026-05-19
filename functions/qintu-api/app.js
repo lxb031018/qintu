@@ -9,38 +9,23 @@
 
 const express = require('express');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const { authMiddleware } = require('./shared/middleware/auth.middleware');
 const { requestIdMiddleware } = require('./shared/middleware/requestId.middleware');
 const { errorHandler, notFoundHandler } = require('./shared/middleware/error.middleware');
-const { getMemoryRepositories } = require('./repositories');
+const { createRepositories } = require('./repositories');
 const routes = require('./shared/routes');
 
-// 创建 Service 实例
-const { userRepo, bindingRepo, locationRepo, taskRepo } = getMemoryRepositories();
+// 创建 Repository 实例
+const { userRepo, bindingRepo } = createRepositories();
 
 // 导入 Service 类
 const AuthService = require('./auth/services/auth.service');
 const BindingService = require('./binding/services/binding.service');
-const TaskService = require('./task/services/task.service');
-const LocationService = require('./location/services/location.service');
-const UserService = require('./user/services/user.service');
 
 // 创建 Service 实例
 const authService = new AuthService(userRepo);
 const bindingService = new BindingService(bindingRepo, userRepo);
-const taskService = new TaskService(bindingRepo, taskRepo);
-const locationService = new LocationService(bindingRepo, locationRepo, userRepo);
-const userService = new UserService(userRepo);
-
-// 导入 RouteShare 相关模块
-const RouteShareRepository = require('./route-share/repositories/route_share.memory.repository');
-const RouteShareService = require('./route-share/services/route_share.service');
-
-// 创建 RouteShare Service 实例
-const routeShareRepo = new RouteShareRepository();
-const routeShareService = new RouteShareService(routeShareRepo, bindingService);
 
 // 挂载到全局供中间件访问（避免循环依赖）
 global._authService = authService;
@@ -48,11 +33,7 @@ global._authService = authService;
 // 导出 services 供路由使用
 const services = {
   authService,
-  bindingService,
-  taskService,
-  locationService,
-  userService,
-  routeShareService
+  bindingService
 };
 
 const app = express();
