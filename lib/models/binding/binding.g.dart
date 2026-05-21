@@ -7,9 +7,11 @@ part of 'binding.dart';
 // **************************************************************************
 
 Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
-  id: (json['id'] as num).toInt(),
+  id: (json['id'] as num?)?.toInt() ?? 0,
   bindCode: json['bind_code'] as String?,
-  status: $enumDecode(_$BindingStatusEnumMap, json['status']),
+  status:
+      $enumDecodeNullable(_$BindingStatusEnumMap, json['status']) ??
+      BindingStatus.active,
   remark: json['remark'] as String?,
   myRole: $enumDecodeNullable(_$MyRoleEnumMap, json['my_role']),
   partnerUserID: json['partner_user_ID'] as String?,
@@ -24,7 +26,9 @@ Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
   receiverPhone: json['receiver_phone'] as String?,
   myNameForPartner: json['my_name_for_partner'] as String?,
   partnerNameForMe: json['partner_name_for_me'] as String?,
-  createdAt: DateTime.parse(json['created_at'] as String),
+  createdAt: json['created_at'] == null
+      ? null
+      : DateTime.parse(json['created_at'] as String),
   updatedAt: json['updated_at'] == null
       ? null
       : DateTime.parse(json['updated_at'] as String),
@@ -51,7 +55,7 @@ Map<String, dynamic> _$BindingToJson(Binding instance) => <String, dynamic>{
   'receiver_user_ID': instance.receiverUserID,
   'receiver_nickname': instance.receiverNickname,
   'receiver_phone': instance.receiverPhone,
-  'created_at': instance.createdAt.toIso8601String(),
+  'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
   'expired_at': instance.expiredAt?.toIso8601String(),
 };
@@ -67,8 +71,8 @@ const _$MyRoleEnumMap = {MyRole.sender: 'sender', MyRole.receiver: 'receiver'};
 
 BindingList _$BindingListFromJson(Map<String, dynamic> json) => BindingList(
   total: (json['total'] as num).toInt(),
-  asSender: (json['as_sender'] as num).toInt(),
-  asReceiver: (json['as_receiver'] as num).toInt(),
+  asSender: (json['as_sender'] as num?)?.toInt() ?? 0,
+  asReceiver: (json['as_receiver'] as num?)?.toInt() ?? 0,
   bindings: (json['bindings'] as List<dynamic>)
       .map((e) => Binding.fromJson(e as Map<String, dynamic>))
       .toList(),
