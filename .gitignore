@@ -130,6 +130,9 @@ yarn-error.log*
 # Backend build artifacts
 functions/qintu-api.zip
 
+# Uploaded avatars (dynamically uploaded by users)
+functions/qintu-api/uploads/
+
 # Map navigation widget
 
 # Example projects
