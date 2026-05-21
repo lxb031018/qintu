@@ -45,6 +45,14 @@ class UserService {
 
     return { user_ID };
   }
+
+  /**
+   * 更新最后登录时间
+   * @param {string} user_ID
+   */
+  async updateLastLogin(user_ID) {
+    await this.userRepo.updateLastLogin(user_ID);
+  }
 }
 
 module.exports = UserService;

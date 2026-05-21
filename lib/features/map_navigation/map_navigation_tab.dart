@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/providers/location_status_provider.dart';
+import 'package:qintu/features/settings/core/user_profile_api.dart';
 import 'widgets/amap_map_view.dart';
 import 'service/map_controller_service/map_controller_service.dart';
 import 'models/amap_routing_models.dart';
@@ -75,6 +76,8 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     if (state == AppLifecycleState.resumed) {
       ref.read(locationProvider.notifier).checkStatus();
       ref.read(routeShareNotifierProvider.notifier).startPolling();
+      // 更新最后登录时间（从后台恢复）
+      UserProfileApi.updateLastLogin().catchError((_) => false);
     } else if (state == AppLifecycleState.paused) {
       ref.read(routeShareNotifierProvider.notifier).stopPolling();
     }

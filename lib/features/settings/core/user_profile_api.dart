@@ -25,4 +25,10 @@ class UserProfileApi {
     );
     return response.success;
   }
+
+  /// 更新最后登录时间（每次打开App时调用）
+  static Future<bool> updateLastLogin() async {
+    final response = await ApiClient().post(ApiEndpoints.updateLastLogin);
+    return response.success;
+  }
 }

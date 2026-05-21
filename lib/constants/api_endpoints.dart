@@ -64,6 +64,9 @@ class ApiEndpoints {
   /// 同步用户信息
   static const String syncUser = '/api/users/sync';
 
+  /// 更新最后登录时间
+  static const String updateLastLogin = '/api/users/last-login';
+
   // ==================== 头像上传 ====================
 
   /// 上传头像

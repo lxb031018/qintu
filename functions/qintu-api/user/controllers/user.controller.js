@@ -89,6 +89,26 @@ class UserController {
   }
 
   /**
+   * 更新最后登录时间
+   * POST /api/users/last-login
+   */
+  async updateLastLogin(req, res) {
+    try {
+      const user_ID = req.user && req.user.user_ID;
+      if (!user_ID) {
+        return res.status(401).json({ code: 401, message: 'Unauthorized' });
+      }
+
+      await this.userService.updateLastLogin(user_ID);
+
+      return res.json({ code: 0, message: 'OK' });
+    } catch (err) {
+      console.error('[User] 更新最后登录时间失败:', err);
+      return res.status(500).json({ code: 500, message: 'Server Error' });
+    }
+  }
+
+  /**
    * 获取指定用户信息
    * GET /api/users/:user_ID
    */

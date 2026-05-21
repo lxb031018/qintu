@@ -26,6 +26,9 @@ function createUserRoutes(userService) {
   // 同步用户信息
   router.post('/sync', (req, res) => userController.syncUser(req, res));
 
+  // 更新最后登录时间
+  router.post('/last-login', (req, res) => userController.updateLastLogin(req, res));
+
   // 获取指定用户信息
   router.get('/:user_ID', (req, res) => userController.getUser(req, res));
 

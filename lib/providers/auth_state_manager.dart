@@ -60,6 +60,13 @@ class AuthStateNotifier extends Notifier<UserState> {
           isLoading: false,
         );
         Logs.auth.info('[AuthStateNotifier] 设置为 authenticated, userId=${loginInfo?.userId}');
+
+        // 更新最后登录时间（冷启动）
+        try {
+          await UserProfileApi.updateLastLogin();
+        } catch (e) {
+          Logs.auth.warning('[AuthStateNotifier] 更新最后登录时间失败: $e');
+        }
       } else {
         Logs.auth.info('[AuthStateNotifier] 未登录，设置 authStatus=unauthenticated');
         state = const UserState(
