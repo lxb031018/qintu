@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/auth_page.dart';
 import '../features/app_shell/unified_home_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/settings/profile_page.dart';
 import '../features/app_shell/splash_screen.dart';
 import 'app_routes.dart';
 import 'route_guards.dart';
@@ -57,6 +58,13 @@ class AppRouter {
           name: 'settings',
           builder: (context, state) => const SettingsPage(),
         ),
+
+        // 个人信息编辑页
+        GoRoute(
+          path: AppRoutes.profile,
+          name: 'profile',
+          builder: (context, state) => const ProfilePage(),
+        ),
       ],
     );
 
@@ -79,6 +87,16 @@ extension RouterExtension on BuildContext {
   /// 跳转到设置页面
   void goToSettings() {
     goNamed('settings');
+  }
+
+  /// 跳转到个人信息编辑页
+  void goToProfile() {
+    goNamed('profile');
+  }
+
+  /// 跳转到个人信息编辑页（push 模式，保留导航栈）
+  void pushToProfile() {
+    pushNamed('profile');
   }
 
   /// 跳转到云函数调用测试页面

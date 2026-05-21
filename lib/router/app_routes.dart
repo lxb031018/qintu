@@ -6,5 +6,6 @@ class AppRoutes {
   static const String auth = '/auth';
   static const String unifiedHome = '/home';
   static const String settings = '/settings';
+  static const String profile = '/settings/profile';
   static const String helloApiTest = '/dev/hello-api-test';
 }
