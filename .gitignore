@@ -55,6 +55,12 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Auto-generated files (build_runner)
+*.g.dart
+*.freezed.dart
+lib/**/*.g.dart
+lib/**/*.freezed.dart
+
 # Symbolication related
 app.*.symbols
 
