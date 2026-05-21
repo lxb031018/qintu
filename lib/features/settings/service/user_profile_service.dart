@@ -19,9 +19,4 @@ class UserProfileService {
   static Future<String?> uploadAvatarBytes(Uint8List bytes) async {
     return await AvatarApi.uploadAvatarBytes(bytes);
   }
-
-  /// 更新头像URL
-  static Future<bool> updateAvatar(String avatarUrl) async {
-    return await UserProfileApi.updateProfile(avatarUrl: avatarUrl);
-  }
 }
