@@ -70,8 +70,8 @@ class ApiClient {
 
         final userId = await SecureStorage.getUserId();
         if (userId != null && userId.isNotEmpty) {
-          options.headers['X-User-OpenID'] = userId;
-          Logs.network.info('👤 已注入 X-User-OpenID: $userId');
+          options.headers['x-user-user_ID'] = userId;
+          Logs.network.info('👤 已注入 x-user-user_ID: $userId');
         }
 
         final deviceId = await DeviceManager.getDeviceId();

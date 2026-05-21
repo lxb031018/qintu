@@ -191,7 +191,7 @@ class PendingRequest {
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
-  @JsonKey(name: 'expired_at')
+  @JsonKey(name: 'expires_at')
   final DateTime expiredAt;
 
   const PendingRequest({

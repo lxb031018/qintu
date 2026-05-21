@@ -92,7 +92,7 @@ PendingRequest _$PendingRequestFromJson(Map<String, dynamic> json) =>
       senderName: json['sender_name'] as String?,
       senderPhone: json['sender_phone'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
-      expiredAt: DateTime.parse(json['expired_at'] as String),
+      expiredAt: DateTime.parse(json['expires_at'] as String),
     );
 
 Map<String, dynamic> _$PendingRequestToJson(PendingRequest instance) =>
@@ -101,7 +101,7 @@ Map<String, dynamic> _$PendingRequestToJson(PendingRequest instance) =>
       'sender_name': instance.senderName,
       'sender_phone': instance.senderPhone,
       'created_at': instance.createdAt.toIso8601String(),
-      'expired_at': instance.expiredAt.toIso8601String(),
+      'expires_at': instance.expiredAt.toIso8601String(),
     };
 
 SentRequest _$SentRequestFromJson(Map<String, dynamic> json) => SentRequest(
