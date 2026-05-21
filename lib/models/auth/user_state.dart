@@ -26,6 +26,7 @@ abstract class UserState with _$UserState {
     @Default(false) bool isLoading,
     String? errorMessage,
     @Default(0) int pendingBindingCount,
+    String? avatarUrl,
   }) = _UserState;
 
   const UserState._();

@@ -4,6 +4,7 @@ import '../../../constants/app_colors.dart';
 import '../../../providers/auth_state_manager.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../router/app_router.dart';
+import '../../../config/environments/environment_manager.dart';
 import 'widgets/settings_section_card.dart';
 
 /// 个人信息卡片
@@ -39,10 +40,24 @@ class ProfileCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.person,
-                  size: 28,
-                  color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                child: ClipOval(
+                  child: userState.avatarUrl != null && userState.avatarUrl!.isNotEmpty
+                      ? Image.network(
+                          EnvironmentManager.baseUrl + userState.avatarUrl!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.person,
+                            size: 28,
+                            color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                          ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          size: 28,
+                          color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                        ),
                 ),
               ),
               const SizedBox(width: 16),

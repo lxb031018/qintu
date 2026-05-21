@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserState {
 
- AuthStatus get authStatus; String? get userId; String? get phoneNumber; bool get isLoading; String? get errorMessage; int get pendingBindingCount;
+ AuthStatus get authStatus; String? get userId; String? get phoneNumber; bool get isLoading; String? get errorMessage; int get pendingBindingCount; String? get avatarUrl;
 /// Create a copy of UserState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $UserStateCopyWith<UserState> get copyWith => _$UserStateCopyWithImpl<UserState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserState&&(identical(other.authStatus, authStatus) || other.authStatus == authStatus)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.pendingBindingCount, pendingBindingCount) || other.pendingBindingCount == pendingBindingCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserState&&(identical(other.authStatus, authStatus) || other.authStatus == authStatus)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.pendingBindingCount, pendingBindingCount) || other.pendingBindingCount == pendingBindingCount)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,authStatus,userId,phoneNumber,isLoading,errorMessage,pendingBindingCount);
+int get hashCode => Object.hash(runtimeType,authStatus,userId,phoneNumber,isLoading,errorMessage,pendingBindingCount,avatarUrl);
 
 @override
 String toString() {
-  return 'UserState(authStatus: $authStatus, userId: $userId, phoneNumber: $phoneNumber, isLoading: $isLoading, errorMessage: $errorMessage, pendingBindingCount: $pendingBindingCount)';
+  return 'UserState(authStatus: $authStatus, userId: $userId, phoneNumber: $phoneNumber, isLoading: $isLoading, errorMessage: $errorMessage, pendingBindingCount: $pendingBindingCount, avatarUrl: $avatarUrl)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $UserStateCopyWith<$Res>  {
   factory $UserStateCopyWith(UserState value, $Res Function(UserState) _then) = _$UserStateCopyWithImpl;
 @useResult
 $Res call({
- AuthStatus authStatus, String? userId, String? phoneNumber, bool isLoading, String? errorMessage, int pendingBindingCount
+ AuthStatus authStatus, String? userId, String? phoneNumber, bool isLoading, String? errorMessage, int pendingBindingCount, String? avatarUrl
 });
 
 
@@ -62,7 +62,7 @@ class _$UserStateCopyWithImpl<$Res>
 
 /// Create a copy of UserState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? authStatus = null,Object? userId = freezed,Object? phoneNumber = freezed,Object? isLoading = null,Object? errorMessage = freezed,Object? pendingBindingCount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? authStatus = null,Object? userId = freezed,Object? phoneNumber = freezed,Object? isLoading = null,Object? errorMessage = freezed,Object? pendingBindingCount = null,Object? avatarUrl = freezed,}) {
   return _then(_self.copyWith(
 authStatus: null == authStatus ? _self.authStatus : authStatus // ignore: cast_nullable_to_non_nullable
 as AuthStatus,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,8 @@ as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber
 as String?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,pendingBindingCount: null == pendingBindingCount ? _self.pendingBindingCount : pendingBindingCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -155,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount,  String? avatarUrl)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserState() when $default != null:
-return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount);case _:
+return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount,_that.avatarUrl);case _:
   return orElse();
 
 }
@@ -176,10 +177,10 @@ return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount,  String? avatarUrl)  $default,) {final _that = this;
 switch (_that) {
 case _UserState():
-return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount);case _:
+return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount,_that.avatarUrl);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +197,10 @@ return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AuthStatus authStatus,  String? userId,  String? phoneNumber,  bool isLoading,  String? errorMessage,  int pendingBindingCount,  String? avatarUrl)?  $default,) {final _that = this;
 switch (_that) {
 case _UserState() when $default != null:
-return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount);case _:
+return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,_that.errorMessage,_that.pendingBindingCount,_that.avatarUrl);case _:
   return null;
 
 }
@@ -211,7 +212,7 @@ return $default(_that.authStatus,_that.userId,_that.phoneNumber,_that.isLoading,
 
 
 class _UserState extends UserState {
-  const _UserState({this.authStatus = AuthStatus.unknown, this.userId, this.phoneNumber, this.isLoading = false, this.errorMessage, this.pendingBindingCount = 0}): super._();
+  const _UserState({this.authStatus = AuthStatus.unknown, this.userId, this.phoneNumber, this.isLoading = false, this.errorMessage, this.pendingBindingCount = 0, this.avatarUrl}): super._();
   
 
 @override@JsonKey() final  AuthStatus authStatus;
@@ -220,6 +221,7 @@ class _UserState extends UserState {
 @override@JsonKey() final  bool isLoading;
 @override final  String? errorMessage;
 @override@JsonKey() final  int pendingBindingCount;
+@override final  String? avatarUrl;
 
 /// Create a copy of UserState
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +233,16 @@ _$UserStateCopyWith<_UserState> get copyWith => __$UserStateCopyWithImpl<_UserSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserState&&(identical(other.authStatus, authStatus) || other.authStatus == authStatus)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.pendingBindingCount, pendingBindingCount) || other.pendingBindingCount == pendingBindingCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserState&&(identical(other.authStatus, authStatus) || other.authStatus == authStatus)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.pendingBindingCount, pendingBindingCount) || other.pendingBindingCount == pendingBindingCount)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,authStatus,userId,phoneNumber,isLoading,errorMessage,pendingBindingCount);
+int get hashCode => Object.hash(runtimeType,authStatus,userId,phoneNumber,isLoading,errorMessage,pendingBindingCount,avatarUrl);
 
 @override
 String toString() {
-  return 'UserState(authStatus: $authStatus, userId: $userId, phoneNumber: $phoneNumber, isLoading: $isLoading, errorMessage: $errorMessage, pendingBindingCount: $pendingBindingCount)';
+  return 'UserState(authStatus: $authStatus, userId: $userId, phoneNumber: $phoneNumber, isLoading: $isLoading, errorMessage: $errorMessage, pendingBindingCount: $pendingBindingCount, avatarUrl: $avatarUrl)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$UserStateCopyWith<$Res> implements $UserStateCopyWith<$Re
   factory _$UserStateCopyWith(_UserState value, $Res Function(_UserState) _then) = __$UserStateCopyWithImpl;
 @override @useResult
 $Res call({
- AuthStatus authStatus, String? userId, String? phoneNumber, bool isLoading, String? errorMessage, int pendingBindingCount
+ AuthStatus authStatus, String? userId, String? phoneNumber, bool isLoading, String? errorMessage, int pendingBindingCount, String? avatarUrl
 });
 
 
@@ -268,7 +270,7 @@ class __$UserStateCopyWithImpl<$Res>
 
 /// Create a copy of UserState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? authStatus = null,Object? userId = freezed,Object? phoneNumber = freezed,Object? isLoading = null,Object? errorMessage = freezed,Object? pendingBindingCount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? authStatus = null,Object? userId = freezed,Object? phoneNumber = freezed,Object? isLoading = null,Object? errorMessage = freezed,Object? pendingBindingCount = null,Object? avatarUrl = freezed,}) {
   return _then(_UserState(
 authStatus: null == authStatus ? _self.authStatus : authStatus // ignore: cast_nullable_to_non_nullable
 as AuthStatus,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -276,7 +278,8 @@ as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber
 as String?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,pendingBindingCount: null == pendingBindingCount ? _self.pendingBindingCount : pendingBindingCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

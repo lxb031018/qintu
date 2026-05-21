@@ -8,7 +8,7 @@ class UserProfileApi {
   static Future<UserProfile?> getCurrentUser() async {
     final response = await ApiClient().get(ApiEndpoints.getCurrentUser);
     if (response.success && response.data != null) {
-      return UserProfile.fromJson(response.data);
+      return UserProfile.fromJson(response.data['data']);
     }
     return null;
   }

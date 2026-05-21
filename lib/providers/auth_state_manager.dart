@@ -4,6 +4,7 @@ import 'package:qintu/features/auth/core/secure_storage.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/config/auth_config.dart';
 import 'package:qintu/core/http/api_client.dart';
+import 'package:qintu/features/settings/core/user_profile_api.dart';
 
 /// ============================================
 /// 认证状态管理器
@@ -38,10 +39,21 @@ class AuthStateNotifier extends Notifier<UserState> {
           Logs.auth.info('[AuthStateNotifier] 已登录用户: ${loginInfo.userId}');
         }
 
+        // 获取用户头像
+        String? avatarUrl;
+        try {
+          final profile = await UserProfileApi.getCurrentUser();
+          avatarUrl = profile?.avatarUrl;
+          Logs.auth.info('[AuthStateNotifier] 获取到头像: $avatarUrl');
+        } catch (e) {
+          Logs.auth.warning('[AuthStateNotifier] 获取头像失败: $e');
+        }
+
         state = state.copyWith(
           authStatus: AuthStatus.authenticated,
           userId: loginInfo?.userId,
           phoneNumber: loginInfo?.phoneNumber,
+          avatarUrl: avatarUrl,
           isLoading: false,
         );
         Logs.auth.info('[AuthStateNotifier] 设置为 authenticated, userId=${loginInfo?.userId}');
