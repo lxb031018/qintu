@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart' show ImageCropper, CropAspectRatioPreset, CropStyle, AndroidUiSettings;
+import 'package:image_cropper/image_cropper.dart' show ImageCropper, CropAspectRatioPreset, CropStyle, AndroidUiSettings, ImageCompressFormat;
+import 'package:image/image.dart' as img;
 import '../../constants/app_colors.dart';
 import '../../constants/app_spacings.dart';
 import '../../constants/app_radii.dart';
@@ -447,6 +450,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     // 裁剪图片
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: image.path,
+      maxWidth: 300,
+      maxHeight: 300,
+      compressQuality: 70,
+      compressFormat: ImageCompressFormat.jpg,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: '裁剪头像',
@@ -459,8 +466,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     if (croppedFile == null) return;
 
+    // 转换为圆形 PNG（带透明角）
+    final circularBytes = await _createCircularPng(croppedFile.path);
+    if (circularBytes == null) return;
+
     // 上传并保存
-    final success = await ref.read(profilePageProvider.notifier).uploadAvatar(croppedFile.path);
+    final success = await ref.read(profilePageProvider.notifier).uploadAvatarBytes(circularBytes);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -469,6 +480,43 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  /// 将裁剪后的正方形图片转换为带透明角的圆形 PNG
+  Future<Uint8List?> _createCircularPng(String filePath) async {
+    try {
+      final bytes = await File(filePath).readAsBytes();
+      final image = img.decodeImage(bytes);
+      if (image == null) return null;
+
+      final size = image.width < image.height ? image.width : image.height;
+      final circular = img.Image(width: size, height: size, numChannels: 4);
+
+      // 遍历每个像素，判断是否在圆形区域内
+      for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+          final dx = x - size / 2;
+          final dy = y - size / 2;
+          final dist = dx * dx + dy * dy;
+          final radius = size / 2;
+
+          if (dist <= radius * radius) {
+            // 在圆形内 - 复制像素
+            final srcX = (x * image.width / size).floor();
+            final srcY = (y * image.height / size).floor();
+            circular.setPixel(x, y, image.getPixel(srcX, srcY));
+          } else {
+            // 在圆形外 - 透明
+            circular.setPixel(x, y, img.ColorRgba8(0, 0, 0, 0));
+          }
+        }
+      }
+
+      return Uint8List.fromList(img.encodePng(circular));
+    } catch (e) {
+      debugPrint('创建圆形头像失败: $e');
+      return null;
     }
   }
 
