@@ -2,6 +2,9 @@
  * 亲途 (qintu) - 后端 API 入口
  */
 
+// 加载环境变量
+require('dotenv').config();
+
 // 全局未捕获异常处理
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] 未捕获异常:', err.message);

@@ -64,6 +64,11 @@ class ApiEndpoints {
   /// 同步用户信息
   static const String syncUser = '/api/users/sync';
 
+  // ==================== 头像上传 ====================
+
+  /// 上传头像
+  static const String uploadAvatar = '/api/avatar/upload';
+
   // ==================== 导航任务 ====================
 
   /// 创建导航任务

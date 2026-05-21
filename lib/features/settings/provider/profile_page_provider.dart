@@ -111,6 +111,31 @@ class ProfilePageNotifier extends Notifier<ProfilePageState> {
       return false;
     }
   }
+
+  /// 上传并保存头像
+  Future<bool> uploadAvatar(String filePath) async {
+    state = state.copyWith(isSaving: true, errorMessage: null);
+
+    try {
+      final avatarUrl = await UserProfileService.uploadAndUpdateAvatar(filePath);
+      if (avatarUrl != null && state.profile != null) {
+        final updatedProfile = UserProfile(
+          userId: state.profile!.userId,
+          phone: state.profile!.phone,
+          nickname: state.profile!.nickname,
+          avatarUrl: avatarUrl,
+        );
+        state = state.copyWith(profile: updatedProfile, isSaving: false);
+        return true;
+      } else {
+        state = state.copyWith(isSaving: false, errorMessage: '上传失败');
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(isSaving: false, errorMessage: e.toString());
+      return false;
+    }
+  }
 }
 
 /// Provider

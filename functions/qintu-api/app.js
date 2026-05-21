@@ -8,6 +8,7 @@
  */
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const config = require('./config');
 const { authMiddleware } = require('./shared/middleware/auth.middleware');
@@ -22,10 +23,12 @@ const { userRepo, bindingRepo } = createRepositories();
 // 导入 Service 类
 const AuthService = require('./auth/services/auth.service');
 const BindingService = require('./binding/services/binding.service');
+const UserService = require('./user/services/user.service');
 
 // 创建 Service 实例
 const authService = new AuthService(userRepo);
 const bindingService = new BindingService(bindingRepo, userRepo);
+const userService = new UserService(userRepo);
 
 // 挂载到全局供中间件访问（避免循环依赖）
 global._authService = authService;
@@ -33,7 +36,8 @@ global._authService = authService;
 // 导出 services 供路由使用
 const services = {
   authService,
-  bindingService
+  bindingService,
+  userService
 };
 
 const app = express();
@@ -76,6 +80,9 @@ app.use(requestIdMiddleware);
 // 请求体大小限制
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// 静态文件服务（上传的头像）
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 全局 Rate Limiting - 本地开发环境禁用
 // const globalLimiter = rateLimit({

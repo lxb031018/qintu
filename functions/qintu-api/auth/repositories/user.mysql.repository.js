@@ -4,7 +4,7 @@
  * 管理用户数据的持久化存储
  */
 
-const { query, transaction } = require('../../../db/mysql');
+const { query, transaction } = require('../../db/mysql');
 
 class UserMysqlRepository {
   /**

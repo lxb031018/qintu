@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_spacings.dart';
 import '../../constants/app_radii.dart';
@@ -108,6 +109,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildAvatarCard(BuildContext context, bool isDark, String? avatarUrl) {
+    final pageState = ref.watch(profilePageProvider);
+
     return Container(
       padding: const EdgeInsets.all(AppSpacings.lg),
       decoration: BoxDecoration(
@@ -124,7 +127,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () => _showAvatarEditHint(context),
+            onTap: () => _pickAndUploadAvatar(context),
             child: Stack(
               children: [
                 Container(
@@ -143,12 +146,45 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.person,
-                    size: 48,
-                    color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                  child: ClipOval(
+                    child: avatarUrl != null && avatarUrl.isNotEmpty
+                        ? Image.network(
+                            avatarUrl,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.person,
+                              size: 48,
+                              color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                            ),
+                          )
+                        : Icon(
+                            Icons.person,
+                            size: 48,
+                            color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,
+                          ),
                   ),
                 ),
+                if (pageState.isSaving)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   bottom: 4,
                   right: 4,
@@ -387,14 +423,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}';
   }
 
-  void _showAvatarEditHint(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('头像更换功能暂未开放'),
-        duration: Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
+  Future<void> _pickAndUploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+
+    // 选择图片
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 500,
+      maxHeight: 500,
+      imageQuality: 80,
     );
+
+    if (image == null) return;
+
+    // 上传并保存
+    final success = await ref.read(profilePageProvider.notifier).uploadAvatar(image.path);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? '头像已更新' : '头像上传失败'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _saveNickname(BuildContext context) async {

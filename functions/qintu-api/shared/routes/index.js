@@ -8,6 +8,8 @@ const router = express.Router();
 // 导入各模块路由（接收 services）
 const authRoutes = require('./auth.routes');
 const bindingRoutes = require('./binding.routes');
+const avatarRoutes = require('./avatar.routes');
+const userRoutes = require('./user.routes');
 
 /**
  * 配置路由
@@ -20,6 +22,12 @@ function configureRoutes(services) {
 
   // 绑定路由：/api/bindings/*
   router.use('/api/bindings', bindingRoutes(services.bindingService));
+
+  // 头像上传路由：/api/avatar/*
+  router.use('/api/avatar', avatarRoutes(services));
+
+  // 用户路由：/api/users/*
+  router.use('/api/users', userRoutes(services.userService));
 
   // 简单测试路由
   router.get('/test', (req, res) => {

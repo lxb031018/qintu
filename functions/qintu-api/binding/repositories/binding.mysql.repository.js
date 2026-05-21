@@ -5,7 +5,7 @@
  * 存储规则：user_A < user_B（字符串比较，小的在前）
  */
 
-const { query } = require('../../../db/mysql');
+const { query } = require('../../db/mysql');
 
 class BindingMysqlRepository {
   /**
