@@ -66,16 +66,21 @@ class BindingNotifier extends Notifier<BindingListState> {
   }
 
   Future<void> loadPendingRequests() async {
+    Logs.binding.info('loadPendingRequests: start');
     state = state.copyWith(
       pendingRequestsState: AsyncLoading(previousData: pendingRequests),
     );
 
     try {
+      Logs.binding.info('loadPendingRequests: calling service');
       final requests = await _bindingService.getPendingRequests();
+      Logs.binding.info('loadPendingRequests: got ${requests.length} requests');
       state = state.copyWith(
         pendingRequestsState: AsyncSuccess(requests),
       );
+      Logs.binding.info('loadPendingRequests: state updated');
     } catch (e, stackTrace) {
+      Logs.binding.error('loadPendingRequests: error $e');
       state = state.copyWith(
         pendingRequestsState: AsyncError('加载待确认请求失败: $e', e, stackTrace),
       );

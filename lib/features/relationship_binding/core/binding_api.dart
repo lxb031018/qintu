@@ -36,10 +36,24 @@ class BindingApi {
 
     final response = await _apiClient.get<Map<String, dynamic>>(ApiEndpoints.getPendingRequests);
 
+    Logs.binding.info('API响应: ${response.data}');
+
     if (response.isSuccessful && response.data != null) {
       final responseData = response.data!;
       final requestsData = responseData['data'] as List<dynamic>? ?? [];
       Logs.binding.info('待确认请求获取成功: ${requestsData.length}');
+
+      // 详细日志：打印每个请求的字段
+      for (int i = 0; i < requestsData.length; i++) {
+        final json = requestsData[i] as Map<String, dynamic>;
+        Logs.binding.info('请求[$i] JSON keys: ${json.keys.toList()}');
+
+        // 在调用 fromJson 之前打印所有字段
+        json.forEach((key, value) {
+          Logs.binding.info('请求[$i] 字段[$key] = $value (type: ${value?.runtimeType})');
+        });
+      }
+
       return requestsData
           .map((json) => PendingRequest.fromJson(json as Map<String, dynamic>))
           .toList();

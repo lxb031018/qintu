@@ -36,7 +36,7 @@ class ApiEndpoints {
   // ==================== 绑定关系 ====================
 
   /// 发送绑定请求（手机号绑定）
-  static const String requestPhoneBinding = '/api/bindings';
+  static const String requestPhoneBinding = '/api/bindings/request-phone';
 
   /// 获取待确认的绑定请求
   static const String getPendingRequests = '/api/bindings/pending';
