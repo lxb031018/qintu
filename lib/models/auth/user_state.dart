@@ -27,6 +27,7 @@ abstract class UserState with _$UserState {
     String? errorMessage,
     @Default(0) int pendingBindingCount,
     String? avatarUrl,
+    String? nickname,
   }) = _UserState;
 
   const UserState._();

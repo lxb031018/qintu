@@ -78,6 +78,8 @@ class ProfilePageNotifier extends Notifier<ProfilePageState> {
           avatarUrl: state.profile!.avatarUrl,
         );
         state = state.copyWith(profile: updatedProfile, isSaving: false);
+        // 同步更新 authStateProvider 的昵称
+        ref.read(authStateProvider.notifier).updateNickname(nickname);
       } else {
         state = state.copyWith(isSaving: false, errorMessage: '保存失败');
       }

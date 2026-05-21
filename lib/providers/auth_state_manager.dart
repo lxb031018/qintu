@@ -39,14 +39,16 @@ class AuthStateNotifier extends Notifier<UserState> {
           Logs.auth.info('[AuthStateNotifier] 已登录用户: ${loginInfo.userId}');
         }
 
-        // 获取用户头像
+        // 获取用户头像和昵称
         String? avatarUrl;
+        String? nickname;
         try {
           final profile = await UserProfileApi.getCurrentUser();
           avatarUrl = profile?.avatarUrl;
-          Logs.auth.info('[AuthStateNotifier] 获取到头像: $avatarUrl');
+          nickname = profile?.nickname;
+          Logs.auth.info('[AuthStateNotifier] 获取到头像: $avatarUrl, 昵称: $nickname');
         } catch (e) {
-          Logs.auth.warning('[AuthStateNotifier] 获取头像失败: $e');
+          Logs.auth.warning('[AuthStateNotifier] 获取用户资料失败: $e');
         }
 
         state = state.copyWith(
@@ -54,6 +56,7 @@ class AuthStateNotifier extends Notifier<UserState> {
           userId: loginInfo?.userId,
           phoneNumber: loginInfo?.phoneNumber,
           avatarUrl: avatarUrl,
+          nickname: nickname,
           isLoading: false,
         );
         Logs.auth.info('[AuthStateNotifier] 设置为 authenticated, userId=${loginInfo?.userId}');
@@ -86,6 +89,12 @@ class AuthStateNotifier extends Notifier<UserState> {
   void updateAvatar(String? avatarUrl) {
     state = state.copyWith(avatarUrl: avatarUrl);
     Logs.auth.info('[AuthStateNotifier] 头像已更新: $avatarUrl');
+  }
+
+  /// 更新昵称
+  void updateNickname(String? nickname) {
+    state = state.copyWith(nickname: nickname);
+    Logs.auth.info('[AuthStateNotifier] 昵称已更新: $nickname');
   }
 
   /// 登录成功，保存认证状态

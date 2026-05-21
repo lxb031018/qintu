@@ -67,9 +67,9 @@ class ProfileCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      userState.userId?.isNotEmpty == true
-                          ? _maskUserId(userState.userId!)
-                          : '未登录',
+                      userState.nickname?.isNotEmpty == true
+                          ? userState.nickname!
+                          : '昵称',
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
                         color: isDark ? AppColors.darkTextColor : AppColors.textColor,
@@ -98,8 +98,4 @@ class ProfileCard extends ConsumerWidget {
     );
   }
 
-  String _maskUserId(String userId) {
-    if (userId.length <= 4) return userId;
-    return userId;
-  }
 }
