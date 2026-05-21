@@ -47,3 +47,24 @@ CREATE TABLE `user_bindings` (
     KEY `idx_user_B` (`user_B`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='用户绑定关系表 - 关系平等，解除绑定即删除记录';
+
+-- ------------------------------------------------------------
+-- 3. 绑定请求表 (binding_requests)
+-- 记录用户发送的绑定请求，等待对方确认后才建立绑定关系
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `binding_requests`;
+CREATE TABLE `binding_requests` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `sender_user_ID` CHAR(36) NOT NULL COMMENT '发送者user_ID',
+    `receiver_user_ID` CHAR(36) NOT NULL COMMENT '接收者user_ID',
+    `sender_name` VARCHAR(32) NULL DEFAULT NULL COMMENT '发送者对接收者的称呼',
+    `receiver_name` VARCHAR(32) NULL DEFAULT NULL COMMENT '接收者对发送者的称呼',
+    `status` ENUM('pending', 'accepted', 'rejected', 'expired') DEFAULT 'pending' COMMENT '请求状态',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `expires_at` TIMESTAMP NOT NULL COMMENT '过期时间',
+
+    PRIMARY KEY (`id`),
+    KEY `idx_receiver` (`receiver_user_ID`, `status`),
+    KEY `idx_sender` (`sender_user_ID`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='绑定请求表 - 需要对方确认才能建立绑定关系';

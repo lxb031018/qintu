@@ -123,6 +123,115 @@ class BindingMysqlRepository {
 
     return result.affectedRows > 0;
   }
+
+  // ==================== 绑定请求（Request）相关 ====================
+
+  /**
+   * 创建绑定请求
+   * @param {string} senderUserID - 发送者 user_ID
+   * @param {string} receiverUserID - 接收者 user_ID
+   * @param {string} senderName - 发送者对接收者的称呼
+   * @param {string} receiverName - 接收者对发送者的称呼
+   * @param {Date} expiresAt - 过期时间
+   * @returns {Promise<Object>} 新创建的请求
+   */
+  async createRequest(senderUserID, receiverUserID, senderName, receiverName, expiresAt) {
+    const [result] = await query(
+      `INSERT INTO binding_requests (sender_user_ID, receiver_user_ID, sender_name, receiver_name, status, created_at, expires_at)
+       VALUES (?, ?, ?, ?, 'pending', NOW(), ?)`,
+      [senderUserID, receiverUserID, senderName, receiverName, expiresAt]
+    );
+    return {
+      id: result.insertId,
+      sender_user_ID: senderUserID,
+      receiver_user_ID: receiverUserID,
+      sender_name: senderName,
+      receiver_name: receiverName,
+      status: 'pending'
+    };
+  }
+
+  /**
+   * 获取接收者的待确认请求
+   * @param {string} receiverUserID - 接收者 user_ID
+   * @returns {Promise<Array>}
+   */
+  async findPendingForReceiver(receiverUserID) {
+    return await query(
+      `SELECT * FROM binding_requests
+       WHERE receiver_user_ID = ? AND status = 'pending' AND expires_at > NOW()
+       ORDER BY created_at DESC`,
+      [receiverUserID]
+    );
+  }
+
+  /**
+   * 获取发送者的已发请求
+   * @param {string} senderUserID - 发送者 user_ID
+   * @returns {Promise<Array>}
+   */
+  async findSentBySender(senderUserID) {
+    return await query(
+      `SELECT * FROM binding_requests
+       WHERE sender_user_ID = ? AND status = 'pending'
+       ORDER BY created_at DESC`,
+      [senderUserID]
+    );
+  }
+
+  /**
+   * 更新请求状态
+   * @param {number} requestId - 请求 ID
+   * @param {string} status - 新状态 (accepted/rejected/expired)
+   * @returns {Promise<boolean>}
+   */
+  async updateRequestStatus(requestId, status) {
+    const [result] = await query(
+      'UPDATE binding_requests SET status = ? WHERE id = ?',
+      [status, requestId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * 根据 ID 查找请求
+   * @param {number} requestId - 请求 ID
+   * @returns {Promise<Object|null>}
+   */
+  async findRequestById(requestId) {
+    const rows = await query(
+      'SELECT * FROM binding_requests WHERE id = ?',
+      [requestId]
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
+
+  /**
+   * 检查是否存在待处理的绑定请求
+   * @param {string} senderUserID - 发送者 user_ID
+   * @param {string} receiverUserID - 接收者 user_ID
+   * @returns {Promise<boolean>}
+   */
+  async hasPendingRequest(senderUserID, receiverUserID) {
+    const rows = await query(
+      `SELECT 1 FROM binding_requests
+       WHERE sender_user_ID = ? AND receiver_user_ID = ? AND status = 'pending' AND expires_at > NOW()`,
+      [senderUserID, receiverUserID]
+    );
+    return rows.length > 0;
+  }
+
+  /**
+   * 将过期的请求标记为 expired
+   * @returns {Promise<number>} 更新的行数
+   */
+  async expireOldRequests() {
+    const [result] = await query(
+      `UPDATE binding_requests SET status = 'expired'
+       WHERE status = 'pending' AND expires_at <= NOW()`
+    );
+    return result.affectedRows || 0;
+  }
 }
 
 module.exports = BindingMysqlRepository;

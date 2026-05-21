@@ -25,14 +25,16 @@ enum MyRole {
 /// 绑定关系数据模型
 @JsonSerializable()
 class Binding {
-  /// 绑定关系 ID
+  /// 绑定关系 ID（可选，用于完整信息。user_bindings 表无单独 id，用复合主键）
+  @JsonKey(includeFromJson: true)
   final int id;
 
   /// 绑定码（已废弃，保留向后兼容）
   @JsonKey(name: 'bind_code', includeIfNull: false)
   final String? bindCode;
 
-  /// 绑定状态
+  /// 绑定状态（默认 active）
+  @JsonKey(name: 'status', includeFromJson: true)
   final BindingStatus status;
 
   /// 备注
@@ -92,7 +94,7 @@ class Binding {
 
   /// 创建时间
   @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   /// 更新时间
   @JsonKey(name: 'updated_at')
@@ -103,9 +105,9 @@ class Binding {
   final DateTime? expiredAt;
 
   const Binding({
-    required this.id,
+    this.id = 0,
     this.bindCode,
-    required this.status,
+    this.status = BindingStatus.active,
     this.remark,
     this.myRole,
     this.partnerUserID,
@@ -120,7 +122,7 @@ class Binding {
     this.receiverPhone,
     this.myNameForPartner,
     this.partnerNameForMe,
-    required this.createdAt,
+    this.createdAt,
     this.updatedAt,
     this.expiredAt,
   });
@@ -151,22 +153,22 @@ class Binding {
 class BindingList {
   /// 总绑定数量
   final int total;
-  
-  /// 作为发送者的绑定数量
-  @JsonKey(name: 'as_sender')
+
+  /// 作为发送者的绑定数量（可选）
+  @JsonKey(name: 'as_sender', includeFromJson: true)
   final int asSender;
-  
-  /// 作为接收者的绑定数量
-  @JsonKey(name: 'as_receiver')
+
+  /// 作为接收者的绑定数量（可选）
+  @JsonKey(name: 'as_receiver', includeFromJson: true)
   final int asReceiver;
-  
+
   /// 绑定列表
   final List<Binding> bindings;
 
   const BindingList({
     required this.total,
-    required this.asSender,
-    required this.asReceiver,
+    this.asSender = 0,
+    this.asReceiver = 0,
     required this.bindings,
   });
 
