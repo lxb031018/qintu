@@ -96,7 +96,7 @@ SHOW TABLES;
 | `phone` | VARCHAR(20) | 手机号（带国家码，如 `+86 13800138000`），唯一 |
 | `nickname` | VARCHAR(50) | 用户昵称 |
 | `avatar_url` | VARCHAR(500) | 头像 URL |
-| `last_login_at` | TIMESTAMP | 最后登录时间 |
+| `last_active_at` | TIMESTAMP | 最近活跃时间 |
 | `created_at` | TIMESTAMP | 创建时间 |
 
 **索引**：

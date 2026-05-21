@@ -243,7 +243,7 @@ X-User-OpenID: <user_ID>
     "nickname": "张三",
     "user_type": "both",
     "status": "active",
-    "last_login_at": "2026-04-04T10:00:00.000Z",
+    "last_active_at": "2026-04-04T10:00:00.000Z",
     "created_at": "2026-04-04T10:00:00.000Z"
   }
 }

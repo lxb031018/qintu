@@ -81,9 +81,9 @@ class UserMysqlRepository {
       fields.push('avatar_url = ?');
       values.push(userData.avatar_url);
     }
-    if (userData.last_login_at !== undefined) {
-      fields.push('last_login_at = ?');
-      values.push(userData.last_login_at);
+    if (userData.last_active_at !== undefined) {
+      fields.push('last_active_at = ?');
+      values.push(userData.last_active_at);
     }
 
     if (fields.length === 0) return;
@@ -101,7 +101,7 @@ class UserMysqlRepository {
    */
   async updateLastLogin(user_ID) {
     await query(
-      'UPDATE users SET last_login_at = NOW() WHERE user_ID = ?',
+      'UPDATE users SET last_active_at = NOW() WHERE user_ID = ?',
       [user_ID]
     );
   }

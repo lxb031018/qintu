@@ -33,7 +33,7 @@ class UserController {
           nickname: user.nickname || '',
           avatar_url: user.avatar_url || '',
           created_at: user.created_at,
-          last_login_at: user.last_login_at
+          last_active_at: user.last_active_at
         }
       });
     } catch (err) {
