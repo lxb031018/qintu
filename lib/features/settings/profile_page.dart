@@ -5,6 +5,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_spacings.dart';
 import '../../constants/app_radii.dart';
 import '../../theme/app_text_styles.dart';
+import '../../config/environments/environment_manager.dart';
 import 'provider/profile_page_provider.dart';
 
 /// ============================================
@@ -149,7 +150,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: ClipOval(
                     child: avatarUrl != null && avatarUrl.isNotEmpty
                         ? Image.network(
-                            avatarUrl,
+                            EnvironmentManager.baseUrl + avatarUrl,
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,

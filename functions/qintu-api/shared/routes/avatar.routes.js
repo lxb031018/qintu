@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { requireAuth } = require('../middleware/auth.middleware');
 
@@ -44,7 +45,7 @@ const upload = multer({
  */
 function createAvatarRoutes(services) {
   // 上传头像（需要认证）
-  router.post('/upload', requireAuth, upload.single('avatar'), (req, res) => {
+  router.post('/upload', requireAuth, upload.single('avatar'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -53,14 +54,46 @@ function createAvatarRoutes(services) {
         });
       }
 
-      // 返回访问路径
-      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      const user_ID = req.user.user_ID;
+      const newFilename = req.file.filename;
+      const newAvatarUrl = `/uploads/avatars/${newFilename}`;
 
+      // 1. 获取旧头像并删除旧文件
+      console.log(`[Avatar] services.userService 存在: ${!!services.userService}`);
+      console.log(`[Avatar] user_ID: ${user_ID}`);
+      if (services.userService) {
+        try {
+          const oldUser = await services.userService.getUserById(user_ID);
+          if (oldUser && oldUser.avatar_url) {
+            // 从完整URL中提取文件名
+            const oldUrlParts = oldUser.avatar_url.split('/');
+            const oldFilename = oldUrlParts[oldUrlParts.length - 1];
+            // 提取新文件名（不含路径）
+            const newFilenameOnly = newFilename;
+            if (oldFilename && oldFilename !== newFilenameOnly) {
+              const oldPath = path.join(__dirname, '../../uploads/avatars', oldFilename);
+              if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+                console.log(`[Avatar] 已删除旧头像: ${oldFilename}`);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Avatar] 删除旧头像失败:', e);
+        }
+
+        // 2. 更新用户头像URL到数据库
+        console.log(`[Avatar] 开始更新数据库: user_ID=${user_ID}, avatar_url=${newAvatarUrl}`);
+        await services.userService.updateUser(user_ID, { avatar_url: newAvatarUrl });
+        console.log(`[Avatar] 数据库更新完成`);
+      }
+
+      // 返回访问路径
       res.json({
         success: true,
         data: {
-          avatarUrl,
-          filename: req.file.filename,
+          avatarUrl: newAvatarUrl,
+          filename: newFilename,
           size: req.file.size
         }
       });
