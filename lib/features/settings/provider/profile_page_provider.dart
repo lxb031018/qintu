@@ -126,6 +126,10 @@ class ProfilePageNotifier extends Notifier<ProfilePageState> {
           avatarUrl: avatarUrl,
         );
         state = state.copyWith(profile: updatedProfile, isSaving: false);
+
+        // 同步更新 authStateProvider 的头像
+        ref.read(authStateProvider.notifier).updateAvatar(avatarUrl);
+
         return true;
       } else {
         state = state.copyWith(isSaving: false, errorMessage: '上传失败');

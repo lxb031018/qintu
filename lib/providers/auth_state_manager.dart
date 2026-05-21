@@ -82,6 +82,12 @@ class AuthStateNotifier extends Notifier<UserState> {
     );
   }
 
+  /// 更新头像
+  void updateAvatar(String? avatarUrl) {
+    state = state.copyWith(avatarUrl: avatarUrl);
+    Logs.auth.info('[AuthStateNotifier] 头像已更新: $avatarUrl');
+  }
+
   /// 登录成功，保存认证状态
   Future<void> setAuthenticated({
     required String userId,
