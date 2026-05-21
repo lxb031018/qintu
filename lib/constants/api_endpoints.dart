@@ -36,7 +36,7 @@ class ApiEndpoints {
   // ==================== 绑定关系 ====================
 
   /// 发送绑定请求（手机号绑定）
-  static const String requestPhoneBinding = '/api/bindings/request-phone';
+  static const String requestPhoneBinding = '/api/bindings';
 
   /// 获取待确认的绑定请求
   static const String getPendingRequests = '/api/bindings/pending';
@@ -55,6 +55,9 @@ class ApiEndpoints {
 
   /// 解除绑定
   static const String revokeBinding = '/api/bindings'; // + /{id}
+
+  /// 修改我对对方的称呼
+  static String modifyBindingName(String partnerUserId) => '/api/bindings/$partnerUserId';
 
   /// 取消发出的绑定请求
   static String cancelSentRequest(int requestId) => '/api/bindings/$requestId';

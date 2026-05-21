@@ -34,7 +34,7 @@ class BindingController {
   async bindByPhone(req, res) {
     try {
       const user_ID = req.user.user_ID;
-      const { receiver_phone } = req.body;
+      const { receiver_phone, sender_name, receiver_name } = req.body;
 
       if (!receiver_phone) {
         return validationError(res, 'receiver_phone 是必填参数');
@@ -44,7 +44,7 @@ class BindingController {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.bindByPhone(user_ID, receiver_phone);
+      const result = await this.bindingService.bindByPhone(user_ID, receiver_phone, sender_name, receiver_name);
       return success(res, result, 201);
     } catch (err) {
       console.error('绑定失败:', err);
@@ -74,6 +74,36 @@ class BindingController {
     } catch (err) {
       console.error('解绑失败:', err);
       return error(res, err.message, err.code || 'UNBIND_FAILED', err.status || 500);
+    }
+  }
+
+  /**
+   * 修改我对对方的称呼
+   * PATCH /api/bindings/:partner_user_id
+   */
+  async modifyName(req, res) {
+    try {
+      const user_ID = req.user.user_ID;
+      const { partner_user_id } = req.params;
+      const { my_name_for_partner } = req.body;
+
+      if (!partner_user_id) {
+        return validationError(res, 'partner_user_id 是必填参数');
+      }
+
+      if (!my_name_for_partner) {
+        return validationError(res, 'my_name_for_partner 是必填参数');
+      }
+
+      if (!user_ID || user_ID === 'unknown_user') {
+        return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
+      }
+
+      const result = await this.bindingService.modifyName(user_ID, partner_user_id, my_name_for_partner);
+      return success(res, result);
+    } catch (err) {
+      console.error('修改称呼失败:', err);
+      return error(res, err.message, err.code || 'MODIFY_NAME_FAILED', err.status || 500);
     }
   }
 }

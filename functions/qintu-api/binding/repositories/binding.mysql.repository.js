@@ -21,20 +21,21 @@ class BindingMysqlRepository {
    * 创建绑定关系
    * @param {string} user_ID_1 - 用户1的 user_ID
    * @param {string} user_ID_2 - 用户2的 user_ID
+   * @param {string} name_A_to_B - A对B的称呼
+   * @param {string} name_B_to_A - B对A的称呼
    */
-  async create(user_ID_1, user_ID_2) {
+  async createWithNames(user_ID_1, user_ID_2, name_A_to_B, name_B_to_A) {
     const { user_A, user_B } = this._orderUsers(user_ID_1, user_ID_2);
 
     try {
       await query(
-        'INSERT INTO user_bindings (user_A, user_B) VALUES (?, ?)',
-        [user_A, user_B]
+        'INSERT INTO user_bindings (user_A, user_B, name_A_to_B, name_B_to_A) VALUES (?, ?, ?, ?)',
+        [user_A, user_B, name_A_to_B, name_B_to_A]
       );
-      return { user_A, user_B };
+      return { user_A, user_B, name_A_to_B, name_B_to_A };
     } catch (error) {
-      // 主键冲突意味着已存在
       if (error.code === 'ER_DUP_ENTRY') {
-        return { user_A, user_B, alreadyExists: true };
+        return { user_A, user_B, name_A_to_B, name_B_to_A, alreadyExists: true };
       }
       throw error;
     }
@@ -85,7 +86,9 @@ class BindingMysqlRepository {
     return rows.map(row => ({
       user_A: row.user_A,
       user_B: row.user_B,
-      partner_user_ID: row.user_A === user_ID ? row.user_B : row.user_A
+      partner_user_ID: row.user_A === user_ID ? row.user_B : row.user_A,
+      name_A_to_B: row.name_A_to_B,
+      name_B_to_A: row.name_B_to_A
     }));
   }
 
@@ -99,6 +102,26 @@ class BindingMysqlRepository {
       [user_ID, user_ID]
     );
     return rows[0].count;
+  }
+
+  /**
+   * 修改我对对方的称呼
+   * @param {string} myUserID - 我的 user_ID
+   * @param {string} partnerUserID - 对方的 user_ID
+   * @param {string} newName - 新的称呼
+   */
+  async modifyName(myUserID, partnerUserID, newName) {
+    const { user_A, user_B } = this._orderUsers(myUserID, partnerUserID);
+
+    // 根据我的身份决定更新哪个字段
+    const field = myUserID === user_A ? 'name_A_to_B' : 'name_B_to_A';
+
+    const result = await query(
+      `UPDATE user_bindings SET ${field} = ? WHERE user_A = ? AND user_B = ?`,
+      [newName, user_A, user_B]
+    );
+
+    return result.affectedRows > 0;
   }
 }
 

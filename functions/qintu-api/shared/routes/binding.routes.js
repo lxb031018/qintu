@@ -26,6 +26,9 @@ function createBindingRoutes(bindingService) {
   // 解绑用户
   router.delete('/:partner_user_id', (req, res) => bindingController.unbind(req, res));
 
+  // 修改我对对方的称呼
+  router.patch('/:partner_user_id', (req, res) => bindingController.modifyName(req, res));
+
   return router;
 }
 

@@ -39,6 +39,8 @@ DROP TABLE IF EXISTS `user_bindings`;
 CREATE TABLE `user_bindings` (
     `user_A` CHAR(36) NOT NULL COMMENT '用户A的 user_ID（较小者）',
     `user_B` CHAR(36) NOT NULL COMMENT '用户B的 user_ID（较大者）',
+    `name_A_to_B` VARCHAR(32) NULL DEFAULT NULL COMMENT 'A对B的称呼',
+    `name_B_to_A` VARCHAR(32) NULL DEFAULT NULL COMMENT 'B对A的称呼',
 
     PRIMARY KEY (`user_A`, `user_B`),
     KEY `idx_user_A` (`user_A`),

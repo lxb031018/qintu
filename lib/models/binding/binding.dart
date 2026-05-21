@@ -58,6 +58,14 @@ class Binding {
   @JsonKey(name: 'partner_type')
   final String? partnerType;
 
+  /// 我对对方的称呼
+  @JsonKey(name: 'my_name_for_partner')
+  final String? myNameForPartner;
+
+  /// 对方对我的称呼
+  @JsonKey(name: 'partner_name_for_me')
+  final String? partnerNameForMe;
+
   /// 发送者 user_ID（完整信息时包含）
   @JsonKey(name: 'sender_user_ID')
   final String? senderUserID;
@@ -110,6 +118,8 @@ class Binding {
     this.receiverUserID,
     this.receiverNickname,
     this.receiverPhone,
+    this.myNameForPartner,
+    this.partnerNameForMe,
     required this.createdAt,
     this.updatedAt,
     this.expiredAt,

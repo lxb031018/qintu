@@ -138,6 +138,22 @@ class BindingApi {
     Logs.binding.info('解除绑定成功');
   }
 
+  /// 修改我对对方的称呼
+  Future<void> modifyBindingName(String partnerUserId, String newName) async {
+    Logs.binding.info('API请求: PATCH ${ApiEndpoints.modifyBindingName(partnerUserId)}');
+
+    final response = await _apiClient.patch<Map<String, dynamic>>(
+      ApiEndpoints.modifyBindingName(partnerUserId),
+      data: {'my_name_for_partner': newName},
+    );
+
+    if (!response.isSuccessful) {
+      throw Exception(response.message ?? '修改称呼失败');
+    }
+
+    Logs.binding.info('修改称呼成功');
+  }
+
   /// 取消发出的请求
   Future<void> cancelSentRequest(int requestId) async {
     Logs.binding.info('API请求: DELETE ${ApiEndpoints.cancelSentRequest(requestId)}');

@@ -22,6 +22,8 @@ Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
   receiverUserID: json['receiver_user_ID'] as String?,
   receiverNickname: json['receiver_nickname'] as String?,
   receiverPhone: json['receiver_phone'] as String?,
+  myNameForPartner: json['my_name_for_partner'] as String?,
+  partnerNameForMe: json['partner_name_for_me'] as String?,
   createdAt: DateTime.parse(json['created_at'] as String),
   updatedAt: json['updated_at'] == null
       ? null
@@ -41,6 +43,8 @@ Map<String, dynamic> _$BindingToJson(Binding instance) => <String, dynamic>{
   'partner_nickname': instance.partnerNickname,
   'partner_phone': instance.partnerPhone,
   'partner_type': instance.partnerType,
+  'my_name_for_partner': instance.myNameForPartner,
+  'partner_name_for_me': instance.partnerNameForMe,
   'sender_user_ID': instance.senderUserID,
   'sender_nickname': instance.senderNickname,
   'sender_phone': instance.senderPhone,

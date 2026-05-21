@@ -62,6 +62,11 @@ class BindingService {
     await _api.revokeBinding(bindingId);
   }
 
+  /// 修改我对对方的称呼
+  Future<void> modifyBindingName(String partnerUserId, String newName) async {
+    await _api.modifyBindingName(partnerUserId, newName);
+  }
+
   /// 取消发出的请求
   Future<void> cancelRequest(int requestId) async {
     await _api.cancelSentRequest(requestId);

@@ -29,10 +29,10 @@ class BindingCard extends StatelessWidget {
     final avatarIconColor = isSender ? AppColors.warningColor : AppColors.successColor;
     // 手机号脱敏显示
     final maskedPhone = PhoneUtils.maskPhone(binding.partnerPhone ?? '');
-    // 优先使用对方昵称，其次使用备注
-    final partnerDisplayName = (binding.partnerNickname != null && binding.partnerNickname!.isNotEmpty)
-        ? binding.partnerNickname!
-        : (binding.remark ?? AppStrings.unknownUser);
+    // 优先使用我对对方的称呼，其次使用对方昵称
+    final partnerDisplayName = (binding.myNameForPartner != null && binding.myNameForPartner!.isNotEmpty)
+        ? binding.myNameForPartner!
+        : (binding.partnerNickname ?? AppStrings.unknownUser);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

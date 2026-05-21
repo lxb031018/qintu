@@ -208,6 +208,38 @@ class ApiClient {
     }
   }
 
+  /// PATCH 请求
+  Future<ApiResponse<T>> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      final response = await _dio.patch<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
+
+      return ApiResponse<T>(
+        statusCode: response.statusCode ?? 0,
+        data: response.data,
+        success: true,
+      );
+    } on DioException catch (e) {
+      return _handleError<T>(e);
+    } catch (e) {
+      Logs.network.info('未知错误: $e');
+      return ApiResponse<T>(
+        statusCode: 0,
+        success: false,
+        message: '未知错误: ${e.toString()}',
+      );
+    }
+  }
+
   /// DELETE 请求
   Future<ApiResponse<T>> delete<T>(
     String path, {

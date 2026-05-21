@@ -4,6 +4,7 @@
  * 直接绑定，关系平等，解绑即删除记录
  */
 
+const { normalizePhone } = require('../../shared/lib/phone');
 const config = require('../../config');
 
 class BindingService {
@@ -16,10 +17,19 @@ class BindingService {
    * 绑定用户（通过手机号）
    * @param {string} myUserID - 我的 user_ID
    * @param {string} partnerPhone - 对方的手机号
+   * @param {string} senderName - 对方对我的称呼
+   * @param {string} receiverName - 我对对方的称呼
    */
-  async bindByPhone(myUserID, partnerPhone) {
-    // 1. 查找对方用户
-    const partnerUser = await this.userRepo.findByPhone(partnerPhone);
+  async bindByPhone(myUserID, partnerPhone, senderName, receiverName) {
+    // Debug: log the actual phone received
+    console.log(`[BIND] partnerPhone="${partnerPhone}" senderName="${senderName}" receiverName="${receiverName}"`);
+
+    // 1. Normalize phone number - use shared function to handle +86 prefix
+    const normalizedPhone = normalizePhone(partnerPhone);
+    console.log(`[BIND] normalizedPhone="${normalizedPhone}"`);
+
+    // 2. 查找对方用户
+    const partnerUser = await this.userRepo.findByPhone(normalizedPhone);
     if (!partnerUser) {
       throw Object.assign(new Error('该手机号尚未注册亲途'), { code: 'USER_NOT_FOUND', status: 404 });
     }
@@ -42,8 +52,17 @@ class BindingService {
       throw Object.assign(new Error('对方绑定人数已达上限'), { code: 'PARTNER_BINDING_FULL', status: 409 });
     }
 
-    // 4. 创建绑定
-    const result = await this.bindingRepo.create(myUserID, partnerUserID);
+    // 4. 确定 user_A 和 user_B 并存储对应的称呼
+    const { user_A, user_B } = myUserID < partnerUserID
+      ? { user_A: myUserID, user_B: partnerUserID }
+      : { user_A: partnerUserID, user_B: myUserID };
+
+    // senderName = 对方对我的称呼，receiverName = 我对对方的称呼
+    // 如果 myUserID 是 user_A，则 receiverName 存到 name_A_to_B，senderName 存到 name_B_to_A
+    const name_A_to_B = myUserID === user_A ? receiverName : senderName;
+    const name_B_to_A = myUserID === user_A ? senderName : receiverName;
+
+    const result = await this.bindingRepo.createWithNames(user_A, user_B, name_A_to_B, name_B_to_A);
 
     if (result.alreadyExists) {
       throw Object.assign(new Error('你们已经是绑定关系'), { code: 'ALREADY_BINDING', status: 409 });
@@ -85,12 +104,20 @@ class BindingService {
     const result = [];
     for (const binding of bindings) {
       const partner = await this.userRepo.findByUserID(binding.partner_user_ID);
+
+      // 根据请求方是 user_A 还是 user_B 返回对应的称呼
+      const isUserA = binding.user_A === myUserID;
+      const myNameForPartner = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
+      const partnerNameForMe = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
+
       result.push({
         partner_user_ID: binding.partner_user_ID,
         partner_nickname: partner?.nickname || '未命名用户',
         partner_phone: partner?.phone
           ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-          : '未知'
+          : '未知',
+        my_name_for_partner: myNameForPartner,
+        partner_name_for_me: partnerNameForMe
       });
     }
 
@@ -107,6 +134,22 @@ class BindingService {
    */
   async isBound(user_ID_1, user_ID_2) {
     return await this.bindingRepo.exists(user_ID_1, user_ID_2);
+  }
+
+  /**
+   * 修改我对对方的称呼
+   * @param {string} myUserID - 我的 user_ID
+   * @param {string} partnerUserID - 对方的 user_ID
+   * @param {string} newName - 新的称呼
+   */
+  async modifyName(myUserID, partnerUserID, newName) {
+    const exists = await this.bindingRepo.exists(myUserID, partnerUserID);
+    if (!exists) {
+      throw Object.assign(new Error('绑定关系不存在'), { code: 'BINDING_NOT_FOUND', status: 404 });
+    }
+
+    await this.bindingRepo.modifyName(myUserID, partnerUserID, newName);
+    return { message: '称呼已修改' };
   }
 }
 
