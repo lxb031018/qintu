@@ -17,6 +17,10 @@ CREATE TABLE `users` (
     `phone` CHAR(11) NOT NULL COMMENT '手机号（11位数字）',
     `nickname` VARCHAR(32) NULL DEFAULT '' COMMENT '用户昵称',
     `avatar_url` VARCHAR(256) NULL DEFAULT '' COMMENT '头像 URL',
+    `access_token` VARCHAR(256) NULL COMMENT '访问令牌',
+    `refresh_token` VARCHAR(256) NULL COMMENT '刷新令牌',
+    `token_expires_at` DATETIME NULL COMMENT 'Token 过期时间',
+    `device_id` VARCHAR(128) NULL COMMENT '登录的设备ID',
     `last_login_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后登录时间',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 

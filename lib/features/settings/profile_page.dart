@@ -27,6 +27,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 每次进入页面时刷新数据
     Future.microtask(() {
       ref.read(profilePageProvider.notifier).loadProfile();
     });

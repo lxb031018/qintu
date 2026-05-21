@@ -14,15 +14,14 @@ class UserProfileService {
     return await UserProfileApi.updateProfile(nickname: nickname);
   }
 
-  /// 上传头像并更新
+  /// 上传头像并更新（后端已处理数据库更新）
   static Future<String?> uploadAndUpdateAvatar(String filePath) async {
-    // 先上传头像
-    final avatarUrl = await AvatarApi.uploadAvatar(filePath);
-    if (avatarUrl == null) return null;
-
-    // 再更新资料
-    final success = await UserProfileApi.updateProfile(avatarUrl: avatarUrl);
-    return success ? avatarUrl : null;
+    // 后端 avatar.routes.js 已处理：
+    // 1. 保存文件到 uploads/avatars/
+    // 2. 删除旧头像文件
+    // 3. 更新 users.avatar_url
+    // 前端只需获取上传后的 URL
+    return await AvatarApi.uploadAvatar(filePath);
   }
 
   /// 更新头像URL（仅更新数据库，不上传）

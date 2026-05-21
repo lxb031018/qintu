@@ -129,6 +129,46 @@ class UserMysqlRepository {
   async findAll() {
     return await query('SELECT * FROM users ORDER BY created_at DESC');
   }
+
+  /**
+   * 保存或更新用户会话
+   * @param {string} user_ID
+   * @param {string} accessToken
+   * @param {string} refreshToken
+   * @param {string} expiresAt - ISO 时间字符串
+   * @param {string} deviceId
+   */
+  async upsertSession(user_ID, accessToken, refreshToken, expiresAt, deviceId) {
+    await query(
+      `UPDATE users SET access_token = ?, refresh_token = ?, token_expires_at = ?, device_id = ?
+       WHERE user_ID = ?`,
+      [accessToken, refreshToken, expiresAt, deviceId, user_ID]
+    );
+  }
+
+  /**
+   * 根据 access_token 查找用户
+   * @param {string} accessToken
+   * @returns {Promise<Object|null>}
+   */
+  async findByAccessToken(accessToken) {
+    const rows = await query(
+      'SELECT * FROM users WHERE access_token = ?',
+      [accessToken]
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
+
+  /**
+   * 清除用户会话（退出登录时调用）
+   * @param {string} user_ID
+   */
+  async clearSession(user_ID) {
+    await query(
+      'UPDATE users SET access_token = NULL, refresh_token = NULL, token_expires_at = NULL, device_id = NULL WHERE user_ID = ?',
+      [user_ID]
+    );
+  }
 }
 
 module.exports = UserMysqlRepository;
