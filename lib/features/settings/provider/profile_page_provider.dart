@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/user_profile.dart';
 import '../service/user_profile_service.dart';
-import '../core/avatar_api.dart';
 import '../../../providers/auth_state_manager.dart';
 
 /// 个人信息编辑页状态
@@ -92,36 +91,12 @@ class ProfilePageNotifier extends Notifier<ProfilePageState> {
     }
   }
 
-  /// 保存头像
-  Future<bool> saveAvatar(String avatarUrl) async {
-    state = state.copyWith(isSaving: true, errorMessage: null);
-
-    try {
-      final success = await UserProfileService.updateAvatar(avatarUrl);
-      if (success && state.profile != null) {
-        final updatedProfile = UserProfile(
-          userId: state.profile!.userId,
-          phone: state.profile!.phone,
-          nickname: state.profile!.nickname,
-          avatarUrl: avatarUrl,
-        );
-        state = state.copyWith(profile: updatedProfile, isSaving: false);
-      } else {
-        state = state.copyWith(isSaving: false, errorMessage: '保存失败');
-      }
-      return success;
-    } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: e.toString());
-      return false;
-    }
-  }
-
   /// 上传并保存头像（字节数组）
   Future<bool> uploadAvatarBytes(Uint8List bytes) async {
     state = state.copyWith(isSaving: true, errorMessage: null);
 
     try {
-      final avatarUrl = await AvatarApi.uploadAvatarBytes(bytes);
+      final avatarUrl = await UserProfileService.uploadAvatarBytes(bytes);
       if (avatarUrl != null && state.profile != null) {
         final updatedProfile = UserProfile(
           userId: state.profile!.userId,
