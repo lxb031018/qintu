@@ -27,6 +27,7 @@ dependencies:
   # 网络请求
   dio: ^5.9.2  # 强大的 HTTP 客户端，支持拦截器
   image_picker: ^1.1.2  # 图片选择器，用于选择头像
+  image_cropper: ^8.0.2  # 图片裁剪，用于头像裁剪
 
 dev_dependencies:
   flutter_test:

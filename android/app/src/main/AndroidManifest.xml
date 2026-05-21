@@ -48,6 +48,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- 头像裁剪 Activity -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
         <!-- 后台定位前台服务 -->
         <service
             android:name="me.lxb.qintu.background.BackgroundLocationService"

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart' show ImageCropper, CropAspectRatioPreset, CropStyle, AndroidUiSettings;
 import '../../constants/app_colors.dart';
 import '../../constants/app_spacings.dart';
 import '../../constants/app_radii.dart';
@@ -443,8 +444,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     if (image == null) return;
 
+    // 裁剪图片
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: image.path,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: '裁剪头像',
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          cropStyle: CropStyle.circle,
+        ),
+      ],
+    );
+
+    if (croppedFile == null) return;
+
     // 上传并保存
-    final success = await ref.read(profilePageProvider.notifier).uploadAvatar(image.path);
+    final success = await ref.read(profilePageProvider.notifier).uploadAvatar(croppedFile.path);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
