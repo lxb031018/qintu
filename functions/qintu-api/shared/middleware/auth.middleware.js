@@ -52,6 +52,8 @@ function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const user_ID = extractUserID(req);
 
+  console.log('[Auth Debug] path:', req.path, '| user_ID:', user_ID, '| authHeader:', authHeader ? authHeader.substring(0, 50) + '...' : 'null');
+
   if (!user_ID) {
     return res.status(401).json({
       code: 'UNAUTHORIZED',
@@ -64,6 +66,7 @@ function requireAuth(req, res, next) {
   if (authService) {
     const accessToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null;
     if (accessToken && !authService.isTokenValidForSession(user_ID, accessToken)) {
+      console.log('[Auth] Session invalid for user:', user_ID);
       return res.status(401).json({
         code: 'SESSION_REVOKED',
         message: '您的账号已在另一设备登录，请重新登录'

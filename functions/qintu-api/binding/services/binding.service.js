@@ -71,14 +71,18 @@ class BindingService {
    * @param {string} myUserID - 我的 user_ID
    */
   async getPendingRequests(myUserID) {
+    console.log('[BindingService] getPendingRequests called with myUserID:', myUserID);
+
     // 先过期旧请求
     await this.bindingRepo.expireOldRequests();
 
     const requests = await this.bindingRepo.findPendingForReceiver(myUserID);
+    console.log('[BindingService] findPendingForReceiver returned:', requests.length, 'requests');
 
     const result = [];
     for (const req of requests) {
       const sender = await this.userRepo.findByUserID(req.sender_user_ID);
+      console.log('[BindingService] req.created_at:', req.created_at, 'type:', typeof req.created_at);
       result.push({
         id: req.id,
         sender_name: req.sender_name,
@@ -89,6 +93,7 @@ class BindingService {
       });
     }
 
+    console.log('[BindingService] returning result:', result);
     return result;
   }
 

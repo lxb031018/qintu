@@ -136,7 +136,7 @@ class BindingMysqlRepository {
    * @returns {Promise<Object>} 新创建的请求
    */
   async createRequest(senderUserID, receiverUserID, senderName, receiverName, expiresAt) {
-    const [result] = await query(
+    const result = await query(
       `INSERT INTO binding_requests (sender_user_ID, receiver_user_ID, sender_name, receiver_name, status, created_at, expires_at)
        VALUES (?, ?, ?, ?, 'pending', NOW(), ?)`,
       [senderUserID, receiverUserID, senderName, receiverName, expiresAt]
@@ -157,12 +157,15 @@ class BindingMysqlRepository {
    * @returns {Promise<Array>}
    */
   async findPendingForReceiver(receiverUserID) {
-    return await query(
+    console.log('[BindingRepo] findPendingForReceiver called with receiverUserID:', receiverUserID);
+    const result = await query(
       `SELECT * FROM binding_requests
        WHERE receiver_user_ID = ? AND status = 'pending' AND expires_at > NOW()
        ORDER BY created_at DESC`,
       [receiverUserID]
     );
+    console.log('[BindingRepo] query returned', result.length, 'rows');
+    return result;
   }
 
   /**
@@ -186,7 +189,7 @@ class BindingMysqlRepository {
    * @returns {Promise<boolean>}
    */
   async updateRequestStatus(requestId, status) {
-    const [result] = await query(
+    const result = await query(
       'UPDATE binding_requests SET status = ? WHERE id = ?',
       [status, requestId]
     );
@@ -226,7 +229,7 @@ class BindingMysqlRepository {
    * @returns {Promise<number>} 更新的行数
    */
   async expireOldRequests() {
-    const [result] = await query(
+    const result = await query(
       `UPDATE binding_requests SET status = 'expired'
        WHERE status = 'pending' AND expires_at <= NOW()`
     );
