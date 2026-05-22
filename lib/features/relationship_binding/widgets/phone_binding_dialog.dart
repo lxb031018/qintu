@@ -6,13 +6,13 @@ import '../../../constants/app_strings.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/validation/validators.dart';
 import '../../../utils/ui/app_snackbar.dart';
-import '../provider/binding_page_provider.dart';
+import '../../../providers/binding_provider.dart';
 
 /// ============================================
 /// 手机号绑定对话框
 ///
 /// UI 层：只负责输入和显示
-/// 调用 bindingPageProvider.requestBinding() 发起请求
+/// 调用 bindingProvider.requestPhoneBinding() 发起请求
 /// ============================================
 
 class PhoneBindingDialog extends ConsumerStatefulWidget {
@@ -75,12 +75,12 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
     if (hasError) return;
 
     // 显示加载状态（通过 provider）
-    final notifier = ref.read(bindingPageProvider.notifier);
+    final notifier = ref.read(bindingProvider.notifier);
     final receiverPhone = '+86 ${_phoneController.text}';
     final senderName = _nameController.text;
     final receiverName = _partnerNameController.text;
 
-    final success = await notifier.requestBinding(
+    final success = await notifier.requestPhoneBinding(
       receiverPhone: receiverPhone,
       senderName: senderName,
       receiverName: receiverName,
@@ -113,9 +113,9 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final pageState = ref.watch(bindingPageProvider);
-    final isLoading = pageState.isLoading;
-    final errorMessage = pageState.errorMessage;
+    final bindingState = ref.watch(bindingProvider);
+    final isLoading = bindingState.bindingsState.isLoading;
+    final errorMessage = bindingState.lastErrorMessage;
 
     return AlertDialog(
       title: null,
