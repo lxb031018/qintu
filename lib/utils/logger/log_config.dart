@@ -6,7 +6,7 @@ import 'file_logger.dart';
 /// 管理日志级别、文件日志等配置
 class LogConfig {
   /// 日志级别
-  static LogLevel _minLevel = kDebugMode ? LogLevel.debug : LogLevel.info;
+  static LogLevel _minLevel = kDebugMode ? LogLevel.debug : LogLevel.warning;
 
   /// 文件日志器
   static final FileLogger _fileLogger = FileLogger();
