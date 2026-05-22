@@ -120,8 +120,8 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
     return AlertDialog(
       title: null,
       content: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -196,13 +196,6 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
                 ),
                 keyboardType: TextInputType.phone,
                 maxLength: 11,
-              ),
-              // 底部提示
-              const SizedBox(height: 16),
-              Text(
-                AppStrings.bindingHintText,
-                style: AppTextStyles.statusTag,
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
