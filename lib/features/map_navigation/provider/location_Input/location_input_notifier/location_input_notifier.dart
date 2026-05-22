@@ -149,8 +149,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
     // 懒加载：用户点击绑定者 Tab 时才加载位置
     if (category == LocationCategory.binder) {
-      // 立即重置状态，避免显示旧数据
-      ref.read(locationBinderProvider.notifier).reset();
       Future.microtask(() {
         ref.read(locationBinderProvider.notifier).loadBinderLocations();
       });
@@ -268,7 +266,6 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
 
     // 点击输入框时刷新绑定者列表
     if (shouldLoadBinder) {
-      ref.read(locationBinderProvider.notifier).reset();
       Future.microtask(() {
         ref.read(locationBinderProvider.notifier).loadBinderLocations();
       });
