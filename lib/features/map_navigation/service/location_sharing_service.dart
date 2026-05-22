@@ -17,7 +17,7 @@ class LocationSharingService {
   double? _lastUploadedLng;
 
   /// 距离阈值（米），移动超过此距离才上传
-  static const double distanceThreshold = 5.0;
+  static const double distanceThreshold = 3.0;
 
   /// 是否正在共享（上次上传位置不为空）
   bool get isSharing => _lastUploadedLat != null;

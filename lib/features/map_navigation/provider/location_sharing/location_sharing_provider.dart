@@ -111,7 +111,7 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
     }
   }
 
-  /// 尝试上传位置（仅当移动超过 5 米时）
+  /// 尝试上传位置（fallback 轮询，移动超过阈值时）
   Future<void> _tryUpload() async {
     if (_mapController == null || !state.isSharing) return;
 
@@ -142,10 +142,10 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
   void _onBackgroundLocationUpdate(Map<String, dynamic> location) {
     if (!state.isSharing) return;
 
+    // Android setDeviceModeDistanceFilter(3f) 已确保移动超过 3 米才回调
+    // 无需再次判断距离，直接上传
     final lat = location['latitude'] as double;
     final lng = location['longitude'] as double;
-
-    if (!_service.shouldUpload(lat, lng)) return;
 
     _uploadService.uploadLocation(
       latitude: lat,

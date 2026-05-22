@@ -121,6 +121,7 @@ class BackgroundLocationService : Service() {
             val option = AMapLocationClientOption().apply {
                 locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
                 interval = 10000
+                setDeviceModeDistanceFilter(3f)  // 移动超过3米就回调
                 isOnceLocation = false
                 isSensorEnable = false
                 isNeedAddress = true

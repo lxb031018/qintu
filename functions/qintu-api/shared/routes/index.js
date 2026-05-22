@@ -10,6 +10,7 @@ const authRoutes = require('./auth.routes');
 const bindingRoutes = require('./binding.routes');
 const avatarRoutes = require('./avatar.routes');
 const userRoutes = require('./user.routes');
+const locationRoutes = require('./location.routes');
 
 /**
  * 配置路由
@@ -22,6 +23,9 @@ function configureRoutes(services) {
 
   // 绑定路由：/api/bindings/*
   router.use('/api/bindings', bindingRoutes(services.bindingService));
+
+  // 位置路由：/api/locations/*
+  router.use('/api/locations', locationRoutes(services.locationService));
 
   // 头像上传路由：/api/avatar/*
   router.use('/api/avatar', avatarRoutes(services));

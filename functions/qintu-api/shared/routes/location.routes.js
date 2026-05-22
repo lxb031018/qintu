@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const LocationController = require('../../location/controllers/location.controller');
+const LocationController = require('../../binding/controllers/location.controller');
 const { requireAuth } = require('../../shared/middleware/auth.middleware');
 
 /**
@@ -21,9 +21,9 @@ function createLocationRoutes(locationService) {
   router.post('/update', (req, res) => locationController.updateLocation(req, res));
 
   // 查询位置
-  router.get('/:receiverUserID', (req, res) => locationController.getLocation(req, res));
+  router.get('/:partnerUserID', (req, res) => locationController.getLocation(req, res));
 
-  // 共享开关（兼容旧逻辑）
+  // 共享开关
   router.post('/sharing/toggle', (req, res) => locationController.toggleSharing(req, res));
 
   // 删除位置
