@@ -255,7 +255,13 @@ class NaviViewFactory(
         })
 
         // 🟢 关键步骤 2：定位蓝点已在预览模式默认开启
-        // 首次布局时会修正地图中心（AMapNaviView 内部预留空间会导致偏移）
+        // 🟢 关键步骤 3：立即设置地图中心点，解决 AMapNaviView 内部锚点偏移问题
+        val centerX = naviView.width / 2
+        val centerY = naviView.height / 2
+        if (centerX > 0 && centerY > 0) {
+            aMap.setPointToCenter(centerX, centerY)
+            Log.d(TAG, "🎯 configureMap 中立即设置中心点: ($centerX, $centerY)")
+        }
 
         Log.d(TAG, "🔍 地图配置完成（UiSettings/定位源/图层/缩放范围，蓝点待启用）")
     }
