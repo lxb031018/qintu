@@ -59,7 +59,7 @@ class BindingService {
 
   /// 解除绑定
   Future<void> revoke(String partnerUserId) async {
-    await _api.revokeBinding(0); // 暂时传 0，后续可以简化
+    await _api.revokeBinding(partnerUserId);
   }
 
   /// 修改我对对方的称呼

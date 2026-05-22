@@ -124,11 +124,11 @@ class BindingApi {
   }
 
   /// 解除绑定
-  Future<void> revokeBinding(int bindingId) async {
-    Logs.binding.info('API请求: DELETE ${ApiEndpoints.revokeBinding}/$bindingId');
+  Future<void> revokeBinding(String partnerUserId) async {
+    Logs.binding.info('API请求: DELETE ${ApiEndpoints.revokeBinding}/$partnerUserId');
 
     final response = await _apiClient.delete<Map<String, dynamic>>(
-      '${ApiEndpoints.revokeBinding}/$bindingId',
+      '${ApiEndpoints.revokeBinding}/$partnerUserId',
     );
 
     if (!response.isSuccessful) {
