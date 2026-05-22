@@ -62,7 +62,9 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
           Logs.map.warning('跳过 null partnerUserID 的绑定: status=${binding.status}');
           continue;
         }
-        user_IDToNickname[user_ID] = binding.partnerNickname ?? '绑定者';
+        user_IDToNickname[user_ID] = (binding.myNameForPartner != null && binding.myNameForPartner!.isNotEmpty)
+            ? binding.myNameForPartner!
+            : (binding.partnerNickname ?? '绑定者');
         user_IDs.add(user_ID);
       }
 
