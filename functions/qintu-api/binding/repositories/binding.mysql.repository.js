@@ -30,8 +30,8 @@ class BindingMysqlRepository {
 
     // 确定谁是 A 谁是 B
     const isUserAIsSender = user_A === senderUserID;
-    const name_A_to_B = isUserAIsSender ? receiverName : senderName;
-    const name_B_to_A = isUserAIsSender ? senderName : receiverName;
+    const name_A_to_B = isUserAIsSender ? senderName : receiverName;
+    const name_B_to_A = isUserAIsSender ? receiverName : senderName;
 
     try {
       const result = await query(
