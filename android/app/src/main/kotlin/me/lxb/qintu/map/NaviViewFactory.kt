@@ -212,7 +212,7 @@ class NaviViewFactory(
 
         // ======== 定位蓝点样式 ========
         // 预览模式：先禁用蓝点，等待 OnGlobalLayout 中设置中心点后再启用
-        aMap.myLocationStyle = createMyLocationStyle(true)
+        aMap.myLocationStyle = createMyLocationStyle(false)  // false=不显示，等 OnGlobalLayout 再启用
         aMap.isMyLocationEnabled = false
 
         // ======== UiSettings ========
