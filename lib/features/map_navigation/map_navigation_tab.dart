@@ -6,6 +6,7 @@ import 'widgets/amap_map_view.dart';
 import 'service/map_controller_service/map_controller_service.dart';
 import 'models/amap_routing_models.dart';
 import 'provider/location_Input/location_input_provider.dart';
+import 'provider/location_sharing/location_sharing_provider.dart';
 import 'provider/map_navigation/map_navigation_provider.dart';
 import 'provider/map_navigation/route_share_notifier.dart';
 import 'provider/map_display/map_controller_provider.dart';
@@ -92,6 +93,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 
   void _onMapCreated(MapControllerService controller) {
     ref.read(mapControllerNotifierProvider.notifier).setController(controller);
+    ref.read(locationSharingProvider.notifier).setMapController(controller);
 
     // 设置导航退出监听器
     controller.setOnNaviViewExitListener(() {

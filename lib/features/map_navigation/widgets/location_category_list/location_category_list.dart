@@ -50,7 +50,6 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
     super.initState();
     Future.microtask(() {
       ref.read(locationHistoryProvider.notifier).loadHistory();
-      ref.read(locationBinderProvider.notifier).loadBinderLocations();
     });
   }
 

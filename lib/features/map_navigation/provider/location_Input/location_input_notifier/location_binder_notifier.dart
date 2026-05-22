@@ -42,8 +42,14 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
     return const LocationBinderState();
   }
 
+  /// 重置状态为初始状态
+  void reset() {
+    state = const LocationBinderState();
+  }
+
   Future<void> loadBinderLocations() async {
-    state = state.copyWith(isLoading: true);
+    // 清空当前位置列表，确保显示加载状态
+    state = state.copyWith(items: [], isLoading: true);
 
     try {
       final bindingService = BindingService();

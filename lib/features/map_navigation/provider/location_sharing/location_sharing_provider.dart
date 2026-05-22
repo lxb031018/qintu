@@ -52,6 +52,10 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
   /// 设置地图控制器
   void setMapController(MapControllerService controller) {
     _mapController = controller;
+    // 地图控制器设置好后，如果正在共享状态，立即上传一次位置
+    if (state.isSharing) {
+      Future.microtask(() => _uploadOnce());
+    }
   }
 
   /// 启动位置共享

@@ -8,6 +8,7 @@ import '../location_category.dart';
 import '../../map_navigation/map_navigation_service.dart';
 import '../../map_navigation/map_navigation_service_provider.dart';
 import 'location_search_notifier.dart';
+import 'location_binder_notifier.dart';
 
 /// ============================================
 /// 位置输入 Notifier
@@ -145,6 +146,15 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         list: state.list.copyWith(selectedCategory: category),
       );
     }
+
+    // 懒加载：用户点击绑定者 Tab 时才加载位置
+    if (category == LocationCategory.binder) {
+      // 立即重置状态，避免显示旧数据
+      ref.read(locationBinderProvider.notifier).reset();
+      Future.microtask(() {
+        ref.read(locationBinderProvider.notifier).loadBinderLocations();
+      });
+    }
   }
 
   void enterHistorySelectionMode() {
@@ -241,9 +251,11 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     Logs.ui.debug('PROVIDER showList: isOrigin=$isOrigin');
 
     LocationCategory? categoryToSet;
+    bool shouldLoadBinder = false;
     if (!_hasShownList) {
       categoryToSet = LocationCategory.binder;
       _hasShownList = true;
+      shouldLoadBinder = true;
     }
 
     state = state.copyWith(
@@ -253,6 +265,14 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
         selectedCategory: categoryToSet,
       ),
     );
+
+    // 点击输入框时刷新绑定者列表
+    if (shouldLoadBinder) {
+      ref.read(locationBinderProvider.notifier).reset();
+      Future.microtask(() {
+        ref.read(locationBinderProvider.notifier).loadBinderLocations();
+      });
+    }
   }
 
   void hideList() {
