@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../core/controller/amap_map_controller.dart';
+import '../../core/controller/camera_controller.dart';
 
 /// ============================================
 /// 地图控制器服务（service 层）
@@ -9,8 +10,10 @@ import '../../core/controller/amap_map_controller.dart';
 /// ============================================
 class MapControllerService {
   final AmapMapController _controller;
+  final CameraController _cameraController;  // 直接持有，简化相机调用链
 
-  MapControllerService() : _controller = AmapMapController();
+  MapControllerService() : _controller = AmapMapController(),
+                           _cameraController = CameraController();
 
   void setOnNaviViewExitListener(VoidCallback? listener) =>
       _controller.setOnNaviViewExitListener(listener);
@@ -32,11 +35,53 @@ class MapControllerService {
   Future<Map<String, dynamic>?> getLastKnownLocation() =>
       _controller.getLastKnownLocation();
 
+  // ==================== 相机 ====================
+
   Future<void> moveCamera({
     required double lat,
     required double lng,
     double zoom = 15.0,
-  }) => _controller.moveCamera(lat: lat, lng: lng, zoom: zoom);
+  }) => _cameraController.moveCamera(lat: lat, lng: lng, zoom: zoom);
+
+  Future<bool> animateCamera({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    double bearing = -1,
+    double tilt = -1,
+    int duration = 0,
+  }) => _cameraController.animateCamera(lat: lat, lng: lng, zoom: zoom,
+          bearing: bearing, tilt: tilt, duration: duration);
+
+  Future<void> zoomIn() => _cameraController.zoomIn();
+  Future<void> zoomOut() => _cameraController.zoomOut();
+  Future<void> zoomTo(double level, {int duration = 0}) =>
+      _cameraController.zoomTo(level, duration: duration);
+
+  Future<void> setPointToCenter({required int x, required int y}) =>
+      _cameraController.setPointToCenter(x: x, y: y);
+
+  Future<void> changeLatLng({required double lat, required double lng}) =>
+      _cameraController.changeLatLng(lat: lat, lng: lng);
+
+  Future<void> moveCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+  }) => _cameraController.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
+
+  Future<void> animateCameraToCenter({
+    required double lat,
+    required double lng,
+    double zoom = 15.0,
+    int duration = 500,
+  }) => _cameraController.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
+
+  Future<void> animateCameraToBounds(
+    List<Map<String, double>> points, {
+    int padding = 100,
+    int duration = 800,
+  }) => _cameraController.animateCameraToBounds(points, padding: padding, duration: duration);
 
   // ==================== 路线 ====================
 
@@ -122,48 +167,6 @@ class MapControllerService {
       _controller.setCarOverlayVisible(visible);
 
   Future<bool> clearCarMarker() => _controller.clearCarMarker();
-
-  // ==================== 相机增强 ====================
-
-  Future<bool> animateCamera({
-    required double lat,
-    required double lng,
-    double zoom = 15.0,
-    double bearing = -1,
-    double tilt = -1,
-    int duration = 0,
-  }) => _controller.animateCamera(lat: lat, lng: lng, zoom: zoom,
-          bearing: bearing, tilt: tilt, duration: duration);
-
-  Future<void> zoomIn() => _controller.zoomIn();
-  Future<void> zoomOut() => _controller.zoomOut();
-  Future<void> zoomTo(double level, {int duration = 0}) =>
-      _controller.zoomTo(level, duration: duration);
-
-  Future<void> setPointToCenter({required int x, required int y}) =>
-      _controller.setPointToCenter(x: x, y: y);
-
-  Future<void> changeLatLng({required double lat, required double lng}) =>
-      _controller.changeLatLng(lat: lat, lng: lng);
-
-  Future<void> moveCameraToCenter({
-    required double lat,
-    required double lng,
-    double zoom = 15.0,
-  }) => _controller.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
-
-  Future<void> animateCameraToCenter({
-    required double lat,
-    required double lng,
-    double zoom = 15.0,
-    int duration = 500,
-  }) => _controller.animateCameraToCenter(lat: lat, lng: lng, zoom: zoom, duration: duration);
-
-  Future<void> animateCameraToBounds(
-    List<Map<String, double>> points, {
-    int padding = 100,
-    int duration = 800,
-  }) => _controller.animateCameraToBounds(points, padding: padding, duration: duration);
 
   // ==================== 地图图层 ====================
 
