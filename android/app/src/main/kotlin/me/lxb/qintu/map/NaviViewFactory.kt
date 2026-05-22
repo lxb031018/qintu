@@ -314,7 +314,7 @@ class NaviViewFactory(
                         val centerX = naviView.width / 2
                         val centerY = naviView.height / 2
                         mapComponents.cameraController.setViewSize(naviView.width, naviView.height)
-                        aMap.setPointToCenter(centerX, centerY)
+                        mapComponents.cameraController.applyCenterPointOnResume()
 
                         if (!myLocationEnabled) {
                             myLocationEnabled = true

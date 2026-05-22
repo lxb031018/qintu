@@ -59,6 +59,13 @@ class MapController(
     }
 
     /**
+     * 在视图恢复时重新应用中心点，解决熄屏解锁后蓝点偏移问题。
+     */
+    fun applyCenterPointOnResume() {
+        cameraController.applyCenterPointOnResume()
+    }
+
+    /**
      * 处理来自 Plugin 层的 MethodCall
      */
     fun handleMethodCall(call: MethodCall, result: MethodChannel.Result) {

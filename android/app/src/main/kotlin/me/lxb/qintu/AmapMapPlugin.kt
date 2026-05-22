@@ -189,6 +189,8 @@ class AmapMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAw
             }
             "resumeNaviView" -> {
                 currentNaviView?.onResume()
+                // 重新应用中心点，解决熄屏解锁后蓝点偏移到底部的问题
+                mapController?.applyCenterPointOnResume()
                 result.success(true)
             }
             "setNaviShowMode" -> {

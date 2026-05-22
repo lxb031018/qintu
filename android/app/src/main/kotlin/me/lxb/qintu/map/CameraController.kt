@@ -7,6 +7,51 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.LatLngBounds
 
 /**
+ * 中心点管理器
+ *
+ * 负责管理视图尺寸和地图中心点的设置。
+ * 单一数据源，确保所有相机操作使用一致的中心点。
+ */
+class CenterPointManager(private val aMap: AMap) {
+    companion object {
+        private const val TAG = "CenterPointManager"
+    }
+
+    private var viewWidth: Int = 0
+    private var viewHeight: Int = 0
+
+    fun setViewSize(width: Int, height: Int) {
+        viewWidth = width
+        viewHeight = height
+        Log.d(TAG, "📐 视图尺寸已更新: ${width}x${height}")
+    }
+
+    fun isReady(): Boolean = viewWidth > 0 && viewHeight > 0
+
+    /**
+     * 应用中心点到地图（使用当前视图中心）
+     */
+    fun applyCenterPoint() {
+        if (!isReady()) {
+            Log.w(TAG, "⚠️ applyCenterPoint: 视图尺寸未就绪 (${viewWidth}x${viewHeight})")
+            return
+        }
+        val centerX = viewWidth / 2
+        val centerY = viewHeight / 2
+        aMap.setPointToCenter(centerX, centerY)
+        Log.d(TAG, "🎯 中心点已应用: ($centerX, $centerY)")
+    }
+
+    /**
+     * 设置任意像素坐标为中心点（供 Flutter 通道调用）
+     */
+    fun setPointToCenter(x: Int, y: Int) {
+        Log.d(TAG, "🎯 setPointToCenter: x=$x, y=$y")
+        aMap.setPointToCenter(x, y)
+    }
+}
+
+/**
  * 相机控制器
  */
 class CameraController(private val aMap: AMap) {
@@ -16,21 +61,25 @@ class CameraController(private val aMap: AMap) {
         private const val DEFAULT_ZOOM = 17f
     }
 
-    private var viewWidth: Int = 0
-    private var viewHeight: Int = 0
+    private val centerPointManager = CenterPointManager(aMap)
 
-    fun setViewSize(width: Int, height: Int) {
-        viewWidth = width
-        viewHeight = height
+    fun setViewSize(width: Int, height: Int) = centerPointManager.setViewSize(width, height)
+
+    fun isViewSizeReady(): Boolean = centerPointManager.isReady()
+
+    /**
+     * 在视图恢复时调用，重新应用中心点。
+     * 解决熄屏解锁后蓝点偏移到底部的问题。
+     */
+    fun applyCenterPointOnResume() {
+        centerPointManager.applyCenterPoint()
     }
 
-    fun isViewSizeReady(): Boolean = viewWidth > 0 && viewHeight > 0
-
     private fun resetCenterPoint() {
-        if (viewWidth > 0 && viewHeight > 0) {
-            aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
+        if (centerPointManager.isReady()) {
+            centerPointManager.applyCenterPoint()
         } else {
-            Log.w(TAG, "⚠️ resetCenterPoint: 视图尺寸未就绪 (${viewWidth}x${viewHeight}), 使用默认值")
+            Log.w(TAG, "⚠️ resetCenterPoint: 视图尺寸未就绪，使用默认中心点")
             aMap.setPointToCenter(200, 200)
         }
     }
@@ -56,20 +105,20 @@ class CameraController(private val aMap: AMap) {
         aMap.moveCamera(update)
     }
 
-/**
+    /**
      * 移动相机到指定位置，并以屏幕正中央为目标点。
      *
      * 先调用 setPointToCenter 重置中心点为视图像素中心，
      * 再执行 moveCamera，解决 AMapNaviView 内部锚点偏移问题。
      */
     fun moveCameraToCenter(lat: Double, lng: Double, zoom: Float = DEFAULT_ZOOM) {
-        if (viewWidth > 0 && viewHeight > 0) {
-            aMap.setPointToCenter(viewWidth / 2, viewHeight / 2)
+        if (centerPointManager.isReady()) {
+            centerPointManager.applyCenterPoint()
         } else {
-            Log.w(TAG, "⚠️ moveCameraToCenter: viewSize 未就绪 (${viewWidth}x${viewHeight}), 使用默认中心点")
-            aMap.setPointToCenter(viewWidth.coerceAtLeast(200), viewHeight.coerceAtLeast(200))
+            Log.w(TAG, "⚠️ moveCameraToCenter: viewSize 未就绪，使用默认中心点")
+            aMap.setPointToCenter(200, 200)
         }
-        Log.d(TAG, "🎯 moveCameraToCenter: lat=$lat, lng=$lng, zoom=$zoom (center=${viewWidth/2},${viewHeight/2})")
+        Log.d(TAG, "🎯 moveCameraToCenter: lat=$lat, lng=$lng, zoom=$zoom")
         val latLng = LatLng(lat, lng)
         aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(latLng, zoom))
     }
@@ -165,7 +214,6 @@ class CameraController(private val aMap: AMap) {
      * 设置屏幕上的某个像素点为地图中心点。
      */
     fun setPointToCenter(x: Int, y: Int) {
-        Log.d(TAG, "🎯 setPointToCenter: x=$x, y=$y")
-        aMap.setPointToCenter(x, y)
+        centerPointManager.setPointToCenter(x, y)
     }
 }
