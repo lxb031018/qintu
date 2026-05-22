@@ -144,9 +144,9 @@ class BindingNotifier extends Notifier<BindingListState> {
     }
   }
 
-  Future<bool> confirmRequest(int requestId) async {
+  Future<bool> confirmRequest(String partnerUserId) async {
     try {
-      await _bindingService.confirm(requestId);
+      await _bindingService.confirm(partnerUserId);
       await loadBindings();
       await loadPendingRequests();
       return true;
@@ -155,9 +155,9 @@ class BindingNotifier extends Notifier<BindingListState> {
     }
   }
 
-  Future<bool> rejectRequest(int requestId) async {
+  Future<bool> rejectRequest(String partnerUserId) async {
     try {
-      await _bindingService.reject(requestId);
+      await _bindingService.reject(partnerUserId);
       await loadPendingRequests();
       return true;
     } catch (e) {
@@ -165,9 +165,9 @@ class BindingNotifier extends Notifier<BindingListState> {
     }
   }
 
-  Future<bool> revokeBinding(int bindingId) async {
+  Future<bool> revokeBinding(String partnerUserId) async {
     try {
-      await _bindingService.revoke(bindingId);
+      await _bindingService.revoke(partnerUserId);
       await loadBindings();
       return true;
     } catch (e) {
@@ -175,11 +175,11 @@ class BindingNotifier extends Notifier<BindingListState> {
     }
   }
 
-  Future<bool> cancelSentRequest(int requestId) async {
+  Future<bool> cancelSentRequest(String partnerUserId) async {
     state = state.copyWith(lastErrorMessage: null);
 
     try {
-      await _bindingService.cancelRequest(requestId);
+      await _bindingService.cancelRequest(partnerUserId);
       await loadSentRequests();
       return true;
     } catch (e) {

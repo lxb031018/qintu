@@ -35,7 +35,7 @@ class Binding {
 
   /// 绑定状态（默认 active）
   @JsonKey(name: 'status', includeFromJson: true)
-  final BindingStatus status;
+  final String status;
 
   /// 备注
   final String? remark;
@@ -104,10 +104,14 @@ class Binding {
   @JsonKey(name: 'expired_at')
   final DateTime? expiredAt;
 
+  /// 绑定成功时间
+  @JsonKey(name: 'bound_at')
+  final DateTime? boundAt;
+
   const Binding({
     this.id = 0,
     this.bindCode,
-    this.status = BindingStatus.active,
+    this.status = 'active',
     this.remark,
     this.myRole,
     this.partnerUserID,
@@ -125,6 +129,7 @@ class Binding {
     this.createdAt,
     this.updatedAt,
     this.expiredAt,
+    this.boundAt,
   });
 
   factory Binding.fromJson(Map<String, dynamic> json) => _$BindingFromJson(json);
@@ -132,14 +137,17 @@ class Binding {
   Map<String, dynamic> toJson() => _$BindingToJson(this);
 
   /// 绑定是否生效中
-  bool get isActive => status == BindingStatus.active;
+  bool get isActive => status == 'active';
+
+  /// 绑定是否待确认
+  bool get isPending => status == 'pending';
 
   /// 绑定是否已过期
   bool get isExpired {
     if (expiredAt != null) {
       return DateTime.now().isAfter(expiredAt!);
     }
-    return status == BindingStatus.expired;
+    return status == 'expired' || status == 'rejected';
   }
 
   @override
@@ -182,6 +190,10 @@ class BindingList {
 class PendingRequest {
   final int id;
 
+  /// 发送者的 user_ID（用于确认/拒绝操作）
+  @JsonKey(name: 'sender_user_ID')
+  final String? senderUserID;
+
   @JsonKey(name: 'sender_name')
   final String? senderName;
 
@@ -196,6 +208,7 @@ class PendingRequest {
 
   const PendingRequest({
     required this.id,
+    this.senderUserID,
     this.senderName,
     this.senderPhone,
     required this.createdAt,
@@ -214,6 +227,11 @@ class PendingRequest {
 @JsonSerializable()
 class SentRequest {
   final int id;
+
+  /// 接收者的 user_ID（用于取消操作）
+  @JsonKey(name: 'receiver_user_ID')
+  final String? receiverUserID;
+
   final String status;
 
   @JsonKey(name: 'receiver_nickname')
@@ -233,6 +251,7 @@ class SentRequest {
 
   const SentRequest({
     required this.id,
+    this.receiverUserID,
     required this.status,
     this.receiverNickname,
     this.receiverPhone,

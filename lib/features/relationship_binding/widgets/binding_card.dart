@@ -20,13 +20,8 @@ class BindingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSender = binding.myRole == MyRole.sender;
     final statusColor = _getStatusColor(binding.status);
     final statusText = _getStatusText(binding.status);
-    final avatarBackground = isSender
-        ? AppColors.orange100
-        : AppColors.green100;
-    final avatarIconColor = isSender ? AppColors.warningColor : AppColors.successColor;
     // 手机号脱敏显示
     final maskedPhone = PhoneUtils.maskPhone(binding.partnerPhone ?? '');
     // 优先使用我对对方的称呼，其次使用对方昵称
@@ -38,10 +33,10 @@ class BindingCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: avatarBackground,
+          backgroundColor: AppColors.blue50,
           child: Icon(
-            isSender ? Icons.person : Icons.group,
-            color: avatarIconColor,
+            Icons.person,
+            color: AppColors.blue700,
           ),
         ),
         title: Text(
@@ -76,7 +71,7 @@ class BindingCard extends StatelessWidget {
               ),
             ),
             SizedBox(width: AppSpacings.sm),
-            if (binding.status == BindingStatus.active)
+            if (binding.status == 'active')
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: AppColors.errorColor),
                 onPressed: onRevoke,
@@ -88,29 +83,33 @@ class BindingCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(BindingStatus status) {
+  Color _getStatusColor(String status) {
     switch (status) {
-      case BindingStatus.active:
+      case 'active':
         return AppColors.successColor;
-      case BindingStatus.pending:
+      case 'pending':
         return AppColors.warningColor;
-      case BindingStatus.expired:
+      case 'expired':
         return AppColors.disabledColor;
-      case BindingStatus.revoked:
+      case 'rejected':
         return AppColors.errorColor;
+      default:
+        return AppColors.disabledColor;
     }
   }
 
-  String _getStatusText(BindingStatus status) {
+  String _getStatusText(String status) {
     switch (status) {
-      case BindingStatus.active:
+      case 'active':
         return AppStrings.active;
-      case BindingStatus.pending:
+      case 'pending':
         return AppStrings.pending;
-      case BindingStatus.expired:
+      case 'expired':
         return AppStrings.expired;
-      case BindingStatus.revoked:
+      case 'rejected':
         return AppStrings.revoked;
+      default:
+        return '未知';
     }
   }
 }

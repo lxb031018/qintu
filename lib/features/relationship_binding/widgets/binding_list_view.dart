@@ -6,7 +6,7 @@ import 'binding_card.dart';
 /// 绑定列表视图（使用 Column 而非 ListView，避免与外层 SingleChildScrollView 冲突）
 class BindingListView extends StatelessWidget {
   final List<Binding> bindings;
-  final Function(int) onRevoke;
+  final Function(String) onRevoke;
 
   const BindingListView({
     super.key,
@@ -22,7 +22,7 @@ class BindingListView extends StatelessWidget {
         children: bindings.map((binding) {
           return BindingCard(
             binding: binding,
-            onRevoke: () => onRevoke(binding.id),
+            onRevoke: () => onRevoke(binding.partnerUserID ?? ''),
           );
         }).toList(),
       ),

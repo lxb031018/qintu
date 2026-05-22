@@ -12,8 +12,8 @@ import '../../../../widgets/common/app_confirm_dialog.dart';
 /// 待确认绑定请求卡片
 class PendingRequestCard extends StatelessWidget {
   final PendingRequest request;
-  final Function(int) onAccept;
-  final Function(int) onReject;
+  final Function(String) onAccept;
+  final Function(String) onReject;
 
   const PendingRequestCard({
     super.key,
@@ -222,7 +222,7 @@ class PendingRequestCard extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      onAccept(request.id);
+      onAccept(request.senderUserID ?? '');
     }
   }
 
@@ -237,7 +237,7 @@ class PendingRequestCard extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      onReject(request.id);
+      onReject(request.senderUserID ?? '');
     }
   }
 }

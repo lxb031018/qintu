@@ -36,24 +36,10 @@ class BindingApi {
 
     final response = await _apiClient.get<Map<String, dynamic>>(ApiEndpoints.getPendingRequests);
 
-    Logs.binding.info('API响应: ${response.data}');
-
     if (response.isSuccessful && response.data != null) {
       final responseData = response.data!;
       final requestsData = responseData['data'] as List<dynamic>? ?? [];
       Logs.binding.info('待确认请求获取成功: ${requestsData.length}');
-
-      // 详细日志：打印每个请求的字段
-      for (int i = 0; i < requestsData.length; i++) {
-        final json = requestsData[i] as Map<String, dynamic>;
-        Logs.binding.info('请求[$i] JSON keys: ${json.keys.toList()}');
-
-        // 在调用 fromJson 之前打印所有字段
-        json.forEach((key, value) {
-          Logs.binding.info('请求[$i] 字段[$key] = $value (type: ${value?.runtimeType})');
-        });
-      }
-
       return requestsData
           .map((json) => PendingRequest.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -106,12 +92,12 @@ class BindingApi {
   }
 
   /// 确认绑定请求
-  Future<void> confirmRequest(int requestId) async {
+  Future<void> confirmRequest(String partnerUserId) async {
     Logs.binding.info('API请求: POST ${ApiEndpoints.confirmRequest}');
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.confirmRequest,
-      data: {'request_id': requestId},
+      data: {'partner_user_id': partnerUserId},
     );
 
     if (!response.isSuccessful) {
@@ -122,12 +108,12 @@ class BindingApi {
   }
 
   /// 拒绝绑定请求
-  Future<void> rejectRequest(int requestId) async {
+  Future<void> rejectRequest(String partnerUserId) async {
     Logs.binding.info('API请求: POST ${ApiEndpoints.rejectRequest}');
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.rejectRequest,
-      data: {'request_id': requestId},
+      data: {'partner_user_id': partnerUserId},
     );
 
     if (!response.isSuccessful) {
@@ -169,11 +155,11 @@ class BindingApi {
   }
 
   /// 取消发出的请求
-  Future<void> cancelSentRequest(int requestId) async {
-    Logs.binding.info('API请求: DELETE ${ApiEndpoints.cancelSentRequest(requestId)}');
+  Future<void> cancelSentRequest(String partnerUserId) async {
+    Logs.binding.info('API请求: DELETE ${ApiEndpoints.cancelSentRequest(partnerUserId)}');
 
     final response = await _apiClient.delete<Map<String, dynamic>>(
-      ApiEndpoints.cancelSentRequest(requestId),
+      ApiEndpoints.cancelSentRequest(partnerUserId),
     );
 
     if (!response.isSuccessful) {

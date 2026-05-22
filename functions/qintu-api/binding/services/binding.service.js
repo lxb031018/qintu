@@ -1,7 +1,8 @@
 /**
  * 绑定服务
  *
- * 完整流程：发送请求 -> 对方确认 -> 建立绑定关系
+ * 单表设计：user_bindings 表同时存储 pending 和 active 状态的绑定
+ * 流程：发送请求 -> 对方确认/拒绝 -> 建立绑定或删除记录
  */
 
 const { normalizePhone } = require('../../shared/lib/phone');
@@ -37,21 +38,21 @@ class BindingService {
       throw Object.assign(new Error('不能绑定自己'), { code: 'SELF_BINDING', status: 400 });
     }
 
-    // 4. 检查是否已经绑定
+    // 4. 检查是否已经绑定（active 状态）
     const isAlreadyBound = await this.bindingRepo.exists(myUserID, partnerUserID);
     if (isAlreadyBound) {
       throw Object.assign(new Error('你们已经是绑定关系'), { code: 'ALREADY_BINDING', status: 409 });
     }
 
-    // 5. 检查是否已有待处理的绑定请求
+    // 5. 检查是否已有待处理的绑定请求（pending 状态）
     const hasPending = await this.bindingRepo.hasPendingRequest(myUserID, partnerUserID);
     if (hasPending) {
       throw Object.assign(new Error('您已发送过绑定请求，请等待对方确认'), { code: 'REQUEST_EXISTS', status: 409 });
     }
 
-    // 6. 创建绑定请求（7天过期）
+    // 6. 创建 pending 状态的绑定记录（7天过期）
     const expiresAt = new Date(Date.now() + config.BINDING.EXPIRES_MS);
-    const request = await this.bindingRepo.createRequest(
+    const result = await this.bindingRepo.createPendingBinding(
       myUserID,
       partnerUserID,
       senderName,
@@ -59,9 +60,13 @@ class BindingService {
       expiresAt
     );
 
+    if (result.alreadyExists) {
+      throw Object.assign(new Error('您已发送过绑定请求，请等待对方确认'), { code: 'REQUEST_EXISTS', status: 409 });
+    }
+
     return {
       message: '绑定请求已发送',
-      request_id: request.id,
+      partner_user_ID: partnerUserID,
       partner_nickname: partnerUser.nickname || '未命名用户'
     };
   }
@@ -71,29 +76,33 @@ class BindingService {
    * @param {string} myUserID - 我的 user_ID
    */
   async getPendingRequests(myUserID) {
-    console.log('[BindingService] getPendingRequests called with myUserID:', myUserID);
-
     // 先过期旧请求
     await this.bindingRepo.expireOldRequests();
 
-    const requests = await this.bindingRepo.findPendingForReceiver(myUserID);
-    console.log('[BindingService] findPendingForReceiver returned:', requests.length, 'requests');
+    const bindings = await this.bindingRepo.findPendingForReceiver(myUserID);
 
     const result = [];
-    for (const req of requests) {
-      const sender = await this.userRepo.findByUserID(req.sender_user_ID);
-      console.log('[BindingService] req.created_at:', req.created_at, 'type:', typeof req.created_at);
+    for (const binding of bindings) {
+      // 找出对方用户（发送者）
+      const partnerUserID = binding.sender_user_ID;
+      const partner = await this.userRepo.findByUserID(partnerUserID);
+
+      // sender_name 是发送者对接收者的称呼
+      // 由于 user_A < user_B，sender_user_ID 可能是 user_A 或 user_B
+      const isUserA = binding.user_A === myUserID;
+      const senderName = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
+
       result.push({
-        id: req.id,
-        sender_name: req.sender_name,
-        sender_phone: sender?.phone ? sender.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
-        sender_nickname: sender?.nickname || '未命名用户',
-        created_at: req.created_at,
-        expires_at: req.expires_at
+        id: binding.id,
+        sender_user_ID: partnerUserID,
+        sender_name: senderName,
+        sender_phone: partner?.phone ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
+        sender_nickname: partner?.nickname || '未命名用户',
+        created_at: binding.created_at,
+        expires_at: binding.expires_at
       });
     }
 
-    console.log('[BindingService] returning result:', result);
     return result;
   }
 
@@ -105,26 +114,32 @@ class BindingService {
     // 先过期旧请求
     await this.bindingRepo.expireOldRequests();
 
-    const requests = await this.bindingRepo.findSentBySender(myUserID);
+    const bindings = await this.bindingRepo.findSentBySender(myUserID);
 
     const result = [];
-    for (const req of requests) {
-      const receiver = await this.userRepo.findByUserID(req.receiver_user_ID);
+    for (const binding of bindings) {
+      const partnerUserID = binding.user_A === myUserID ? binding.user_B : binding.user_A;
+      const partner = await this.userRepo.findByUserID(partnerUserID);
 
-      // 计算状态
-      let status = req.status;
-      if (req.status === 'pending' && new Date(req.expires_at) < new Date()) {
+      // 判断状态
+      let status = binding.status;
+      if (binding.status === 'pending' && new Date(binding.expires_at) < new Date()) {
         status = 'expired';
       }
 
+      // receiver_name 是对方对我的称呼
+      const isUserA = binding.user_A === myUserID;
+      const receiverName = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
+
       result.push({
-        id: req.id,
-        receiver_name: req.receiver_name,
-        receiver_nickname: receiver?.nickname || '未命名用户',
-        receiver_phone: receiver?.phone ? receiver.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
+        id: binding.id,
+        receiver_user_ID: partnerUserID,
+        receiver_name: receiverName,
+        receiver_nickname: partner?.nickname || '未命名用户',
+        receiver_phone: partner?.phone ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
         status: status,
-        created_at: req.created_at,
-        expires_at: req.expires_at
+        created_at: binding.created_at,
+        expires_at: binding.expires_at
       });
     }
 
@@ -134,107 +149,62 @@ class BindingService {
   /**
    * 确认绑定请求（接收者接受）
    * @param {string} myUserID - 我的 user_ID
-   * @param {number} requestId - 请求 ID
+   * @param {string} partnerUserID - 发送者的 user_ID
    */
-  async confirmRequest(myUserID, requestId) {
-    // 1. 查找请求
-    const request = await this.bindingRepo.findRequestById(requestId);
-    if (!request) {
+  async confirmRequest(myUserID, partnerUserID) {
+    // 1. 检查绑定是否存在且为 pending
+    const binding = await this.bindingRepo.findPendingForReceiver(myUserID);
+    const pendingBinding = binding.find(b =>
+      (b.user_A === myUserID && b.user_B === partnerUserID) ||
+      (b.user_A === partnerUserID && b.user_B === myUserID)
+    );
+
+    if (!pendingBinding) {
       throw Object.assign(new Error('绑定请求不存在'), { code: 'REQUEST_NOT_FOUND', status: 404 });
     }
 
-    // 2. 检查是否是接收者
-    if (request.receiver_user_ID !== myUserID) {
-      throw Object.assign(new Error('无权操作此请求'), { code: 'UNAUTHORIZED', status: 403 });
-    }
-
-    // 3. 检查请求状态
-    if (request.status !== 'pending') {
-      throw Object.assign(new Error('请求已处理'), { code: 'REQUEST_ALREADY_PROCESSED', status: 409 });
-    }
-
-    // 4. 检查是否已过期
-    if (new Date(request.expires_at) < new Date()) {
+    // 2. 检查请求是否已过期
+    if (new Date(pendingBinding.expires_at) < new Date()) {
       throw Object.assign(new Error('请求已过期'), { code: 'REQUEST_EXPIRED', status: 409 });
     }
 
-    // 5. 创建绑定关系
-    // sender 是 A（发起方），receiver 是 B（接收方）
-    // 但存储时 user_A < user_B
-    const { user_A, user_B } = myUserID < request.sender_user_ID
-      ? { user_A: myUserID, user_B: request.sender_user_ID }
-      : { user_A: request.sender_user_ID, user_B: myUserID };
-
-    // sender_name = 发送者对接收者的称呼（A对B的称呼）
-    // receiver_name = 接收者对发送者的称呼（B对A的称呼）
-    // 如果 myUserID 是 user_A（即我是发送者），那么：
-    //   - 我的称呼（receiver_name）应该存到 name_B_to_A
-    //   - 对方的称呼（sender_name）应该存到 name_A_to_B
-    // 如果 myUserID 是 user_B（即我是接收者），那么：
-    //   - 我的称呼（receiver_name）应该存到 name_A_to_B
-    //   - 对方的称呼（sender_name）应该存到 name_B_to_A
-    const name_A_to_B = myUserID === user_A ? request.receiver_name : request.sender_name;
-    const name_B_to_A = myUserID === user_A ? request.sender_name : request.receiver_name;
-
-    const bindResult = await this.bindingRepo.createWithNames(user_A, user_B, name_A_to_B, name_B_to_A);
-
-    if (bindResult.alreadyExists) {
-      throw Object.assign(new Error('你们已经是绑定关系'), { code: 'ALREADY_BINDING', status: 409 });
-    }
-
-    // 6. 更新请求状态为已接受
-    await this.bindingRepo.updateRequestStatus(requestId, 'accepted');
+    // 3. 激活绑定（pending -> active）
+    await this.bindingRepo.activateBinding(myUserID, partnerUserID);
 
     return {
       message: '绑定成功',
-      partner_user_ID: request.sender_user_ID,
-      partner_nickname: (await this.userRepo.findByUserID(request.sender_user_ID))?.nickname || '未命名用户'
+      partner_user_ID: partnerUserID
     };
   }
 
   /**
    * 拒绝绑定请求
    * @param {string} myUserID - 我的 user_ID
-   * @param {number} requestId - 请求 ID
+   * @param {string} partnerUserID - 发送者的 user_ID
    */
-  async rejectRequest(myUserID, requestId) {
-    const request = await this.bindingRepo.findRequestById(requestId);
-    if (!request) {
+  async rejectRequest(myUserID, partnerUserID) {
+    // 删除 pending 状态的记录
+    const deleted = await this.bindingRepo.deletePending(myUserID, partnerUserID);
+
+    if (!deleted) {
       throw Object.assign(new Error('绑定请求不存在'), { code: 'REQUEST_NOT_FOUND', status: 404 });
     }
 
-    if (request.receiver_user_ID !== myUserID) {
-      throw Object.assign(new Error('无权操作此请求'), { code: 'UNAUTHORIZED', status: 403 });
-    }
-
-    if (request.status !== 'pending') {
-      throw Object.assign(new Error('请求已处理'), { code: 'REQUEST_ALREADY_PROCESSED', status: 409 });
-    }
-
-    await this.bindingRepo.updateRequestStatus(requestId, 'rejected');
     return { message: '已拒绝绑定请求' };
   }
 
   /**
    * 取消发出的请求
    * @param {string} myUserID - 我的 user_ID
-   * @param {number} requestId - 请求 ID
+   * @param {string} partnerUserID - 接收者的 user_ID
    */
-  async cancelRequest(myUserID, requestId) {
-    const request = await this.bindingRepo.findRequestById(requestId);
-    if (!request) {
+  async cancelRequest(myUserID, partnerUserID) {
+    const deleted = await this.bindingRepo.deletePending(myUserID, partnerUserID);
+
+    if (!deleted) {
       throw Object.assign(new Error('绑定请求不存在'), { code: 'REQUEST_NOT_FOUND', status: 404 });
     }
 
-    if (request.sender_user_ID !== myUserID) {
-      throw Object.assign(new Error('无权操作此请求'), { code: 'UNAUTHORIZED', status: 403 });
-    }
-
-    if (request.status !== 'pending') {
-      throw Object.assign(new Error('请求已处理'), { code: 'REQUEST_ALREADY_PROCESSED', status: 409 });
-    }
-
-    await this.bindingRepo.updateRequestStatus(requestId, 'rejected');
     return { message: '已取消绑定请求' };
   }
 
@@ -262,11 +232,16 @@ class BindingService {
 
     const result = [];
     for (const binding of bindings) {
+      // 跳过非 active 状态的绑定（pending 在列表中不显示）
+      if (binding.status !== 'active') {
+        continue;
+      }
+
       const partner = await this.userRepo.findByUserID(binding.partner_user_ID);
 
       const isUserA = binding.user_A === myUserID;
-      const myNameForPartner = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
-      const partnerNameForMe = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
+      const myNameForPartner = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
+      const partnerNameForMe = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
 
       result.push({
         partner_user_ID: binding.partner_user_ID,
@@ -275,7 +250,10 @@ class BindingService {
           ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
           : '未知',
         my_name_for_partner: myNameForPartner,
-        partner_name_for_me: partnerNameForMe
+        partner_name_for_me: partnerNameForMe,
+        status: binding.status,
+        created_at: binding.created_at,
+        bound_at: binding.bound_at
       });
     }
 
@@ -299,13 +277,6 @@ class BindingService {
 
     await this.bindingRepo.modifyName(myUserID, partnerUserID, newName);
     return { message: '称呼已修改' };
-  }
-
-  /**
-   * 检查是否已绑定
-   */
-  async isBound(user_ID_1, user_ID_2) {
-    return await this.bindingRepo.exists(user_ID_1, user_ID_2);
   }
 }
 

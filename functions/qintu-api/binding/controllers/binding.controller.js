@@ -84,17 +84,17 @@ class BindingController {
   async confirmRequest(req, res) {
     try {
       const user_ID = req.user.user_ID;
-      const { request_id } = req.body;
+      const { partner_user_id } = req.body;
 
-      if (!request_id) {
-        return validationError(res, 'request_id 是必填参数');
+      if (!partner_user_id) {
+        return validationError(res, 'partner_user_id 是必填参数');
       }
 
       if (!user_ID || user_ID === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.confirmRequest(user_ID, request_id);
+      const result = await this.bindingService.confirmRequest(user_ID, partner_user_id);
       return success(res, result);
     } catch (err) {
       console.error('确认绑定请求失败:', err);
@@ -109,17 +109,17 @@ class BindingController {
   async rejectRequest(req, res) {
     try {
       const user_ID = req.user.user_ID;
-      const { request_id } = req.body;
+      const { partner_user_id } = req.body;
 
-      if (!request_id) {
-        return validationError(res, 'request_id 是必填参数');
+      if (!partner_user_id) {
+        return validationError(res, 'partner_user_id 是必填参数');
       }
 
       if (!user_ID || user_ID === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.rejectRequest(user_ID, request_id);
+      const result = await this.bindingService.rejectRequest(user_ID, partner_user_id);
       return success(res, result);
     } catch (err) {
       console.error('拒绝绑定请求失败:', err);
@@ -129,22 +129,22 @@ class BindingController {
 
   /**
    * 取消发出的请求
-   * DELETE /api/bindings/requests/:id
+   * DELETE /api/bindings/pending/:partner_user_id
    */
   async cancelRequest(req, res) {
     try {
       const user_ID = req.user.user_ID;
-      const { id } = req.params;
+      const { partner_user_id } = req.params;
 
-      if (!id) {
-        return validationError(res, 'id 是必填参数');
+      if (!partner_user_id) {
+        return validationError(res, 'partner_user_id 是必填参数');
       }
 
       if (!user_ID || user_ID === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.cancelRequest(user_ID, parseInt(id));
+      const result = await this.bindingService.cancelRequest(user_ID, partner_user_id);
       return success(res, result);
     } catch (err) {
       console.error('取消请求失败:', err);

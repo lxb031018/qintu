@@ -90,16 +90,16 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
               controller: _tabController,
               children: [
                 SentRequestsTab(
-                  onRefresh: _loadNotifications,
+                  onRefresh: () => _loadNotifications(),
                   onCancel: _cancelRequest,
                 ),
                 ReceivedRequestsTab(
-                  onRefresh: _loadNotifications,
-                  onConfirm: _confirmRequest,
-                  onReject: _rejectRequest,
+                  onRefresh: () => _loadNotifications(),
+                  onConfirm: (id) => _confirmRequest(id),
+                  onReject: (id) => _rejectRequest(id),
                 ),
                 RejectedRequestsTab(
-                  onRefresh: _loadNotifications,
+                  onRefresh: () => _loadNotifications(),
                 ),
               ],
             ),
@@ -198,9 +198,9 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
   }
 
   /// 确认绑定请求
-  Future<void> _confirmRequest(int requestId) async {
+  Future<void> _confirmRequest(String senderUserId) async {
     final notifier = ref.read(bindingProvider.notifier);
-    final success = await notifier.confirmRequest(requestId);
+    final success = await notifier.confirmRequest(senderUserId);
     if (!mounted) return;
     _handleOperationResult(
       context,
@@ -212,9 +212,9 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
   }
 
   /// 拒绝绑定请求
-  Future<void> _rejectRequest(int requestId) async {
+  Future<void> _rejectRequest(String senderUserId) async {
     final notifier = ref.read(bindingProvider.notifier);
-    final success = await notifier.rejectRequest(requestId);
+    final success = await notifier.rejectRequest(senderUserId);
     if (!mounted) return;
     _handleOperationResult(
       context,
@@ -226,7 +226,7 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
   }
 
   /// 取消发出的请求
-  Future<void> _cancelRequest(int requestId) async {
+  Future<void> _cancelRequest(String partnerUserId) async {
     final notifier = ref.read(bindingProvider.notifier);
 
     AppConfirmDialog.show(
@@ -237,7 +237,7 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
       confirmColor: Theme.of(context).colorScheme.error,
       confirmTextColor: Colors.white,
       onConfirm: () async {
-        final success = await notifier.cancelSentRequest(requestId);
+        final success = await notifier.cancelSentRequest(partnerUserId);
         if (!mounted) return;
         _handleOperationResult(
           context,

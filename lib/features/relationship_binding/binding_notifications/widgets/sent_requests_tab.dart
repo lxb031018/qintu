@@ -15,7 +15,7 @@ import 'empty_state_widget.dart';
 
 class SentRequestsTab extends ConsumerWidget {
   final Future<void> Function() onRefresh;
-  final Future<void> Function(int requestId) onCancel;
+  final Future<void> Function(String partnerUserId) onCancel;
 
   const SentRequestsTab({
     super.key,
@@ -49,7 +49,7 @@ class SentRequestsTab extends ConsumerWidget {
                 final request = requests[index];
                 return SentRequestCard(
                   request: request,
-                  onCancel: (requestId) => onCancel(requestId),
+                  onCancel: (partnerUserId) => onCancel(partnerUserId),
                 );
               },
             ),

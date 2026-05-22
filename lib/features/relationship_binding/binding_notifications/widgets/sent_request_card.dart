@@ -17,7 +17,7 @@ import '../../../../widgets/common/app_confirm_dialog.dart';
 
 class SentRequestCard extends StatelessWidget {
   final SentRequest request;
-  final Function(int requestId) onCancel;
+  final Function(String) onCancel;
 
   const SentRequestCard({
     super.key,
@@ -199,7 +199,7 @@ class SentRequestCard extends StatelessWidget {
       confirmText: AppStrings.confirmCancel,
       confirmColor: AppColors.errorColor,
       confirmTextColor: AppColors.whiteText,
-      onConfirm: () => onCancel(request.id),
+      onConfirm: () => onCancel(request.receiverUserID ?? ''),
     );
   }
 }

@@ -15,8 +15,8 @@ import 'empty_state_widget.dart';
 
 class ReceivedRequestsTab extends ConsumerWidget {
   final Future<void> Function() onRefresh;
-  final Future<void> Function(int requestId) onConfirm;
-  final Future<void> Function(int requestId) onReject;
+  final Future<void> Function(String senderUserId) onConfirm;
+  final Future<void> Function(String senderUserId) onReject;
 
   const ReceivedRequestsTab({
     super.key,
@@ -50,8 +50,8 @@ class ReceivedRequestsTab extends ConsumerWidget {
                 final request = requests[index];
                 return PendingRequestCard(
                   request: request,
-                  onAccept: (requestId) => onConfirm(requestId),
-                  onReject: (requestId) => onReject(requestId),
+                  onAccept: (senderUserId) => onConfirm(senderUserId),
+                  onReject: (senderUserId) => onReject(senderUserId),
                 );
               },
             ),

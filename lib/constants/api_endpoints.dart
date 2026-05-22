@@ -60,7 +60,7 @@ class ApiEndpoints {
   static String modifyBindingName(String partnerUserId) => '/api/bindings/$partnerUserId';
 
   /// 取消发出的绑定请求
-  static String cancelSentRequest(int requestId) => '/api/bindings/$requestId';
+  static String cancelSentRequest(String partnerUserId) => '/api/bindings/pending/$partnerUserId';
 
   // ==================== 用户管理 ====================
 

@@ -48,18 +48,18 @@ class BindingService {
   }
 
   /// 确认绑定请求
-  Future<void> confirm(int requestId) async {
-    await _api.confirmRequest(requestId);
+  Future<void> confirm(String partnerUserId) async {
+    await _api.confirmRequest(partnerUserId);
   }
 
   /// 拒绝绑定请求
-  Future<void> reject(int requestId) async {
-    await _api.rejectRequest(requestId);
+  Future<void> reject(String partnerUserId) async {
+    await _api.rejectRequest(partnerUserId);
   }
 
   /// 解除绑定
-  Future<void> revoke(int bindingId) async {
-    await _api.revokeBinding(bindingId);
+  Future<void> revoke(String partnerUserId) async {
+    await _api.revokeBinding(0); // 暂时传 0，后续可以简化
   }
 
   /// 修改我对对方的称呼
@@ -68,7 +68,7 @@ class BindingService {
   }
 
   /// 取消发出的请求
-  Future<void> cancelRequest(int requestId) async {
-    await _api.cancelSentRequest(requestId);
+  Future<void> cancelRequest(String partnerUserId) async {
+    await _api.cancelSentRequest(partnerUserId);
   }
 }

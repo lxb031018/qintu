@@ -34,37 +34,28 @@ COMMENT='用户表';
 -- 2. 绑定关系表 (user_bindings)
 -- 记录用户之间的绑定关系，关系平等，双向可发导航任务
 -- 存储规则：user_A < user_B（字符串比较，小的在前）
+-- status: pending(待确认) / active(已绑定) / rejected(已拒绝/已过期)
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `user_bindings`;
 CREATE TABLE `user_bindings` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '自增ID，用于API操作',
     `user_A` CHAR(36) NOT NULL COMMENT '用户A的 user_ID（较小者）',
     `user_B` CHAR(36) NOT NULL COMMENT '用户B的 user_ID（较大者）',
+    `sender_user_ID` CHAR(36) NULL COMMENT '发送者 user_ID（发起绑定请求的人）',
     `name_A_to_B` VARCHAR(32) NULL DEFAULT NULL COMMENT 'A对B的称呼',
     `name_B_to_A` VARCHAR(32) NULL DEFAULT NULL COMMENT 'B对A的称呼',
-
-    PRIMARY KEY (`user_A`, `user_B`),
-    KEY `idx_user_A` (`user_A`),
-    KEY `idx_user_B` (`user_B`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='用户绑定关系表 - 关系平等，解除绑定即删除记录';
-
--- ------------------------------------------------------------
--- 3. 绑定请求表 (binding_requests)
--- 记录用户发送的绑定请求，等待对方确认后才建立绑定关系
--- ------------------------------------------------------------
-DROP TABLE IF EXISTS `binding_requests`;
-CREATE TABLE `binding_requests` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `sender_user_ID` CHAR(36) NOT NULL COMMENT '发送者user_ID',
-    `receiver_user_ID` CHAR(36) NOT NULL COMMENT '接收者user_ID',
-    `sender_name` VARCHAR(32) NULL DEFAULT NULL COMMENT '发送者对接收者的称呼',
-    `receiver_name` VARCHAR(32) NULL DEFAULT NULL COMMENT '接收者对发送者的称呼',
-    `status` ENUM('pending', 'accepted', 'rejected', 'expired') DEFAULT 'pending' COMMENT '请求状态',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT 'pending=待确认, active=已绑定, rejected=已拒绝/已过期',
+    `expires_at` DATETIME NULL COMMENT 'pending状态过期时间',
+    `bound_at` DATETIME NULL COMMENT '绑定成功时间',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `expires_at` TIMESTAMP NOT NULL COMMENT '过期时间',
 
-    PRIMARY KEY (`id`),
-    KEY `idx_receiver` (`receiver_user_ID`, `status`),
-    KEY `idx_sender` (`sender_user_ID`, `status`)
+    UNIQUE KEY `uk_user_pair` (`user_A`, `user_B`),
+    KEY `idx_user_A` (`user_A`),
+    KEY `idx_user_B` (`user_B`),
+    KEY `idx_sender` (`sender_user_ID`),
+    KEY `idx_status` (`status`),
+    KEY `idx_receiver` (`user_B`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='绑定请求表 - 需要对方确认才能建立绑定关系';
+COMMENT='用户绑定关系表 - 单表设计，pending状态为待确认的绑定请求';
+
+-- 注意：已废弃 binding_requests 表，功能合并到 user_bindings 表

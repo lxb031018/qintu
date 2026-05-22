@@ -161,7 +161,7 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
     return BindingListView(
       bindings: displayBindings,
-      onRevoke: (bindingId) => _confirmRevoke(bindingId),
+      onRevoke: (partnerUserId) => _confirmRevoke(partnerUserId),
     );
   }
 
@@ -192,7 +192,7 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
   }
 
   /// 确认解除绑定（带二次确认对话框）
-  Future<void> _confirmRevoke(int bindingId) async {
+  Future<void> _confirmRevoke(String partnerUserId) async {
     final confirmed = await AppConfirmDialog.show(
       context,
       title: AppStrings.revokeBinding,
@@ -208,7 +208,7 @@ class _RelationshipBindingTabState extends ConsumerState<RelationshipBindingTab>
 
     final bindingState = ref.read(bindingProvider);
     final notifier = ref.read(bindingProvider.notifier);
-    final success = await notifier.revokeBinding(bindingId);
+    final success = await notifier.revokeBinding(partnerUserId);
 
     if (!mounted) return;
 
