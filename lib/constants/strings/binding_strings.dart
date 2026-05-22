@@ -81,9 +81,6 @@ class BindingStrings {
   /// 请输入正确的手机号
   static const String invalidPhone = '请输入正确的手机号';
 
-  /// 绑定提示文本
-  static const String bindingHintText = '对方将看到您填写的称呼和手机号，请确认信息准确';
-
   /// 您对对方的称呼（标签）
   static const String yourNameForPartner = '您对对方的称呼';
 

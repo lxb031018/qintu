@@ -119,9 +119,11 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
 
     return AlertDialog(
       title: null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      constraints: const BoxConstraints(maxWidth: double.infinity),
       content: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -240,7 +242,7 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
         ),
       ],
       actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      
     );
   }
 }
