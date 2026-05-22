@@ -217,7 +217,8 @@ class NaviViewFactory(
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
         myLocationStyle.interval(2000) // 定位间隔 2 秒
         aMap.myLocationStyle = myLocationStyle
-        aMap.isMyLocationEnabled = true  // 预览模式默认显示蓝点
+        // 预览模式：先禁用蓝点，等待 OnGlobalLayout 中设置中心点后再启用
+        aMap.isMyLocationEnabled = false
 
         // ======== UiSettings ========
         val ui = aMap.uiSettings
