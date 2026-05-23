@@ -69,19 +69,24 @@ class RouteShareService {
 
     console.log(`[RouteShare] 路线已接收并销毁: ${share.id}`);
 
+    // 以嵌套结构返回，匹配 Flutter 端 PendingRouteShare.fromJson 的解析逻辑
     return [{
       id: share.id,
       senderUserID: share.senderUserID,
       senderNickname: '绑定用户',
       receiverUserID: share.receiverUserID,
-      originLat: share.origin.latitude,
-      originLng: share.origin.longitude,
-      originName: share.origin.name,
-      originAddress: share.origin.address || '',
-      destLat: share.destination.latitude,
-      destLng: share.destination.longitude,
-      destName: share.destination.name,
-      destAddress: share.destination.address || '',
+      origin: {
+        latitude: share.origin.latitude,
+        longitude: share.origin.longitude,
+        name: share.origin.name,
+        address: share.origin.address || ''
+      },
+      destination: {
+        latitude: share.destination.latitude,
+        longitude: share.destination.longitude,
+        name: share.destination.name,
+        address: share.destination.address || ''
+      },
       routeType: share.routeType,
       routeId: share.routeId,
       createdAt: share.createdAt
