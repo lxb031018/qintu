@@ -15,19 +15,19 @@ class BindingController {
    */
   async requestBinding(req, res) {
     try {
-      const user_ID = req.user.user_ID;
+      const userId = req.user.userId;
       const { receiver_phone, sender_name, receiver_name } = req.body;
 
       if (!receiver_phone) {
         return validationError(res, 'receiver_phone 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
       const result = await this.bindingService.requestBinding(
-        user_ID,
+        userId,
         receiver_phone,
         sender_name || '',
         receiver_name || ''
@@ -45,12 +45,12 @@ class BindingController {
    */
   async getPendingRequests(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user.userId;
+      if (!userId || userId === 'unknown_user') {
         return success(res, []);
       }
 
-      const result = await this.bindingService.getPendingRequests(user_ID);
+      const result = await this.bindingService.getPendingRequests(userId);
       return success(res, result);
     } catch (err) {
       console.error('获取待确认请求失败:', err);
@@ -64,12 +64,12 @@ class BindingController {
    */
   async getSentRequests(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user.userId;
+      if (!userId || userId === 'unknown_user') {
         return success(res, []);
       }
 
-      const result = await this.bindingService.getSentRequests(user_ID);
+      const result = await this.bindingService.getSentRequests(userId);
       return success(res, result);
     } catch (err) {
       console.error('获取发出的请求失败:', err);
@@ -83,18 +83,18 @@ class BindingController {
    */
   async confirmRequest(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      const { partner_user_id } = req.body;
+      const userId = req.user.userId;
+      const { partner_userId } = req.body;
 
-      if (!partner_user_id) {
-        return validationError(res, 'partner_user_id 是必填参数');
+      if (!partner_userId) {
+        return validationError(res, 'partner_userId 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.confirmRequest(user_ID, partner_user_id);
+      const result = await this.bindingService.confirmRequest(userId, partner_userId);
       return success(res, result);
     } catch (err) {
       console.error('确认绑定请求失败:', err);
@@ -108,18 +108,18 @@ class BindingController {
    */
   async rejectRequest(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      const { partner_user_id } = req.body;
+      const userId = req.user.userId;
+      const { partner_userId } = req.body;
 
-      if (!partner_user_id) {
-        return validationError(res, 'partner_user_id 是必填参数');
+      if (!partner_userId) {
+        return validationError(res, 'partner_userId 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.rejectRequest(user_ID, partner_user_id);
+      const result = await this.bindingService.rejectRequest(userId, partner_userId);
       return success(res, result);
     } catch (err) {
       console.error('拒绝绑定请求失败:', err);
@@ -129,22 +129,22 @@ class BindingController {
 
   /**
    * 取消发出的请求
-   * DELETE /api/bindings/pending/:partner_user_id
+   * DELETE /api/bindings/pending/:partner_userId
    */
   async cancelRequest(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      const { partner_user_id } = req.params;
+      const userId = req.user.userId;
+      const { partner_userId } = req.params;
 
-      if (!partner_user_id) {
-        return validationError(res, 'partner_user_id 是必填参数');
+      if (!partner_userId) {
+        return validationError(res, 'partner_userId 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.cancelRequest(user_ID, partner_user_id);
+      const result = await this.bindingService.cancelRequest(userId, partner_userId);
       return success(res, result);
     } catch (err) {
       console.error('取消请求失败:', err);
@@ -158,12 +158,12 @@ class BindingController {
    */
   async getMyBindings(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user.userId;
+      if (!userId || userId === 'unknown_user') {
         return success(res, { total: 0, bindings: [] });
       }
 
-      const result = await this.bindingService.getMyBindings(user_ID);
+      const result = await this.bindingService.getMyBindings(userId);
       return success(res, result);
     } catch (err) {
       console.error('获取绑定关系失败:', err);
@@ -173,22 +173,22 @@ class BindingController {
 
   /**
    * 解绑用户
-   * DELETE /api/bindings/:partner_user_id
+   * DELETE /api/bindings/:partner_userId
    */
   async unbind(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      const { partner_user_id } = req.params;
+      const userId = req.user.userId;
+      const { partner_userId } = req.params;
 
-      if (!partner_user_id) {
-        return validationError(res, 'partner_user_id 是必填参数');
+      if (!partner_userId) {
+        return validationError(res, 'partner_userId 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.unbind(user_ID, partner_user_id);
+      const result = await this.bindingService.unbind(userId, partner_userId);
       return success(res, result);
     } catch (err) {
       console.error('解绑失败:', err);
@@ -198,27 +198,27 @@ class BindingController {
 
   /**
    * 修改我对对方的称呼
-   * PATCH /api/bindings/:partner_user_id
+   * PATCH /api/bindings/:partner_userId
    */
   async modifyName(req, res) {
     try {
-      const user_ID = req.user.user_ID;
-      const { partner_user_id } = req.params;
+      const userId = req.user.userId;
+      const { partner_userId } = req.params;
       const { my_name_for_partner } = req.body;
 
-      if (!partner_user_id) {
-        return validationError(res, 'partner_user_id 是必填参数');
+      if (!partner_userId) {
+        return validationError(res, 'partner_userId 是必填参数');
       }
 
       if (!my_name_for_partner) {
         return validationError(res, 'my_name_for_partner 是必填参数');
       }
 
-      if (!user_ID || user_ID === 'unknown_user') {
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      const result = await this.bindingService.modifyName(user_ID, partner_user_id, my_name_for_partner);
+      const result = await this.bindingService.modifyName(userId, partner_userId, my_name_for_partner);
       return success(res, result);
     } catch (err) {
       console.error('修改称呼失败:', err);

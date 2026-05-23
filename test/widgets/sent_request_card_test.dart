@@ -6,10 +6,10 @@ import 'package:qintu/models/binding/binding.dart';
 void main() {
   group('SentRequestCard Widget', () {
     late SentRequest testRequest;
-    late int cancelledRequestId;
+    late String cancelledRequestId;
 
     setUp(() {
-      cancelledRequestId = -1;
+      cancelledRequestId = '';
       testRequest = SentRequest(
         id: 42,
         status: 'pending',

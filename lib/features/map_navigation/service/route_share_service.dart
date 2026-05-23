@@ -16,7 +16,7 @@ class RouteShareService {
 
   /// 发送路由分享
   ///
-  /// [binderUserID] - 绑定者user_ID（接收者）
+  /// [binderUserID] - 绑定者userId（接收者）
   /// [origin] - 起点POI
   /// [destination] - 终点POI
   /// [routeType] - 出行方式

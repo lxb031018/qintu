@@ -8,7 +8,7 @@
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
-| `users` | 用户信息 | user_ID（主键）、手机号、昵称、头像 |
+| `users` | 用户信息 | userId（主键）、手机号、昵称、头像 |
 | `user_bindings` | 绑定关系 | user_A、user_B（关系平等，双向可发导航任务） |
 
 ### 数据流动示意
@@ -92,7 +92,7 @@ SHOW TABLES;
 
 | 字段名 | 类型 | 说明 |
 |--------|------|------|
-| `user_ID` | VARCHAR(64) | 用户唯一标识（UUID），主键 |
+| `userId` | VARCHAR(64) | 用户唯一标识（UUID），主键 |
 | `phone` | VARCHAR(20) | 手机号（带国家码，如 `+86 13800138000`），唯一 |
 | `nickname` | VARCHAR(50) | 用户昵称 |
 | `avatar_url` | VARCHAR(500) | 头像 URL |
@@ -103,13 +103,13 @@ SHOW TABLES;
 
 | 索引类型 | 索引名 | 作用 |
 |----------|--------|------|
-| 主键 | `PRIMARY KEY` | 基于 `user_ID` |
+| 主键 | `PRIMARY KEY` | 基于 `userId` |
 | 唯一索引 | `uk_phone` | 手机号唯一 |
 | 普通索引 | `idx_created_at` | 按创建时间排序 |
 
 **示例数据**：
 ```sql
-INSERT INTO users (user_ID, phone, nickname) VALUES (
+INSERT INTO users (userId, phone, nickname) VALUES (
     '550e8400-e29b-41d4-a716-446655440000',
     '+86 13800138000',
     '张三'
@@ -124,15 +124,15 @@ INSERT INTO users (user_ID, phone, nickname) VALUES (
 
 **核心逻辑**：
 - 绑定关系平等，双方均可向对方发送导航任务
-- 存储规则：`user_A < user_B`（字符串比较，较小的 user_ID 在前）
+- 存储规则：`user_A < user_B`（字符串比较，较小的 userId 在前）
 - 解除绑定即删除记录，无状态标识
 
 **字段说明**：
 
 | 字段名 | 类型 | 说明 |
 |--------|------|------|
-| `user_A` | VARCHAR(64) | 用户A的 user_ID（较小者） |
-| `user_B` | VARCHAR(64) | 用户B的 user_ID（较大者） |
+| `user_A` | VARCHAR(64) | 用户A的 userId（较小者） |
+| `user_B` | VARCHAR(64) | 用户B的 userId（较大者） |
 
 **索引**：
 
@@ -154,7 +154,7 @@ INSERT INTO user_bindings (user_A, user_B) VALUES (
 **绑定流程**：
 1. 用户 A 输入用户 B 的手机号，发送绑定请求
 2. 用户 B 确认绑定请求
-3. 系统自动比较两个 user_ID，将较小的存入 `user_A`
+3. 系统自动比较两个 userId，将较小的存入 `user_A`
 4. 创建 `user_bindings` 记录
 5. 绑定关系生效，双方均可向对方发送导航任务
 
@@ -165,21 +165,21 @@ INSERT INTO user_bindings (user_A, user_B) VALUES (
 ### 查询某用户的所有绑定关系
 ```sql
 SELECT * FROM user_bindings
-WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
+WHERE user_A = 'userId_here' OR user_B = 'userId_here';
 ```
 
 ### 查询两个用户之间是否存在绑定关系
 ```sql
 SELECT * FROM user_bindings
-WHERE (user_A = 'user_ID_A' AND user_B = 'user_ID_B')
-   OR (user_A = 'user_ID_B' AND user_B = 'user_ID_A');
+WHERE (user_A = 'userId_A' AND user_B = 'userId_B')
+   OR (user_A = 'userId_B' AND user_B = 'userId_A');
 ```
 
 ### 统计某用户的绑定数量
 ```sql
 SELECT COUNT(*) as binding_count
 FROM user_bindings
-WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
+WHERE user_A = 'userId_here' OR user_B = 'userId_here';
 ```
 
 ---
@@ -191,9 +191,9 @@ WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
 - 无发送者/接收者角色区分
 - 解除绑定即删除记录
 
-### 2. user_ID 排序规则
-- `user_A` 始终是 user_ID 字符串比较较小的一方
-- `user_B` 是 user_ID 字符串比较较大的一方
+### 2. userId 排序规则
+- `user_A` 始终是 userId 字符串比较较小的一方
+- `user_B` 是 userId 字符串比较较大的一方
 - 应用层需确保插入时正确排序
 
 ### 3. 权限控制
@@ -227,11 +227,11 @@ WHERE user_A = 'user_ID_here' OR user_B = 'user_ID_here';
 - 确认 SQL 语句语法正确
 
 ### 问题 2：绑定关系查询不到
-- 确认 user_ID 排序正确（user_A < user_B）
+- 确认 userId 排序正确（user_A < user_B）
 - 检查索引是否创建成功
 
 ### 问题 3：插入数据时唯一键冲突
-- 确保 `users` 表中已存在对应的 user_ID
+- 确保 `users` 表中已存在对应的 userId
 - 检查手机号是否已被其他用户使用
 
 ---

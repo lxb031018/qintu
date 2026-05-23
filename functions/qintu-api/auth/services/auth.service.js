@@ -20,7 +20,7 @@ class AuthService {
   }
 
   /**
-   * 从 accessToken 反推 user_ID
+   * 从 accessToken 反推 userId
    */
   _extractUserIDFromToken(accessToken) {
     if (!accessToken || !accessToken.includes(config.PREFIX.USERID)) {
@@ -32,12 +32,12 @@ class AuthService {
   }
 
   /**
-   * 校验 accessToken 是否属于指定 user_ID 的有效会话
+   * 校验 accessToken 是否属于指定 userId 的有效会话
    */
-  async isTokenValidForSession(user_ID, accessToken) {
+  async isTokenValidForSession(userId, accessToken) {
     try {
       // 从数据库查询用户
-      const user = await this.userRepo.findByUserID(user_ID);
+      const user = await this.userRepo.findByUserID(userId);
       if (!user) return false;
 
       // 检查 access_token 是否匹配
@@ -58,16 +58,16 @@ class AuthService {
   /**
    * 清除用户所有旧会话（同一手机号新设备登录时调用）
    */
-  async _revokeAllSessionsForUser(user_ID) {
-    await this.userRepo.clearSession(user_ID);
+  async _revokeAllSessionsForUser(userId) {
+    await this.userRepo.clearSession(userId);
   }
 
   /**
    * 注册或更新会话（绑定 deviceId -> Token 映射）
    */
-  async _upsertSession(user_ID, deviceId, accessToken, refreshToken) {
+  async _upsertSession(userId, deviceId, accessToken, refreshToken) {
     const expiresAt = new Date(Date.now() + config.SESSION.EXPIRES_S * 1000).toISOString().replace('T', ' ').slice(0, 19);
-    await this.userRepo.upsertSession(user_ID, accessToken, refreshToken, expiresAt, deviceId);
+    await this.userRepo.upsertSession(userId, accessToken, refreshToken, expiresAt, deviceId);
   }
 
   /**
@@ -99,7 +99,7 @@ class AuthService {
    * 验证验证码
    * @param {string} verificationId
    * @param {string} verificationCode
-   * @returns {Object} - { user_ID, access_token, refresh_token, verification_token }
+   * @returns {Object} - { userId, access_token, refresh_token, verification_token }
    */
   async verifyCode(verificationId, verificationCode) {
     const data = this.mockCodes.get(verificationId);
@@ -121,19 +121,19 @@ class AuthService {
     this.mockCodes.delete(verificationId);
 
     // 检查手机号是否已有用户，有则复用，无则创建
-    let user_ID = await this.userRepo.findUserIDByPhone(data.phone);
-    if (!user_ID) {
-      user_ID = config.PREFIX.USERID + uuidv4().replace(/-/g, '');
-      await this.userRepo.registerByPhone(data.phone, user_ID);
+    let userId = await this.userRepo.findUserIDByPhone(data.phone);
+    if (!userId) {
+      userId = config.PREFIX.USERID + uuidv4().replace(/-/g, '');
+      await this.userRepo.registerByPhone(data.phone, userId);
     }
 
     // 生成 token（不带 deviceId，因为是首次登录，还没有 deviceId）
-    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID;
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID;
-    const verificationToken = config.PREFIX.V_TOKEN + user_ID;
+    const accessToken = config.PREFIX.ACCESS_TOKEN + userId;
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + userId;
+    const verificationToken = config.PREFIX.V_TOKEN + userId;
 
     return {
-      user_ID,
+      userId,
       access_token: accessToken,
       refresh_token: refreshToken,
       verification_token: verificationToken
@@ -144,27 +144,27 @@ class AuthService {
    * 登录（通过 verification_token）
    * @param {string} verificationToken
    * @param {string} deviceId - 设备唯一标识，用于多设备互斥
-   * @returns {Object} - { user_ID, access_token, refresh_token, user_type }
+   * @returns {Object} - { userId, access_token, refresh_token, user_type }
    */
   async signin(verificationToken, deviceId) {
-    const user_ID = verificationToken
+    const userId = verificationToken
       ? verificationToken.replace(config.PREFIX.V_TOKEN, '')
       : 'mock_user';
 
     // 新设备登录时，废弃旧会话，实现互斥登录
     if (deviceId) {
-      await this._revokeAllSessionsForUser(user_ID);
+      await this._revokeAllSessionsForUser(userId);
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + '_' + (deviceId || 'default');
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID + '_' + (deviceId || 'default');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + userId + '_' + (deviceId || 'default');
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + userId + '_' + (deviceId || 'default');
 
     if (deviceId) {
-      await this._upsertSession(user_ID, deviceId, accessToken, refreshToken);
+      await this._upsertSession(userId, deviceId, accessToken, refreshToken);
     }
 
     return {
-      user_ID,
+      userId,
       access_token: accessToken,
       refresh_token: refreshToken,
       user_type: 'sender'
@@ -179,23 +179,23 @@ class AuthService {
    * @returns {Object}
    */
   async signup(verificationToken, phoneNumber, deviceId) {
-    const user_ID = verificationToken
+    const userId = verificationToken
       ? verificationToken.replace(config.PREFIX.V_TOKEN, '')
       : 'mock_user';
 
     if (deviceId) {
-      await this._revokeAllSessionsForUser(user_ID);
+      await this._revokeAllSessionsForUser(userId);
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + '_' + (deviceId || 'default');
-    const refreshToken = config.PREFIX.REFRESH_TOKEN + user_ID + '_' + (deviceId || 'default');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + userId + '_' + (deviceId || 'default');
+    const refreshToken = config.PREFIX.REFRESH_TOKEN + userId + '_' + (deviceId || 'default');
 
     if (deviceId) {
-      await this._upsertSession(user_ID, deviceId, accessToken, refreshToken);
+      await this._upsertSession(userId, deviceId, accessToken, refreshToken);
     }
 
     return {
-      user_ID,
+      userId,
       access_token: accessToken,
       refresh_token: refreshToken,
       user_type: 'sender'
@@ -204,11 +204,11 @@ class AuthService {
 
   /**
    * 登出
-   * @param {string} user_ID
+   * @param {string} userId
    * @param {string} deviceId
    */
-  async signout(user_ID, deviceId) {
-    await this.userRepo.clearSession(user_ID);
+  async signout(userId, deviceId) {
+    await this.userRepo.clearSession(userId);
   }
 
   /**
@@ -217,27 +217,27 @@ class AuthService {
    * @returns {Object}
    */
   async refreshToken(refreshToken) {
-    let user_ID = 'unknown_user';
+    let userId = 'unknown_user';
     let deviceId = null;
 
     if (refreshToken && refreshToken.includes(config.PREFIX.USERID)) {
       const parts = refreshToken.split(config.PREFIX.USERID);
       if (parts.length > 1) {
-        const user_IDPart = parts[1].split(/[\s"_]/)[0];
-        user_ID = config.PREFIX.USERID + user_IDPart;
+        const userIdPart = parts[1].split(/[\s"_]/)[0];
+        userId = config.PREFIX.USERID + userIdPart;
         deviceId = parts[1].split(/[\s"_]/)[1] || null;
       }
     }
 
-    const accessToken = config.PREFIX.ACCESS_TOKEN + user_ID + (deviceId ? '_' + deviceId : '');
-    const refreshTokenNew = config.PREFIX.REFRESH_TOKEN + user_ID + (deviceId ? '_' + deviceId : '');
+    const accessToken = config.PREFIX.ACCESS_TOKEN + userId + (deviceId ? '_' + deviceId : '');
+    const refreshTokenNew = config.PREFIX.REFRESH_TOKEN + userId + (deviceId ? '_' + deviceId : '');
 
-    if (user_ID && deviceId) {
-      await this._upsertSession(user_ID, deviceId, accessToken, refreshTokenNew);
+    if (userId && deviceId) {
+      await this._upsertSession(userId, deviceId, accessToken, refreshTokenNew);
     }
 
     return {
-      user_ID,
+      userId,
       access_token: accessToken,
       refresh_token: refreshTokenNew,
       expires_in: config.AUTH.TOKEN_EXPIRES_S,

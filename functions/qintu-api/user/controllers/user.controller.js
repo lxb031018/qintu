@@ -15,12 +15,12 @@ class UserController {
    */
   async getMe(req, res) {
     try {
-      const user_ID = req.user && req.user.user_ID;
-      if (!user_ID) {
+      const userId = req.user && req.user.userId;
+      if (!userId) {
         return res.status(401).json({ code: 401, message: 'Unauthorized' });
       }
 
-      const user = await this.userService.getUserById(user_ID);
+      const user = await this.userService.getUserById(userId);
       if (!user) {
         return res.status(404).json({ code: 404, message: 'User not found' });
       }
@@ -28,7 +28,7 @@ class UserController {
       return res.json({
         code: 0,
         data: {
-          user_ID: user.user_ID,
+          userId: user.userId,
           phone: user.phone,
           nickname: user.nickname || '',
           avatar_url: user.avatar_url || '',
@@ -48,14 +48,14 @@ class UserController {
    */
   async updateMe(req, res) {
     try {
-      const user_ID = req.user && req.user.user_ID;
-      if (!user_ID) {
+      const userId = req.user && req.user.userId;
+      if (!userId) {
         return res.status(401).json({ code: 401, message: 'Unauthorized' });
       }
 
       const { nickname, avatar_url } = req.body;
 
-      await this.userService.updateUser(user_ID, { nickname, avatar_url });
+      await this.userService.updateUser(userId, { nickname, avatar_url });
 
       return res.json({ code: 0, message: 'OK' });
     } catch (err) {
@@ -70,17 +70,17 @@ class UserController {
    */
   async syncUser(req, res) {
     try {
-      const { phone_number, user_ID, nickname } = req.body;
+      const { phone_number, userId, nickname } = req.body;
 
       if (!phone_number) {
         return res.status(400).json({ code: 400, message: 'Missing phone_number' });
       }
 
-      const result = await this.userService.syncUser(phone_number, user_ID, nickname);
+      const result = await this.userService.syncUser(phone_number, userId, nickname);
 
       return res.json({
         code: 0,
-        user_ID: result.user_ID
+        userId: result.userId
       });
     } catch (err) {
       console.error('[User] 同步用户信息失败:', err);
@@ -94,12 +94,12 @@ class UserController {
    */
   async updateLastLogin(req, res) {
     try {
-      const user_ID = req.user && req.user.user_ID;
-      if (!user_ID) {
+      const userId = req.user && req.user.userId;
+      if (!userId) {
         return res.status(401).json({ code: 401, message: 'Unauthorized' });
       }
 
-      await this.userService.updateLastLogin(user_ID);
+      await this.userService.updateLastLogin(userId);
 
       return res.json({ code: 0, message: 'OK' });
     } catch (err) {
@@ -110,13 +110,13 @@ class UserController {
 
   /**
    * 获取指定用户信息
-   * GET /api/users/:user_ID
+   * GET /api/users/:userId
    */
   async getUser(req, res) {
     try {
-      const { user_ID } = req.params;
+      const { userId } = req.params;
 
-      const user = await this.userService.getUserById(user_ID);
+      const user = await this.userService.getUserById(userId);
       if (!user) {
         return res.status(404).json({ code: 404, message: 'User not found' });
       }
@@ -124,7 +124,7 @@ class UserController {
       return res.json({
         code: 0,
         data: {
-          user_ID: user.user_ID,
+          userId: user.userId,
           phone: user.phone,
           nickname: user.nickname || '',
           avatar_url: user.avatar_url || ''

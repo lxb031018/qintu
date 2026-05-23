@@ -164,7 +164,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
+                            errorBuilder: (context, error, stackTrace) => Icon(
                               Icons.person,
                               size: 48,
                               color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,

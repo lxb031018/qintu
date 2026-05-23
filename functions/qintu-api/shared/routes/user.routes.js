@@ -30,7 +30,7 @@ function createUserRoutes(userService) {
   router.post('/last-login', (req, res) => userController.updateLastLogin(req, res));
 
   // 获取指定用户信息
-  router.get('/:user_ID', (req, res) => userController.getUser(req, res));
+  router.get('/:userId', (req, res) => userController.getUser(req, res));
 
   return router;
 }

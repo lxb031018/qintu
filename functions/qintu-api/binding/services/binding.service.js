@@ -16,7 +16,7 @@ class BindingService {
 
   /**
    * 发送绑定请求
-   * @param {string} myUserID - 我的 user_ID
+   * @param {string} myUserID - 我的 userId
    * @param {string} partnerPhone - 对方的手机号
    * @param {string} senderName - 我对对方的称呼
    * @param {string} receiverName - 对方对我的称呼
@@ -31,7 +31,7 @@ class BindingService {
       throw Object.assign(new Error('该手机号尚未注册亲途'), { code: 'USER_NOT_FOUND', status: 404 });
     }
 
-    const partnerUserID = partnerUser.user_ID;
+    const partnerUserID = partnerUser.userId;
 
     // 3. 检查自环
     if (myUserID === partnerUserID) {
@@ -66,14 +66,14 @@ class BindingService {
 
     return {
       message: '绑定请求已发送',
-      partner_user_ID: partnerUserID,
+      partner_userId: partnerUserID,
       partner_nickname: partnerUser.nickname || '未命名用户'
     };
   }
 
   /**
    * 获取我收到的待确认请求（作为接收者）
-   * @param {string} myUserID - 我的 user_ID
+   * @param {string} myUserID - 我的 userId
    */
   async getPendingRequests(myUserID) {
     // 先过期旧请求
@@ -84,17 +84,17 @@ class BindingService {
     const result = [];
     for (const binding of bindings) {
       // 找出对方用户（发送者）
-      const partnerUserID = binding.sender_user_ID;
+      const partnerUserID = binding.sender_userId;
       const partner = await this.userRepo.findByUserID(partnerUserID);
 
       // sender_name 是发送者对接收者的称呼
-      // 由于 user_A < user_B，sender_user_ID 可能是 user_A 或 user_B
+      // 由于 user_A < user_B，sender_userId 可能是 user_A 或 user_B
       const isUserA = binding.user_A === myUserID;
       const senderName = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
 
       result.push({
         id: binding.id,
-        sender_user_ID: partnerUserID,
+        sender_userId: partnerUserID,
         sender_name: senderName,
         sender_phone: partner?.phone ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
         sender_nickname: partner?.nickname || '未命名用户',
@@ -108,7 +108,7 @@ class BindingService {
 
   /**
    * 获取我发出的请求（作为发送者）
-   * @param {string} myUserID - 我的 user_ID
+   * @param {string} myUserID - 我的 userId
    */
   async getSentRequests(myUserID) {
     // 先过期旧请求
@@ -133,7 +133,7 @@ class BindingService {
 
       result.push({
         id: binding.id,
-        receiver_user_ID: partnerUserID,
+        receiver_userId: partnerUserID,
         receiver_name: receiverName,
         receiver_nickname: partner?.nickname || '未命名用户',
         receiver_phone: partner?.phone ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
@@ -148,8 +148,8 @@ class BindingService {
 
   /**
    * 确认绑定请求（接收者接受）
-   * @param {string} myUserID - 我的 user_ID
-   * @param {string} partnerUserID - 发送者的 user_ID
+   * @param {string} myUserID - 我的 userId
+   * @param {string} partnerUserID - 发送者的 userId
    */
   async confirmRequest(myUserID, partnerUserID) {
     // 1. 检查绑定是否存在且为 pending
@@ -173,14 +173,14 @@ class BindingService {
 
     return {
       message: '绑定成功',
-      partner_user_ID: partnerUserID
+      partner_userId: partnerUserID
     };
   }
 
   /**
    * 拒绝绑定请求
-   * @param {string} myUserID - 我的 user_ID
-   * @param {string} partnerUserID - 发送者的 user_ID
+   * @param {string} myUserID - 我的 userId
+   * @param {string} partnerUserID - 发送者的 userId
    */
   async rejectRequest(myUserID, partnerUserID) {
     // 删除 pending 状态的记录
@@ -195,8 +195,8 @@ class BindingService {
 
   /**
    * 取消发出的请求
-   * @param {string} myUserID - 我的 user_ID
-   * @param {string} partnerUserID - 接收者的 user_ID
+   * @param {string} myUserID - 我的 userId
+   * @param {string} partnerUserID - 接收者的 userId
    */
   async cancelRequest(myUserID, partnerUserID) {
     const deleted = await this.bindingRepo.deletePending(myUserID, partnerUserID);
@@ -210,8 +210,8 @@ class BindingService {
 
   /**
    * 解绑用户
-   * @param {string} myUserID - 我的 user_ID
-   * @param {string} partnerUserID - 对方的 user_ID
+   * @param {string} myUserID - 我的 userId
+   * @param {string} partnerUserID - 对方的 userId
    */
   async unbind(myUserID, partnerUserID) {
     const exists = await this.bindingRepo.exists(myUserID, partnerUserID);
@@ -225,7 +225,7 @@ class BindingService {
 
   /**
    * 获取我的所有绑定
-   * @param {string} myUserID - 我的 user_ID
+   * @param {string} myUserID - 我的 userId
    */
   async getMyBindings(myUserID) {
     const bindings = await this.bindingRepo.findAllForUser(myUserID);
@@ -237,14 +237,14 @@ class BindingService {
         continue;
       }
 
-      const partner = await this.userRepo.findByUserID(binding.partner_user_ID);
+      const partner = await this.userRepo.findByUserID(binding.partner_userId);
 
       const isUserA = binding.user_A === myUserID;
       const myNameForPartner = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
       const partnerNameForMe = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
 
       result.push({
-        partner_user_ID: binding.partner_user_ID,
+        partner_userId: binding.partner_userId,
         partner_nickname: partner?.nickname || '未命名用户',
         partner_phone: partner?.phone
           ? partner.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
@@ -265,8 +265,8 @@ class BindingService {
 
   /**
    * 修改我对对方的称呼
-   * @param {string} myUserID - 我的 user_ID
-   * @param {string} partnerUserID - 对方的 user_ID
+   * @param {string} myUserID - 我的 userId
+   * @param {string} partnerUserID - 对方的 userId
    * @param {string} newName - 新的称呼
    */
   async modifyName(myUserID, partnerUserID, newName) {

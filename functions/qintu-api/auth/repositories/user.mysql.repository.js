@@ -8,41 +8,41 @@ const { query, transaction } = require('../../db/mysql');
 
 class UserMysqlRepository {
   /**
-   * 根据手机号查找 user_ID
+   * 根据手机号查找 userId
    * @param {string} phone - 11位手机号
    * @returns {Promise<string|null>}
    */
   async findUserIDByPhone(phone) {
     const rows = await query(
-      'SELECT user_ID FROM users WHERE phone = ?',
+      'SELECT userId FROM users WHERE phone = ?',
       [phone]
     );
-    return rows.length > 0 ? rows[0].user_ID : null;
+    return rows.length > 0 ? rows[0].userId : null;
   }
 
   /**
-   * 注册用户（手机号 -> user_ID 映射）
+   * 注册用户（手机号 -> userId 映射）
    * 使用 INSERT IGNORE 避免重复插入
    * @param {string} phone - 手机号
-   * @param {string} user_ID - 用户 user_ID
+   * @param {string} userId - 用户 userId
    */
-  async registerByPhone(phone, user_ID) {
+  async registerByPhone(phone, userId) {
     await query(
-      `INSERT IGNORE INTO users (user_ID, phone, created_at)
+      `INSERT IGNORE INTO users (userId, phone, created_at)
        VALUES (?, ?, NOW())`,
-      [user_ID, phone]
+      [userId, phone]
     );
   }
 
   /**
-   * 根据 user_ID 查找用户
-   * @param {string} user_ID
+   * 根据 userId 查找用户
+   * @param {string} userId
    * @returns {Promise<Object|null>}
    */
-  async findByUserID(user_ID) {
+  async findByUserID(userId) {
     const rows = await query(
-      'SELECT * FROM users WHERE user_ID = ?',
-      [user_ID]
+      'SELECT * FROM users WHERE userId = ?',
+      [userId]
     );
     return rows.length > 0 ? rows[0] : null;
   }
@@ -62,10 +62,10 @@ class UserMysqlRepository {
 
   /**
    * 创建或更新用户
-   * @param {string} user_ID
+   * @param {string} userId
    * @param {Object} userData - 用户数据
    */
-  async upsert(user_ID, userData) {
+  async upsert(userId, userData) {
     const fields = [];
     const values = [];
 
@@ -88,33 +88,33 @@ class UserMysqlRepository {
 
     if (fields.length === 0) return;
 
-    values.push(user_ID);
+    values.push(userId);
     await query(
-      `UPDATE users SET ${fields.join(', ')} WHERE user_ID = ?`,
+      `UPDATE users SET ${fields.join(', ')} WHERE userId = ?`,
       values
     );
   }
 
   /**
    * 更新最后登录时间
-   * @param {string} user_ID
+   * @param {string} userId
    */
-  async updateLastLogin(user_ID) {
+  async updateLastLogin(userId) {
     await query(
-      'UPDATE users SET last_active_at = NOW() WHERE user_ID = ?',
-      [user_ID]
+      'UPDATE users SET last_active_at = NOW() WHERE userId = ?',
+      [userId]
     );
   }
 
   /**
-   * 根据 user_ID 反查脱敏手机号
-   * @param {string} user_ID
+   * 根据 userId 反查脱敏手机号
+   * @param {string} userId
    * @returns {Promise<string|null>}
    */
-  async findPhoneByUserID(user_ID) {
+  async findPhoneByUserID(userId) {
     const rows = await query(
-      'SELECT phone FROM users WHERE user_ID = ?',
-      [user_ID]
+      'SELECT phone FROM users WHERE userId = ?',
+      [userId]
     );
     if (rows.length === 0) return null;
     const phone = rows[0].phone;
@@ -132,17 +132,17 @@ class UserMysqlRepository {
 
   /**
    * 保存或更新用户会话
-   * @param {string} user_ID
+   * @param {string} userId
    * @param {string} accessToken
    * @param {string} refreshToken
    * @param {string} expiresAt - ISO 时间字符串
    * @param {string} deviceId
    */
-  async upsertSession(user_ID, accessToken, refreshToken, expiresAt, deviceId) {
+  async upsertSession(userId, accessToken, refreshToken, expiresAt, deviceId) {
     await query(
       `UPDATE users SET access_token = ?, refresh_token = ?, token_expires_at = ?, device_id = ?
-       WHERE user_ID = ?`,
-      [accessToken, refreshToken, expiresAt, deviceId, user_ID]
+       WHERE userId = ?`,
+      [accessToken, refreshToken, expiresAt, deviceId, userId]
     );
   }
 
@@ -161,12 +161,12 @@ class UserMysqlRepository {
 
   /**
    * 清除用户会话（退出登录时调用）
-   * @param {string} user_ID
+   * @param {string} userId
    */
-  async clearSession(user_ID) {
+  async clearSession(userId) {
     await query(
-      'UPDATE users SET access_token = NULL, refresh_token = NULL, token_expires_at = NULL, device_id = NULL WHERE user_ID = ?',
-      [user_ID]
+      'UPDATE users SET access_token = NULL, refresh_token = NULL, token_expires_at = NULL, device_id = NULL WHERE userId = ?',
+      [userId]
     );
   }
 }

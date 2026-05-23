@@ -97,7 +97,7 @@ class BindingApi {
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.confirmRequest,
-      data: {'partner_user_id': partnerUserId},
+      data: {'partner_userId': partnerUserId},
     );
 
     if (!response.isSuccessful) {
@@ -113,7 +113,7 @@ class BindingApi {
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.rejectRequest,
-      data: {'partner_user_id': partnerUserId},
+      data: {'partner_userId': partnerUserId},
     );
 
     if (!response.isSuccessful) {

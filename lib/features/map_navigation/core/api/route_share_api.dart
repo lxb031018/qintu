@@ -15,7 +15,7 @@ class RouteShareApi {
 
   /// 发送路由分享
   ///
-  /// [receiverUserID] - 接收者user_ID
+  /// [receiverUserID] - 接收者userId
   /// [originLat] - 起点纬度
   /// [originLng] - 起点经度
   /// [originName] - 起点名称

@@ -54,16 +54,16 @@ function createAvatarRoutes(services) {
         });
       }
 
-      const user_ID = req.user.user_ID;
+      const userId = req.user.userId;
       const newFilename = req.file.filename;
       const newAvatarUrl = `/uploads/avatars/${newFilename}`;
 
       // 1. 获取旧头像并删除旧文件
       console.log(`[Avatar] services.userService 存在: ${!!services.userService}`);
-      console.log(`[Avatar] user_ID: ${user_ID}`);
+      console.log(`[Avatar] userId: ${userId}`);
       if (services.userService) {
         try {
-          const oldUser = await services.userService.getUserById(user_ID);
+          const oldUser = await services.userService.getUserById(userId);
           if (oldUser && oldUser.avatar_url) {
             // 从完整URL中提取文件名
             const oldUrlParts = oldUser.avatar_url.split('/');
@@ -83,8 +83,8 @@ function createAvatarRoutes(services) {
         }
 
         // 2. 更新用户头像URL到数据库
-        console.log(`[Avatar] 开始更新数据库: user_ID=${user_ID}, avatar_url=${newAvatarUrl}`);
-        await services.userService.updateUser(user_ID, { avatar_url: newAvatarUrl });
+        console.log(`[Avatar] 开始更新数据库: userId=${userId}, avatar_url=${newAvatarUrl}`);
+        await services.userService.updateUser(userId, { avatar_url: newAvatarUrl });
         console.log(`[Avatar] 数据库更新完成`);
       }
 

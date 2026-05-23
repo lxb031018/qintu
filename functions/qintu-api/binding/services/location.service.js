@@ -9,7 +9,7 @@
 
 const { error } = require('../../shared/lib/response');
 
-// 内存缓存：user_ID -> location data
+// 内存缓存：userId -> location data
 const _locationCache = new Map();
 
 /**
@@ -22,18 +22,18 @@ class LocationService {
 
   /**
    * 更新用户位置
-   * @param {string} user_ID - 用户 ID
+   * @param {string} userId - 用户 ID
    * @param {number} latitude - 纬度
    * @param {number} longitude - 经度
    * @param {number} accuracy - 精度（米）
    * @param {string|null} address - 地址（可选）
    */
-  async updateLocation(user_ID, latitude, longitude, accuracy, address = null) {
-    if (!user_ID || latitude == null || longitude == null) {
+  async updateLocation(userId, latitude, longitude, accuracy, address = null) {
+    if (!userId || latitude == null || longitude == null) {
       throw Object.assign(new Error('缺少必要参数'), { code: 'INVALID_PARAM', status: 400 });
     }
 
-    _locationCache.set(user_ID, {
+    _locationCache.set(userId, {
       latitude,
       longitude,
       accuracy: accuracy || null,
@@ -94,35 +94,35 @@ class LocationService {
 
   /**
    * 切换位置共享状态
-   * @param {string} user_ID - 用户 ID
+   * @param {string} userId - 用户 ID
    * @param {boolean} isSharing - 是否开启共享
    */
-  async toggleSharing(user_ID, isSharing) {
-    if (!user_ID) {
+  async toggleSharing(userId, isSharing) {
+    if (!userId) {
       throw Object.assign(new Error('缺少用户 ID'), { code: 'INVALID_PARAM', status: 400 });
     }
 
-    const locationData = _locationCache.get(user_ID);
+    const locationData = _locationCache.get(userId);
     if (!locationData) {
       throw Object.assign(new Error('暂无位置数据，请先上传位置'), { code: 'LOCATION_NOT_FOUND', status: 404 });
     }
 
     locationData.isSharing = isSharing;
-    _locationCache.set(user_ID, locationData);
+    _locationCache.set(userId, locationData);
 
     return { success: true, isSharing };
   }
 
   /**
    * 删除用户位置
-   * @param {string} user_ID - 用户 ID
+   * @param {string} userId - 用户 ID
    */
-  async deleteLocation(user_ID) {
-    if (!user_ID) {
+  async deleteLocation(userId) {
+    if (!userId) {
       throw Object.assign(new Error('缺少用户 ID'), { code: 'INVALID_PARAM', status: 400 });
     }
 
-    _locationCache.delete(user_ID);
+    _locationCache.delete(userId);
     return { success: true };
   }
 }

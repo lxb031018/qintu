@@ -47,7 +47,7 @@ class ProfileCard extends ConsumerWidget {
                           width: 56,
                           height: 56,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
+                          errorBuilder: (context, error, stackTrace) => Icon(
                             Icons.person,
                             size: 28,
                             color: isDark ? AppColors.darkLightTextColor : AppColors.lightTextColor,

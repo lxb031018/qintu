@@ -14,7 +14,7 @@ class SecureStorageKeys {
   static const String refreshToken = 'refresh_token';
 
   /// 用户 ID
-  static const String userId = 'user_id';
+  static const String userId = 'userId';
 
   /// 用户角色
   static const String userRole = 'user_role';
@@ -55,7 +55,7 @@ class SecureStorageKeys {
 /// SharedPreferences 存储键（非敏感配置）
 class SharedPreferencesKeys {
   /// OpenID
-  static const String user_ID = 'user_ID';
+  static const String userId = 'userId';
 
   /// 用户类型
   static const String userType = 'user_type';
@@ -74,7 +74,7 @@ class SharedPreferencesKeys {
 
   /// 所有键列表
   static const List<String> all = [
-    user_ID,
+    userId,
     userType,
     isFirstLogin,
     themeMode,

@@ -107,5 +107,5 @@ node -e "require('./lib/database').query('SELECT 1').then(() => console.log('OK'
 
 - **文件位置**：`functions/qintu-api/test-binding-flow.js`
 - **技术栈**：Node.js 原生 HTTP 模块（无需额外依赖）
-- **测试数据**：使用 mock user_ID，不需要真实用户
+- **测试数据**：使用 mock userId，不需要真实用户
 - **运行时间**：约 2-5 秒

@@ -16,8 +16,8 @@ class LocationController {
    */
   async updateLocation(req, res) {
     try {
-      const user_ID = req.user?.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user?.userId;
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
@@ -28,7 +28,7 @@ class LocationController {
       }
 
       await this.locationService.updateLocation(
-        user_ID,
+        userId,
         parseFloat(latitude),
         parseFloat(longitude),
         accuracy ? parseInt(accuracy) : null,
@@ -48,7 +48,7 @@ class LocationController {
    */
   async getLocation(req, res) {
     try {
-      const myUserID = req.user?.user_ID;
+      const myUserID = req.user?.userId;
       if (!myUserID || myUserID === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
@@ -88,8 +88,8 @@ class LocationController {
    */
   async toggleSharing(req, res) {
     try {
-      const user_ID = req.user?.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user?.userId;
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
@@ -98,7 +98,7 @@ class LocationController {
         return error(res, 'isSharing 参数必须是布尔值', 'INVALID_PARAM', 400);
       }
 
-      const result = await this.locationService.toggleSharing(user_ID, isSharing);
+      const result = await this.locationService.toggleSharing(userId, isSharing);
       return success(res, result);
     } catch (err) {
       console.error('[Location] 切换共享状态失败:', err);
@@ -112,12 +112,12 @@ class LocationController {
    */
   async deleteLocation(req, res) {
     try {
-      const user_ID = req.user?.user_ID;
-      if (!user_ID || user_ID === 'unknown_user') {
+      const userId = req.user?.userId;
+      if (!userId || userId === 'unknown_user') {
         return error(res, '缺少用户认证信息', 'UNAUTHORIZED', 401);
       }
 
-      await this.locationService.deleteLocation(user_ID);
+      await this.locationService.deleteLocation(userId);
       return success(res, { message: '位置删除成功' });
     } catch (err) {
       console.error('[Location] 删除位置失败:', err);

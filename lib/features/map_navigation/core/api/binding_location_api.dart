@@ -16,7 +16,7 @@ class BindingLocationApi {
 
   /// 获取绑定者的位置
   ///
-  /// [partnerUserID] 绑定者的 user_ID
+  /// [partnerUserID] 绑定者的 userId
   /// 返回位置信息，如果未共享或无位置返回 null
   Future<BindingLocationResult> getBinderLocation(String partnerUserID) async {
     try {
@@ -50,9 +50,9 @@ class BindingLocationApi {
     final results = <String, BindingLocationResult>{};
 
     // 并发请求所有绑定者位置
-    final futures = partnerUserIDs.map((user_ID) async {
-      final result = await getBinderLocation(user_ID);
-      return MapEntry(user_ID, result);
+    final futures = partnerUserIDs.map((userId) async {
+      final result = await getBinderLocation(userId);
+      return MapEntry(userId, result);
     });
 
     final entries = await Future.wait(futures);
@@ -66,37 +66,37 @@ class BindingLocationApi {
 
 /// 绑定者位置查询结果
 class BindingLocationResult {
-  final String user_ID;
+  final String userId;
   final BindingLocation? location;
   final BindingLocationStatus status;
   final String? errorMessage;
 
   const BindingLocationResult._({
-    required this.user_ID,
+    required this.userId,
     this.location,
     required this.status,
     this.errorMessage,
   });
 
-  factory BindingLocationResult.success(String user_ID, BindingLocation location) =>
+  factory BindingLocationResult.success(String userId, BindingLocation location) =>
       BindingLocationResult._(
-        user_ID: user_ID,
+        userId: userId,
         location: location,
         status: BindingLocationStatus.success,
       );
 
-  factory BindingLocationResult.notSharing(String user_ID) => BindingLocationResult._(
-        user_ID: user_ID,
+  factory BindingLocationResult.notSharing(String userId) => BindingLocationResult._(
+        userId: userId,
         status: BindingLocationStatus.notSharing,
       );
 
-  factory BindingLocationResult.notFound(String user_ID) => BindingLocationResult._(
-        user_ID: user_ID,
+  factory BindingLocationResult.notFound(String userId) => BindingLocationResult._(
+        userId: userId,
         status: BindingLocationStatus.notFound,
       );
 
-  factory BindingLocationResult.error(String user_ID, String message) => BindingLocationResult._(
-        user_ID: user_ID,
+  factory BindingLocationResult.error(String userId, String message) => BindingLocationResult._(
+        userId: userId,
         status: BindingLocationStatus.error,
         errorMessage: message,
       );

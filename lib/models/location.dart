@@ -5,8 +5,8 @@ part 'location.g.dart';
 /// 实时位置数据模型
 @JsonSerializable()
 class Location {
-  /// 接收者 user_ID
-  @JsonKey(name: 'receiver_user_ID')
+  /// 接收者 userId
+  @JsonKey(name: 'receiver_userId')
   final String receiverUserID;
   
   /// 当前导航任务 ID

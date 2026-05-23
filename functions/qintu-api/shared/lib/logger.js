@@ -9,7 +9,7 @@
  * 记录操作日志
  *
  * @param {Object} options - 日志选项
- * @param {string} options.userUserID - 操作用户的 user_ID
+ * @param {string} options.userUserID - 操作用户的 userId
  * @param {string} options.action - 操作类型（如：CREATE_BINDING, CONFIRM_BINDING 等）
  * @param {string} [options.targetType] - 目标类型（如：'binding', 'task', 'location'）
  * @param {string} [options.targetId] - 目标 ID

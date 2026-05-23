@@ -44,8 +44,8 @@ class Binding {
   @JsonKey(name: 'my_role')
   final MyRole? myRole;
 
-  /// 对方 user_ID
-  @JsonKey(name: 'partner_user_ID')
+  /// 对方 userId
+  @JsonKey(name: 'partner_userId')
   final String? partnerUserID;
 
   /// 对方昵称
@@ -68,8 +68,8 @@ class Binding {
   @JsonKey(name: 'partner_name_for_me')
   final String? partnerNameForMe;
 
-  /// 发送者 user_ID（完整信息时包含）
-  @JsonKey(name: 'sender_user_ID')
+  /// 发送者 userId（完整信息时包含）
+  @JsonKey(name: 'sender_userId')
   final String? senderUserID;
 
   /// 发送者昵称（完整信息时包含）
@@ -80,8 +80,8 @@ class Binding {
   @JsonKey(name: 'sender_phone')
   final String? senderPhone;
 
-  /// 接收者 user_ID（完整信息时包含）
-  @JsonKey(name: 'receiver_user_ID')
+  /// 接收者 userId（完整信息时包含）
+  @JsonKey(name: 'receiver_userId')
   final String? receiverUserID;
 
   /// 接收者昵称（完整信息时包含）
@@ -190,8 +190,8 @@ class BindingList {
 class PendingRequest {
   final int id;
 
-  /// 发送者的 user_ID（用于确认/拒绝操作）
-  @JsonKey(name: 'sender_user_ID')
+  /// 发送者的 userId（用于确认/拒绝操作）
+  @JsonKey(name: 'sender_userId')
   final String? senderUserID;
 
   @JsonKey(name: 'sender_name')
@@ -228,8 +228,8 @@ class PendingRequest {
 class SentRequest {
   final int id;
 
-  /// 接收者的 user_ID（用于取消操作）
-  @JsonKey(name: 'receiver_user_ID')
+  /// 接收者的 userId（用于取消操作）
+  @JsonKey(name: 'receiver_userId')
   final String? receiverUserID;
 
   final String status;

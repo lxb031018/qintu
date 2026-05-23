@@ -8,31 +8,31 @@ class UserService {
   }
 
   /**
-   * 根据 user_ID 获取用户
-   * @param {string} user_ID
+   * 根据 userId 获取用户
+   * @param {string} userId
    */
-  async getUserById(user_ID) {
-    return await this.userRepo.findByUserID(user_ID);
+  async getUserById(userId) {
+    return await this.userRepo.findByUserID(userId);
   }
 
   /**
    * 更新用户信息
-   * @param {string} user_ID
+   * @param {string} userId
    * @param {Object} userData - { nickname, avatar_url }
    */
-  async updateUser(user_ID, userData) {
-    await this.userRepo.upsert(user_ID, userData);
+  async updateUser(userId, userData) {
+    await this.userRepo.upsert(userId, userData);
   }
 
   /**
    * 同步用户信息
    * @param {string} phone_number
-   * @param {string} user_ID
+   * @param {string} userId
    * @param {string} nickname
    */
-  async syncUser(phone_number, user_ID, nickname) {
+  async syncUser(phone_number, userId, nickname) {
     // 注册或更新用户
-    await this.userRepo.registerByPhone(phone_number, user_ID);
+    await this.userRepo.registerByPhone(phone_number, userId);
 
     const updateData = { phone: phone_number };
     if (nickname) {
@@ -40,18 +40,18 @@ class UserService {
     }
 
     if (Object.keys(updateData).length > 0) {
-      await this.userRepo.upsert(user_ID, updateData);
+      await this.userRepo.upsert(userId, updateData);
     }
 
-    return { user_ID };
+    return { userId };
   }
 
   /**
    * 更新最后登录时间
-   * @param {string} user_ID
+   * @param {string} userId
    */
-  async updateLastLogin(user_ID) {
-    await this.userRepo.updateLastLogin(user_ID);
+  async updateLastLogin(userId) {
+    await this.userRepo.updateLastLogin(userId);
   }
 }
 

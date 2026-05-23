@@ -55,26 +55,26 @@ class LocationBinderNotifier extends Notifier<LocationBinderState> {
         Logs.map.info('Binding: partnerUserID=${b.partnerUserID}, status=${b.status}, nickname=${b.partnerNickname}');
       }
 
-      final user_IDToNickname = <String, String>{};
-      final user_IDs = <String>[];
+      final userIdToNickname = <String, String>{};
+      final userIds = <String>[];
       for (final binding in bindings) {
-        final user_ID = binding.partnerUserID;
-        if (user_ID == null) {
+        final userId = binding.partnerUserID;
+        if (userId == null) {
           Logs.map.warning('跳过 null partnerUserID 的绑定: status=${binding.status}');
           continue;
         }
-        user_IDToNickname[user_ID] = (binding.myNameForPartner != null && binding.myNameForPartner!.isNotEmpty)
+        userIdToNickname[userId] = (binding.myNameForPartner != null && binding.myNameForPartner!.isNotEmpty)
             ? binding.myNameForPartner!
             : (binding.partnerNickname ?? '绑定者');
-        user_IDs.add(user_ID);
+        userIds.add(userId);
       }
 
-      Logs.map.info('有效绑定者数量: ${user_IDs.length}, userIDs=$user_IDs');
+      Logs.map.info('有效绑定者数量: ${userIds.length}, userIDs=$userIds');
 
-      final locationResults = await _bindingService.getBinderLocations(user_IDs);
+      final locationResults = await _bindingService.getBinderLocations(userIds);
       Logs.map.info('位置查询结果: $locationResults');
 
-      final binderDataList = _bindingService.convertToBinderDataList(user_IDToNickname, locationResults);
+      final binderDataList = _bindingService.convertToBinderDataList(userIdToNickname, locationResults);
       Logs.map.info('转换后绑定者数据: $binderDataList');
 
       final items = _categoryService.getBinderLocations(binderDataList);

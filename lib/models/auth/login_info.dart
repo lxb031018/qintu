@@ -60,7 +60,7 @@ class LoginInfo {
       'refresh_token': refreshToken,
       'expires_in': expiresIn,
       'phone_number': phoneNumber,
-      'user_id': userId,
+      'userId': userId,
       'access_token_save_time': accessTokenSaveTime?.millisecondsSinceEpoch,
       'refresh_token_save_time': refreshTokenSaveTime?.millisecondsSinceEpoch,
     };

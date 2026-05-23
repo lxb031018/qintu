@@ -9,8 +9,8 @@
  * - POST /reject-request - 拒绝请求
  * - DELETE /requests/:id - 取消发出的请求
  * - GET /my - 获取绑定列表
- * - DELETE /:partner_user_id - 解绑
- * - PATCH /:partner_user_id - 修改称呼
+ * - DELETE /:partner_userId - 解绑
+ * - PATCH /:partner_userId - 修改称呼
  */
 
 const express = require('express');
@@ -50,10 +50,10 @@ function createBindingRoutes(bindingService) {
   router.get('/my', (req, res) => bindingController.getMyBindings(req, res));
 
   // 解绑用户
-  router.delete('/:partner_user_id', (req, res) => bindingController.unbind(req, res));
+  router.delete('/:partner_userId', (req, res) => bindingController.unbind(req, res));
 
   // 修改我对对方的称呼
-  router.patch('/:partner_user_id', (req, res) => bindingController.modifyName(req, res));
+  router.patch('/:partner_userId', (req, res) => bindingController.modifyName(req, res));
 
   return router;
 }
