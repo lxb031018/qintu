@@ -169,6 +169,25 @@ class UserMysqlRepository {
       [userId]
     );
   }
+
+  /**
+   * 检查两个用户是否已绑定
+   * @param {string} userId_1
+   * @param {string} userId_2
+   * @returns {Promise<boolean>}
+   */
+  async isBindingWith(userId_1, userId_2) {
+    const { query } = require('../../db/mysql');
+    // userA < userB
+    const userA = userId_1 < userId_2 ? userId_1 : userId_2;
+    const userB = userId_1 < userId_2 ? userId_2 : userId_1;
+
+    const rows = await query(
+      'SELECT 1 FROM user_bindings WHERE userA = ? AND userB = ? AND status = ?',
+      [userA, userB, 'active']
+    );
+    return rows.length > 0;
+  }
 }
 
 module.exports = UserMysqlRepository;

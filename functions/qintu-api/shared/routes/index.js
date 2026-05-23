@@ -11,6 +11,7 @@ const bindingRoutes = require('./binding.routes');
 const avatarRoutes = require('./avatar.routes');
 const userRoutes = require('./user.routes');
 const locationRoutes = require('./location.routes');
+const routeShareRoutes = require('./route_share.routes');
 
 /**
  * 配置路由
@@ -32,6 +33,9 @@ function configureRoutes(services) {
 
   // 用户路由：/api/users/*
   router.use('/api/users', userRoutes(services.userService));
+
+  // 路由分享路由：/api/route-share/*
+  router.use('/api/route-share', routeShareRoutes(services.routeShareService));
 
   // 简单测试路由
   router.get('/test', (req, res) => {

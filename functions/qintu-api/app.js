@@ -25,12 +25,14 @@ const AuthService = require('./auth/services/auth.service');
 const BindingService = require('./binding/services/binding.service');
 const LocationService = require('./binding/services/location.service');
 const UserService = require('./user/services/user.service');
+const RouteShareService = require('./route-share/services/route_share.service');
 
 // 创建 Service 实例
 const authService = new AuthService(userRepo);
 const bindingService = new BindingService(bindingRepo, userRepo);
 const locationService = new LocationService(bindingRepo);
 const userService = new UserService(userRepo);
+const routeShareService = new RouteShareService();
 
 // 挂载到全局供中间件访问（避免循环依赖）
 global._authService = authService;
@@ -40,7 +42,8 @@ const services = {
   authService,
   bindingService,
   locationService,
-  userService
+  userService,
+  routeShareService
 };
 
 const app = express();
