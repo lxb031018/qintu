@@ -59,8 +59,8 @@ class LocationService {
     // 验证绑定关系是否存在且生效
     const bindings = await this.bindingRepo.findAllForUser(myUserID);
     const binding = bindings.find(
-      b => (b.user_A === myUserID && b.user_B === partnerUserID) ||
-           (b.user_A === partnerUserID && b.user_B === myUserID)
+      b => (b.userA === myUserID && b.userB === partnerUserID) ||
+           (b.userA === partnerUserID && b.userB === myUserID)
     );
 
     if (!binding || binding.status !== 'active') {

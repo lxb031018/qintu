@@ -88,8 +88,8 @@ class BindingService {
       const partner = await this.userRepo.findByUserID(partnerUserID);
 
       // sender_name 是发送者对接收者的称呼
-      // 由于 user_A < user_B，sender_userId 可能是 user_A 或 user_B
-      const isUserA = binding.user_A === myUserID;
+      // 由于 userA < userB，sender_userId 可能是 userA 或 userB
+      const isUserA = binding.userA === myUserID;
       const senderName = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
 
       result.push({
@@ -118,7 +118,7 @@ class BindingService {
 
     const result = [];
     for (const binding of bindings) {
-      const partnerUserID = binding.user_A === myUserID ? binding.user_B : binding.user_A;
+      const partnerUserID = binding.userA === myUserID ? binding.userB : binding.userA;
       const partner = await this.userRepo.findByUserID(partnerUserID);
 
       // 判断状态
@@ -128,7 +128,7 @@ class BindingService {
       }
 
       // receiver_name 是对方对我的称呼
-      const isUserA = binding.user_A === myUserID;
+      const isUserA = binding.userA === myUserID;
       const receiverName = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
 
       result.push({
@@ -155,8 +155,8 @@ class BindingService {
     // 1. 检查绑定是否存在且为 pending
     const binding = await this.bindingRepo.findPendingForReceiver(myUserID);
     const pendingBinding = binding.find(b =>
-      (b.user_A === myUserID && b.user_B === partnerUserID) ||
-      (b.user_A === partnerUserID && b.user_B === myUserID)
+      (b.userA === myUserID && b.userB === partnerUserID) ||
+      (b.userA === partnerUserID && b.userB === myUserID)
     );
 
     if (!pendingBinding) {
@@ -239,7 +239,7 @@ class BindingService {
 
       const partner = await this.userRepo.findByUserID(binding.partner_userId);
 
-      const isUserA = binding.user_A === myUserID;
+      const isUserA = binding.userA === myUserID;
       const myNameForPartner = isUserA ? binding.name_B_to_A : binding.name_A_to_B;
       const partnerNameForMe = isUserA ? binding.name_A_to_B : binding.name_B_to_A;
 

@@ -28,7 +28,7 @@ class BindingLocationApi {
 
       if (response.isSuccessful && response.data != null) {
         final data = response.data!['data'] as Map<String, dynamic>?;
-        if (data != null) {
+        if (data != null && data.containsKey('latitude') && data.containsKey('longitude')) {
           return BindingLocationResult.success(
             partnerUserID,
             BindingLocation.fromJson(data),

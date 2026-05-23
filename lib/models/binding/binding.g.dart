@@ -12,14 +12,14 @@ Binding _$BindingFromJson(Map<String, dynamic> json) => Binding(
   status: json['status'] as String? ?? 'active',
   remark: json['remark'] as String?,
   myRole: $enumDecodeNullable(_$MyRoleEnumMap, json['my_role']),
-  partnerUserID: json['partner_user_ID'] as String?,
+  partnerUserID: json['partner_userId'] as String?,
   partnerNickname: json['partner_nickname'] as String?,
   partnerPhone: json['partner_phone'] as String?,
   partnerType: json['partner_type'] as String?,
-  senderUserID: json['sender_user_ID'] as String?,
+  senderUserID: json['sender_userId'] as String?,
   senderNickname: json['sender_nickname'] as String?,
   senderPhone: json['sender_phone'] as String?,
-  receiverUserID: json['receiver_user_ID'] as String?,
+  receiverUserID: json['receiver_userId'] as String?,
   receiverNickname: json['receiver_nickname'] as String?,
   receiverPhone: json['receiver_phone'] as String?,
   myNameForPartner: json['my_name_for_partner'] as String?,
@@ -44,16 +44,16 @@ Map<String, dynamic> _$BindingToJson(Binding instance) => <String, dynamic>{
   'status': instance.status,
   'remark': instance.remark,
   'my_role': _$MyRoleEnumMap[instance.myRole],
-  'partner_user_ID': instance.partnerUserID,
+  'partner_userId': instance.partnerUserID,
   'partner_nickname': instance.partnerNickname,
   'partner_phone': instance.partnerPhone,
   'partner_type': instance.partnerType,
   'my_name_for_partner': instance.myNameForPartner,
   'partner_name_for_me': instance.partnerNameForMe,
-  'sender_user_ID': instance.senderUserID,
+  'sender_userId': instance.senderUserID,
   'sender_nickname': instance.senderNickname,
   'sender_phone': instance.senderPhone,
-  'receiver_user_ID': instance.receiverUserID,
+  'receiver_userId': instance.receiverUserID,
   'receiver_nickname': instance.receiverNickname,
   'receiver_phone': instance.receiverPhone,
   'created_at': instance.createdAt?.toIso8601String(),
@@ -84,7 +84,7 @@ Map<String, dynamic> _$BindingListToJson(BindingList instance) =>
 PendingRequest _$PendingRequestFromJson(Map<String, dynamic> json) =>
     PendingRequest(
       id: (json['id'] as num).toInt(),
-      senderUserID: json['sender_user_ID'] as String?,
+      senderUserID: json['sender_userId'] as String?,
       senderName: json['sender_name'] as String?,
       senderPhone: json['sender_phone'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -94,7 +94,7 @@ PendingRequest _$PendingRequestFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$PendingRequestToJson(PendingRequest instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'sender_user_ID': instance.senderUserID,
+      'sender_userId': instance.senderUserID,
       'sender_name': instance.senderName,
       'sender_phone': instance.senderPhone,
       'created_at': instance.createdAt.toIso8601String(),
@@ -103,7 +103,7 @@ Map<String, dynamic> _$PendingRequestToJson(PendingRequest instance) =>
 
 SentRequest _$SentRequestFromJson(Map<String, dynamic> json) => SentRequest(
   id: (json['id'] as num).toInt(),
-  receiverUserID: json['receiver_user_ID'] as String?,
+  receiverUserID: json['receiver_userId'] as String?,
   status: json['status'] as String,
   receiverNickname: json['receiver_nickname'] as String?,
   receiverPhone: json['receiver_phone'] as String?,
@@ -119,7 +119,7 @@ SentRequest _$SentRequestFromJson(Map<String, dynamic> json) => SentRequest(
 Map<String, dynamic> _$SentRequestToJson(SentRequest instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'receiver_user_ID': instance.receiverUserID,
+      'receiver_userId': instance.receiverUserID,
       'status': instance.status,
       'receiver_nickname': instance.receiverNickname,
       'receiver_phone': instance.receiverPhone,

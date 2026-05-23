@@ -2,19 +2,19 @@
  * 绑定关系 MySQL Repository
  *
  * 单表设计：user_bindings 表同时存储 pending 和 active 状态的绑定
- * 存储规则：user_A < user_B（字符串比较，小的在前）
+ * 存储规则：userA < userB（字符串比较，小的在前）
  */
 
 const { query } = require('../../db/mysql');
 
 class BindingMysqlRepository {
   /**
-   * 确保 user_A < user_B
+   * 确保 userA < userB
    */
   _orderUsers(userId_1, userId_2) {
     return userId_1 < userId_2
-      ? { user_A: userId_1, user_B: userId_2 }
-      : { user_A: userId_2, user_B: userId_1 };
+      ? { userA: userId_1, userB: userId_2 }
+      : { userA: userId_2, userB: userId_1 };
   }
 
   /**
@@ -26,23 +26,23 @@ class BindingMysqlRepository {
    * @param {Date} expiresAt - 过期时间
    */
   async createPendingBinding(senderUserID, receiverUserID, senderName, receiverName, expiresAt) {
-    const { user_A, user_B } = this._orderUsers(senderUserID, receiverUserID);
+    const { userA, userB } = this._orderUsers(senderUserID, receiverUserID);
 
     // 确定谁是 A 谁是 B
-    const isUserAIsSender = user_A === senderUserID;
+    const isUserAIsSender = userA === senderUserID;
     const name_A_to_B = isUserAIsSender ? senderName : receiverName;
     const name_B_to_A = isUserAIsSender ? receiverName : senderName;
 
     try {
       const result = await query(
-        `INSERT INTO user_bindings (user_A, user_B, sender_userId, name_A_to_B, name_B_to_A, status, expires_at)
+        `INSERT INTO user_bindings (userA, userB, sender_userId, name_A_to_B, name_B_to_A, status, expires_at)
          VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
-        [user_A, user_B, senderUserID, name_A_to_B, name_B_to_A, expiresAt]
+        [userA, userB, senderUserID, name_A_to_B, name_B_to_A, expiresAt]
       );
-      return { id: result.insertId, user_A, user_B, name_A_to_B, name_B_to_A, status: 'pending' };
+      return { id: result.insertId, userA, userB, name_A_to_B, name_B_to_A, status: 'pending' };
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
-        return { user_A, user_B, name_A_to_B, name_B_to_A, status: 'pending', alreadyExists: true };
+        return { userA, userB, name_A_to_B, name_B_to_A, status: 'pending', alreadyExists: true };
       }
       throw error;
     }
@@ -54,12 +54,12 @@ class BindingMysqlRepository {
    * @param {string} partnerUserID - 对方的 userId
    */
   async activateBinding(myUserID, partnerUserID) {
-    const { user_A, user_B } = this._orderUsers(myUserID, partnerUserID);
+    const { userA, userB } = this._orderUsers(myUserID, partnerUserID);
 
     const result = await query(
       `UPDATE user_bindings SET status = 'active', bound_at = NOW()
-       WHERE user_A = ? AND user_B = ? AND status = 'pending'`,
-      [user_A, user_B]
+       WHERE userA = ? AND userB = ? AND status = 'pending'`,
+      [userA, userB]
     );
 
     return result.affectedRows > 0;
@@ -71,12 +71,12 @@ class BindingMysqlRepository {
    * @param {string} userId_2 - 用户2的 userId
    */
   async deletePending(userId_1, userId_2) {
-    const { user_A, user_B } = this._orderUsers(userId_1, userId_2);
+    const { userA, userB } = this._orderUsers(userId_1, userId_2);
 
     const result = await query(
       `DELETE FROM user_bindings
-       WHERE user_A = ? AND user_B = ? AND status = 'pending'`,
-      [user_A, user_B]
+       WHERE userA = ? AND userB = ? AND status = 'pending'`,
+      [userA, userB]
     );
 
     return result.affectedRows > 0;
@@ -88,11 +88,11 @@ class BindingMysqlRepository {
    * @param {string} userId_2 - 用户2的 userId
    */
   async delete(userId_1, userId_2) {
-    const { user_A, user_B } = this._orderUsers(userId_1, userId_2);
+    const { userA, userB } = this._orderUsers(userId_1, userId_2);
 
     const result = await query(
-      'DELETE FROM user_bindings WHERE user_A = ? AND user_B = ?',
-      [user_A, user_B]
+      'DELETE FROM user_bindings WHERE userA = ? AND userB = ?',
+      [userA, userB]
     );
 
     return result.affectedRows > 0;
@@ -105,11 +105,11 @@ class BindingMysqlRepository {
    * @param {string} status - 状态
    */
   async existsWithStatus(userId_1, userId_2, status) {
-    const { user_A, user_B } = this._orderUsers(userId_1, userId_2);
+    const { userA, userB } = this._orderUsers(userId_1, userId_2);
 
     const rows = await query(
-      'SELECT 1 FROM user_bindings WHERE user_A = ? AND user_B = ? AND status = ?',
-      [user_A, user_B, status]
+      'SELECT 1 FROM user_bindings WHERE userA = ? AND userB = ? AND status = ?',
+      [userA, userB, status]
     );
 
     return rows.length > 0;
@@ -139,10 +139,10 @@ class BindingMysqlRepository {
    */
   async findPendingForReceiver(receiverUserID) {
     // 找出所有 receiver 是 receiverUserID 且 status=pending 的记录
-    // 由于 user_A < user_B，receiver 可能是 user_A 或 user_B
+    // 由于 userA < userB，receiver 可能是 userA 或 userB
     const rows = await query(
       `SELECT * FROM user_bindings
-       WHERE ((user_A = ? OR user_B = ?) AND status = 'pending' AND expires_at > NOW())
+       WHERE ((userA = ? OR userB = ?) AND status = 'pending' AND expires_at > NOW())
        ORDER BY created_at DESC`,
       [receiverUserID, receiverUserID]
     );
@@ -169,7 +169,7 @@ class BindingMysqlRepository {
    */
   async findActiveForUser(userId) {
     const rows = await query(
-      'SELECT * FROM user_bindings WHERE (user_A = ? OR user_B = ?) AND status = ?',
+      'SELECT * FROM user_bindings WHERE (userA = ? OR userB = ?) AND status = ?',
       [userId, userId, 'active']
     );
     return rows;
@@ -181,16 +181,16 @@ class BindingMysqlRepository {
    */
   async findAllForUser(userId) {
     const rows = await query(
-      'SELECT * FROM user_bindings WHERE user_A = ? OR user_B = ?',
+      'SELECT * FROM user_bindings WHERE userA = ? OR userB = ?',
       [userId, userId]
     );
 
     return rows.map(row => ({
       id: row.id,
-      user_A: row.user_A,
-      user_B: row.user_B,
-      partner_userId: row.user_A === userId ? row.user_B : row.user_A,
-      sender_userId: row.sender_userId,
+      userA: row.userA,
+      userB: row.userB,
+      partner_userId: row.userA === userId ? row.userB : row.userA,
+      sender_userId: row.senderUserId,
       name_A_to_B: row.name_A_to_B,
       name_B_to_A: row.name_B_to_A,
       status: row.status,
@@ -207,7 +207,7 @@ class BindingMysqlRepository {
   async countForUser(userId) {
     const rows = await query(
       `SELECT COUNT(*) as count FROM user_bindings
-       WHERE (user_A = ? OR user_B = ?) AND status = 'active'`,
+       WHERE (userA = ? OR userB = ?) AND status = 'active'`,
       [userId, userId]
     );
     return rows[0].count;
@@ -220,14 +220,14 @@ class BindingMysqlRepository {
    * @param {string} newName - 新的称呼
    */
   async modifyName(myUserID, partnerUserID, newName) {
-    const { user_A, user_B } = this._orderUsers(myUserID, partnerUserID);
+    const { userA, userB } = this._orderUsers(myUserID, partnerUserID);
 
     // 根据我的身份决定更新哪个字段
-    const field = myUserID === user_A ? 'name_A_to_B' : 'name_B_to_A';
+    const field = myUserID === userA ? 'name_A_to_B' : 'name_B_to_A';
 
     const result = await query(
-      `UPDATE user_bindings SET ${field} = ? WHERE user_A = ? AND user_B = ?`,
-      [newName, user_A, user_B]
+      `UPDATE user_bindings SET ${field} = ? WHERE userA = ? AND userB = ?`,
+      [newName, userA, userB]
     );
 
     return result.affectedRows > 0;
