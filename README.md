@@ -79,6 +79,14 @@ flutter run
 flutter build apk --debug
 ```
 
+## 下载 APK
+
+| 版本 | 说明 |
+|------|------|
+| [Debug APK v1.0.0](https://github.com/lxb031018/qintu/releases/download/v1.0.0/app-debug.apk) | 调试版本，可直接安装（需开启开发者模式） |
+
+> 首发版本，点击上方链接下载。如果链接失效，请访问 [Releases](https://github.com/lxb031018/qintu/releases) 页面获取最新版本。
+
 ## 开发文档
 
 | 文档 | 说明 |
