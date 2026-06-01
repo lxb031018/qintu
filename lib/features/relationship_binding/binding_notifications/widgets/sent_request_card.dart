@@ -7,6 +7,7 @@ import '../../../../constants/app_spacings.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../theme/app_text_styles.dart';
 import '../../../../widgets/common/app_confirm_dialog.dart';
+import '../../models/binding_status_display.dart';
 
 /// ============================================
 /// 我发出的绑定请求卡片
@@ -30,6 +31,8 @@ class SentRequestCard extends StatelessWidget {
     // 🌟 后端已脱敏，直接使用，不再二次脱敏
     final maskedPhone = request.receiverPhone ?? '未知';
     final receiverName = request.receiverNickname ?? '未知用户';
+    final statusColor = BindingStatusDisplay.colorFor(request);
+    final statusIcon = BindingStatusDisplay.iconFor(request);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -42,10 +45,10 @@ class SentRequestCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: _getStatusColor(context).withValues(alpha: 0.1),
+                  backgroundColor: statusColor.withValues(alpha: 0.1),
                   child: Icon(
-                    _getStatusIcon(),
-                    color: _getStatusColor(context),
+                    statusIcon,
+                    color: statusColor,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -69,7 +72,7 @@ class SentRequestCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                _buildStatusBadge(context),
+                _buildStatusBadge(context, statusColor),
               ],
             ),
             SizedBox(height: AppSpacings.md),
@@ -79,15 +82,15 @@ class SentRequestCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  _getStatusIcon(),
+                  statusIcon,
                   size: 16,
-                  color: _getStatusColor(context),
+                  color: statusColor,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   request.statusText,
                   style: AppTextStyles.statusTag.copyWith(
-                    color: _getStatusColor(context),
+                    color: statusColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -132,57 +135,25 @@ class SentRequestCard extends StatelessWidget {
   }
 
   /// 状态徽章
-  Widget _buildStatusBadge(BuildContext context) {
+  Widget _buildStatusBadge(BuildContext context, Color statusColor) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: AppSpacings.sm, vertical: AppSpacings.xs),
       decoration: BoxDecoration(
-        color: _getStatusColor(context).withValues(alpha: 0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.all(AppRadii.medium),
         border: Border.all(
-          color: _getStatusColor(context).withValues(alpha: 0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
       child: Text(
         request.statusText,
         style: AppTextStyles.bottomTab.copyWith(
-          color: _getStatusColor(context),
+          color: statusColor,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
-  }
-
-  /// 获取状态颜色
-  Color _getStatusColor(BuildContext context) {
-    if (request.isPending) {
-      return request.isExpiringSoon ? AppColors.warningColor : AppColors.infoColor;
-    } else if (request.isRejected) {
-      return AppColors.errorColor;
-    } else if (request.isUnbound) {
-      return AppColors.disabledColor; // 对方解除绑定，显示中性灰色
-    } else if (request.isExpired) {
-      return AppColors.disabledColor;
-    } else if (request.isActive) {
-      return AppColors.successColor;
-    }
-    return AppColors.disabledColor;
-  }
-
-  /// 获取状态图标
-  IconData _getStatusIcon() {
-    if (request.isPending) {
-      return request.isExpiringSoon ? Icons.warning_amber_rounded : Icons.access_time;
-    } else if (request.isRejected) {
-      return Icons.close_outlined;
-    } else if (request.isUnbound) {
-      return Icons.link_off_outlined; // 对方解除绑定
-    } else if (request.isExpired) {
-      return Icons.timer_outlined;
-    } else if (request.isActive) {
-      return Icons.check_circle_outlined;
-    }
-    return Icons.help_outline;
   }
 
   /// 过期时间文本

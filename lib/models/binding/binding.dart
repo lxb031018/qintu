@@ -264,22 +264,26 @@ class SentRequest {
   Map<String, dynamic> toJson() => _$SentRequestToJson(this);
 
   bool get isPending => status == 'pending';
-  bool get isRejected => status == 'revoked' && rejectedAt != null;
-  bool get isUnbound => status == 'revoked' && rejectedAt == null;
+  bool get isRejected => status == 'revoked';
   bool get isExpired => status == 'expired';
   bool get isActive => status == 'active';
 
   /// 显示用的状态文本
+  ///
+  /// 文案与 UI 展示对齐（与 widget 之前散落在 sent_request_card 里的 switch 一致）：
+  /// - pending → "等待对方确认"
+  /// - revoked → "对方已拒绝"
+  /// - active → "已绑定"
   String get statusText {
     switch (status) {
       case 'pending':
-        return '待确认';
+        return '等待对方确认';
       case 'revoked':
-        return isRejected ? '已拒绝' : '已解除';
+        return '对方已拒绝';
       case 'expired':
         return '已过期';
       case 'active':
-        return '已激活';
+        return '已绑定';
       default:
         return '未知状态';
     }

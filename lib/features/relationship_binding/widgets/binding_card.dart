@@ -5,6 +5,7 @@ import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_spacings.dart';
 import '../../../theme/app_text_styles.dart';
+import '../models/binding_status_display.dart';
 
 /// 绑定卡片
 class BindingCard extends StatelessWidget {
@@ -20,8 +21,8 @@ class BindingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final statusColor = _getStatusColor(binding.status);
-    final statusText = _getStatusText(binding.status);
+    final statusColor = BindingStatusDisplay.colorForBindingStatus(binding.status);
+    final statusText = BindingStatusText.labelFor(binding.status);
     // 手机号脱敏显示
     final maskedPhone = PhoneUtils.maskPhone(binding.partnerPhone ?? '');
     // 优先使用我对对方的称呼，其次使用对方昵称
@@ -81,35 +82,5 @@ class BindingCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'active':
-        return AppColors.successColor;
-      case 'pending':
-        return AppColors.warningColor;
-      case 'expired':
-        return AppColors.disabledColor;
-      case 'rejected':
-        return AppColors.errorColor;
-      default:
-        return AppColors.disabledColor;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'active':
-        return AppStrings.active;
-      case 'pending':
-        return AppStrings.pending;
-      case 'expired':
-        return AppStrings.expired;
-      case 'rejected':
-        return AppStrings.revoked;
-      default:
-        return '未知';
-    }
   }
 }
