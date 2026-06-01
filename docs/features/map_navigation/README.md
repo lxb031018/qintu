@@ -31,7 +31,7 @@ lib/features/map_navigation/
 │   └── ...
 ├── provider/                         # 状态管理层
 │   ├── map_navigation/               # 导航状态
-│   ├── location_Input/               # 位置输入状态
+│   ├── location_input/               # 位置输入状态
 │   └── map_display/                  # 地图显示协调
 └── widgets/                          # UI 组件层
 ```

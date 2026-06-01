@@ -121,7 +121,7 @@ startNavigation() → 进入导航模式
 
 ## LocationInputNotifier
 
-**文件**：`lib/features/map_navigation/provider/location_Input/location_input_notifier/`
+**文件**：`lib/features/map_navigation/provider/location_input/location_input_notifier/`
 
 **Provider**：`locationInputProvider`
 
