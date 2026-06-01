@@ -6,6 +6,11 @@ import 'package:qintu/features/relationship_binding/models/binding_request_input
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/constants/binding_limits.dart';
 
+/// 绑定服务 provider（方便测试时 override 注入 mock）
+final bindingServiceProvider = Provider<BindingService>((ref) {
+  return BindingService();
+});
+
 /// ============================================
 /// 绑定关系状态管理
 ///
@@ -13,11 +18,12 @@ import 'package:qintu/constants/binding_limits.dart';
 /// ============================================
 
 class BindingNotifier extends Notifier<BindingListState> {
-  late final BindingService _bindingService;
+  /// 通过 ref 读取 service（由 bindingServiceProvider 注入）
+  /// 好处：测试时可以 override 这个 provider 传入 mock service
+  BindingService get _bindingService => ref.read(bindingServiceProvider);
 
   @override
   BindingListState build() {
-    _bindingService = BindingService();
     return const BindingListState();
   }
 

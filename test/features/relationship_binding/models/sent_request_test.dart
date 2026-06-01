@@ -78,7 +78,8 @@ void main() {
       expect(request.expiredAtText, '已过期');
     });
 
-    test('expiredAtText 在不足 1 小时时返回 "不足 1 小时"', () {
+    test('expiredAtText 在不足 1 小时时返回 "不足1小时"', () {
+      // P3-3: 与 model 中的"不足1小时"（无空格）保持一致
       final request = SentRequest(
         id: 1,
         status: 'pending',
@@ -86,10 +87,11 @@ void main() {
         expiredAt: DateTime.now().add(const Duration(minutes: 30)),
       );
 
-      expect(request.expiredAtText, '不足 1 小时');
+      expect(request.expiredAtText, '不足1小时');
     });
 
-    test('expiredAtText 在少于 24 小时时返回 "X小时后过期"', () {
+    test('expiredAtText 在少于 24 小时时返回 "X 小时后过期"', () {
+      // P3-3: 与 model 中的"$hours 小时后过期"（数字与中文之间有空格）保持一致
       final request = SentRequest(
         id: 1,
         status: 'pending',
@@ -97,10 +99,11 @@ void main() {
         expiredAt: DateTime.now().add(const Duration(hours: 12)),
       );
 
-      expect(request.expiredAtText, '12小时后过期');
+      expect(request.expiredAtText, '12 小时后过期');
     });
 
-    test('expiredAtText 在超过 24 小时时返回 "X天后过期"', () {
+    test('expiredAtText 在超过 24 小时时返回 "X 天后过期"', () {
+      // P3-3: 与 model 中的"$days 天后过期"（数字与中文之间有空格）保持一致
       final request = SentRequest(
         id: 1,
         status: 'pending',
@@ -108,7 +111,7 @@ void main() {
         expiredAt: DateTime.now().add(const Duration(days: 3)),
       );
 
-      expect(request.expiredAtText, '3天后过期');
+      expect(request.expiredAtText, '3 天后过期');
     });
 
     test('isRejected 在被拒绝时返回 true', () {
@@ -170,12 +173,13 @@ void main() {
 
   group('PendingRequest', () {
     test('fromJson 正确解析数据', () {
+      // P3-3: expires_at 是必填字段，补上
       final json = {
         'id': 1,
         'sender_name': '张三',
-        'sender_nickname': '小张',
         'sender_phone': '13800138000',
         'created_at': '2026-04-09T10:00:00.000Z',
+        'expires_at': '2026-05-09T10:00:00.000Z',
       };
 
       final request = PendingRequest.fromJson(json);
