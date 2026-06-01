@@ -10,6 +10,103 @@ enum RouteType {
   transit,
 }
 
+/// [RouteType] 的字符串/UI 文本转换工具
+///
+/// 集中维护：
+/// - 后端 API 字符串（driving/walking/riding/transit） ↔ 枚举
+/// - 枚举 ↔ UI 展示文本（出租车/步行/骑行/公交）
+///
+/// 避免在多个 service / widget 中重复 switch
+class RouteTypeCodec {
+  RouteTypeCodec._();
+
+  /// API 字符串（与后端协议一致）
+  static const String driving = 'driving';
+  static const String walking = 'walking';
+  static const String riding = 'riding';
+  static const String transit = 'transit';
+
+  /// UI 展示文本
+  static const String _labelDriving = '驾车';
+  static const String _labelWalking = '步行';
+  static const String _labelRiding = '骑行';
+  static const String _labelTransit = '公交';
+
+  /// RouteType → API 字符串
+  static String toApiString(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return driving;
+      case RouteType.walking:
+        return walking;
+      case RouteType.riding:
+        return riding;
+      case RouteType.transit:
+        return transit;
+    }
+  }
+
+  /// API 字符串 → RouteType，无法识别时回退 [fallback]（默认 driving）
+  static RouteType parseFromApiString(String? value, {RouteType fallback = RouteType.driving}) {
+    switch (value) {
+      case driving:
+        return RouteType.driving;
+      case walking:
+        return RouteType.walking;
+      case riding:
+        return RouteType.riding;
+      case transit:
+        return RouteType.transit;
+      default:
+        return fallback;
+    }
+  }
+
+  /// API 字符串 → UI 展示文本
+  static String labelFromApiString(String? value) {
+    switch (value) {
+      case driving:
+        return _labelDriving;
+      case walking:
+        return _labelWalking;
+      case riding:
+        return _labelRiding;
+      case transit:
+        return _labelTransit;
+      default:
+        return _labelDriving;
+    }
+  }
+
+  /// RouteType → UI 展示文本
+  static String labelFor(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return _labelDriving;
+      case RouteType.walking:
+        return _labelWalking;
+      case RouteType.riding:
+        return _labelRiding;
+      case RouteType.transit:
+        return _labelTransit;
+    }
+  }
+
+  /// RouteType → 图标
+  static IconData iconFor(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return Icons.directions_car;
+      case RouteType.walking:
+        return Icons.directions_walk;
+      case RouteType.riding:
+        return Icons.directions_bike;
+      case RouteType.transit:
+        return Icons.directions_bus;
+    }
+  }
+}
+
 /// 路线规划结果
 class RouteOption {
   final int routeId;        // 原生路线 ID（用于 SDK 渲染）

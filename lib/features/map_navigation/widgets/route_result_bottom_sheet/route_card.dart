@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../models/amap_routing_models.dart';
 import '../../models/map_overlay_models.dart';
+import '../../models/route_option_model.dart';
 
 /// 路线选项卡片
 ///
@@ -35,19 +35,19 @@ class RouteCard extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? _getRouteTypeColor(currentRouteType).withValues(alpha: 0.15)
+              ? Color(RouteColors.getColor(currentRouteType)).withValues(alpha: 0.15)
               : (isDark ? AppColors.darkCardBackground : AppColors.cardBackground),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? _getRouteTypeColor(currentRouteType)
+                ? Color(RouteColors.getColor(currentRouteType))
                 : (isDark ? AppColors.darkDividerColor : AppColors.grey200),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: _getRouteTypeColor(currentRouteType).withValues(alpha: 0.3),
+                    color: Color(RouteColors.getColor(currentRouteType)).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -62,17 +62,17 @@ class RouteCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _getRouteTypeIcon(currentRouteType),
+                  RouteTypeUi.iconFor(currentRouteType),
                   size: 14,
-                  color: _getRouteTypeColor(currentRouteType),
+                  color: Color(RouteColors.getColor(currentRouteType)),
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  _getRouteTypeLabel(currentRouteType),
+                  RouteTypeUi.labelFor(currentRouteType),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: _getRouteTypeColor(currentRouteType),
+                    color: Color(RouteColors.getColor(currentRouteType)),
                   ),
                 ),
               ],
@@ -136,26 +136,5 @@ class RouteCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getRouteTypeColor(RouteType type) {
-    if (type == RouteType.driving) return const Color(0xFF1890FF);
-    if (type == RouteType.walking) return const Color(0xFF52C41A);
-    if (type == RouteType.riding) return const Color(0xFFFAAD14);
-    return const Color(0xFF722ED1);
-  }
-
-  IconData _getRouteTypeIcon(RouteType type) {
-    if (type == RouteType.driving) return Icons.directions_car;
-    if (type == RouteType.walking) return Icons.directions_walk;
-    if (type == RouteType.riding) return Icons.directions_bike;
-    return Icons.directions_bus;
-  }
-
-  String _getRouteTypeLabel(RouteType type) {
-    if (type == RouteType.driving) return '出租车';
-    if (type == RouteType.walking) return '步行';
-    if (type == RouteType.riding) return '骑行';
-    return '公交';
   }
 }

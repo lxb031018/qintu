@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/bridge/poi_search_bridge.dart';
 import '../core/bridge/geocode_bridge.dart';
 import '../models/poi_models.dart';
+import '../service/map_controller_service/map_controller_service.dart';
 import '../../../models/location/lat_lng.dart';
 
 /// ============================================
@@ -26,6 +27,39 @@ class LocationSearchContext {
     this.cachedCity,
     this.cachedCityCode,
   });
+
+  /// 从 [MapControllerService] 构造：
+  /// 1. 取当前 GPS 位置
+  /// 2. 若取不到则退化到 last known
+  /// 3. 附带 cachedCity
+  static Future<LocationSearchContext> fromMapController(
+    MapControllerService? mapController,
+  ) async {
+    LatLng? gpsCenter;
+    String? cachedCity;
+
+    final gpsResult = await mapController?.getCurrentLocation();
+    if (gpsResult != null) {
+      gpsCenter = LatLng(
+        gpsResult['latitude'] as double,
+        gpsResult['longitude'] as double,
+      );
+      cachedCity ??= gpsResult['city'] as String?;
+    } else {
+      final lastLoc = await mapController?.getLastKnownLocation();
+      if (lastLoc != null) {
+        gpsCenter = LatLng(
+          lastLoc['latitude'] as double,
+          lastLoc['longitude'] as double,
+        );
+      }
+    }
+
+    return LocationSearchContext(
+      gpsCenter: gpsCenter,
+      cachedCity: cachedCity ?? mapController?.lastKnownCity,
+    );
+  }
 }
 
 /// 位置搜索结果

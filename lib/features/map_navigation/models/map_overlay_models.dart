@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:qintu/models/location/lat_lng.dart';
 import 'package:qintu/features/map_navigation/models/poi_models.dart';
-import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import 'package:qintu/features/map_navigation/models/route_option_model.dart';
+import 'package:qintu/features/map_navigation/models/bus_route_models.dart';
 
 /// ============================================
 /// 地图覆盖物数据模型
@@ -101,6 +104,40 @@ class RouteColors {
   }
 }
 
+/// [RouteCard] 专用 UI 标签
+///
+/// 与 [RouteTypeCodec.labelFor] 的差异：driving 在此处显示为"出租车"（强调是替代公交的选项）
+/// 其他类型一致
+class RouteTypeUi {
+  RouteTypeUi._();
+
+  static IconData iconFor(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return Icons.directions_car;
+      case RouteType.walking:
+        return Icons.directions_walk;
+      case RouteType.riding:
+        return Icons.directions_bike;
+      case RouteType.transit:
+        return Icons.directions_bus;
+    }
+  }
+
+  static String labelFor(RouteType type) {
+    switch (type) {
+      case RouteType.driving:
+        return '出租车';
+      case RouteType.walking:
+        return '步行';
+      case RouteType.riding:
+        return '骑行';
+      case RouteType.transit:
+        return '公交';
+    }
+  }
+}
+
 /// 路线结果数据模型（供 UI 使用）
 class RouteResultItem {
   final double distance;
@@ -141,4 +178,45 @@ class RouteResultItem {
     this.walkDistance,
     this.cityCode,
   });
+
+  /// 从 [RouteOption] 构造，自动计算与 [selectedFor] 的差异
+  ///
+  /// 差异阈值：
+  /// - 时间差 ≥ 60 秒才显示
+  /// - 距离差 ≥ 100 米才显示
+  static const int _timeDiffThresholdSec = 60;
+  static const int _distanceDiffThresholdMeters = 100;
+
+  factory RouteResultItem.fromRoute(
+    RouteOption route, {
+    RouteOption? selectedFor,
+  }) {
+    int? timeDiff;
+    int? distanceDiff;
+    if (selectedFor != null) {
+      final diffSec = (route.duration - selectedFor.duration).round();
+      final diffM = (route.distance - selectedFor.distance).round();
+      if (diffSec.abs() >= _timeDiffThresholdSec) timeDiff = diffSec;
+      if (diffM.abs() >= _distanceDiffThresholdMeters) distanceDiff = diffM;
+    }
+
+    return RouteResultItem(
+      distance: route.distance,
+      formattedDistance: route.distanceText,
+      duration: route.duration,
+      formattedDuration: route.durationText,
+      strategy: route.strategyText,
+      tolls: route.tolls,
+      trafficStatuses: route.trafficStatuses,
+      timeDiff: timeDiff,
+      distanceDiff: distanceDiff,
+      routeType: route.routeType,
+      transitSegments: route.transitSegments,
+      transitSummary: route.transitSummaryText,
+      transitLineNames: route.transitLineNames,
+      transferCount: route.transferCount,
+      walkDistance: route.walkDistance,
+      cityCode: route.cityCodes?.isNotEmpty == true ? route.cityCodes!.first : null,
+    );
+  }
 }

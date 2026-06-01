@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qintu/constants/app_colors.dart';
 import 'package:qintu/constants/app_spacings.dart';
-import 'package:qintu/features/map_navigation/models/amap_routing_models.dart';
+import '../../../../models/route_segment_models.dart';
 
 /// 进站口/出站口信息
 class EntranceExitInfo extends StatelessWidget {

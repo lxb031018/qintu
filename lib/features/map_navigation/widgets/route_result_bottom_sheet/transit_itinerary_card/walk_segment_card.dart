@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:qintu/models/location/lat_lng.dart';
 import '../../../../../../constants/app_colors.dart';
 import '../../../../../../constants/app_radii.dart';
 import '../../../../../../constants/app_spacings.dart';
-import '../../../models/amap_routing_models.dart';
+import '../../../models/bus_route_models.dart';
 
 /// ============================================
 /// 步行段展示组件

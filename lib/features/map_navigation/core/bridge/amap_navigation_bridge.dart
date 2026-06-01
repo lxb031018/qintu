@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:qintu/core/constants/platform_channels.dart';
+import 'package:qintu/models/location/lat_lng.dart';
 import 'package:qintu/utils/logger.dart';
 import '../../models/navigation_models.dart';
-import '../../models/amap_routing_models.dart';
+import '../../models/route_option_model.dart';
 
 /// 高德导航桥接层
 ///
@@ -132,16 +133,7 @@ class AmapNavigationBridge {
   }
 
   static RouteType _parseRouteType(String type) {
-    switch (type) {
-      case 'driving':
-        return RouteType.driving;
-      case 'walking':
-        return RouteType.walking;
-      case 'riding':
-        return RouteType.riding;
-      default:
-        return RouteType.driving;
-    }
+    return RouteTypeCodec.parseFromApiString(type);
   }
 
   static Future<bool> startNavigation({

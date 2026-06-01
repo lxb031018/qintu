@@ -62,34 +62,11 @@ class RouteShareService {
     );
   }
 
-  String _routeTypeToString(RouteType type) {
-    switch (type) {
-      case RouteType.driving:
-        return 'driving';
-      case RouteType.walking:
-        return 'walking';
-      case RouteType.riding:
-        return 'riding';
-      case RouteType.transit:
-        return 'transit';
-    }
-  }
+  String _routeTypeToString(RouteType type) => RouteTypeCodec.toApiString(type);
 
   /// 将 routeType 字符串转换为 RouteType 枚举
-  RouteType stringToRouteType(String type) {
-    switch (type) {
-      case 'driving':
-        return RouteType.driving;
-      case 'walking':
-        return RouteType.walking;
-      case 'riding':
-        return RouteType.riding;
-      case 'transit':
-        return RouteType.transit;
-      default:
-        return RouteType.driving;
-    }
-  }
+  RouteType stringToRouteType(String type) =>
+      RouteTypeCodec.parseFromApiString(type);
 
   /// 获取待接收的路由分享
   Future<List<PendingRouteShare>> getPendingShares() async {

@@ -5,25 +5,19 @@ import 'location_category_service.dart';
 /// ============================================
 /// 绑定者位置 Service
 ///
-/// 业务逻辑层，封装绑定者位置相关 API 调用
-/// 不持有 UI 状态，只负责获取并转换绑定者位置数据
+/// 业务逻辑层。批量获取与转换在 [BindingLocationApi] 中完成，
+/// 本 service 只承担"过滤成功项并组装 BinderLocationData"的业务价值
 /// ============================================
 class BindingLocationService {
   final BindingLocationApi _api;
 
   BindingLocationService({BindingLocationApi? api}) : _api = api ?? BindingLocationApi();
 
-  /// 获取单个绑定者的位置信息
-  Future<BindingLocationResult> getBinderLocation(String partnerUserID) async {
-    return await _api.getBinderLocation(partnerUserID);
-  }
-
-  /// 批量获取多个绑定者的位置信息
+  /// 批量获取多个绑定者的位置信息（透传 api）
   Future<Map<String, BindingLocationResult>> getBinderLocations(
     List<String> partnerUserIDs,
-  ) async {
-    return await _api.getBinderLocations(partnerUserIDs);
-  }
+  ) =>
+      _api.getBinderLocations(partnerUserIDs);
 
   /// 将 API 返回的位置结果转换为前端使用的 BinderLocationData 列表
   ///

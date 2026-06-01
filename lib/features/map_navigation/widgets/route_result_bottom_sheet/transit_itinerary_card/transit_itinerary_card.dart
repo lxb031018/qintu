@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../../constants/app_colors.dart';
 import '../../../../../constants/app_radii.dart';
 import '../../../../../constants/app_spacings.dart';
-import '../../../models/amap_routing_models.dart';
 import '../../../models/bus_route_models.dart';
 import '../../../models/map_overlay_models.dart';
 import 'segment_timeline.dart';
