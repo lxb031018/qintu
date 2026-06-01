@@ -1,5 +1,8 @@
+import '../../../utils/validation/validators.dart';
+import '../../../constants/app_strings.dart';
 import '../core/binding_api.dart';
 import '../../../models/binding/binding.dart';
+import '../models/binding_request_input.dart';
 
 /// ============================================
 /// 绑定关系 Service 层
@@ -34,16 +37,46 @@ class BindingService {
     return await _api.getSentRequests();
   }
 
-  /// 发送手机号绑定请求
-  Future<void> requestBinding({
-    required String receiverPhone,
-    String? senderName,
-    String? receiverName,
-  }) async {
+  /// 校验绑定请求输入
+  ///
+  /// 字段为空时返回中文错误信息（与 widget 之前 inline 校验的措辞一致）。
+  /// 全部通过则返回 null。
+  BindingValidationError? validateRequestInput(BindingRequestInput input) {
+    String? partnerNameError;
+    String? nameError;
+    String? phoneError;
+
+    if (input.partnerName.isEmpty) {
+      partnerNameError = AppStrings.pleaseFillNameForPartner;
+    }
+    if (input.name.isEmpty) {
+      nameError = AppStrings.pleaseFillName;
+    }
+    final phoneValidation = Validators.validatePhone(input.phone);
+    if (phoneValidation != null) {
+      phoneError = phoneValidation;
+    }
+
+    if (partnerNameError == null && nameError == null && phoneError == null) {
+      return null;
+    }
+    return BindingValidationError(
+      partnerNameError: partnerNameError,
+      nameError: nameError,
+      phoneError: phoneError,
+    );
+  }
+
+  /// 提交绑定请求
+  ///
+  /// 自动处理：
+  /// - 给 phone 加 +86 前缀
+  /// - 字段名映射（partnerName → receiverName, name → senderName）
+  Future<void> submitRequest(BindingRequestInput input) async {
     await _api.requestPhoneBinding(
-      receiverPhone: receiverPhone,
-      senderName: senderName,
-      receiverName: receiverName,
+      receiverPhone: '+86 ${input.phone}',
+      senderName: input.name,
+      receiverName: input.partnerName,
     );
   }
 

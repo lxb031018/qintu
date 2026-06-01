@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../theme/app_text_styles.dart';
-import '../../../utils/validation/validators.dart';
 import '../../../utils/ui/app_snackbar.dart';
+import '../models/binding_request_input.dart';
 import '../provider/binding_notifier.dart';
 
 /// ============================================
@@ -44,47 +44,26 @@ class _PhoneBindingDialogState extends ConsumerState<PhoneBindingDialog> {
   }
 
   Future<void> _handleSubmit() async {
-    // 清除旧错误
-    setState(() {
-      _partnerNameError = null;
-      _nameError = null;
-      _phoneError = null;
-    });
-
-    bool hasError = false;
-
-    // 校验"您对对方的称呼"
-    if (_partnerNameController.text.isEmpty) {
-      setState(() => _partnerNameError = AppStrings.pleaseFillNameForPartner);
-      hasError = true;
-    }
-
-    // 校验"对方对您的称呼"
-    if (_nameController.text.isEmpty) {
-      setState(() => _nameError = AppStrings.pleaseFillName);
-      hasError = true;
-    }
-
-    // 校验手机号
-    final phoneError = Validators.validatePhone(_phoneController.text);
-    if (phoneError != null) {
-      setState(() => _phoneError = phoneError);
-      hasError = true;
-    }
-
-    if (hasError) return;
-
-    // 显示加载状态（通过 provider）
     final notifier = ref.read(bindingProvider.notifier);
-    final receiverPhone = '+86 ${_phoneController.text}';
-    final senderName = _nameController.text;
-    final receiverName = _partnerNameController.text;
 
-    final success = await notifier.requestPhoneBinding(
-      receiverPhone: receiverPhone,
-      senderName: senderName,
-      receiverName: receiverName,
+    // 1. 构造输入模型（业务逻辑下沉到 service）
+    final input = BindingRequestInput(
+      partnerName: _partnerNameController.text,
+      name: _nameController.text,
+      phone: _phoneController.text,
     );
+
+    // 2. 字段级校验，由 service 完成
+    final validation = notifier.validateRequestInput(input);
+    setState(() {
+      _partnerNameError = validation?.partnerNameError;
+      _nameError = validation?.nameError;
+      _phoneError = validation?.phoneError;
+    });
+    if (validation != null) return;
+
+    // 3. 提交（service 自动加 +86 前缀 + 字段名映射）
+    final success = await notifier.submitBindingRequest(input);
 
     if (!mounted) return;
 

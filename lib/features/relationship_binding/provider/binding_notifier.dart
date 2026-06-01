@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' hide AsyncLoading, Async
 import 'package:qintu/models/binding/binding.dart';
 import 'package:qintu/models/async_state.dart';
 import 'package:qintu/features/relationship_binding/service/binding_service.dart';
+import 'package:qintu/features/relationship_binding/models/binding_request_input.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/constants/binding_limits.dart';
 
@@ -109,35 +110,38 @@ class BindingNotifier extends Notifier<BindingListState> {
 
   // ==================== 绑定操作 ====================
 
-  Future<bool> requestPhoneBinding({
-    required String receiverPhone,
-    String? senderName,
-    String? receiverName,
-  }) async {
+  /// 字段级校验（无副作用）
+  ///
+  /// widget 收集用户输入后调用，根据返回的 [BindingValidationError] 路由到对应字段。
+  BindingValidationError? validateRequestInput(BindingRequestInput input) {
+    return _bindingService.validateRequestInput(input);
+  }
+
+  /// 提交绑定请求
+  ///
+  /// service 负责 +86 前缀拼接和字段名映射，notifier 负责状态更新。
+  /// 成功时刷新绑定列表和已发送请求列表。
+  Future<bool> submitBindingRequest(BindingRequestInput input) async {
     state = state.copyWith(lastErrorMessage: null);
 
     try {
       Logs.binding.info('发送绑定请求', data: {
-        'receiver_phone': receiverPhone,
-        'sender_name': senderName,
-        'receiver_name': receiverName,
+        'receiver_phone': '+86 ${input.phone}',
+        'sender_name': input.name,
+        'receiver_name': input.partnerName,
       });
 
-      await _bindingService.requestBinding(
-        receiverPhone: receiverPhone,
-        senderName: senderName,
-        receiverName: receiverName,
-      );
+      await _bindingService.submitRequest(input);
 
       Logs.binding.info('绑定请求发送成功');
       await loadBindings();
       await loadSentRequests();
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       final errorMessage = '发送绑定请求失败: $e';
       state = state.copyWith(
         lastErrorMessage: errorMessage,
-        bindingsState: AsyncError(errorMessage),
+        bindingsState: AsyncError(errorMessage, e, stackTrace),
       );
       return false;
     }

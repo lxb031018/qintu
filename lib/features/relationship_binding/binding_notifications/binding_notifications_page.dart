@@ -198,37 +198,25 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
   }
 
   /// 确认绑定请求
-  Future<void> _confirmRequest(String senderUserId) async {
-    final notifier = ref.read(bindingProvider.notifier);
-    final success = await notifier.confirmRequest(senderUserId);
-    if (!mounted) return;
-    _handleOperationResult(
-      context,
-      success,
-      ref.read(bindingProvider).bindingsState.errorMessage,
-      AppStrings.acceptBindingRequestSuccess,
-      AppStrings.acceptBindingRequestFailed,
-    );
-  }
+  Future<void> _confirmRequest(String senderUserId) =>
+      _runBindingOperation(
+        operation: () =>
+            ref.read(bindingProvider.notifier).confirmRequest(senderUserId),
+        successText: AppStrings.acceptBindingRequestSuccess,
+        failedText: AppStrings.acceptBindingRequestFailed,
+      );
 
   /// 拒绝绑定请求
-  Future<void> _rejectRequest(String senderUserId) async {
-    final notifier = ref.read(bindingProvider.notifier);
-    final success = await notifier.rejectRequest(senderUserId);
-    if (!mounted) return;
-    _handleOperationResult(
-      context,
-      success,
-      ref.read(bindingProvider).bindingsState.errorMessage,
-      AppStrings.rejectBindingRequestSuccess,
-      AppStrings.rejectBindingRequestFailed,
-    );
-  }
+  Future<void> _rejectRequest(String senderUserId) =>
+      _runBindingOperation(
+        operation: () =>
+            ref.read(bindingProvider.notifier).rejectRequest(senderUserId),
+        successText: AppStrings.rejectBindingRequestSuccess,
+        failedText: AppStrings.rejectBindingRequestFailed,
+      );
 
   /// 取消发出的请求
   Future<void> _cancelRequest(String partnerUserId) async {
-    final notifier = ref.read(bindingProvider.notifier);
-
     AppConfirmDialog.show(
       context,
       title: AppStrings.cancelRequest,
@@ -236,34 +224,32 @@ class _BindingNotificationsPageState extends ConsumerState<BindingNotificationsP
       confirmText: AppStrings.confirmCancel,
       confirmColor: Theme.of(context).colorScheme.error,
       confirmTextColor: Colors.white,
-      onConfirm: () async {
-        final success = await notifier.cancelSentRequest(partnerUserId);
-        if (!mounted) return;
-        _handleOperationResult(
-          context,
-          success,
-          ref.read(bindingProvider).lastErrorMessage,
-          AppStrings.requestCancelled,
-          AppStrings.cancelRequestFailed,
-        );
-      },
+      onConfirm: () => _runBindingOperation(
+        operation: () =>
+            ref.read(bindingProvider.notifier).cancelSentRequest(partnerUserId),
+        successText: AppStrings.requestCancelled,
+        failedText: AppStrings.cancelRequestFailed,
+      ),
     );
   }
 
-  /// 统一处理操作结果
-  Future<void> _handleOperationResult(
-    BuildContext ctx,
-    bool success,
-    String? errorMsg,
-    String successText,
-    String errorText,
-  ) async {
-    if (!ctx.mounted) return;
+  /// 统一执行绑定操作并处理结果
+  ///
+  /// 成功：snackbar 提示 + 刷新列表；失败：snackbar 错误提示。
+  Future<void> _runBindingOperation({
+    required Future<bool> Function() operation,
+    required String successText,
+    required String failedText,
+  }) async {
+    final success = await operation();
+    if (!mounted) return;
     if (success) {
-      AppSnackbar.showPrimary(ctx, successText);
+      AppSnackbar.showPrimary(context, successText);
       await _loadNotifications();
     } else {
-      AppSnackbar.showErrorTheme(ctx, errorMsg ?? errorText);
+      // notifier 内部不统一设置 errorMessage（见各 confirm/reject/cancel 方法），
+      // 失败时统一回退到 failedText 占位文案。
+      AppSnackbar.showErrorTheme(context, failedText);
     }
   }
 }
