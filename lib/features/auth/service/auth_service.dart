@@ -11,15 +11,22 @@ import '../core/secure_storage.dart';
 ///
 /// 纯业务逻辑，调用 API 层编排流程
 /// 不持有状态，不继承 ChangeNotifier
+///
+/// 重构：从全 static 方法类改为可注入实例，构造时接受 `ISecureStorage`。
+/// 这样测试可注入 mock storage，避免触碰 `flutter_secure_storage` 原生插件。
 /// ============================================
 
 class AuthService {
+  AuthService(this._storage);
+
+  final ISecureStorage _storage;
+
   /// 智能登录/注册
   ///
   /// 自动判断用户是新用户还是老用户：
   /// - 老用户：登录
   /// - 新用户：注册并登录
-  static Future<AuthResult> signInOrSignUp({
+  Future<AuthResult> signInOrSignUp({
     required String verificationToken,
     required String phone,
   }) async {
@@ -41,8 +48,8 @@ class AuthService {
   }
 
   /// 保存认证结果到安全存储
-  static Future<void> saveAuthResult(AuthResult result, String phone) async {
-    await SecureStorage.saveTokens(
+  Future<void> saveAuthResult(AuthResult result, String phone) async {
+    await _storage.saveTokens(
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       accessTokenExpiresIn: result.accessTokenExpiresIn,
@@ -53,18 +60,18 @@ class AuthService {
   }
 
   /// 检查是否已登录
-  static Future<bool> isLoggedIn() async {
-    return await SecureStorage.isLoggedIn();
+  Future<bool> isLoggedIn() async {
+    return await _storage.isLoggedIn();
   }
 
   /// 获取登录信息
-  static Future<LoginInfo?> getLoginInfo() async {
-    return await SecureStorage.getLoginInfo();
+  Future<LoginInfo?> getLoginInfo() async {
+    return await _storage.getLoginInfo();
   }
 
   /// 清除登录状态
-  static Future<void> logout() async {
-    final accessToken = await SecureStorage.getAccessToken();
+  Future<void> logout() async {
+    final accessToken = await _storage.getAccessToken();
     final deviceId = await DeviceManager.getDeviceId();
 
     if (accessToken != null) {
@@ -73,6 +80,6 @@ class AuthService {
       } catch (_) {}
     }
 
-    await SecureStorage.clearTokens();
+    await _storage.clearTokens();
   }
 }

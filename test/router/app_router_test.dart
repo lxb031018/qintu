@@ -1,8 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qintu/models/auth/user_state.dart';
 import 'package:qintu/router/app_router.dart';
 import 'package:qintu/providers/auth_state_manager.dart';
+import '../managers/mock_secure_storage.dart';
 
 /// 简化的路由守卫测试
 void main() {
@@ -124,33 +126,43 @@ void main() {
   });
 
   group('AuthStateNotifier 基础测试', () {
-    late AuthStateNotifier authStateNotifier;
+    late ProviderContainer container;
+    late MockSecureStorage mockStorage;
+    late AuthStateNotifier notifier;
+    late UserState Function() readState;
 
     setUp(() {
-      authStateNotifier = AuthStateNotifier();
+      mockStorage = MockSecureStorage();
+      container = ProviderContainer(overrides: [
+        secureStorageProvider.overrideWithValue(mockStorage),
+      ]);
+      notifier = container.read(authStateProvider.notifier);
+      readState = () => container.read(authStateProvider);
     });
 
-    // Notifier 不需要 dispose
+    tearDown(() {
+      container.dispose();
+    });
 
     test('初始状态应该是 unknown', () {
-      expect(authStateNotifier.state.authStatus, AuthStatus.unknown);
-      expect(authStateNotifier.state.isLoggedIn, isFalse);
+      expect(readState().authStatus, AuthStatus.unknown);
+      expect(readState().isLoggedIn, isFalse);
     });
 
     test('setLoading 应该更新加载状态', () {
-      authStateNotifier.setLoading(true);
-      expect(authStateNotifier.state.isLoading, isTrue);
+      notifier.setLoading(true);
+      expect(readState().isLoading, isTrue);
 
-      authStateNotifier.setLoading(false);
-      expect(authStateNotifier.state.isLoading, isFalse);
+      notifier.setLoading(false);
+      expect(readState().isLoading, isFalse);
     });
 
     test('setError 和 clearError 应该正常工作', () {
-      authStateNotifier.setError('测试错误');
-      expect(authStateNotifier.state.errorMessage, '测试错误');
+      notifier.setError('测试错误');
+      expect(readState().errorMessage, '测试错误');
 
-      authStateNotifier.clearError();
-      expect(authStateNotifier.state.errorMessage, isNull);
+      notifier.clearError();
+      expect(readState().errorMessage, isNull);
     });
   });
 }

@@ -109,12 +109,13 @@ class AuthNotifier extends Notifier<AuthPageState> {
       );
 
       final formattedPhone = PhoneUtils.formatForApi(state.phone);
-      final authResult = await AuthService.signInOrSignUp(
+      final authService = ref.read(authServiceProvider);
+      final authResult = await authService.signInOrSignUp(
         verificationToken: verificationToken,
         phone: formattedPhone,
       );
 
-      await AuthService.saveAuthResult(authResult, formattedPhone);
+      await authService.saveAuthResult(authResult, formattedPhone);
 
       await ref.read(authStateProvider.notifier).setAuthenticated(
         userId: authResult.uid,
@@ -183,3 +184,11 @@ class AuthNotifier extends Notifier<AuthPageState> {
 final authProvider = NotifierProvider<AuthNotifier, AuthPageState>(
   AuthNotifier.new,
 );
+
+/// 认证 Service Provider
+///
+/// AuthService 重构为可注入实例后，上层通过此 Provider 拿到实例，
+/// 内部组合 `secureStorageProvider`，对调用方透明。
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService(ref.read(secureStorageProvider));
+});

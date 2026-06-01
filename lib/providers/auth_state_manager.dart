@@ -6,6 +6,15 @@ import 'package:qintu/config/auth_config.dart';
 import 'package:qintu/core/http/api_client.dart';
 import 'package:qintu/features/settings/core/user_profile_api.dart';
 
+/// 安全存储 Provider
+///
+/// 上层（AuthStateNotifier / AuthService）通过此 Provider 注入 storage。
+/// 测试里用 `overrideWithValue(MockSecureStorage())` 即可注入 mock，
+/// 避免触碰 `flutter_secure_storage` 原生插件。
+final secureStorageProvider = Provider<ISecureStorage>((ref) {
+  return FlutterSecureStorageImpl();
+});
+
 /// ============================================
 /// 认证状态管理器
 ///
@@ -16,8 +25,11 @@ import 'package:qintu/features/settings/core/user_profile_api.dart';
 /// ============================================
 
 class AuthStateNotifier extends Notifier<UserState> {
+  late final ISecureStorage _storage;
+
   @override
   UserState build() {
+    _storage = ref.read(secureStorageProvider);
     return const UserState();
   }
 
@@ -29,11 +41,11 @@ class AuthStateNotifier extends Notifier<UserState> {
     ApiClient.registerSessionRevokedCallback(_handleSessionRevoked);
 
     try {
-      final isLoggedIn = await SecureStorage.isLoggedIn();
+      final isLoggedIn = await _storage.isLoggedIn();
       Logs.auth.info('[AuthStateNotifier] isLoggedIn=$isLoggedIn');
 
       if (isLoggedIn) {
-        final loginInfo = await SecureStorage.getLoginInfo();
+        final loginInfo = await _storage.getLoginInfo();
 
         if (loginInfo != null) {
           Logs.auth.info('[AuthStateNotifier] 已登录用户: ${loginInfo.userId}');
@@ -123,7 +135,7 @@ class AuthStateNotifier extends Notifier<UserState> {
 
       Logs.auth.info('RefreshToken 有效期: ${refreshTokenExpiresIn > 0 ? "从API获取" : "使用默认值"} = $effectiveRefreshTokenExpiresIn秒 (${effectiveRefreshTokenExpiresIn ~/ 86400}天)');
 
-      await SecureStorage.saveTokens(
+      await _storage.saveTokens(
         accessToken: accessToken,
         refreshToken: refreshToken,
         accessTokenExpiresIn: accessTokenExpiresIn,
@@ -163,7 +175,7 @@ class AuthStateNotifier extends Notifier<UserState> {
         errorMessage: null,
       );
 
-      await SecureStorage.clearTokens();
+      await _storage.clearTokens();
 
       state = const UserState(
         authStatus: AuthStatus.unauthenticated,
@@ -206,7 +218,7 @@ class AuthStateNotifier extends Notifier<UserState> {
     Logs.auth.info('开始刷新 Token...');
 
     try {
-      final refreshToken = await SecureStorage.getRefreshToken();
+      final refreshToken = await _storage.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
         throw Exception('没有可用的 Refresh Token');
       }

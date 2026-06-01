@@ -5,18 +5,45 @@ import '../../../config/auth_config.dart';
 import '../../../models/auth/login_info.dart';
 import '../../../utils/logger.dart';
 
-/// 安全存储服务 - 负责管理用户登录状态的持久化
+/// 安全存储契约
 ///
-/// 安全策略：
-/// - 敏感数据（access_token, refresh_token）使用 FlutterSecureStorage
-/// - 非敏感数据（expires_in, phone_number 等）使用 SharedPreferencesAsync
+/// 拆分动机：把"存储能力"从"具体实现"中抽出，
+/// - 上层（AuthStateNotifier / AuthService）通过 `ISecureStorage` 接口注入依赖，
+///   单元测试可注入 mock，避免触碰 `flutter_secure_storage` 原生插件。
+/// - 非 Riverpod 上下文（ApiClient / TokenRefreshInterceptor）通过
+///   `SecureStorageRegistry` 拿全局实例，无需打破单例。
+///
+/// 敏感数据（access_token, refresh_token）走 `FlutterSecureStorage`；
+/// 非敏感数据（expires_in, phone_number, user_id 等）走 `SharedPreferencesAsync`。
+abstract interface class ISecureStorage {
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+    required int accessTokenExpiresIn,
+    required int refreshTokenExpiresIn,
+    required String phoneNumber,
+    required String userId,
+  });
 
-class SecureStorage {
-  /// 安全存储实例
-  ///
-  /// v10.0.0 更新：
-  /// - 移除了已弃用的 encryptedSharedPreferences 参数
-  /// - Android 自动使用自定义密码迁移
+  Future<String?> getAccessToken();
+
+  Future<String?> getRefreshToken();
+
+  Future<String?> getUserId();
+
+  Future<bool> isLoggedIn();
+
+  Future<void> clearTokens();
+
+  Future<LoginInfo?> getLoginInfo();
+}
+
+/// 默认实现：基于 `flutter_secure_storage` + `shared_preferences`。
+///
+/// 直接实例化即可；也作为 `SecureStorageRegistry` 的默认值。
+class FlutterSecureStorageImpl implements ISecureStorage {
+  FlutterSecureStorageImpl();
+
   static const _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(),
     iOptions: IOSOptions(
@@ -24,13 +51,10 @@ class SecureStorage {
     ),
   );
 
-  /// SharedPreferencesAsync 实例
   static final _prefs = SharedPreferencesAsync();
 
-  // ==================== Token 存储 ====================
-
-  /// 保存登录信息
-  static Future<void> saveTokens({
+  @override
+  Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
     required int accessTokenExpiresIn,
@@ -39,16 +63,13 @@ class SecureStorage {
     required String userId,
   }) async {
     try {
-      // 敏感数据使用安全存储
       await _secureStorage.write(key: SecureStorageKeys.accessToken, value: accessToken);
       await _secureStorage.write(key: SecureStorageKeys.refreshToken, value: refreshToken);
 
-      // 非敏感数据使用普通存储
       await _prefs.setInt(SecureStorageKeys.tokenExpiresAt, refreshTokenExpiresIn);
       await _prefs.setString(SecureStorageKeys.phoneNumber, phoneNumber);
       await _prefs.setString(SecureStorageKeys.userId, userId);
 
-      // 保存 Token 时间戳
       final now = DateTime.now().millisecondsSinceEpoch;
       await _prefs.setInt(SecureStorageKeys.accessTokenSaveTime, now);
       await _prefs.setInt(SecureStorageKeys.refreshTokenSaveTime, now);
@@ -58,42 +79,34 @@ class SecureStorage {
     }
   }
 
-  /// 获取 Access Token
-  static Future<String?> getAccessToken() async {
+  @override
+  Future<String?> getAccessToken() async {
     return await _secureStorage.read(key: SecureStorageKeys.accessToken);
   }
 
-  /// 获取 Refresh Token
-  static Future<String?> getRefreshToken() async {
+  @override
+  Future<String?> getRefreshToken() async {
     return await _secureStorage.read(key: SecureStorageKeys.refreshToken);
   }
 
-  /// 获取手机号
-  static Future<String?> getPhoneNumber() async {
-    return await _prefs.getString(SecureStorageKeys.phoneNumber);
-  }
-
-  /// 获取用户 ID
-  static Future<String?> getUserId() async {
+  @override
+  Future<String?> getUserId() async {
     return await _prefs.getString(SecureStorageKeys.userId);
   }
 
-  /// 检查是否已登录
-  static Future<bool> isLoggedIn() async {
+  @override
+  Future<bool> isLoggedIn() async {
     try {
       final accessToken = await _secureStorage.read(key: SecureStorageKeys.accessToken);
       final refreshToken = await _secureStorage.read(key: SecureStorageKeys.refreshToken);
 
-      // Access Token 和 Refresh Token 都必须存在
       if (accessToken == null || refreshToken == null) {
         return false;
       }
 
-      // 检查 Refresh Token 是否过期
       final refreshTokenSaveTime = await _prefs.getInt(SecureStorageKeys.refreshTokenSaveTime);
       final refreshTokenExpiresIn = await _prefs.getInt(SecureStorageKeys.tokenExpiresAt);
 
-      // 如果保存时间为空，说明登录流程未完成或数据损坏
       if (refreshTokenSaveTime == null) {
         return false;
       }
@@ -110,13 +123,11 @@ class SecureStorage {
     }
   }
 
-  /// 清除登录状态（退出登录）
-  static Future<void> clearTokens() async {
-    // 清除安全存储
+  @override
+  Future<void> clearTokens() async {
     await _secureStorage.delete(key: SecureStorageKeys.accessToken);
     await _secureStorage.delete(key: SecureStorageKeys.refreshToken);
 
-    // 清除普通存储
     await _prefs.remove(SecureStorageKeys.tokenExpiresAt);
     await _prefs.remove(SecureStorageKeys.phoneNumber);
     await _prefs.remove(SecureStorageKeys.userId);
@@ -127,8 +138,8 @@ class SecureStorage {
     Logs.database.info('Token 已清除');
   }
 
-  /// 获取完整的登录信息（强类型）
-  static Future<LoginInfo?> getLoginInfo() async {
+  @override
+  Future<LoginInfo?> getLoginInfo() async {
     final accessToken = await _secureStorage.read(key: SecureStorageKeys.accessToken);
     if (accessToken == null) {
       return null;
@@ -146,11 +157,27 @@ class SecureStorage {
       refreshTokenSaveTime: await _prefs.getInt(SecureStorageKeys.refreshTokenSaveTime),
     );
   }
+}
 
-  /// 获取完整的登录信息（Map 格式，兼容旧代码）
-  @Deprecated('使用 getLoginInfo() 代替，返回强类型 LoginInfo')
-  static Future<Map<String, dynamic>?> getLoginInfoAsMap() async {
-    final loginInfo = await getLoginInfo();
-    return loginInfo?.toMap();
+/// 全局存储注册表
+///
+/// 用途：给 `ApiClient` / `TokenRefreshInterceptor` 这种**不在 Riverpod ref
+/// 上下文里**的代码用。它们不持有 ref，所以走全局句柄拿当前生效的 storage
+/// 实现。
+///
+/// 用法：
+/// - 生产：默认就是 `FlutterSecureStorageImpl()`，无需注册
+/// - 测试：`SecureStorageRegistry.setInstance(MyMockStorage())`，tearDown 里 `reset()`
+class SecureStorageRegistry {
+  static ISecureStorage _instance = FlutterSecureStorageImpl();
+
+  static ISecureStorage get instance => _instance;
+
+  static void setInstance(ISecureStorage storage) {
+    _instance = storage;
+  }
+
+  static void reset() {
+    _instance = FlutterSecureStorageImpl();
   }
 }

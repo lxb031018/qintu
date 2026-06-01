@@ -62,13 +62,13 @@ class ApiClient {
       onRequest: (options, handler) async {
         Logs.network.info('🌐 发起请求: ${options.method} ${options.uri}');
 
-        final accessToken = await SecureStorage.getAccessToken();
+        final accessToken = await SecureStorageRegistry.instance.getAccessToken();
         if (accessToken != null && accessToken.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $accessToken';
           Logs.network.info('🔑 已注入 Access Token');
         }
 
-        final userId = await SecureStorage.getUserId();
+        final userId = await SecureStorageRegistry.instance.getUserId();
         if (userId != null && userId.isNotEmpty) {
           options.headers['x-user-userId'] = userId;
           Logs.network.info('👤 已注入 x-user-userId: $userId');

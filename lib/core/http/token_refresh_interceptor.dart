@@ -50,7 +50,8 @@ class TokenRefreshInterceptor extends Interceptor {
 
   Future<bool> _refreshToken() async {
     try {
-      final refreshToken = await SecureStorage.getRefreshToken();
+      final storage = SecureStorageRegistry.instance;
+      final refreshToken = await storage.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
         Logs.network.warning('⚠️ 无 Refresh Token，跳过刷新');
         return false;
@@ -70,9 +71,9 @@ class TokenRefreshInterceptor extends Interceptor {
         final newRefreshToken = data['refresh_token'] as String?;
 
         if (newAccessToken != null && newRefreshToken != null) {
-          final loginInfo = await SecureStorage.getLoginInfo();
+          final loginInfo = await storage.getLoginInfo();
           if (loginInfo != null) {
-            await SecureStorage.saveTokens(
+            await storage.saveTokens(
               accessToken: newAccessToken,
               refreshToken: newRefreshToken,
               accessTokenExpiresIn: data['expires_in'] ?? 7200,
