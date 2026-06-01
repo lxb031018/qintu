@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qintu/models/async_state.dart';
-import 'package:qintu/providers/binding_provider.dart';
+import 'package:qintu/features/relationship_binding/provider/binding_notifier.dart';
 
 void main() {
   group('BindingNotifier', () {
@@ -45,7 +45,8 @@ void main() {
     });
 
     test('allBindings 初始值应该是空列表', () {
-      expect(bindingProvider.allBindings, isEmpty);
+      // P0-4: allBindings 与 bindings 重复，使用 bindings
+      expect(bindingProvider.bindings, isEmpty);
     });
 
     test('clearError 在没有错误时不应该改变状态', () {

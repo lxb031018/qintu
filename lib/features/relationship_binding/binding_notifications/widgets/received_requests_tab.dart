@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../providers/binding_provider.dart';
+import '../../provider/binding_notifier.dart';
 import '../../../../../constants/app_strings.dart';
 import '../../../../../constants/app_spacings.dart';
 import '../../../../../theme/app_text_styles.dart';

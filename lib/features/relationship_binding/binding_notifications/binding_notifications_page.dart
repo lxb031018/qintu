@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/app_strings.dart';
-import '../../../providers/binding_provider.dart';
+import '../provider/binding_notifier.dart';
 import '../../../widgets/common/tab_badge.dart';
 import '../../../widgets/common/app_confirm_dialog.dart';
 import '../../../utils/ui/app_snackbar.dart';

@@ -6,6 +6,5 @@
 // ```
 
 export 'auth_state_manager.dart';
-export 'binding_provider.dart';
 export 'settings_manager.dart';
 export 'theme_manager.dart';

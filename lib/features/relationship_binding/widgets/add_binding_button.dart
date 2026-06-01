@@ -4,7 +4,7 @@ import 'package:qintu/constants/app_colors.dart';
 import 'package:qintu/constants/app_strings.dart';
 import 'package:qintu/constants/app_spacings.dart';
 import 'package:qintu/constants/binding_limits.dart';
-import 'package:qintu/providers/binding_provider.dart';
+import '../provider/binding_notifier.dart';
 import 'package:qintu/widgets/common/app_button.dart';
 
 /// ============================================

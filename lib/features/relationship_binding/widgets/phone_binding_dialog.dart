@@ -6,7 +6,7 @@ import '../../../constants/app_strings.dart';
 import '../../../theme/app_text_styles.dart';
 import '../../../utils/validation/validators.dart';
 import '../../../utils/ui/app_snackbar.dart';
-import '../../../providers/binding_provider.dart';
+import '../provider/binding_notifier.dart';
 
 /// ============================================
 /// 手机号绑定对话框

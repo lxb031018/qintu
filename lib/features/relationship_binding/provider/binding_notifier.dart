@@ -39,7 +39,6 @@ class BindingNotifier extends Notifier<BindingListState> {
   int get totalBindings => asSenderCount + asReceiverCount;
   bool get isBindingLimitReached => totalBindings >= BindingLimits.maxBindingsPerUser;
   bool get hasActiveBindings => bindings.any((b) => b.isActive);
-  List<Binding> get allBindings => bindings;
 
   // ==================== 加载操作 ====================
 

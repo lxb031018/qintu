@@ -14,7 +14,6 @@ import 'router/app_router.dart';
 import 'widgets/error_boundary.dart';
 
 export 'providers/auth_state_manager.dart' show authStateProvider;
-export 'providers/binding_provider.dart' show bindingProvider;
 export 'providers/settings_manager.dart' show settingsManagerProvider;
 export 'providers/theme_manager.dart' show themeManagerProvider;
 

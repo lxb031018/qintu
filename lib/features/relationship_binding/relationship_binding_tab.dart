@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/constants/app_strings.dart';
-import 'package:qintu/providers/binding_provider.dart';
+import 'provider/binding_notifier.dart';
 import 'package:qintu/widgets/common/app_confirm_dialog.dart';
 import 'package:qintu/utils/ui/app_snackbar.dart';
 import 'package:qintu/features/map_navigation/map_navigation_tab.dart';
