@@ -204,6 +204,26 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     );
   }
 
+  /// 从 [LocationCategoryService] 加载历史位置列表
+  Future<void> loadHistory() async {
+    state = state.copyWith(
+      items: state.items.copyWith(isLoadingHistory: true),
+    );
+    final items = await _categoryService.getHistoryLocations();
+    state = state.copyWith(
+      items: state.items.copyWith(
+        historyItems: items,
+        isLoadingHistory: false,
+      ),
+    );
+  }
+
+  /// 写入输入卡片的实测高度（由 widget 在 post-frame 回调中测量后调用）
+  void setInputCardHeight(double height) {
+    if ((state.inputCardHeight - height).abs() < 0.5) return;
+    state = state.copyWith(inputCardHeight: height);
+  }
+
   Future<void> selectPoi(PoiSuggestion poi) async {
     final newFields = state.fields.copyWith(
       origin: state.isOriginFocused
@@ -320,6 +340,7 @@ class LocationInputNotifier extends Notifier<LocationInputState> {
     ref.read(locationSearchProvider.notifier).clearSearch();
     state = const LocationInputState();
   }
+
 }
 
 final locationInputProvider =

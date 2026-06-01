@@ -69,24 +69,6 @@ class AmapMapController {
 
   // ==================== 标记代理 ====================
 
-  Future<bool> setRouteMarkers({
-    required double startLat,
-    required double startLng,
-    required double endLat,
-    required double endLng,
-    String? startLabel,
-    String? endLabel,
-  }) =>
-      markerController.setRouteMarkers(
-          startLat: startLat,
-          startLng: startLng,
-          endLat: endLat,
-          endLng: endLng,
-          startLabel: startLabel,
-          endLabel: endLabel);
-
-  Future<bool> clearRouteMarkers() => markerController.clearRouteMarkers();
-
   Future<bool> showSingleMarker({
     required double lat,
     required double lng,

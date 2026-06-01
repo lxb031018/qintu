@@ -1,72 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qintu/models/location/lat_lng.dart';
-import 'amap_bus_models.dart';
 
 export 'package:qintu/models/location/lat_lng.dart';
-
-/// 公共交通线路类型
-enum TransitLineType {
-  bus,      // 公交
-  subway,   // 地铁
-}
-
-/// 公共交通线路信息
-class TransitLine {
-  final String name;               // 线路名称，如 "1号线"、"特11路"
-  final TransitLineType type;      // 类型：公交/地铁
-  final int stationCount;          // 站数
-  final String? departureStation;  // 上车站名
-  final String? arrivalStation;   // 下车站名
-  final double? duration;          // 行驶时长（秒）
-  // 公交线路详情
-  final String? busLineId;         // 线路唯一ID
-  final String? lineType;          // 线路类型描述，如 "空调线路"、"快线"
-  final double? basicPrice;        // 起步价
-  final double? totalPrice;        // 全程票价
-  final String? firstBusTime;      // 首班车时间
-  final String? lastBusTime;       // 末班车时间
-  final String? originatingStation; // 始发站
-  final String? terminalStation;   // 终点站
-  final String? busCompany;        // 运营公司
-  final List<BusLineStation>? passStations;  // 途经站点
-
-  const TransitLine({
-    required this.name,
-    required this.type,
-    required this.stationCount,
-    this.departureStation,
-    this.arrivalStation,
-    this.duration,
-    this.busLineId,
-    this.lineType,
-    this.basicPrice,
-    this.totalPrice,
-    this.firstBusTime,
-    this.lastBusTime,
-    this.originatingStation,
-    this.terminalStation,
-    this.busCompany,
-    this.passStations,
-  });
-
-  String get typeText {
-    switch (type) {
-      case TransitLineType.bus:
-        return '公交';
-      case TransitLineType.subway:
-        return '地铁';
-    }
-  }
-
-  IconData get icon {
-    switch (type) {
-      case TransitLineType.bus:
-        return Icons.directions_bus;
-      case TransitLineType.subway:
-        return Icons.subway;
-    }
-  }
-}
 
 /// 地铁出入口
 class StationEntrance {
@@ -81,60 +16,6 @@ class StationEntrance {
   });
 
   LatLng get latLng => LatLng(lat, lng);
-}
-
-/// 路线段（用于公共交通路线）
-class TransitSegment {
-  final List<TransitLine> lines;          // 该段包含的线路（公共交通）
-  final int walkingDistance;               // 该段步行距离（米）
-  final List<LatLng> points;               // 该段的坐标点（用于分段渲染不同颜色）
-  final StationEntrance? entrance;        // 进站入口（地铁）
-  final StationEntrance? exit;            // 出站出口（地铁）
-  final List<WalkStep>? walkSteps;         // 步行导航步骤详情（transit 内步行段）
-  final TaxiSegment? taxi;                // 打车段详情
-
-  const TransitSegment({
-    required this.lines,
-    required this.walkingDistance,
-    this.points = const [],
-    this.entrance,
-    this.exit,
-    this.walkSteps,
-    this.taxi,
-  });
-
-  bool get hasTransit => lines.isNotEmpty;
-  bool get hasWalking => walkingDistance > 0;
-  bool get hasTaxi => taxi != null;
-
-  /// 路段类型：0=纯步行, 1=公交, 2=地铁, 4=打车
-  int get segmentType {
-    if (taxi != null) return 4;
-    if (lines.isEmpty) return 0;
-    for (final line in lines) {
-      if (line.type == TransitLineType.subway) return 2;
-    }
-    return 1;
-  }
-}
-
-/// 出租车段
-class TaxiSegment {
-  final LatLng? origin;
-  final LatLng? destination;
-  final double? distance;
-  final double? duration;
-  final double? price;
-  final List<LatLng> points;
-
-  const TaxiSegment({
-    this.origin,
-    this.destination,
-    this.distance,
-    this.duration,
-    this.price,
-    this.points = const [],
-  });
 }
 
 /// ============================================

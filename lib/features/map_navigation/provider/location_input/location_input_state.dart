@@ -1,5 +1,4 @@
 import '../../models/poi_models.dart';
-import '../../models/amap_routing_models.dart';
 import 'location_category.dart';
 import 'location_input_callbacks.dart';
 import '../../../../models/location/lat_lng.dart';
@@ -193,6 +192,10 @@ class LocationInputState {
   final LocationNaviTriggerState naviTrigger;
   final LocationInputCardCallbacks? callbacks;
 
+  /// 输入卡片的实测高度（由 LocationInputCard 在 post-frame 回调中写入）
+  /// 用于下方 TransitRouteSheet 计算最大高度
+  final double inputCardHeight;
+
   const LocationInputState({
     this.fields = const LocationInputFieldState(),
     this.list = const LocationListState(),
@@ -200,6 +203,7 @@ class LocationInputState {
     this.selection = const LocationSelectionState(),
     this.naviTrigger = const LocationNaviTriggerState(),
     this.callbacks,
+    this.inputCardHeight = 0,
   });
 
   InputFieldState get origin => fields.origin;
@@ -231,6 +235,7 @@ class LocationInputState {
     LocationSelectionState? selection,
     LocationNaviTriggerState? naviTrigger,
     LocationInputCardCallbacks? callbacks,
+    double? inputCardHeight,
     bool clearOrigin = false,
     bool clearDestination = false,
     bool clearPendingNaviPoi = false,
@@ -252,6 +257,7 @@ class LocationInputState {
           ? const LocationNaviTriggerState()
           : (naviTrigger ?? this.naviTrigger),
       callbacks: callbacks ?? this.callbacks,
+      inputCardHeight: inputCardHeight ?? this.inputCardHeight,
     );
   }
 }

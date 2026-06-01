@@ -3,8 +3,8 @@ import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../../../widgets/common/qintu_action_button.dart';
-import '../../models/amap_routing_models.dart';
 import '../../models/map_overlay_models.dart';
+import '../../models/route_option_model.dart';
 import 'drag_handle.dart';
 import 'empty_state.dart';
 import 'route_card.dart';
@@ -39,9 +39,6 @@ class RouteResultBottomSheet extends StatefulWidget {
   /// 当前选中的出行方式
   final RouteType currentRouteType;
 
-  /// 是否可见（用于控制显示/隐藏动画）
-  final bool isVisible;
-
   /// 开始导航按钮点击回调
   final VoidCallback? onStartNavigation;
 
@@ -61,7 +58,6 @@ class RouteResultBottomSheet extends StatefulWidget {
     this.onRouteSelected,
     this.onClose,
     this.currentRouteType = RouteType.driving,
-    this.isVisible = true,
     this.onStartNavigation,
     this.onShare,
     this.errorMessage,

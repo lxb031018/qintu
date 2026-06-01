@@ -35,9 +35,6 @@ class TransitRouteSheet extends StatefulWidget {
   /// 关闭弹窗回调
   final VoidCallback? onClose;
 
-  /// 开始导航/查看路线图回调
-  final VoidCallback? onStartNavigation;
-
   /// 退出详情页回调，用于恢复地图扁平渲染
   final VoidCallback? onDetailExited;
 
@@ -56,7 +53,6 @@ class TransitRouteSheet extends StatefulWidget {
     this.selectedIndex = 0,
     this.onRouteSelected,
     this.onClose,
-    this.onStartNavigation,
     this.onDetailExited,
     this.errorMessage,
     this.isLoading = false,
@@ -129,10 +125,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (_detailRoute != null) {
-      _measureDetailSizes();
-    }
 
     return _detailRoute != null
         ? _buildDraggableDetailPage(isDark)
@@ -268,6 +260,7 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
                                 _detailRoute = widget.routes[index];
                                 _detailSizesMeasured = false;
                               });
+                              _measureDetailSizes();
                               widget.onRouteSelected?.call(index);
                             },
                             isDark: isDark,
@@ -275,7 +268,6 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
                         },
                       ),
                     ),
-                    _buildActionButtons(isDark),
                   ],
                 ],
               ),
@@ -329,9 +321,5 @@ class _TransitRouteSheetState extends State<TransitRouteSheet> {
         ),
       ),
     );
-  }
-
-  Widget _buildActionButtons(bool isDark) {
-    return const SizedBox.shrink();
   }
 }

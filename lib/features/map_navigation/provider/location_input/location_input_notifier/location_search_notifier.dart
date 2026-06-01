@@ -6,7 +6,6 @@ import '../../../service/poi_service.dart';
 import '../../../service/map_controller_service/map_controller_service.dart';
 import '../location_category.dart';
 import '../../map_display/map_controller_provider.dart';
-import '../../../../../models/location/lat_lng.dart';
 
 /// ============================================
 /// POI 搜索状态
@@ -138,32 +137,8 @@ class LocationSearchNotifier extends Notifier<LocationSearchState> {
     }
   }
 
-  Future<LocationSearchContext> _buildSearchContext() async {
-    String? cachedCity = _mapController?.lastKnownCity;
-    LatLng? gpsCenter;
-
-    final gpsResult = await _mapController?.getCurrentLocation();
-    if (gpsResult != null) {
-      gpsCenter = LatLng(
-        gpsResult['latitude'] as double,
-        gpsResult['longitude'] as double,
-      );
-      cachedCity ??= gpsResult['city'] as String?;
-    } else {
-      final lastLoc = await _mapController?.getLastKnownLocation();
-      if (lastLoc != null) {
-        gpsCenter = LatLng(
-          lastLoc['latitude'] as double,
-          lastLoc['longitude'] as double,
-        );
-      }
-    }
-
-    return LocationSearchContext(
-      gpsCenter: gpsCenter,
-      cachedCity: cachedCity,
-    );
-  }
+  Future<LocationSearchContext> _buildSearchContext() =>
+      LocationSearchContext.fromMapController(_mapController);
 }
 
 final locationSearchProvider =
