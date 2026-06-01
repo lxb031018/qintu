@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qintu/features/relationship_binding/binding_notifications/widgets/binding_request_list_view.dart';
-import 'package:qintu/models/binding/binding.dart';
 
 void main() {
-  Widget _wrap(Widget child) {
+  Widget wrap(Widget child) {
     return MaterialApp(home: Scaffold(body: child));
   }
 
   testWidgets('isLoading=true 时显示 spinner', (tester) async {
-    await tester.pumpWidget(_wrap(BindingRequestListView<String>(
+    await tester.pumpWidget(wrap(BindingRequestListView<String>(
       requests: const [],
       isLoading: true,
       onRefresh: () async {},
@@ -22,7 +21,7 @@ void main() {
   });
 
   testWidgets('空数据时显示空状态组件', (tester) async {
-    await tester.pumpWidget(_wrap(BindingRequestListView<String>(
+    await tester.pumpWidget(wrap(BindingRequestListView<String>(
       requests: const [],
       isLoading: false,
       onRefresh: () async {},
@@ -36,7 +35,7 @@ void main() {
   });
 
   testWidgets('有数据时按 itemBuilder 渲染', (tester) async {
-    await tester.pumpWidget(_wrap(BindingRequestListView<String>(
+    await tester.pumpWidget(wrap(BindingRequestListView<String>(
       requests: const ['a', 'b', 'c'],
       isLoading: false,
       onRefresh: () async {},
@@ -54,7 +53,7 @@ void main() {
 
   testWidgets('下拉刷新触发 onRefresh 回调', (tester) async {
     var refreshCount = 0;
-    await tester.pumpWidget(_wrap(BindingRequestListView<String>(
+    await tester.pumpWidget(wrap(BindingRequestListView<String>(
       requests: const [],
       isLoading: false,
       onRefresh: () async {

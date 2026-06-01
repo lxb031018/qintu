@@ -4,12 +4,12 @@ import 'package:qintu/features/relationship_binding/binding_notifications/widget
 import 'package:qintu/models/binding/binding.dart';
 
 void main() {
-  Widget _wrap(Widget child) {
+  Widget wrap(Widget child) {
     return MaterialApp(home: Scaffold(body: child));
   }
 
   testWidgets('展示发送者名字和脱敏手机号', (tester) async {
-    await tester.pumpWidget(_wrap(PendingRequestCard(
+    await tester.pumpWidget(wrap(PendingRequestCard(
       request: PendingRequest(
         id: 1,
         senderUserID: 'sender-1',
@@ -28,7 +28,7 @@ void main() {
 
   testWidgets('点击接受按钮弹出确认对话框', (tester) async {
     var accepted = false;
-    await tester.pumpWidget(_wrap(PendingRequestCard(
+    await tester.pumpWidget(wrap(PendingRequestCard(
       request: PendingRequest(
         id: 1,
         senderUserID: 'sender-1',
@@ -55,7 +55,7 @@ void main() {
   });
 
   testWidgets('临近过期显示警告提示', (tester) async {
-    await tester.pumpWidget(_wrap(PendingRequestCard(
+    await tester.pumpWidget(wrap(PendingRequestCard(
       request: PendingRequest(
         id: 1,
         senderUserID: 'sender-1',
