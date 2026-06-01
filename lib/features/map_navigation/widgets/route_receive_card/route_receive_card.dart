@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../core/api/route_share_api.dart';
+import '../../models/route_option_model.dart';
+import '../../provider/map_navigation/map_navigation_provider.dart';
+import '../../provider/map_navigation/route_share_notifier.dart';
 
 /// ============================================
 /// 路由分享卡片
@@ -121,20 +125,7 @@ class RouteReceiveCard extends StatelessWidget {
     );
   }
 
-  String _routeTypeName(String type) {
-    switch (type) {
-      case 'driving':
-        return '驾车';
-      case 'walking':
-        return '步行';
-      case 'riding':
-        return '骑行';
-      case 'transit':
-        return '公交';
-      default:
-        return '驾车';
-    }
-  }
+  String _routeTypeName(String type) => RouteTypeCodec.labelFromApiString(type);
 
   Widget _buildActions() {
     return Padding(
@@ -177,4 +168,47 @@ class RouteReceiveCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 弹出路线分享接收卡片
+///
+/// [share] 待展示的分享数据
+/// 显示在屏幕顶部（通过 Stack + Positioned 覆盖默认 dialog 居中行为）
+Future<void> showRouteShareDialog(
+  BuildContext context, {
+  required PendingRouteShare share,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Consumer(
+        builder: (context, ref, _) {
+          return Stack(
+            children: [
+              Positioned(
+                top: MediaQuery.of(dialogContext).padding.top + AppSpacings.smd,
+                left: AppSpacings.smd,
+                right: AppSpacings.smd,
+                child: RouteReceiveCard(
+                  share: share,
+                  senderNickname: share.senderNickname,
+                  onNavigate: () {
+                    Navigator.of(dialogContext).pop();
+                    // 路线已在收到分享时自动选中，直接开始导航
+                    ref.read(mapNavigationProvider.notifier).startNavigation();
+                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+                  },
+                  onCancel: () {
+                    Navigator.of(dialogContext).pop();
+                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }

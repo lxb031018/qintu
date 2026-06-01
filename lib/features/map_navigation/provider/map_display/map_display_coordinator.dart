@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qintu/models/location/lat_lng.dart';
 import 'package:qintu/utils/logger.dart';
 import 'package:qintu/features/map_navigation/widgets/route_result_bottom_sheet/transit_itinerary_card/color/subway_color_helper.dart';
-import '../../models/amap_routing_models.dart';
+import '../../models/route_option_model.dart';
+import '../../models/bus_route_models.dart';
 import '../../models/map_overlay_models.dart';
 import '../../models/poi_models.dart';
-import '../location_Input/location_input_state.dart';
+import '../location_input/location_input_state.dart';
 import 'map_controller_provider.dart';
 import '../map_navigation/map_navigation_provider.dart';
 
 class MapDisplayCoordinator {
   MapControllerNotifier get _notifier => _ref.read(mapControllerNotifierProvider.notifier);
   final Ref _ref;
+
+  /// 公交/驾车路线聚焦时的相机参数
+  static const int _focusPaddingPx = 50;
+  static const int _focusAnimationMs = 800;
 
   MapDisplayCoordinator(this._ref);
 
@@ -151,6 +157,49 @@ class MapDisplayCoordinator {
     if (stationDataList.isNotEmpty) {
       await _notifier.showStationMarkers(stationDataList);
     }
+  }
+
+  /// 聚焦公交路线：渲染详情 + 缩放到 segment 范围
+  ///
+  /// widget 选中一条公交线路后调用此方法即可完成"绘制+取景"
+  Future<void> focusTransitRoute(RouteOption route) async {
+    await showTransitRouteDetail(route);
+    final segments = route.transitSegments;
+    if (segments != null && segments.isNotEmpty) {
+      await _notifier.animateCameraToBoundsWithSegments(
+        segments,
+        padding: _focusPaddingPx,
+        duration: _focusAnimationMs,
+      );
+    }
+  }
+
+  /// 进入导航模式：开启 SDK 导航 UI、跟随车辆、显示车标、开启 TMC
+  Future<void> enterNavigationMode() async {
+    final ctrl = _ref.read(mapControllerNotifierProvider);
+    if (ctrl == null) return;
+    await ctrl.enableNaviMode();
+    await ctrl.setFollowMode(true);
+    await ctrl.setLocationDotEnabled(false);
+    await ctrl.setCarOverlayVisible(true);
+    await ctrl.setRouteTmcEnabled(true);
+    await ctrl.setRouteTrafficIconEnabled(true);
+  }
+
+  /// 退出导航模式：关闭 SDK 导航 UI、恢复定位蓝点、隐藏车标、清理路线
+  Future<void> exitNavigationMode() async {
+    final ctrl = _ref.read(mapControllerNotifierProvider);
+    if (ctrl == null) return;
+    await ctrl.disableNaviMode();
+    await ctrl.setFollowMode(false);
+    await ctrl.setLocationDotEnabled(true);
+    await ctrl.setCarOverlayVisible(false);
+    await ctrl.clearCarMarker();
+    await ctrl.setRouteTmcEnabled(false);
+    await ctrl.setRouteTrafficIconEnabled(false);
+    await ctrl.clearRoutes();
+    await ctrl.clearRouteOverlays();
+    await ctrl.moveToMyLocation();
   }
 
   /// 从 BusTransitSegment 构建站点数据

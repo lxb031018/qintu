@@ -4,8 +4,8 @@ import 'package:qintu/providers/location_status_provider.dart';
 import 'package:qintu/features/settings/core/user_profile_api.dart';
 import 'widgets/amap_map_view.dart';
 import 'service/map_controller_service/map_controller_service.dart';
-import 'models/amap_routing_models.dart';
-import 'provider/location_Input/location_input_provider.dart';
+import 'models/route_option_model.dart';
+import 'provider/location_input/location_input_provider.dart';
 import 'provider/location_sharing/location_sharing_provider.dart';
 import 'provider/map_navigation/map_navigation_provider.dart';
 import 'provider/map_navigation/route_share_notifier.dart';
@@ -16,7 +16,7 @@ import 'widgets/location_category_list/location_category_list.dart';
 import 'widgets/location_status_button.dart';
 import 'widgets/route_result_bottom_sheet/route_result_bottom_sheet.dart';
 import 'widgets/route_result_bottom_sheet/transit_route_sheet.dart';
-import 'widgets/route_receive_card/route_receive_card.dart';
+import 'widgets/route_receive_card/route_receive_card.dart' show showRouteShareDialog;
 import 'models/map_overlay_models.dart';
 import 'models/poi_models.dart';
 import '../../../constants/app_durations.dart';
@@ -59,7 +59,6 @@ class MapNavigationTab extends ConsumerStatefulWidget {
 class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   final _mapKey = GlobalKey();
-  final _locationCardKey = GlobalKey();
 
   @override
   void initState() {
@@ -119,33 +118,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 
     ref.listen(routeShareNotifierProvider.select((s) => s.latestShare), (previous, next) {
       if (next != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => Stack(
-            children: [
-              Positioned(
-                top: MediaQuery.of(context).padding.top + AppSpacings.smd,
-                left: AppSpacings.smd,
-                right: AppSpacings.smd,
-                child: RouteReceiveCard(
-                  share: next,
-                  senderNickname: next.senderNickname,
-                  onNavigate: () {
-                    Navigator.of(context).pop();
-                    // 路线已在收到分享时自动选中，直接开始导航
-                    ref.read(mapNavigationProvider.notifier).startNavigation();
-                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
-                  },
-                  onCancel: () {
-                    Navigator.of(context).pop();
-                    ref.read(routeShareNotifierProvider.notifier).clearLatestShare();
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
+        showRouteShareDialog(context, share: next);
       }
     });
 
@@ -195,7 +168,7 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled)
-                    LocationInputCard(key: _locationCardKey),
+                    const LocationInputCard(),
                   if (!ref.watch(settingsManagerProvider).isAntiCollisionEnabled &&
                       ref.watch(locationInputProvider).listVisible)
                     const Padding(
@@ -218,7 +191,6 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
             _RouteBottomSheetPositioner(
               navState: navState,
               tabBarHeight: ref.watch(tabBarHeightProvider),
-              locationCardKey: _locationCardKey,
             ),
         ],
       ),
@@ -229,12 +201,10 @@ class _MapNavigationTabState extends ConsumerState<MapNavigationTab>
 class _RouteBottomSheetPositioner extends ConsumerStatefulWidget {
   final MapNavigationState navState;
   final double tabBarHeight;
-  final GlobalKey locationCardKey;
 
   const _RouteBottomSheetPositioner({
     required this.navState,
     required this.tabBarHeight,
-    required this.locationCardKey,
   });
 
   @override
@@ -247,13 +217,15 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
   @override
   Widget build(BuildContext context) {
     final isTransit = _isTransit;
-
-    final cardBox =
-        widget.locationCardKey.currentContext?.findRenderObject() as RenderBox?;
-    final cardTop = cardBox?.localToGlobal(Offset.zero).dy ?? 0;
-    final cardHeight = cardBox?.size.height ?? 0;
-    final cardBottom = cardTop + cardHeight;
-    final sheetTop = cardBottom + AppSpacings.sm;
+    // 从 provider 读取卡片高度（由 LocationInputCard 在 post-frame 中上报）
+    final cardHeight = ref.watch(
+      locationInputProvider.select((s) => s.inputCardHeight),
+    );
+    // 输入卡片顶端 = statusBarHeight + sm
+    // 输入卡片底端 = 顶端 + cardHeight
+    // 公交 sheet 从卡片底端 + sm 开始
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final sheetTop = statusBarHeight + AppSpacings.smd + cardHeight + AppSpacings.smd;
 
     if (!isTransit) {
       return Positioned(
@@ -262,7 +234,6 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
         bottom: 0,
         child: _RouteBottomSheetBuilder(
           navState: widget.navState,
-          locationCardKey: widget.locationCardKey,
           cardHeight: cardHeight,
         ),
       );
@@ -275,7 +246,6 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
       right: 0,
       child: _RouteBottomSheetBuilder(
         navState: widget.navState,
-        locationCardKey: widget.locationCardKey,
         cardHeight: cardHeight,
       ),
     );
@@ -284,12 +254,10 @@ class _RouteBottomSheetPositionerState extends ConsumerState<_RouteBottomSheetPo
 
 class _RouteBottomSheetBuilder extends ConsumerWidget {
   final MapNavigationState navState;
-  final GlobalKey locationCardKey;
   final double cardHeight;
 
   const _RouteBottomSheetBuilder({
     required this.navState,
-    required this.locationCardKey,
     required this.cardHeight,
   });
 
@@ -298,47 +266,13 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
     // 直接从 provider 读取最新状态，确保不因 prop 传递延迟导致数据过期
     final currentState = ref.watch(mapNavigationProvider);
     final routes = currentState.routes;
-    debugPrint('[BOTTOM_SHEET_BUILDER] routes.length=${routes.length}, '
-        'currentRouteType=${currentState.currentRouteType}, '
-        'routesState=${currentState.routesState}, '
-        'showRoutesSheet=${currentState.showRoutesSheet}');
     final selectedIdx = currentState.selectedRouteIndex;
     final selectedRoute = selectedIdx < routes.length ? routes[selectedIdx] : null;
     final isTransit = currentState.currentRouteType == RouteType.transit;
 
-    final routeItems = routes.asMap().entries.map((entry) {
-      final idx = entry.key;
-      final route = entry.value;
-      final isSelected = idx == selectedIdx;
-
-      int? timeDiff;
-      int? distanceDiff;
-      if (!isSelected && selectedRoute != null) {
-        final diffSec = (route.duration - selectedRoute.duration).round();
-        final diffM = (route.distance - selectedRoute.distance).round();
-        if (diffSec.abs() >= 60) timeDiff = diffSec;
-        if (diffM.abs() >= 100) distanceDiff = diffM;
-      }
-
-      return RouteResultItem(
-        distance: route.distance,
-        formattedDistance: route.distanceText,
-        duration: route.duration,
-        formattedDuration: route.durationText,
-        strategy: route.strategyText,
-        tolls: route.tolls,
-        trafficStatuses: route.trafficStatuses,
-        timeDiff: timeDiff,
-        distanceDiff: distanceDiff,
-        routeType: route.routeType,
-        transitSegments: route.transitSegments,
-        transitSummary: route.transitSummaryText,
-        transitLineNames: route.transitLineNames,
-        transferCount: route.transferCount,
-        walkDistance: route.walkDistance,
-        cityCode: route.cityCodes?.isNotEmpty == true ? route.cityCodes!.first : null,
-      );
-    }).toList();
+    final routeItems = routes
+        .map((r) => RouteResultItem.fromRoute(r, selectedFor: selectedRoute))
+        .toList();
 
     if (isTransit) {
       final screenHeight = MediaQuery.of(context).size.height;
@@ -354,22 +288,10 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
         selectedIndex: selectedIdx,
         onRouteSelected: (index) {
           ref.read(mapNavigationProvider.notifier).selectRoute(index);
-          final route = currentState.routes[index];
-          ref.read(mapDisplayCoordinatorProvider).showTransitRouteDetail(route);
-          final segments = route.transitSegments;
-          if (segments != null && segments.isNotEmpty) {
-            ref.read(mapControllerNotifierProvider.notifier).animateCameraToBoundsWithSegments(
-              segments,
-              padding: 50,
-              duration: 800,
-            );
-          }
+          ref.read(mapDisplayCoordinatorProvider).focusTransitRoute(currentState.routes[index]);
         },
         onClose: () {
           ref.read(mapNavigationProvider.notifier).hideRoutesSheet();
-        },
-        onStartNavigation: () {
-          ref.read(mapNavigationProvider.notifier).startNavigation();
         },
         onDetailExited: () {
           ref.read(mapDisplayCoordinatorProvider).clearRoutes();
@@ -393,60 +315,46 @@ class _RouteBottomSheetBuilder extends ConsumerWidget {
       onStartNavigation: () {
         ref.read(mapNavigationProvider.notifier).startNavigation();
       },
-      onShare: () {
-        final notifier = ref.read(routeShareNotifierProvider.notifier);
-        final inputState = ref.read(locationInputProvider);
-
-        // 找到选中的绑定者POI（source == PoiSource.binder）
-        final binderPoi = inputState.origin.poi?.source == PoiSource.binder
-            ? inputState.origin.poi
-            : (inputState.destination.poi?.source == PoiSource.binder
-                ? inputState.destination.poi
-                : null);
-
-        if (binderPoi == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('请先选择一个绑定者作为分享目标'), duration: Duration(seconds: 2)),
-          );
-          return;
-        }
-
-        if (currentState.originPoi == null || currentState.destinationPoi == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('请先选择起点和终点'), duration: Duration(seconds: 2)),
-          );
-          return;
-        }
-
-        if (currentState.currentRouteType == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('请先选择出行方式'), duration: Duration(seconds: 2)),
-          );
-          return;
-        }
-
-        notifier.shareRoute(
-          binderUserID: binderPoi.id,
-          origin: currentState.originPoi!,
-          destination: currentState.destinationPoi!,
-          routeType: currentState.currentRouteType!,
-          routeId: currentState.selectedRoute?.routeId ?? -1,
-        ).then((success) {
-          if (!context.mounted) return;
-          if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('分享成功'), duration: Duration(seconds: 2)),
-            );
-          } else {
-            final error = ref.read(routeShareNotifierProvider).errorMessage;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('分享失败: ${error ?? "未知错误"}'), duration: const Duration(seconds: 2)),
-            );
-          }
-        });
-      },
+      onShare: () => _onShare(context, ref, currentState),
       errorMessage: currentState.errorMessage,
       isLoading: currentState.routesState.isLoading,
     );
+  }
+
+  /// 分享当前路线：委托 notifier 校验和调用，widget 只负责显示 SnackBar
+  Future<void> _onShare(
+    BuildContext context,
+    WidgetRef ref,
+    MapNavigationState currentState,
+  ) async {
+    final inputState = ref.read(locationInputProvider);
+    final binderPoi = inputState.origin.poi?.source == PoiSource.binder
+        ? inputState.origin.poi
+        : (inputState.destination.poi?.source == PoiSource.binder
+            ? inputState.destination.poi
+            : null);
+
+    final result = await ref.read(routeShareNotifierProvider.notifier).shareCurrentRoute(
+          binderPoi: binderPoi,
+          originPoi: currentState.originPoi,
+          destinationPoi: currentState.destinationPoi,
+          routeType: currentState.currentRouteType,
+          selectedRouteId: currentState.selectedRoute?.routeId ?? -1,
+        );
+
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (result.isSuccess) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('分享成功'), duration: Duration(seconds: 2)),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('分享失败: ${result.errorMessage ?? "未知错误"}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }

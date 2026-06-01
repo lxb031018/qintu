@@ -1,6 +1,7 @@
 import 'package:qintu/models/async_state.dart';
+import 'package:qintu/models/location/lat_lng.dart';
 import '../../models/poi_models.dart';
-import '../../models/amap_routing_models.dart';
+import '../../models/route_option_model.dart';
 
 /// ============================================
 /// 地图导航状态

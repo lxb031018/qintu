@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/bus_route_models.dart';
 import '../../service/map_controller_service/map_controller_service.dart';
-import 'map_display_service.dart';
 
 /// ============================================
 /// 地图控制器 Provider
@@ -17,7 +16,7 @@ final mapControllerProvider = Provider<MapControllerService?>((ref) {
   return controller;
 });
 
-class MapControllerNotifier extends Notifier<MapControllerService?> implements MapDisplayService {
+class MapControllerNotifier extends Notifier<MapControllerService?> {
   @override
   MapControllerService? build() => null;
 
@@ -25,17 +24,14 @@ class MapControllerNotifier extends Notifier<MapControllerService?> implements M
     state = controller;
   }
 
-  @override
   Future<void> moveCamera({required double lat, required double lng, double zoom = 15.0}) async {
     await state?.moveCamera(lat: lat, lng: lng, zoom: zoom);
   }
 
-  @override
   Future<void> setNaviShowMode(int mode) async {
     await state?.setNaviShowMode(mode);
   }
 
-  @override
   Future<void> moveCameraToCenter({required double lat, required double lng, double zoom = 15.0}) async {
     await state?.moveCameraToCenter(lat: lat, lng: lng, zoom: zoom);
   }

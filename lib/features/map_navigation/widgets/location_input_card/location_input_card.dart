@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
-import '../../provider/location_Input/location_input_provider.dart';
+import '../../provider/location_input/location_input_provider.dart';
 import 'route_type_selector.dart';
 import 'swappable_location_row.dart';
 
@@ -50,6 +50,13 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
     super.dispose();
   }
 
+  /// 测量并写入卡片实测高度到 provider，供下方 route sheet 计算
+  void _reportHeight() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      ref.read(locationInputProvider.notifier).setInputCardHeight(box.size.height);
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -58,6 +65,9 @@ class _LocationInputCardState extends ConsumerState<LocationInputCard> {
 
     // 同步控制器文本（仅在必要时刻）
     _syncControllers(state);
+
+    // 测量并上报卡片高度（用于下方 route sheet 计算 maxHeight）
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHeight());
 
     return Container(
       padding: const EdgeInsets.all(AppSpacings.sm),

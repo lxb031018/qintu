@@ -42,6 +42,19 @@ class RouteShareState {
   }
 }
 
+/// 分享结果（供 widget 决定 UI 提示）
+class ShareRouteResult {
+  final bool isSuccess;
+  final String? errorMessage;
+
+  const ShareRouteResult._({required this.isSuccess, this.errorMessage});
+
+  const ShareRouteResult.success() : this._(isSuccess: true);
+
+  const ShareRouteResult.error(String message)
+      : this._(isSuccess: false, errorMessage: message);
+}
+
 /// ============================================
 /// 路由分享 Notifier
 ///
@@ -93,6 +106,40 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
       );
       return false;
     }
+  }
+
+  /// 分享当前路线（封装校验与 SnackBar 提示逻辑）
+  ///
+  /// 由 widget 调用，widget 只需根据 [ShareRouteResult] 显示对应 UI
+  Future<ShareRouteResult> shareCurrentRoute({
+    required PoiSuggestion? binderPoi,
+    required PoiSuggestion? originPoi,
+    required PoiSuggestion? destinationPoi,
+    required RouteType? routeType,
+    required int selectedRouteId,
+  }) async {
+    if (binderPoi == null) {
+      return const ShareRouteResult.error('请先选择一个绑定者作为分享目标');
+    }
+    if (originPoi == null || destinationPoi == null) {
+      return const ShareRouteResult.error('请先选择起点和终点');
+    }
+    if (routeType == null) {
+      return const ShareRouteResult.error('请先选择出行方式');
+    }
+
+    final success = await shareRoute(
+      binderUserID: binderPoi.id,
+      origin: originPoi,
+      destination: destinationPoi,
+      routeType: routeType,
+      routeId: selectedRouteId,
+    );
+
+    if (success) {
+      return const ShareRouteResult.success();
+    }
+    return ShareRouteResult.error(state.errorMessage ?? '未知错误');
   }
 
   /// 启动轮询
@@ -148,7 +195,7 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     }
   }
 
-  /// 将分享数据设置到 MapNavigationNotifier 并触发算路
+  /// 将分享数据交给 MapNavigationNotifier 处理（编排逻辑下沉到 nav notifier）
   void _triggerNavigation(PendingRouteShare share) {
     final origin = _toPoiSuggestion(
       lat: share.originLat,
@@ -165,25 +212,13 @@ class RouteShareNotifier extends Notifier<RouteShareState> {
     );
 
     final routeType = _service.stringToRouteType(share.routeType);
-    final targetRouteId = share.routeId;
 
-    ref.read(mapNavigationProvider.notifier).setOrigin(origin);
-    ref.read(mapNavigationProvider.notifier).setDestination(dest);
-
-    // 监听 routes 变化，算路完成后自动选中路线（但不开始导航）
-    ref.listen(mapNavigationProvider.select((s) => s.routes), (previous, next) {
-      if (next.isEmpty) return;
-
-      // 找到匹配的路线并选中
-      final index = targetRouteId >= 0
-          ? next.indexWhere((r) => r.routeId == targetRouteId)
-          : 0;
-      if (index >= 0) {
-        ref.read(mapNavigationProvider.notifier).selectRoute(index);
-      }
-    });
-
-    ref.read(mapNavigationProvider.notifier).switchRouteType(routeType);
+    ref.read(mapNavigationProvider.notifier).applySharedRoute(
+          origin: origin,
+          destination: dest,
+          routeType: routeType,
+          targetRouteId: share.routeId,
+        );
   }
 
   PoiSuggestion _toPoiSuggestion({

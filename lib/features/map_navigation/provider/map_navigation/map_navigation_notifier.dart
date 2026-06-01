@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qintu/models/async_state.dart';
 import 'package:qintu/utils/logger.dart';
 import '../../models/poi_models.dart';
-import '../../models/amap_routing_models.dart';
+import '../../models/route_option_model.dart';
 import '../../models/bus_route_models.dart' as bus;
 import '../../service/poi_service.dart';
 import '../../service/bus_route_service.dart';
@@ -27,18 +27,23 @@ import 'map_navigation_service.dart';
 /// 实现 MapNavigationService 接口
 /// ============================================
 class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapNavigationService {
+  /// 高德驾车算路策略：10 = 速度最快（推荐）
+  static const int _drivingStrategyFastest = 10;
+
   late final PoiService _poiService = ref.read(poiServiceProvider);
   late final MapDisplayCoordinator _mapDisplayCoordinator = ref.read(mapDisplayCoordinatorProvider);
-  bool _disposed = false;
+  /// 防止 async 操作在 notifier dispose 之后写入 state
+  /// 在 build() 顶部重置，确保重新订阅后正常工作
+  bool _disposed = true;
   StreamSubscription<NavigationState>? _navStreamSub;
 
   @override
   MapNavigationState build() {
+    _disposed = false;
     _startNavEventListener();
     ref.onDispose(() {
       _disposed = true;
       _navStreamSub?.cancel();
-      AmapNavigationBridge.stopNavigation();
     });
     return const MapNavigationState();
   }
@@ -46,7 +51,6 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
   void _startNavEventListener() {
     _navStreamSub?.cancel();
     _navStreamSub = AmapNavigationBridge.navigationStateStream.listen((navState) {
-      if (_disposed) return;
       switch (navState.status) {
         case NavigationStatus.navigating:
           state = state.copyWith(isNavigating: true);
@@ -101,16 +105,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
       showRoutesSheet: false,
       clearCurrentRouteType: true,
     );
-    ref.read(mapControllerNotifierProvider)?.disableNaviMode();
-    ref.read(mapControllerNotifierProvider)?.setFollowMode(false);
-    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(true);
-    ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(false);
-    ref.read(mapControllerNotifierProvider)?.clearCarMarker();
-    ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(false);
-    ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(false);
-    ref.read(mapControllerNotifierProvider)?.clearRoutes();
-    ref.read(mapControllerNotifierProvider)?.clearRouteOverlays();
-    ref.read(mapControllerNotifierProvider)?.moveToMyLocation();
+    _mapDisplayCoordinator.exitNavigationMode();
   }
 
   @override
@@ -257,7 +252,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
           routeType: _routeTypeToString(state.currentRouteType!),
           origin: state.originLocation!,
           destination: state.destinationLocation!,
-          strategy: 10,
+          strategy: _drivingStrategyFastest,
         );
         routes = naviRoutes ?? [];
       }
@@ -300,18 +295,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
     }
   }
 
-  String _routeTypeToString(RouteType type) {
-    switch (type) {
-      case RouteType.driving:
-        return 'driving';
-      case RouteType.walking:
-        return 'walking';
-      case RouteType.riding:
-        return 'riding';
-      case RouteType.transit:
-        return 'transit';
-    }
-  }
+  String _routeTypeToString(RouteType type) => RouteTypeCodec.toApiString(type);
 
   RouteOption _busPathToRouteOption(bus.BusPath bp, String? cityCode) {
     return RouteOption(
@@ -382,6 +366,30 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
     state = state.copyWith(showRoutesSheet: false, clearCurrentRouteType: true);
   }
 
+  /// 应用他人分享的路线：写入起终点 + 切换出行方式 + 算路后选中目标路线
+  ///
+  /// 由 [RouteShareNotifier] 调用，内部以命令式顺序编排，不依赖 ref.listen
+  Future<void> applySharedRoute({
+    required PoiSuggestion origin,
+    required PoiSuggestion destination,
+    required RouteType routeType,
+    required int targetRouteId,
+  }) async {
+    setOrigin(origin);
+    setDestination(destination);
+    if (!state.canPlanRoute) return;
+
+    state = state.copyWith(currentRouteType: routeType);
+    await planRoute();
+
+    if (targetRouteId >= 0 && state.routes.isNotEmpty) {
+      final index = state.routes.indexWhere((r) => r.routeId == targetRouteId);
+      if (index >= 0) {
+        selectRoute(index);
+      }
+    }
+  }
+
   Future<void> startNavigation() async {
     final route = state.selectedRoute;
     if (route == null) {
@@ -404,13 +412,7 @@ class MapNavigationNotifier extends Notifier<MapNavigationState> implements MapN
       showRoutesSheet: false,
     );
 
-    ref.read(mapControllerNotifierProvider)?.enableNaviMode();
-
-    ref.read(mapControllerNotifierProvider)?.setFollowMode(true);
-    ref.read(mapControllerNotifierProvider)?.setLocationDotEnabled(false);
-    ref.read(mapControllerNotifierProvider)?.setCarOverlayVisible(true);
-    ref.read(mapControllerNotifierProvider)?.setRouteTmcEnabled(true);
-    ref.read(mapControllerNotifierProvider)?.setRouteTrafficIconEnabled(true);
+    await _mapDisplayCoordinator.enterNavigationMode();
 
     await AmapNavigationBridge.selectRouteId(route.routeId);
 

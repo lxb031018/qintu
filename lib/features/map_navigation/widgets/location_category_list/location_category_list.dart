@@ -4,7 +4,7 @@ import '../../../../constants/app_colors.dart';
 import '../../../../constants/app_radii.dart';
 import '../../../../constants/app_spacings.dart';
 import '../../models/poi_models.dart';
-import '../../provider/location_Input/location_input_provider.dart';
+import '../../provider/location_input/location_input_provider.dart';
 import 'location_list_item.dart';
 import 'category_tab_bar.dart';
 import 'history_selection_bar.dart';
@@ -49,7 +49,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(locationHistoryProvider.notifier).loadHistory();
+      ref.read(locationInputProvider.notifier).loadHistory();
     });
   }
 
@@ -244,9 +244,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
   }
 
   Widget _buildHistoryContent(LocationInputState state) {
-    final historyState = ref.watch(locationHistoryProvider);
-
-    if (historyState.isLoading) {
+    if (state.isLoadingHistory) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -258,7 +256,7 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
       );
     }
 
-    if (historyState.items.isEmpty) {
+    if (state.historyItems.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacings.md),
@@ -272,10 +270,10 @@ class _LocationCategoryListState extends ConsumerState<LocationCategoryList> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: historyState.items.map((poi) => HistoryListItem(
+      children: state.historyItems.map((poi) => HistoryListItem(
         poi: poi,
-        isSelected: historyState.selectedIds.contains(poi.id),
-        isSelectionMode: historyState.isSelectionMode,
+        isSelected: state.selectedHistoryIds.contains(poi.id),
+        isSelectionMode: state.isHistorySelectionMode,
         onTap: () => _onHistoryTap(poi),
         onLongPress: () => _onHistoryLongPress(poi),
       )).toList(),

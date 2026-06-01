@@ -59,24 +59,35 @@ class LocationSharingNotifier extends Notifier<LocationSharingState> {
   }
 
   /// 启动位置共享
+  ///
+  /// 若已处于共享状态，则跳过（防止重复启动）。如需重启请先 [stopSharing]。
   Future<void> startSharing() async {
     if (state.isSharing) return;
 
     state = state.copyWith(isSharing: true);
 
-    // 首次上传
-    await _uploadOnce();
+    try {
+      // 首次上传
+      await _uploadOnce();
 
-    // 优先尝试后台定位服务
-    final bgStarted = await _bgService.start(
-      onUpdate: _onBackgroundLocationUpdate,
-    );
+      // 优先尝试后台定位服务
+      final bgStarted = await _bgService.start(
+        onUpdate: _onBackgroundLocationUpdate,
+      );
 
-    if (!bgStarted) {
-      // 后台服务启动失败，回退到前台轮询
-      _uploadTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        _tryUpload();
-      });
+      if (!bgStarted) {
+        // 后台服务启动失败，回退到前台轮询
+        _uploadTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+          _tryUpload();
+        });
+      }
+    } catch (e) {
+      // 启动失败：回滚状态，避免"半挂"导致后续 startSharing 静默失败
+      _uploadTimer?.cancel();
+      _uploadTimer = null;
+      await _bgService.stop();
+      state = state.copyWith(isSharing: false);
+      rethrow;
     }
   }
 
