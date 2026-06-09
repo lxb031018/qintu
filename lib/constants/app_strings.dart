@@ -594,4 +594,13 @@ class AppStrings {
 
   /// 双击设置提示
   static const String doubleTapSettingsHint = '💡 若初次使用本APP建议双击"设置"';
+
+  /// 法律信息
+  static const String legalNotices = '法律信息';
+
+  /// 用户协议
+  static const String userAgreement = '用户协议';
+
+  /// 隐私政策
+  static const String privacyPolicy = '隐私政策';
 }

@@ -8,6 +8,7 @@ import '../map_navigation/map_navigation_tab.dart';
 import 'widgets/theme_selector_card.dart';
 import 'widgets/logout_card.dart';
 import 'widgets/tab_switch_mode_card.dart';
+import 'widgets/legal_links_card.dart';
 import 'profile_card.dart';
 import 'provider/settings_page_provider.dart';
 
@@ -39,6 +40,8 @@ class SettingsPage extends ConsumerWidget {
           const TabSwitchModeCard(),
           const SizedBox(height: 16),
           const ThemeSelectorCard(),
+          const SizedBox(height: 16),
+          const LegalLinksCard(),
           const SizedBox(height: 16),
           LogoutCard(
             isLoading: pageState.isLoggingOut,

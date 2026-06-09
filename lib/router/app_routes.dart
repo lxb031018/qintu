@@ -7,5 +7,7 @@ class AppRoutes {
   static const String unifiedHome = '/home';
   static const String settings = '/settings';
   static const String profile = '/settings/profile';
+  static const String userAgreement = '/settings/user-agreement';
+  static const String privacyPolicy = '/settings/privacy-policy';
   static const String helloApiTest = '/dev/hello-api-test';
 }

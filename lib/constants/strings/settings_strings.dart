@@ -59,4 +59,13 @@ class SettingsStrings {
 
   /// 关闭
   static const String disabled = '关闭';
+
+  /// 法律信息
+  static const String legalNotices = '法律信息';
+
+  /// 用户协议
+  static const String userAgreement = '用户协议';
+
+  /// 隐私政策
+  static const String privacyPolicy = '隐私政策';
 }

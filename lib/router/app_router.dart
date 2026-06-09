@@ -4,6 +4,8 @@ import '../features/auth/auth_page.dart';
 import '../features/app_shell/unified_home_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/settings/profile_page.dart';
+import '../features/settings/user_agreement_page.dart';
+import '../features/settings/privacy_policy_page.dart';
 import '../features/app_shell/splash_screen.dart';
 import 'app_routes.dart';
 import 'route_guards.dart';
@@ -65,6 +67,20 @@ class AppRouter {
           name: 'profile',
           builder: (context, state) => const ProfilePage(),
         ),
+
+        // 用户协议
+        GoRoute(
+          path: AppRoutes.userAgreement,
+          name: 'user-agreement',
+          builder: (context, state) => const UserAgreementPage(),
+        ),
+
+        // 隐私政策
+        GoRoute(
+          path: AppRoutes.privacyPolicy,
+          name: 'privacy-policy',
+          builder: (context, state) => const PrivacyPolicyPage(),
+        ),
       ],
     );
 
@@ -97,6 +113,16 @@ extension RouterExtension on BuildContext {
   /// 跳转到个人信息编辑页（push 模式，保留导航栈）
   void pushToProfile() {
     pushNamed('profile');
+  }
+
+  /// 跳转到用户协议页（push 模式）
+  void pushToUserAgreement() {
+    pushNamed('user-agreement');
+  }
+
+  /// 跳转到隐私政策页（push 模式）
+  void pushToPrivacyPolicy() {
+    pushNamed('privacy-policy');
   }
 
   /// 跳转到云函数调用测试页面

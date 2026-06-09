@@ -19,6 +19,9 @@ class AuthButton extends StatelessWidget {
   /// 是否正在加载
   final bool isLoading;
 
+  /// 是否禁用
+  final bool disabled;
+
   /// 点击回调
   final VoidCallback onPressed;
 
@@ -27,6 +30,7 @@ class AuthButton extends StatelessWidget {
     required this.text,
     required this.primaryColor,
     required this.isLoading,
+    this.disabled = false,
     required this.onPressed,
   });
 
@@ -35,6 +39,7 @@ class AuthButton extends StatelessWidget {
     return AppButton(
       text: text,
       isLoading: isLoading,
+      disabled: disabled,
       onPressed: onPressed,
       backgroundColor: primaryColor,
       foregroundColor: TextColors.white,

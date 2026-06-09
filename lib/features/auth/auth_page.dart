@@ -11,6 +11,7 @@ import 'widgets/auth_button.dart';
 import 'widgets/phone_input_card.dart';
 import 'widgets/code_input_card.dart';
 import 'widgets/error_card.dart';
+import 'widgets/agreement_checkbox.dart';
 
 /// ============================================
 /// 认证页面（登录/注册）
@@ -28,6 +29,7 @@ class AuthPage extends ConsumerStatefulWidget {
 class _AuthPageState extends ConsumerState<AuthPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
+  bool _agreed = false;
 
   @override
   void dispose() {
@@ -39,6 +41,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final primaryColor = AppColors.primaryColor;
     final authNotifier = ref.watch(authProvider.notifier);
     final authState = ref.watch(authProvider);
@@ -78,9 +81,16 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                     text: AppStrings.getVerificationCode,
                     primaryColor: primaryColor,
                     isLoading: authState.isLoading,
+                    disabled: !_agreed,
                     onPressed: () {
                       authNotifier.sendCode(_phoneController.text);
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  AgreementCheckbox(
+                    value: _agreed,
+                    onChanged: (v) => setState(() => _agreed = v ?? false),
+                    isDark: isDark,
                   ),
                 ],
                 if (authState.step == AuthStep.inputCode) ...[
@@ -99,9 +109,16 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                     text: AppStrings.login,
                     primaryColor: primaryColor,
                     isLoading: authState.isLoading,
+                    disabled: !_agreed,
                     onPressed: () {
                       authNotifier.verifyAndLogin(_codeController.text);
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  AgreementCheckbox(
+                    value: _agreed,
+                    onChanged: (v) => setState(() => _agreed = v ?? false),
+                    isDark: isDark,
                   ),
                 ],
                 if (authState.errorMessage != null) ...[
