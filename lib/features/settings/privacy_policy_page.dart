@@ -144,7 +144,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    '最后更新日期：2026年6月',
+                    '最后更新日期：2026年6月9日',
                     style: AppTextStyles.caption.copyWith(
                       color: isDark
                           ? AppColors.darkLightTextColor

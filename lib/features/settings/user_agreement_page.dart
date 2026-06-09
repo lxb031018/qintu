@@ -132,7 +132,7 @@ class UserAgreementPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   Text(
                     '开发者：lxb（lxb031018@163.com）\n'
-                    '最后更新日期：2026年6月',
+                    '最后更新日期：2026年6月9日',
                     style: AppTextStyles.caption.copyWith(
                       color: isDark
                           ? AppColors.darkLightTextColor

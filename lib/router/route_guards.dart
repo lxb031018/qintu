@@ -52,10 +52,18 @@ class RouteGuards {
     final isOnAuthPage = state.matchedLocation == AppRoutes.auth;
     final isOnSplashPage = state.matchedLocation == AppRoutes.splash;
     final isOnDevPage = state.matchedLocation.startsWith('/dev/');
+    final isOnLegalPage = state.matchedLocation == AppRoutes.userAgreement ||
+        state.matchedLocation == AppRoutes.privacyPolicy;
 
     // 开发测试页面不需要登录，直接放行
     if (isOnDevPage) {
       Logs.ui.info('🧭 [ROUTER] 开发测试页面，不需要认证');
+      return null;
+    }
+
+    // 用户协议与隐私政策页面不需要登录
+    if (isOnLegalPage) {
+      Logs.ui.info('🧭 [ROUTER] 法律页面，不需要认证');
       return null;
     }
 
